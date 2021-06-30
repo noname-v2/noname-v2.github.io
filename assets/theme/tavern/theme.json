@@ -1,0 +1,32 @@
+{
+	"app": {
+		"background": "@(background.webp) center/cover"
+	},
+
+	"player": {
+		"background": "@(border.webp) center/cover",
+		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px",
+		"image-shadow": "rgba(20, 20, 20, 1) 0 0 0 1px",
+		"image-margin": "4px",
+		"hp-high": "@(hp-high.webp)",
+		"hp-mid": "@(hp-mid.webp)",
+		"hp-low": "@(hp-low.webp)",
+		"hp-lost": "@(hp-lost.webp)"
+	},
+	
+	"section": {
+		"background": "@(seperator.webp) center/cover",
+		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px"
+	},
+
+	"toggle": {
+		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px",
+		"button-shadow": "rgba(20, 20, 20, 1) 0 0 0 1px",
+		"slider-background": "rgba(0, 0, 0, 0.6)",
+		"slider-shadow": "rgba(0, 0, 0, 0.8) 0 0 0 1px"
+	},
+
+	"sidebar": {
+		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
+	}
+}

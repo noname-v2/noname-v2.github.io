@@ -1,0 +1,91 @@
+noname-sidebar {
+	@include layer;
+	width: 220px;
+	background: var(--sidebar-background);
+	box-shadow: var(--sidebar-shadow);
+	transition: transform var(--app-transition);
+
+	// header and footer
+	> noname-caption {
+		position: absolute;
+		display: block;
+		width: 100%;
+		height: 45px;
+		line-height: 47px;
+		font-size: 30px;
+		cursor: pointer;
+		text-align: center;
+
+		// header
+		&:first-child {
+			background: var(--sidebar-header-background);
+			box-shadow: var(--sidebar-header-shadow);
+			&:hover {
+				background: var(--sidebar-header-background-hover);
+			}
+			&.clickdown {
+				background: var(--sidebar-header-background-down);
+			}
+
+			// back button
+			> noname-image {
+				position: absolute;
+				width: 29px;
+				height: 29px;
+				left: 8px;
+				top: 8px;
+				background: var(--icon-back) center/cover;
+			}
+
+			// header text
+			> noname-span {
+				position: relative;
+				&.mid {
+					left: 4px;
+				}
+				&.long {
+					top: -1px;
+					left: 10px;
+					font-size: 28px;
+				}
+				&.vlong {
+					top: -2px;
+					left: 12px;
+					font-size: 24px;
+				}
+			}
+		}
+
+		// footer
+		&.footer {
+			top: auto;
+			bottom: 0;
+			display: none;
+			background: var(--sidebar-footer-background);
+			box-shadow: var(--sidebar-footer-shadow);
+			transition: transform var(--app-transition);
+			&:hover {
+				background: var(--sidebar-footer-background-hover);
+			}
+			&.clickdown {
+				background: var(--sidebar-footer-background-down);
+			}
+		}
+	}
+
+	// show footer
+	&.with-footer {
+		noname-pane {
+			height: calc(100% - 92px);
+		}
+		> noname-caption.footer {
+			display: block;
+		}
+	}
+
+	// pane container
+	> noname-pane {
+		height: calc(100% - 46px);
+		top: 46px;
+	}
+}

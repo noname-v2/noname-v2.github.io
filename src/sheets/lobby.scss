@@ -1,0 +1,251 @@
+noname-lobby {
+	@include layer;
+
+	// area containing players
+	> noname-seats {
+		position: absolute;
+		width: 700px;
+		height: 250px;
+		left: calc(50% - 240px);
+		top: calc(50% - 125px);
+		transition: transform var(--app-transition);
+
+		// two rows
+		&[data-rows="2"] {
+			height: 480px;
+			top: calc(50% - 240px);
+		}
+
+		// player container
+		> noname-gallery {
+			@include layer;
+			height: 250px;
+			text-align: center;
+
+			// player entry
+			> noname-player {
+				position: relative;
+				display: inline-block;
+				margin: 20px 10px 0 10px;
+				transition: opacity var(--app-transition);
+
+				> noname-content > noname-caption {
+					left: 10px;
+					top: 16px;
+				}
+			}
+
+			&:last-child {
+				top: auto;
+				bottom: 0;
+			}
+		}
+	}
+
+	// start button
+	> noname-bar {
+		z-index: 1;
+		position: absolute;
+		right: 30px;
+		bottom: 28px;
+		transition: transform var(--app-transition);
+
+		> noname-button {
+			position: relative;
+			display: inline-block;
+			margin-left: 25px;
+			transition: opacity var(--app-transition);
+
+			&.blurred {
+				pointer-events: none;
+			}
+		}
+
+		&.hidden {
+			transform: scale(0.8);
+		}
+	}
+
+	// chat area in sidebar
+	> noname-sidebar > noname-chat {
+		display: none;
+	}
+
+	> noname-sidebar.online {
+		> noname-content {
+			height: calc(100% - 246px);
+		}
+
+		> noname-chat {
+			position: absolute;
+			background: var(--widget-background-light);
+			box-shadow: var(--widget-shadow);
+			bottom: 0;
+			width: 100%;
+			height: 200px;
+			display: block;
+
+			// input box
+			> input {
+				position: absolute;
+				width: calc(100% - 50px);
+				padding: 2px 45px 2px 5px;
+				bottom: 1px;
+				left: 0;
+				font-size: 16px;
+				box-shadow: var(--widget-shadow);
+				background: var(--widget-background-light);
+			}
+
+			// icons
+			> noname-icon {
+				position: absolute;
+				width: 50px;
+				height: 29px;
+				right: 0;
+				background-size: 20px 20px;
+				background-position: 20px 3px;
+				background-repeat: no-repeat;
+				opacity: 0.8;
+				transition: opacity var(--app-transition);
+
+				// emote icon
+				&.emote {
+					bottom: 0;
+					background-image: var(--icon-emote);
+					cursor: pointer;
+				}
+
+				// clear screen icon
+				&.clear {
+					top: 5px;
+					background-image: var(--icon-erase);
+				}
+
+				// scroll to top
+				&.top {
+					top: 45px;
+					background-size: 20px 16px;
+					background-position: 20px 6px;
+					background-image: var(--icon-up);
+				}
+
+				// scroll to bottom
+				&.bottom {
+					top: 85px;
+					background-position: 20px 6px;
+					background-size: 20px 16px;
+					transform: rotateX(180deg);
+					background-image: var(--icon-up);
+				}
+
+				// hover
+				&:hover {
+					opacity: 1;
+				}
+			}
+
+			// hover area for displaying icons
+			> noname-hover {
+				position: absolute;
+				width: 40px;
+				height: 100px;
+				right: 0;
+				top: 0;
+			}
+
+			// chat container
+			> noname-content {
+				@include layer;
+				height: 169px;
+				overflow: scroll;
+
+				// chat entry
+				> noname-div {
+					position: relative;
+					display: block;
+					margin: 10px 0 15px 10px;
+					width: calc(100% - 20px);
+					
+					> noname-div {
+						position: relative;
+						display: inline-block;
+						vertical-align: top;
+						white-space: nowrap;
+
+						&:first-child {
+							margin-right: 8px;
+						}
+
+						// avatar container
+						&.avatar {
+							> noname-image {
+								position: relative;
+								display: block;
+								width: 35px;
+								height: 35px;
+								border-radius: 100%;
+								box-shadow: var(--widget-image-shadow);
+							}
+						}
+
+						// nickname and text
+						&.chat {
+							width: calc(100% - 43px);
+
+							> noname-div {
+								position: relative;
+								display: block;
+
+								// nickname
+								&:first-child {
+									width: calc(100% - 2px);
+									padding-left: 2px;
+									font-size: 12px;
+									margin-bottom: 5px;
+								}
+
+								// chat text
+								&:last-child {
+									@include widget;
+									background: var(--widget-background-popup);
+									font-size: 14px;
+									width: calc(100% - 10px);
+									padding: 5px;
+									white-space: normal;
+									border-radius: var(--widget-radius-sharp);
+
+									// emote message
+									&.emote {
+										width: 47px;
+										height: 47px;
+									}
+								}
+							}
+
+							// hide nickname of self
+							&:first-child {
+								margin-top: 3px;
+
+								> noname-div:first-child {
+									display: none;
+								}
+
+								> .emote {
+									margin-left: 98px;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// zoom effect when open and close
+	&.hidden {
+		> noname-seats, > noname-bar {
+			transform: scale(0.8);
+		}
+	}
+}

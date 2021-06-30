@@ -1,0 +1,71 @@
+@mixin layer {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	left: 0;
+	top: 0;
+	position: absolute;
+}
+
+@mixin transit {
+	transition-property: opacity, transform;
+	transition-duration: var(--app-transition);
+}
+
+@mixin transit-slow {
+	transition-property: opacity, transform;
+	transition-duration: var(--app-transition-slow);
+}
+
+@mixin transit-fast {
+	transition-property: opacity, transform;
+	transition-duration: var(--app-transition-fast);
+}
+
+@mixin flex-center {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+
+	> * {
+		position: relative;
+	}
+}
+
+@mixin widget {
+    background: var(--widget-background);
+	border-radius: var(--widget-radius);
+	box-shadow: var(--widget-shadow);
+
+	// image with border
+	> noname-image {
+		position: absolute;
+		width: calc(100% - 2 * var(--widget-image-margin));
+		height: calc(100% - 2 * var(--widget-image-margin));
+		left: var(--widget-image-margin);
+		top: var(--widget-image-margin);
+		border-radius: var(--widget-image-radius);
+		box-shadow: var(--widget-image-shadow);
+	}
+}
+
+@mixin widget-sharp {
+	border-radius: var(--widget-radius-sharp);
+
+	// image with sharper border
+	> noname-image {
+		width: calc(100% - 2 * var(--widget-image-margin-sharp));
+		height: calc(100% - 2 * var(--widget-image-margin-sharp));
+		left: var(--widget-image-margin-sharp);
+		top: var(--widget-image-margin-sharp);
+		border-radius: var(--widget-image-radius-sharp);
+	}
+}
+
+// workaround for safari's transition + transform problem
+@mixin mask {
+	overflow: hidden;
+	mask-image: -webkit-radial-gradient(white, black);
+	-webkit-mask-image: -webkit-radial-gradient(white, black);
+}

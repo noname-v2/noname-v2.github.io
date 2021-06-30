@@ -1,0 +1,86 @@
+noname-button {
+	width: 52px;
+	height: 52px;
+	position: relative;
+	display: inline-block;
+	cursor: pointer;
+
+	// input.down feedback
+	&.clickdown {
+		transform: scale(0.98)
+	}
+
+	// fix text rendereing problem in transition
+	backface-visibility: hidden;
+
+	// background circle image
+	> noname-background {
+		border-radius: var(--button-radius);
+		box-shadow: var(--button-shadow);
+		background: var(--button-background) center/cover;
+		// center colored round image
+		> noname-image {
+			@include layer;
+			opacity: var(--button-image-opacity);
+			transition: opacity var(--app-transition-fast);
+
+			// fix text rendereing problem in transition
+			transform: translateZ(0px);
+		}
+	}
+
+	// hover effect of background image
+	&:hover > noname-background > noname-image {
+		opacity: 1;
+	}
+
+	// yellow background image
+	&[data-background='blue'] > noname-background > noname-image {
+		background: var(--button-blue-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='green'] > noname-background > noname-image {
+		background: var(--button-green-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='grey'] > noname-background > noname-image {
+		background: var(--button-grey-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='orange'] > noname-background > noname-image {
+		background: var(--button-orange-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='purple'] > noname-background > noname-image {
+		background: var(--button-purple-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='red'] > noname-background > noname-image {
+		background: var(--button-red-image) center/cover;
+	}
+
+	// yellow background image
+	&[data-background='yellow'] > noname-background > noname-image {
+		background: var(--button-yellow-image) center/cover;
+	}
+
+	// caption text
+	> noname-content > noname-caption {
+		font-size: 38px;
+		font-family: var(--button-font);
+		position: absolute;
+		&:first-child {
+			left: -5px;
+			top: -5px;
+		}
+		&:last-child {
+			bottom: -5px;
+			right: -5px;
+		}
+	}
+}

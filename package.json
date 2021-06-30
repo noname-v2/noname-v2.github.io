@@ -1,0 +1,30 @@
+{
+	"name": "noname-v2",
+	"version": "2.0.0",
+	"homepage": "noname.pub",
+	"scripts": {
+		"build": "sh scripts/clean.sh && node scripts/build-meta.mjs && npx tsc && node scripts/build-rollup.mjs",
+		"electron": "npx electron scripts/electron.js"
+	},
+	"license": "GPL-3.0",
+	"intro": "Web based card game",
+	"config": {
+		"ruleset": "sgs"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/noname-v2/noname-v2.github.io.git"
+	},
+	"devDependencies": {
+		"@types/node": "^15.0.0",
+		"@types/ws": "^7.4.5",
+		"rollup": "^2.45.2",
+		"sass": "^1.32.11",
+		"typescript": "^4.2.4"
+	},
+	"optionalDependencies": {
+		"electron": "^12.0.7",
+		"http-server": "^0.12.3",
+		"ws": "^7.4.5"
+	}
+}

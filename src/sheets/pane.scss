@@ -1,0 +1,120 @@
+noname-pane {
+	@include layer;
+	
+    &:not(.scroll) {
+        overflow: hidden;
+    }
+
+	// section title, gallery container, button container and toggle container
+	> noname-section, > noname-gallery, > noname-bar, > noname-group, > noname-text {
+		display: block;
+		position: relative;
+		margin: 10px 0 10px 0;
+		width: 100%;
+	}
+
+	// section container
+	> noname-section {
+		text-align: center;
+
+		// section text
+		> noname-span {
+			position: relative;
+			display: inline-block;
+			font-size: 12px;
+			width: 90px;
+			height: 18px;
+			text-align: center;
+			line-height: 17px;
+			background: var(--section-background);
+			border-radius: var(--section-radius);
+			box-shadow: var(--section-shadow);
+		}
+	}
+
+	// gallery
+	> noname-gallery {
+		white-space: normal;
+
+		> noname-player {
+			width: 120px;
+			height: 168px;
+
+			> noname-content {
+				> noname-caption {
+					left: 5px;
+					top: 8px;
+				}
+	
+				> noname-label {
+					top: 3px;
+					right: 3px;
+				}
+	
+				> noname-hp {
+					bottom: 8px;
+					right: 5px;
+				}
+			}
+		}
+	}
+	
+	// button container
+	> noname-bar {
+		text-align: center;
+
+		> noname-caption {
+			@include widget;
+			@include widget-sharp;
+
+			position: relative;
+			cursor: pointer;
+			display: inline-block;
+			margin: 7px;
+			padding: 5px 8px 4px 8px;
+			font-size: 22px;
+		}
+
+		&.full > noname-caption {
+			margin: 7px 5px 7px 5px;
+		}
+	}
+
+	// caption
+	> noname-caption {
+		width: 100%;
+		text-align: center;
+		font-size: 24px;
+		display: block;
+		margin-top: 8px;
+		margin-bottom: -8px;
+	}
+
+	// text
+	> noname-text {
+		width: calc(100% - 20px);
+		padding: 5px 10px 5px 10px;
+
+		> noname-span {
+			position: relative;
+			white-space: normal;
+		}
+
+		&.skill > noname-div {
+			position: relative;
+			display: inline-block;
+			white-space: nowrap;
+			vertical-align: top;
+			left: -5px;
+
+			&:last-child {
+				white-space: normal;
+				width: calc(100% - 60px);
+			}
+		}
+
+		&:last-child {
+			margin-bottom: 2px;
+		}
+	}
+}

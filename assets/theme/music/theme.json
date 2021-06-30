@@ -1,0 +1,47 @@
+{
+	"app": {
+		"background": "@(grid.webp),linear-gradient(#333333, #222222)"
+	},
+
+	"player": {
+		"background": "linear-gradient(#4b4b4b, #464646)",
+		"back-background": "linear-gradient(#4b4b4b, #464646)",
+		"shadow": "rgba(36, 36, 36, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
+		"back-shadow": "rgba(40, 40, 40, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
+		"image-shadow": "rgba(40, 40, 40, 1) 0 0 0 1px",
+		"image-margin": "4px",
+		"hp-high": "@(hp-high.webp)",
+		"hp-mid": "@(hp-mid.webp)",
+		"hp-low": "@(hp-low.webp)",
+		"hp-lost": "@(hp-lost.webp)"
+	},
+
+	"card": {
+		"background": "@(card.webp)",
+		"back-background": "@(cardback.webp)"
+	},
+
+	"widget": {
+		"background": "linear-gradient(#4b4b4b, #464646)",
+		"background-popup": "rgba(0, 0, 0, 0.2)",
+		"shadow": "rgba(40, 40, 40, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
+		"image-shadow": "rgba(40, 40, 40, 1) 0 0 0 1px",
+		"image-margin": "4px",
+		"image-margin-sharp": "3px"
+	},
+	
+	"section": {
+		"shadow": "rgba(40, 40, 40, 1) 0 0 0 1px, rgba(0, 0, 0, 0.08) 0 0 5px inset"
+	},
+
+	"sidebar": {
+		"background": "linear-gradient(#4b4b4b, #464646)",
+		"shadow": "rgba(36, 36, 36, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
+		"header-background": "rgba(0, 0, 0, 0.2)",
+		"header-shadow": "rgba(45, 45, 45, 1) 0 0 0 1px"
+	},
+
+	"toggle": {
+		"button-shadow": "rgba(45, 45, 45, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
+	}
+}

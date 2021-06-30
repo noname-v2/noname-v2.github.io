@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"module": "ESNext",
+		"target": "ESNext",
+		"outDir": "build/src"
+	},
+	"include": [
+		"src/client/main.ts",
+		"src/client/service.ts",
+		"src/worker/main.ts",
+		"src/extensions/*/main.ts"	
+	]
+}

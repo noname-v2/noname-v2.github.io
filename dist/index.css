@@ -1,0 +1,1009 @@
+noname-app {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+  text-shadow: var(--app-text-shadow);
+  color: var(--app-color);
+  font-family: var(--app-font), sans-serif;
+  cursor: default;
+}
+noname-app > noname-background {
+  background: var(--app-background);
+}
+
+noname-arena {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+
+noname-button {
+  width: 52px;
+  height: 52px;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  backface-visibility: hidden;
+}
+noname-button.clickdown {
+  transform: scale(0.98);
+}
+noname-button > noname-background {
+  border-radius: var(--button-radius);
+  box-shadow: var(--button-shadow);
+  background: var(--button-background) center/cover;
+}
+noname-button > noname-background > noname-image {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  opacity: var(--button-image-opacity);
+  transition: opacity var(--app-transition-fast);
+  transform: translateZ(0px);
+}
+noname-button:hover > noname-background > noname-image {
+  opacity: 1;
+}
+noname-button[data-background=blue] > noname-background > noname-image {
+  background: var(--button-blue-image) center/cover;
+}
+noname-button[data-background=green] > noname-background > noname-image {
+  background: var(--button-green-image) center/cover;
+}
+noname-button[data-background=grey] > noname-background > noname-image {
+  background: var(--button-grey-image) center/cover;
+}
+noname-button[data-background=orange] > noname-background > noname-image {
+  background: var(--button-orange-image) center/cover;
+}
+noname-button[data-background=purple] > noname-background > noname-image {
+  background: var(--button-purple-image) center/cover;
+}
+noname-button[data-background=red] > noname-background > noname-image {
+  background: var(--button-red-image) center/cover;
+}
+noname-button[data-background=yellow] > noname-background > noname-image {
+  background: var(--button-yellow-image) center/cover;
+}
+noname-button > noname-content > noname-caption {
+  font-size: 38px;
+  font-family: var(--button-font);
+  position: absolute;
+}
+noname-button > noname-content > noname-caption:first-child {
+  left: -5px;
+  top: -5px;
+}
+noname-button > noname-content > noname-caption:last-child {
+  bottom: -5px;
+  right: -5px;
+}
+
+noname-gallery {
+  width: 100%;
+}
+noname-gallery:not(.visible) {
+  overflow: hidden;
+}
+noname-gallery.visible > noname-pages > noname-page:not(.current) {
+  opacity: 0;
+  pointer-events: none;
+}
+noname-gallery.visible > noname-pages:not(.moving) > noname-page {
+  transition: opacity var(--app-transition);
+}
+noname-gallery > noname-pages {
+  height: 100%;
+  white-space: nowrap;
+  position: absolute;
+}
+noname-gallery > noname-pages > noname-page {
+  height: 100%;
+  position: relative;
+  display: inline-block;
+}
+noname-gallery > noname-pages > noname-page > noname-layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+noname-gallery > noname-pages > noname-page > noname-layer > noname-item {
+  position: relative;
+}
+noname-gallery > noname-pages > noname-page > noname-layer > noname-item > * {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+noname-gallery > noname-indicator {
+  display: none;
+  height: 10px;
+  bottom: 0;
+  width: 100%;
+  position: absolute;
+}
+noname-gallery > noname-indicator > noname-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  margin-left: 3px;
+  margin-right: 3px;
+}
+noname-gallery > noname-indicator > noname-dot > noname-layer {
+  border-radius: 6px;
+  transition: opacity 0.3s ease-in;
+}
+noname-gallery > noname-indicator > noname-dot > noname-layer:last-child {
+  opacity: 0;
+  background: var(--gallery-indicator-background-current);
+}
+noname-gallery > noname-indicator > noname-dot > noname-layer:first-child {
+  opacity: 1;
+  background: var(--gallery-indicator-background);
+}
+noname-gallery > noname-indicator > noname-dot.current > noname-layer:last-child {
+  opacity: 1;
+}
+noname-gallery > noname-indicator > noname-dot.current > noname-layer:first-child {
+  opacity: 0;
+}
+noname-gallery.with-indicator > noname-pages {
+  height: calc(100% - 10px);
+}
+noname-gallery.with-indicator > noname-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+noname-gallery.with-indicator > noname-indicator > * {
+  position: relative;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  overflow: hidden;
+  overscroll-behavior-x: none;
+  user-select: none;
+  background-color: #3c3c3c;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+noname-background, noname-content, noname-layer {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+
+noname-caption {
+  font-family: var(--app-caption-font);
+}
+
+noname-widget {
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+}
+noname-widget > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-widget.sharp {
+  border-radius: var(--widget-radius-sharp);
+}
+noname-widget.sharp > noname-image {
+  width: calc(100% - 2 * var(--widget-image-margin-sharp));
+  height: calc(100% - 2 * var(--widget-image-margin-sharp));
+  left: var(--widget-image-margin-sharp);
+  top: var(--widget-image-margin-sharp);
+  border-radius: var(--widget-image-radius-sharp);
+}
+noname-widget.active {
+  background: var(--widget-background-active);
+}
+noname-widget.focus {
+  background: var(--widget-background-focus);
+}
+noname-widget.active.focus {
+  background: var(--widget-background-highlight);
+}
+noname-widget.active > noname-image, noname-widget.focus > noname-image {
+  box-shadow: var(--widget-image-shadow-active);
+}
+
+.hidden {
+  opacity: 0 !important;
+}
+
+.hidden, .hidden * {
+  pointer-events: none !important;
+}
+
+.blurred:not(.hidden) {
+  opacity: var(--app-blurred-opacity) !important;
+}
+
+.scroll {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+noname-lobby {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+noname-lobby > noname-seats {
+  position: absolute;
+  width: 700px;
+  height: 250px;
+  left: calc(50% - 240px);
+  top: calc(50% - 125px);
+  transition: transform var(--app-transition);
+}
+noname-lobby > noname-seats[data-rows="2"] {
+  height: 480px;
+  top: calc(50% - 240px);
+}
+noname-lobby > noname-seats > noname-gallery {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  height: 250px;
+  text-align: center;
+}
+noname-lobby > noname-seats > noname-gallery > noname-player {
+  position: relative;
+  display: inline-block;
+  margin: 20px 10px 0 10px;
+  transition: opacity var(--app-transition);
+}
+noname-lobby > noname-seats > noname-gallery > noname-player > noname-content > noname-caption {
+  left: 10px;
+  top: 16px;
+}
+noname-lobby > noname-seats > noname-gallery:last-child {
+  top: auto;
+  bottom: 0;
+}
+noname-lobby > noname-bar {
+  z-index: 1;
+  position: absolute;
+  right: 30px;
+  bottom: 28px;
+  transition: transform var(--app-transition);
+}
+noname-lobby > noname-bar > noname-button {
+  position: relative;
+  display: inline-block;
+  margin-left: 25px;
+  transition: opacity var(--app-transition);
+}
+noname-lobby > noname-bar > noname-button.blurred {
+  pointer-events: none;
+}
+noname-lobby > noname-bar.hidden {
+  transform: scale(0.8);
+}
+noname-lobby > noname-sidebar > noname-chat {
+  display: none;
+}
+noname-lobby > noname-sidebar.online > noname-content {
+  height: calc(100% - 246px);
+}
+noname-lobby > noname-sidebar.online > noname-chat {
+  position: absolute;
+  background: var(--widget-background-light);
+  box-shadow: var(--widget-shadow);
+  bottom: 0;
+  width: 100%;
+  height: 200px;
+  display: block;
+}
+noname-lobby > noname-sidebar.online > noname-chat > input {
+  position: absolute;
+  width: calc(100% - 50px);
+  padding: 2px 45px 2px 5px;
+  bottom: 1px;
+  left: 0;
+  font-size: 16px;
+  box-shadow: var(--widget-shadow);
+  background: var(--widget-background-light);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon {
+  position: absolute;
+  width: 50px;
+  height: 29px;
+  right: 0;
+  background-size: 20px 20px;
+  background-position: 20px 3px;
+  background-repeat: no-repeat;
+  opacity: 0.8;
+  transition: opacity var(--app-transition);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon.emote {
+  bottom: 0;
+  background-image: var(--icon-emote);
+  cursor: pointer;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon.clear {
+  top: 5px;
+  background-image: var(--icon-erase);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon.top {
+  top: 45px;
+  background-size: 20px 16px;
+  background-position: 20px 6px;
+  background-image: var(--icon-up);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon.bottom {
+  top: 85px;
+  background-position: 20px 6px;
+  background-size: 20px 16px;
+  transform: rotateX(180deg);
+  background-image: var(--icon-up);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-icon:hover {
+  opacity: 1;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-hover {
+  position: absolute;
+  width: 40px;
+  height: 100px;
+  right: 0;
+  top: 0;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  height: 169px;
+  overflow: scroll;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div {
+  position: relative;
+  display: block;
+  margin: 10px 0 15px 10px;
+  width: calc(100% - 20px);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  white-space: nowrap;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div:first-child {
+  margin-right: 8px;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.avatar > noname-image {
+  position: relative;
+  display: block;
+  width: 35px;
+  height: 35px;
+  border-radius: 100%;
+  box-shadow: var(--widget-image-shadow);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat {
+  width: calc(100% - 43px);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat > noname-div {
+  position: relative;
+  display: block;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat > noname-div:first-child {
+  width: calc(100% - 2px);
+  padding-left: 2px;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat > noname-div:last-child {
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+  background: var(--widget-background-popup);
+  font-size: 14px;
+  width: calc(100% - 10px);
+  padding: 5px;
+  white-space: normal;
+  border-radius: var(--widget-radius-sharp);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat > noname-div:last-child > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat > noname-div:last-child.emote {
+  width: 47px;
+  height: 47px;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat:first-child {
+  margin-top: 3px;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat:first-child > noname-div:first-child {
+  display: none;
+}
+noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat:first-child > .emote {
+  margin-left: 98px;
+}
+noname-lobby.hidden > noname-seats, noname-lobby.hidden > noname-bar {
+  transform: scale(0.8);
+}
+
+noname-pane {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+}
+noname-pane:not(.scroll) {
+  overflow: hidden;
+}
+noname-pane > noname-section, noname-pane > noname-gallery, noname-pane > noname-bar, noname-pane > noname-group, noname-pane > noname-text {
+  display: block;
+  position: relative;
+  margin: 10px 0 10px 0;
+  width: 100%;
+}
+noname-pane > noname-section {
+  text-align: center;
+}
+noname-pane > noname-section > noname-span {
+  position: relative;
+  display: inline-block;
+  font-size: 12px;
+  width: 90px;
+  height: 18px;
+  text-align: center;
+  line-height: 17px;
+  background: var(--section-background);
+  border-radius: var(--section-radius);
+  box-shadow: var(--section-shadow);
+}
+noname-pane > noname-gallery {
+  white-space: normal;
+}
+noname-pane > noname-gallery > noname-player {
+  width: 120px;
+  height: 168px;
+}
+noname-pane > noname-gallery > noname-player > noname-content > noname-caption {
+  left: 5px;
+  top: 8px;
+}
+noname-pane > noname-gallery > noname-player > noname-content > noname-label {
+  top: 3px;
+  right: 3px;
+}
+noname-pane > noname-gallery > noname-player > noname-content > noname-hp {
+  bottom: 8px;
+  right: 5px;
+}
+noname-pane > noname-bar {
+  text-align: center;
+}
+noname-pane > noname-bar > noname-caption {
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+  border-radius: var(--widget-radius-sharp);
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  margin: 7px;
+  padding: 5px 8px 4px 8px;
+  font-size: 22px;
+}
+noname-pane > noname-bar > noname-caption > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-pane > noname-bar > noname-caption > noname-image {
+  width: calc(100% - 2 * var(--widget-image-margin-sharp));
+  height: calc(100% - 2 * var(--widget-image-margin-sharp));
+  left: var(--widget-image-margin-sharp);
+  top: var(--widget-image-margin-sharp);
+  border-radius: var(--widget-image-radius-sharp);
+}
+noname-pane > noname-bar.full > noname-caption {
+  margin: 7px 5px 7px 5px;
+}
+noname-pane > noname-caption {
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  display: block;
+  margin-top: 8px;
+  margin-bottom: -8px;
+}
+noname-pane > noname-text {
+  width: calc(100% - 20px);
+  padding: 5px 10px 5px 10px;
+}
+noname-pane > noname-text > noname-span {
+  position: relative;
+  white-space: normal;
+}
+noname-pane > noname-text.skill > noname-div {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: top;
+  left: -5px;
+}
+noname-pane > noname-text.skill > noname-div:last-child {
+  white-space: normal;
+  width: calc(100% - 60px);
+}
+noname-pane > noname-text:last-child {
+  margin-bottom: 2px;
+}
+
+noname-popup {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  z-index: 20;
+}
+noname-popup.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+noname-popup.center > * {
+  position: relative;
+}
+noname-popup.full {
+  width: 520px;
+  height: 410px;
+}
+noname-popup > noname-pane {
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+}
+noname-popup > noname-pane > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-popup > noname-pane.menu {
+  border-radius: var(--widget-radius-sharp);
+  padding-top: 3px;
+  padding-bottom: 3px;
+  transform-origin: top left;
+  overflow: hidden;
+  width: auto;
+  height: auto;
+}
+noname-popup > noname-pane.menu > noname-image {
+  width: calc(100% - 2 * var(--widget-image-margin-sharp));
+  height: calc(100% - 2 * var(--widget-image-margin-sharp));
+  left: var(--widget-image-margin-sharp);
+  top: var(--widget-image-margin-sharp);
+  border-radius: var(--widget-image-radius-sharp);
+}
+noname-popup > noname-pane.menu > noname-option {
+  display: block;
+  padding: 3px 10px 3px 10px;
+  position: relative;
+}
+noname-popup > noname-pane.menu > noname-option:hover {
+  background: var(--fill-blue);
+  box-shadow: var(--widget-image-shadow);
+}
+
+noname-pane.settings {
+  width: 410px;
+  height: 480px;
+}
+noname-pane.settings > noname-gallery {
+  height: 80px;
+}
+noname-pane.settings > noname-gallery.with-indicator {
+  height: 100px;
+}
+noname-pane.settings > noname-gallery noname-item {
+  width: 120px;
+  height: 70px;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > * {
+  position: relative;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
+  font-size: 18px;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
+  font-size: 36px;
+  margin-bottom: 1px;
+}
+noname-pane.settings > noname-gallery.music {
+  height: 62px;
+}
+noname-pane.settings > noname-gallery.music.with-indicator {
+  height: 82px;
+}
+noname-pane.settings > noname-gallery.music noname-item {
+  width: 50px;
+  height: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp {
+  border-radius: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
+  border-radius: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-page > noname-layer {
+  width: calc(100% - 20px);
+  left: 10px;
+}
+noname-pane.settings > noname-gallery.volume {
+  height: 62px;
+  margin-bottom: -8px;
+}
+noname-pane.settings > noname-gallery.volume noname-item {
+  width: 180px;
+  height: 40px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget {
+  border-radius: 20px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image {
+  overflow: hidden;
+  border-radius: 25px;
+  background: var(--toggle-button-background);
+  overflow: hidden;
+  mask-image: -webkit-radial-gradient(white, black);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
+  width: 200%;
+  height: 100%;
+  position: absolute;
+  white-space: nowrap;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
+  width: 50%;
+  height: 100%;
+  display: inline-block;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
+  background: var(--toggle-background-on);
+  box-shadow: var(--toggle-shadow);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
+  transition: transform var(--app-transition);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
+  transform: translateX(-180px);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content {
+  pointer-events: none;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
+  margin-bottom: 1px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
+  display: inline-block;
+  width: 20px;
+}
+
+noname-sidebar {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  width: 220px;
+  background: var(--sidebar-background);
+  box-shadow: var(--sidebar-shadow);
+  transition: transform var(--app-transition);
+}
+noname-sidebar > noname-caption {
+  position: absolute;
+  display: block;
+  width: 100%;
+  height: 45px;
+  line-height: 47px;
+  font-size: 30px;
+  cursor: pointer;
+  text-align: center;
+}
+noname-sidebar > noname-caption:first-child {
+  background: var(--sidebar-header-background);
+  box-shadow: var(--sidebar-header-shadow);
+}
+noname-sidebar > noname-caption:first-child:hover {
+  background: var(--sidebar-header-background-hover);
+}
+noname-sidebar > noname-caption:first-child.clickdown {
+  background: var(--sidebar-header-background-down);
+}
+noname-sidebar > noname-caption:first-child > noname-image {
+  position: absolute;
+  width: 29px;
+  height: 29px;
+  left: 8px;
+  top: 8px;
+  background: var(--icon-back) center/cover;
+}
+noname-sidebar > noname-caption:first-child > noname-span {
+  position: relative;
+}
+noname-sidebar > noname-caption:first-child > noname-span.mid {
+  left: 4px;
+}
+noname-sidebar > noname-caption:first-child > noname-span.long {
+  top: -1px;
+  left: 10px;
+  font-size: 28px;
+}
+noname-sidebar > noname-caption:first-child > noname-span.vlong {
+  top: -2px;
+  left: 12px;
+  font-size: 24px;
+}
+noname-sidebar > noname-caption.footer {
+  top: auto;
+  bottom: 0;
+  display: none;
+  background: var(--sidebar-footer-background);
+  box-shadow: var(--sidebar-footer-shadow);
+  transition: transform var(--app-transition);
+}
+noname-sidebar > noname-caption.footer:hover {
+  background: var(--sidebar-footer-background-hover);
+}
+noname-sidebar > noname-caption.footer.clickdown {
+  background: var(--sidebar-footer-background-down);
+}
+noname-sidebar.with-footer noname-pane {
+  height: calc(100% - 92px);
+}
+noname-sidebar.with-footer > noname-caption.footer {
+  display: block;
+}
+noname-sidebar > noname-pane {
+  height: calc(100% - 46px);
+  top: 46px;
+}
+
+noname-splash {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
+}
+noname-splash.blurred {
+  transform: scale(var(--app-splash-transform));
+  pointer-events: none;
+}
+noname-splash > noname-gallery {
+  width: 900px;
+  height: 270px;
+  top: calc(37.5% - 105px);
+  left: calc(50% - 450px);
+  position: absolute;
+}
+noname-splash > noname-gallery noname-item {
+  width: 150px;
+  height: 210px;
+}
+noname-splash > noname-gallery noname-item > noname-widget {
+  cursor: pointer;
+  position: relative;
+  display: inline-block;
+  margin: 30px 15px 0 15px;
+  background: var(--player-background);
+  box-shadow: var(--player-shadow);
+  border-radius: var(--player-radius);
+}
+noname-splash > noname-gallery noname-item > noname-widget > noname-image {
+  width: calc(100% - 2 * var(--player-image-margin));
+  height: calc(100% - 2 * var(--player-image-margin));
+  left: var(--player-image-margin);
+  top: var(--player-image-margin);
+  border-radius: var(--player-image-radius);
+  box-shadow: var(--player-image-shadow);
+}
+noname-splash > noname-gallery noname-item > noname-widget > noname-caption {
+  opacity: 0;
+  transition: opacity var(--app-transition);
+  position: absolute;
+  bottom: 16px;
+  right: 12px;
+  font-size: 50px;
+  writing-mode: vertical-rl;
+}
+noname-splash > noname-bar {
+  bottom: calc(25% - 78.5px);
+  width: 100%;
+  height: 52px;
+  left: 0;
+  text-align: center;
+  position: absolute;
+}
+noname-splash > noname-bar > noname-button {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+noname-splash > noname-bar > noname-button > noname-content > noname-caption {
+  opacity: 0;
+  transition: opacity var(--app-transition);
+}
+noname-splash.font-loaded > noname-bar > noname-button > noname-content > noname-caption,
+noname-splash.font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
+  opacity: 1;
+}
+
+noname-toggle {
+  width: 100%;
+  height: 25px;
+  display: block;
+  position: relative;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+noname-toggle:first-child {
+  margin-top: 20px;
+}
+noname-toggle:last-child {
+  margin-bottom: 20px;
+}
+noname-toggle > noname-span, noname-toggle noname-switcher, noname-toggle noname-text {
+  height: 25px;
+  line-height: 25px;
+  position: absolute;
+}
+noname-toggle > noname-span {
+  left: 20px;
+  width: calc(100% - 100px);
+}
+noname-toggle > noname-switcher, noname-toggle > noname-text {
+  right: 20px;
+  width: 60px;
+  cursor: pointer;
+}
+noname-toggle > noname-text {
+  text-align: right;
+}
+noname-toggle > noname-text > noname-span {
+  float: right;
+  margin-right: 5px;
+}
+noname-toggle > noname-switcher {
+  border-radius: var(--toggle-radius);
+  box-shadow: var(--toggle-shadow);
+  background: var(--toggle-background);
+}
+noname-toggle > noname-switcher > noname-switcher-container {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  border-radius: var(--toggle-radius);
+  overflow: hidden;
+  mask-image: -webkit-radial-gradient(white, black);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+noname-toggle > noname-switcher > noname-switcher-container > noname-switcher-background {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  background: var(--toggle-background-on);
+  left: -60px;
+  transition: transform var(--app-transition);
+}
+noname-toggle > noname-switcher > noname-switcher-button {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  width: 25px;
+  border-radius: var(--toggle-radius);
+  background: var(--toggle-button-background);
+  box-shadow: var(--toggle-button-shadow);
+  transition: transform var(--app-transition);
+}
+noname-toggle.on > noname-switcher > noname-switcher-container > noname-switcher-background {
+  transform: translateX(60px);
+}
+noname-toggle.on > noname-switcher > noname-switcher-button {
+  transform: translateX(35px);
+}
+noname-toggle.hidden {
+  display: none;
+}
+
+.fixed > noname-toggle > noname-switcher, .fixed > noname-toggle > noname-text, noname-toggle.fixed > noname-switcher, noname-toggle.fixed > noname-text {
+  right: 20px;
+  width: 60px;
+  cursor: default;
+  pointer-events: none;
+}

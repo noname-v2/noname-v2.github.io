@@ -1,0 +1,18 @@
+noname-app {
+	// not using @include layer because of zooming
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform-origin: top left;
+
+	// text and cursor styles
+	text-shadow: var(--app-text-shadow);
+	color: var(--app-color);
+	font-family: var(--app-font), sans-serif;
+	cursor: default;
+
+	// background image
+	> noname-background {
+		background: var(--app-background);
+	}
+}

@@ -1,0 +1,65 @@
+html, body {
+	@include layer;
+	overflow: hidden;
+	overscroll-behavior-x: none; // disable two finger back gesture in chrome
+	user-select: none;
+	background-color: #3c3c3c;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent; // no highlight when tappin on element
+}
+
+noname-background, noname-content, noname-layer {
+	@include layer;
+}
+
+noname-caption {
+	font-family: var(--app-caption-font);
+}
+
+noname-widget {
+	@include widget;
+
+	&.sharp {
+		@include widget-sharp;
+	}
+
+	&.active {
+		background: var(--widget-background-active);
+	}
+
+	&.focus {
+		background: var(--widget-background-focus);
+	}
+
+	&.active.focus {
+		background: var(--widget-background-highlight);
+	}
+
+	&.active, &.focus {
+		> noname-image {
+			box-shadow: var(--widget-image-shadow-active);
+		}
+	}
+}
+
+.hidden {
+	opacity: 0 !important;
+}
+
+.hidden, .hidden * {
+	pointer-events: none !important;
+}
+
+.blurred:not(.hidden) {
+	opacity: var(--app-blurred-opacity) !important;
+}
+
+.scroll {
+	overflow-x: hidden;
+	overflow-y: scroll;
+	-webkit-overflow-scrolling: touch;
+}
+
+::-webkit-scrollbar {
+	display: none
+}

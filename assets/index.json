@@ -1,0 +1,37 @@
+{
+    "bg": {
+        "fenghuo": "烽火",
+        "huangtian": "黄天",
+        "shengshi": "盛世",
+        "taoyuan": "桃园",
+        "yinxiang": "印象",
+        "chibi": "赤壁",
+        "yuxi": "玉玺"
+    },
+    "bgm": {
+        "default-game": "三国杀",
+        "default-splash": "长安",
+        "fengyi": "凤仪亭",
+        "danqi": "千里走单骑",
+        "diaochan": "貂蝉",
+        "huarongdao": "华容道",
+        "jiangnan": "江南",
+        "shezhan": "舌战群儒",
+        "track": "备战",
+        "changbanpo": "长坂坡"
+    },
+    "emote": {
+        "guojia": "郭嘉",
+        "shibing": "士兵",
+        "zhenji": "甄姬"
+    },
+    "font": {
+        "lishu": "隶书",
+        "xingkai": "行楷"
+    },
+    "theme": {
+        "default": "默认",
+        "music": "音乐",
+        "tavern": "酒馆"
+    }
+}

@@ -1,0 +1,39 @@
+noname-popup {
+    @include layer;
+    z-index: 20;
+
+    &.center {
+        @include flex-center;
+    }
+
+    &.full {
+        width: 520px;
+		height: 410px;
+    }
+
+    > noname-pane {
+        @include widget;
+
+        &.menu {
+            @include widget-sharp;
+
+            padding-top: 3px;
+			padding-bottom: 3px;
+			transform-origin: top left;
+			overflow: hidden;
+            width: auto;
+            height: auto;
+
+            > noname-option {
+                display: block;
+                padding: 3px 10px 3px 10px;
+                position: relative;
+        
+                &:hover {
+                    background: var(--fill-blue);
+                    box-shadow: var(--widget-image-shadow);
+                }
+            }
+        }
+    }
+}

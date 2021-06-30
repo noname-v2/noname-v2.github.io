@@ -1,0 +1,106 @@
+noname-toggle {
+	width: 100%;
+	height: 25px;
+	display: block;
+	position: relative;
+	margin-top: 10px;
+	margin-bottom: 10px;
+
+	&:first-child {
+		margin-top: 20px;
+	}
+
+	&:last-child {
+		margin-bottom: 20px;
+	}
+
+	> noname-span, noname-switcher, noname-text {
+		height: 25px;
+		line-height: 25px;
+		position: absolute;
+	}
+
+	// caption text
+	> noname-span {
+		left: 20px;
+		width: calc(100% - 100px);
+	}
+
+	> noname-switcher, > noname-text {
+		right: 20px;
+		width: 60px;
+		cursor: pointer;
+	}
+
+	// menu based toggle
+	> noname-text {
+		text-align: right;
+		> noname-span {
+			float: right;
+			margin-right: 5px;
+		}
+	}
+
+	// boolean toggle
+	> noname-switcher {
+		// appearance
+		border-radius: var(--toggle-radius);
+		box-shadow: var(--toggle-shadow);
+		background: var(--toggle-background);
+
+		> noname-switcher-container {
+			@include layer;
+			border-radius: var(--toggle-radius);
+			overflow: hidden;
+
+			// workaround for safari transition bug
+			mask-image: -webkit-radial-gradient(white, black);
+			-webkit-mask-image: -webkit-radial-gradient(white, black);
+
+			// blue background
+			> noname-switcher-background {
+				@include layer;
+				background: var(--toggle-background-on);
+				left: -60px;
+				transition: transform var(--app-transition);
+			}
+		}
+
+		// round button
+		> noname-switcher-button {
+			@include layer;
+			width: 25px;
+			border-radius: var(--toggle-radius);
+			background: var(--toggle-button-background);
+			box-shadow: var(--toggle-button-shadow);
+			transition: transform var(--app-transition);
+		}
+	}
+
+	// boolean toggle on
+	&.on > noname-switcher {
+		// blue background
+		> noname-switcher-container > noname-switcher-background {
+			transform: translateX(60px);
+		}
+
+		// round button
+		> noname-switcher-button {
+			transform: translateX(35px);
+		}
+	}
+
+	// folded toggle
+	&.hidden {
+		display: none;
+	}
+}
+
+.fixed > noname-toggle, noname-toggle.fixed {
+	> noname-switcher, > noname-text {
+		right: 20px;
+		width: 60px;
+		cursor: default;
+		pointer-events: none;
+	}
+}

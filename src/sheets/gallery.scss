@@ -1,0 +1,92 @@
+noname-gallery {
+    width: 100%;
+
+    &:not(.visible) {
+        overflow: hidden;        
+    }
+
+    &.visible > noname-pages {
+        > noname-page:not(.current) {
+            opacity: 0;
+            pointer-events: none;
+        }
+        &:not(.moving) > noname-page {
+            transition: opacity var(--app-transition);
+        }
+    }
+
+    > noname-pages {
+        height: 100%;
+        white-space: nowrap;
+        position: absolute;
+        
+        > noname-page {
+            height: 100%;
+            position: relative;
+            display: inline-block;
+            
+            > noname-layer {
+                display: flex;
+                align-items: center;
+                justify-content: space-evenly;
+
+                > noname-item {
+                    position: relative;
+
+                    > * {
+                        @include layer;
+                    }
+                }
+            }
+        }
+    }
+
+    > noname-indicator {
+        display: none;
+        height: 10px;
+        bottom: 0;
+        width: 100%;
+        position: absolute;
+
+        > noname-dot {
+            position: relative;
+            width: 6px;
+            height: 6px;
+            margin-left: 3px;
+            margin-right: 3px;
+
+            > noname-layer {
+                border-radius: 6px;
+                transition: opacity 0.3s ease-in;
+
+                &:last-child {
+                    opacity: 0;
+                    background: var(--gallery-indicator-background-current);
+                }
+                &:first-child {
+                    opacity: 1;
+                    background: var(--gallery-indicator-background);
+                }
+            }
+
+            &.current > noname-layer {
+                &:last-child {
+                    opacity: 1;
+                }
+                &:first-child {
+                    opacity: 0;
+                }
+            }
+        }
+    }
+
+    &.with-indicator {
+        > noname-pages {
+            height: calc(100% - 10px);
+        }
+
+        > noname-indicator {
+            @include flex-center;
+        }
+    }
+}

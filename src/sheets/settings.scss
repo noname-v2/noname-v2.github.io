@@ -1,0 +1,114 @@
+noname-pane.settings {
+    width: 410px;
+    height: 480px;
+
+    > noname-gallery {
+        height: 80px;
+
+        &.with-indicator {
+            height: 100px;
+        }
+
+        noname-item {
+            width: 120px;
+            height: 70px;
+
+            > noname-widget > noname-content {
+                @include flex-center;
+
+                > noname-caption {
+                    font-size: 18px;
+                }
+
+                &.plus > noname-caption {
+                    font-size: 36px;
+                    margin-bottom: 1px;
+                }
+            }
+        }
+
+        &.music {
+            height: 62px;
+
+            &.with-indicator {
+                height: 82px;
+            }
+
+            noname-item {
+                width: 50px;
+                height: 50px;
+
+                > noname-widget.sharp {
+                    border-radius: 50px;
+
+                    > noname-image {
+                        border-radius: 50px;
+                    }
+                }
+            }
+
+            noname-page > noname-layer {
+                width: calc(100% - 20px);
+                left: 10px;
+            }
+        }
+
+        &.volume {
+            height: 62px;
+            margin-bottom: -8px;
+
+            noname-item {
+                width: 180px;
+                height: 40px;
+
+                > noname-widget {
+                    border-radius: 20px;
+                    > noname-image {
+                        overflow: hidden;
+                        border-radius: 25px;
+		                background: var(--toggle-button-background);
+                        @include mask;
+
+                        > noname-slider {
+                            width: 200%;
+                            height: 100%;
+                            position: absolute;
+                            white-space: nowrap;
+                            
+                            > noname-div {
+                                width: 50%;
+                                height: 100%;
+                                display: inline-block;
+
+                                &:first-child {
+                                    background: var(--toggle-background-on);
+                                    box-shadow: var(--toggle-shadow);
+                                }
+                            }
+
+                            &.ios {
+                                transition: transform var(--app-transition);
+
+                                &.off {
+                                    transform: translateX(-180px);
+                                }
+                            }
+                        }
+                    }
+
+                    > noname-content {
+                        pointer-events: none;
+
+                        > noname-text {
+                            margin-bottom: 1px;
+                            > div {
+                                display: inline-block;
+                                width: 20px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
