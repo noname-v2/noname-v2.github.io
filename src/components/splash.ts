@@ -1,4 +1,4 @@
-import { Component, Popup, Gallery } from '../components';
+import { Component, Popup, Gallery, Button } from '../components';
 
 interface ExtensionIndex {
 	[key: string]: {
@@ -15,6 +15,9 @@ export class Splash extends Component {
 	// bottom toolbar
 	bar = this.ui.createElement('bar');
 
+	// bottom toolbar buttons
+	buttons = <{[key: string]: Button}>{};
+
 	// settings menu
 	settings = <Popup>this.ui.create('popup');
 
@@ -28,7 +31,7 @@ export class Splash extends Component {
 		
 		// set mode backgrround
 		const bg = ui.createElement('image', entry);
-		ui.setBackground(bg, 'extensions', mode, 'mode.webp');
+		ui.setBackground(bg, 'extensions', mode, 'mode');
 		
 		// set caption
 		const caption = ui.createElement('caption', entry);
@@ -102,14 +105,56 @@ export class Splash extends Component {
 	}
 
     private createButton(caption: string, color: string, onclick: () => void) {
-        const button = this.ui.create('button');
+        const button = <Button>this.ui.create('button');
         button.update({ caption, color });
+		button.node.classList.add('disabled');
         this.ui.bindClick(button.node, onclick);
         this.bar.appendChild(button.node);
+		return button;
     }
 
 	createHub() {
 		const hub = this.hub;
+		hub.temp = true;
+		hub.pane.node.classList.add('hub');
+		hub.onopen = () => {
+			this.node.classList.add('blurred');
+			// if (!this.client.connection) {
+
+			// }
+		};
+		hub.onclose = () => {
+			this.node.classList.remove('blurred');
+		};
+
+		// nickname, avatar and hub address
+		const group = this.ui.createElement('group');
+		hub.pane.node.appendChild(group);
+
+		// avatar
+		const avatarNode = this.ui.createElement('widget', group);
+		const img = this.ui.createElement('image', avatarNode);
+		const url = this.db.get('avatar') ?? 'standard:caocao';
+		if (url.includes(':')) {
+			const [ext, name] = url.split(':');
+			this.ui.setBackground(img, 'extensions', ext, 'images', name);
+		}
+		else {
+			this.ui.setBackground(img, url);
+		}
+
+		// text
+		this.ui.createElement('span.nickname', group).innerHTML = '昵称';
+		this.ui.createElement('span.address', group).innerHTML = '地址';
+
+		// input
+		const nickname = this.ui.create('input', group);
+		nickname.node.classList.add('nickname');
+		const address = this.ui.create('input', group);
+		address.node.classList.add('address');
+
+		// enable button click after creation finish
+		this.buttons.hub.node.classList.remove('disabled');
 	}
 
 	createSettings() {
@@ -170,7 +215,7 @@ export class Splash extends Component {
 					const theme = themes[i + j];
 					if (theme) {
 						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme.webp`);
+						this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
 
 						if (theme === this.db.get('theme')) {
 							node.classList.add('active')
@@ -209,7 +254,7 @@ export class Splash extends Component {
 					const bg = bgs[i + j];
 					if (bg) {
 						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), `assets/bg/${bg}.webp`);
+						this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
 
 						if (bg === this.db.get('bg')) {
 							node.classList.add('active')
@@ -318,7 +363,7 @@ export class Splash extends Component {
 					const bgm = bgms[i + j];
 					if (bgm) {
 						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), `assets/bgm/${bgm}.webp`);
+						this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
 
 						if (bgm === this.db.get('splash-music')) {
 							rotating[0] = node;
@@ -413,6 +458,9 @@ export class Splash extends Component {
 				}
 			});
 		}
+
+		// enable button click after creation finish
+		this.buttons.settings.node.classList.remove('disabled');
 	}
 	
 	init() {
@@ -435,19 +483,19 @@ export class Splash extends Component {
 				}
 
 				window.location.reload();
-			});	
+			}).node.classList.remove('disabled');
 		}
 
 		// create buttom buttons
-        this.createButton('工坊', 'yellow', () => {
+        this.buttons.workshop = this.createButton('工坊', 'yellow', () => {
             console.log('yellow');
         });
 
-        this.createButton('联机', 'green', () => {
-            console.log('green');
+        this.buttons.hub = this.createButton('联机', 'green', () => {
+            this.hub.open();
         });
 
-        this.createButton('选项', 'orange', () => {
+        this.buttons.settings = this.createButton('选项', 'orange', () => {
             this.settings.open();
         });
 

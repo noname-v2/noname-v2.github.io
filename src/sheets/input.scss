@@ -1,0 +1,56 @@
+noname-input {
+    position: relative;
+    display: block;
+    height: 27px;
+    border-radius: var(--widget-radius-sharp);
+    background: var(--widget-background-popup);
+    box-shadow: var(--widget-shadow);
+
+    > input {
+        position: absolute;
+		display: block;
+        color: white;
+        line-height: 26px;
+        font-size: 18px;
+        outline: none;
+        border: none;
+        top: 1px;
+        left: 2px;
+        width: calc(100% - 4px);
+        height: 25px;
+        background: none;
+        box-shadow: none;
+        padding: 0;
+
+        &:focus {
+            width: calc(100% - 30px);
+    
+            + noname-clear {
+                visibility: visible;
+            }
+        }
+	}
+
+    // clear button for text box
+    > noname-clear {
+        position: absolute;
+        width: 50px;
+        height: 37px;
+        left: calc(100% - 42px);
+        top: -5px;
+        background-image: var(--icon-clear);
+        background-size: 17px 17px;
+        background-repeat: no-repeat;
+        background-position: 21px 10px;
+        opacity: 0.5;
+        visibility: hidden;
+
+        &.clickdown {
+            visibility: visible;
+        }
+    }
+
+    &:hover > noname-clear {
+        visibility: visible;
+    }
+}

@@ -5,6 +5,11 @@ noname-button {
 	display: inline-block;
 	cursor: pointer;
 
+	&.disabled {
+		cursor: default;
+		pointer-events: none;
+	}
+
 	// input.down feedback
 	&.clickdown {
 		transform: scale(0.98)

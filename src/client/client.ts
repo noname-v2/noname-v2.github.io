@@ -87,16 +87,18 @@ export class Client {
 	}
 
     /** Connect to web worker. */
-    connect(config: [string, string[]]) {
+    connect(config: [string, string[]] | string) {
         this.connection?.terminate();
 
 		const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
         connection.onmessage = ({data}) => {
             if (data === 'ready') {
                 connection.onmessage = ({data}) => this.dispatch(data);
-                config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
-                config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
-                config.push(this.db.get(config[0] + ':config') || {});
+                if (Array.isArray(config)) {
+                    config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
+                    config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
+                    config.push(this.db.get(config[0] + ':config') || {});
+                }
                 this.send(0, config, true);
             }
         }

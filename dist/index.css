@@ -30,6 +30,10 @@ noname-button {
   cursor: pointer;
   backface-visibility: hidden;
 }
+noname-button.disabled {
+  cursor: default;
+  pointer-events: none;
+}
 noname-button.clickdown {
   transform: scale(0.98);
 }
@@ -261,6 +265,56 @@ noname-widget.active > noname-image, noname-widget.focus > noname-image {
   display: none;
 }
 
+noname-input {
+  position: relative;
+  display: block;
+  height: 27px;
+  border-radius: var(--widget-radius-sharp);
+  background: var(--widget-background-popup);
+  box-shadow: var(--widget-shadow);
+}
+noname-input > input {
+  position: absolute;
+  display: block;
+  color: white;
+  line-height: 26px;
+  font-size: 18px;
+  outline: none;
+  border: none;
+  top: 1px;
+  left: 2px;
+  width: calc(100% - 4px);
+  height: 25px;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+noname-input > input:focus {
+  width: calc(100% - 30px);
+}
+noname-input > input:focus + noname-clear {
+  visibility: visible;
+}
+noname-input > noname-clear {
+  position: absolute;
+  width: 50px;
+  height: 37px;
+  left: calc(100% - 42px);
+  top: -5px;
+  background-image: var(--icon-clear);
+  background-size: 17px 17px;
+  background-repeat: no-repeat;
+  background-position: 21px 10px;
+  opacity: 0.5;
+  visibility: hidden;
+}
+noname-input > noname-clear.clickdown {
+  visibility: visible;
+}
+noname-input:hover > noname-clear {
+  visibility: visible;
+}
+
 noname-lobby {
   width: 100%;
   height: 100%;
@@ -478,6 +532,144 @@ noname-lobby.hidden > noname-seats, noname-lobby.hidden > noname-bar {
   transform: scale(0.8);
 }
 
+noname-pane.hub {
+  width: 410px;
+  height: 480px;
+}
+noname-pane.hub > noname-group {
+  margin-top: 30px;
+  height: 80px;
+}
+noname-pane.hub > noname-group > noname-widget {
+  width: 80px;
+  height: 80px;
+  left: 40px;
+  border-radius: 100%;
+  position: absolute;
+}
+noname-pane.hub > noname-group > noname-widget > noname-image {
+  border-radius: 100%;
+}
+noname-pane.hub > noname-group > noname-span {
+  position: absolute;
+  left: 140px;
+  height: 27px;
+  line-height: 28px;
+  font-size: 22px;
+  font-family: var(--app-caption-font);
+}
+noname-pane.hub > noname-group > noname-input {
+  position: absolute;
+  left: 197px;
+  width: 40%;
+}
+noname-pane.hub > noname-group > .nickname {
+  top: 7px;
+}
+noname-pane.hub > noname-group > .address {
+  top: 47px;
+}
+
+noname-pane.settings {
+  width: 410px;
+  height: 480px;
+}
+noname-pane.settings > noname-gallery {
+  height: 80px;
+}
+noname-pane.settings > noname-gallery.with-indicator {
+  height: 100px;
+}
+noname-pane.settings > noname-gallery noname-item {
+  width: 120px;
+  height: 70px;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > * {
+  position: relative;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
+  font-size: 18px;
+}
+noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
+  font-size: 36px;
+  margin-bottom: 1px;
+}
+noname-pane.settings > noname-gallery.music {
+  height: 62px;
+}
+noname-pane.settings > noname-gallery.music.with-indicator {
+  height: 82px;
+}
+noname-pane.settings > noname-gallery.music noname-item {
+  width: 50px;
+  height: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp {
+  border-radius: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
+  border-radius: 50px;
+}
+noname-pane.settings > noname-gallery.music noname-page > noname-layer {
+  width: calc(100% - 20px);
+  left: 10px;
+}
+noname-pane.settings > noname-gallery.volume {
+  height: 62px;
+  margin-bottom: -8px;
+}
+noname-pane.settings > noname-gallery.volume noname-item {
+  width: 180px;
+  height: 40px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget {
+  border-radius: 20px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image {
+  overflow: hidden;
+  border-radius: 25px;
+  background: var(--toggle-button-background);
+  overflow: hidden;
+  mask-image: -webkit-radial-gradient(white, black);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
+  width: 200%;
+  height: 100%;
+  position: absolute;
+  white-space: nowrap;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
+  width: 50%;
+  height: 100%;
+  display: inline-block;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
+  background: var(--toggle-background-on);
+  box-shadow: var(--toggle-shadow);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
+  transition: transform var(--app-transition);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
+  transform: translateX(-180px);
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content {
+  pointer-events: none;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
+  margin-bottom: 1px;
+}
+noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
+  display: inline-block;
+  width: 20px;
+}
+
 noname-pane {
   width: 100%;
   height: 100%;
@@ -655,106 +847,6 @@ noname-popup > noname-pane.menu > noname-option {
 noname-popup > noname-pane.menu > noname-option:hover {
   background: var(--fill-blue);
   box-shadow: var(--widget-image-shadow);
-}
-
-noname-pane.settings {
-  width: 410px;
-  height: 480px;
-}
-noname-pane.settings > noname-gallery {
-  height: 80px;
-}
-noname-pane.settings > noname-gallery.with-indicator {
-  height: 100px;
-}
-noname-pane.settings > noname-gallery noname-item {
-  width: 120px;
-  height: 70px;
-}
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > * {
-  position: relative;
-}
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
-  font-size: 18px;
-}
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
-  font-size: 36px;
-  margin-bottom: 1px;
-}
-noname-pane.settings > noname-gallery.music {
-  height: 62px;
-}
-noname-pane.settings > noname-gallery.music.with-indicator {
-  height: 82px;
-}
-noname-pane.settings > noname-gallery.music noname-item {
-  width: 50px;
-  height: 50px;
-}
-noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp {
-  border-radius: 50px;
-}
-noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
-  border-radius: 50px;
-}
-noname-pane.settings > noname-gallery.music noname-page > noname-layer {
-  width: calc(100% - 20px);
-  left: 10px;
-}
-noname-pane.settings > noname-gallery.volume {
-  height: 62px;
-  margin-bottom: -8px;
-}
-noname-pane.settings > noname-gallery.volume noname-item {
-  width: 180px;
-  height: 40px;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget {
-  border-radius: 20px;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image {
-  overflow: hidden;
-  border-radius: 25px;
-  background: var(--toggle-button-background);
-  overflow: hidden;
-  mask-image: -webkit-radial-gradient(white, black);
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
-  width: 200%;
-  height: 100%;
-  position: absolute;
-  white-space: nowrap;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
-  width: 50%;
-  height: 100%;
-  display: inline-block;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
-  background: var(--toggle-background-on);
-  box-shadow: var(--toggle-shadow);
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
-  transition: transform var(--app-transition);
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
-  transform: translateX(-180px);
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content {
-  pointer-events: none;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
-  margin-bottom: 1px;
-}
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
-  display: inline-block;
-  width: 20px;
 }
 
 noname-sidebar {

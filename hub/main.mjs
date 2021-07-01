@@ -13,11 +13,13 @@ const plans = new Map();
 const messages = {
     /** Initialize a client with uid and info. */
     init(msg) {
-        [this.uid, this.info] = JSON.parse(msg);
-        if (!this.uid || !this.info) {
+        const [uid, info, room] = JSON.parse(msg);
+        if (!uid || !info || typeof uid !== 'string' || typeof info !== 'string') {
             client.close(1002, 'init');
             return;
         }
+        this.uid = uid;
+        this.info = info;
 
         // replace old client
         const old = clients.get(this.uid);
@@ -36,7 +38,10 @@ const messages = {
         }
 
         // send room info to client
-        if (client.joined === null) {
+        if (room && typeof room === 'string') {
+            messages.room.call(clients, room);
+        }
+        else if (client.joined === null) {
             const rooms = {};
             for (const client of clients) {
                 if (client.room) {
@@ -111,7 +116,7 @@ const messages = {
     /** Send a message to a member of the room. */
     send(msg) {
         const [uid, msg2] = JSON.parse(msg);
-        if (this.room && this.joined.has(uid)) {
+        if (this.room && this.joined.has(uid) && typeof msg2 === 'string') {
             clients.get(uid)?.send('msg:' + msg2);
         }
     },

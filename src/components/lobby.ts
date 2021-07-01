@@ -26,6 +26,7 @@ export class Lobby extends Component {
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
     }
+
     $pane(configs: any) {
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
@@ -50,10 +51,12 @@ export class Lobby extends Component {
             this.cardToggles.set(name, toggle);
         }
     }
+
     $owner(uid: string) {
         this.sidebar.pane.node.classList[uid === this.client.uid ? 'remove' : 'add']('fixed');
         this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
     }
+
     $config(config: {[key: string]: any}) {
         for (const key in config) {
             this.configToggles.get(key)?.assign(config[key]);
@@ -62,6 +65,7 @@ export class Lobby extends Component {
             this.db.set(this.get('mode') + ':config', config);
         }
     }
+
     $disabledHeropacks(packs: string[]) {
         for (const [name, toggle] of this.heroToggles.entries()) {
             toggle.assign(!packs.includes(name));
@@ -70,6 +74,7 @@ export class Lobby extends Component {
             this.db.set(this.get('mode') + ':disabledHeropacks', packs.length > 0 ? packs : null);
         }
     }
+    
     $disabledCardpacks(packs: string[]) {
         for (const [name, toggle] of this.cardToggles.entries()) {
             toggle.assign(!packs.includes(name));

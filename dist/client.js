@@ -317,7 +317,7 @@
             const bg = this.db.get('bg');
             if (bg) {
                 // use custom background
-                this.ui.setBackground(this.bgNode, 'assets/bg', bg + '.webp');
+                this.ui.setBackground(this.bgNode, 'assets/bg', bg);
             }
             else {
                 // use default background
@@ -347,7 +347,7 @@
                 this.bgmNode.src = '';
             }
         }
-        // adjust zoom level according to device DPI
+        /** Adjust zoom level according to device DPI. */
         resize() {
             // actual window size
             const width = window.innerWidth;
@@ -726,6 +726,28 @@
         }
     }
 
+    class Input extends Component {
+        constructor() {
+            super(...arguments);
+            // clear input button
+            this.clear = this.ui.createElement('clear');
+        }
+        init() {
+            this.input = document.createElement('input');
+            this.node.appendChild(this.input);
+            this.node.appendChild(this.clear);
+            this.input.onblur = () => {
+                if (this.callback) {
+                    this.callback(this.input.value);
+                }
+            };
+            this.ui.bindClick(this.clear, () => {
+                this.input.value = '';
+                this.input.focus();
+            });
+        }
+    }
+
     class Lobby extends Component {
         constructor() {
             super(...arguments);
@@ -959,6 +981,8 @@
             this.gallery = this.ui.create('gallery');
             // bottom toolbar
             this.bar = this.ui.createElement('bar');
+            // bottom toolbar buttons
+            this.buttons = {};
             // settings menu
             this.settings = this.ui.create('popup');
             // hub menu
@@ -970,7 +994,7 @@
             const name = extensions[mode]['mode'];
             // set mode backgrround
             const bg = ui.createElement('image', entry);
-            ui.setBackground(bg, 'extensions', mode, 'mode.webp');
+            ui.setBackground(bg, 'extensions', mode, 'mode');
             // set caption
             const caption = ui.createElement('caption', entry);
             caption.innerHTML = name;
@@ -1032,11 +1056,47 @@
         createButton(caption, color, onclick) {
             const button = this.ui.create('button');
             button.update({ caption, color });
+            button.node.classList.add('disabled');
             this.ui.bindClick(button.node, onclick);
             this.bar.appendChild(button.node);
+            return button;
         }
         createHub() {
-            this.hub;
+            const hub = this.hub;
+            hub.temp = true;
+            hub.pane.node.classList.add('hub');
+            hub.onopen = () => {
+                this.node.classList.add('blurred');
+                // if (!this.client.connection) {
+                // }
+            };
+            hub.onclose = () => {
+                this.node.classList.remove('blurred');
+            };
+            // nickname, avatar and hub address
+            const group = this.ui.createElement('group');
+            hub.pane.node.appendChild(group);
+            // avatar
+            const avatarNode = this.ui.createElement('widget', group);
+            const img = this.ui.createElement('image', avatarNode);
+            const url = this.db.get('avatar') ?? 'standard:caocao';
+            if (url.includes(':')) {
+                const [ext, name] = url.split(':');
+                this.ui.setBackground(img, 'extensions', ext, 'images', name);
+            }
+            else {
+                this.ui.setBackground(img, url);
+            }
+            // text
+            this.ui.createElement('span.nickname', group).innerHTML = '昵称';
+            this.ui.createElement('span.address', group).innerHTML = '地址';
+            // input
+            const nickname = this.ui.create('input', group);
+            nickname.node.classList.add('nickname');
+            const address = this.ui.create('input', group);
+            address.node.classList.add('address');
+            // enable button click after creation finish
+            this.buttons.hub.node.classList.remove('disabled');
         }
         createSettings() {
             // setup dialog
@@ -1086,7 +1146,7 @@
                         const theme = themes[i + j];
                         if (theme) {
                             const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme.webp`);
+                            this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
                             if (theme === this.db.get('theme')) {
                                 node.classList.add('active');
                             }
@@ -1118,7 +1178,7 @@
                         const bg = bgs[i + j];
                         if (bg) {
                             const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), `assets/bg/${bg}.webp`);
+                            this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
                             if (bg === this.db.get('bg')) {
                                 node.classList.add('active');
                             }
@@ -1209,7 +1269,7 @@
                         const bgm = bgms[i + j];
                         if (bgm) {
                             const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), `assets/bgm/${bgm}.webp`);
+                            this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
                             if (bgm === this.db.get('splash-music')) {
                                 rotating[0] = node;
                             }
@@ -1295,6 +1355,8 @@
                     }
                 });
             }
+            // enable button click after creation finish
+            this.buttons.settings.node.classList.remove('disabled');
         }
         init() {
             // create mode selection gallery
@@ -1312,16 +1374,16 @@
                         }
                     }
                     window.location.reload();
-                });
+                }).node.classList.remove('disabled');
             }
             // create buttom buttons
-            this.createButton('工坊', 'yellow', () => {
+            this.buttons.workshop = this.createButton('工坊', 'yellow', () => {
                 console.log('yellow');
             });
-            this.createButton('联机', 'green', () => {
-                console.log('green');
+            this.buttons.hub = this.createButton('联机', 'green', () => {
+                this.hub.open();
             });
-            this.createButton('选项', 'orange', () => {
+            this.buttons.settings = this.createButton('选项', 'orange', () => {
                 this.settings.open();
             });
             this.node.appendChild(this.gallery.node);
@@ -1407,6 +1469,7 @@
     componentClasses.set('arena', Arena);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
+    componentClasses.set('input', Input);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
@@ -1606,11 +1669,10 @@
         }
         // set background image and set background position/size to center/cover
         setBackground(node, ...args) {
+            if (!args[args.length - 1].includes('.')) {
+                args[args.length - 1] += '.webp';
+            }
             node.style.background = `url(${args.join('/')}) center/cover`;
-        }
-        // set background image
-        setBackgroundImage(node, ...args) {
-            node.style.background = `url(${args.join('/')})`;
         }
         /** Register component constructor. */
         registerComponent(key, cls) {
@@ -1830,9 +1892,11 @@
             connection.onmessage = ({ data }) => {
                 if (data === 'ready') {
                     connection.onmessage = ({ data }) => this.dispatch(data);
-                    config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
-                    config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
-                    config.push(this.db.get(config[0] + ':config') || {});
+                    if (Array.isArray(config)) {
+                        config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
+                        config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
+                        config.push(this.db.get(config[0] + ':config') || {});
+                    }
                     this.send(0, config, true);
                 }
             };

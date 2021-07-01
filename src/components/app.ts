@@ -179,7 +179,7 @@ export class App extends Component {
 		
 		if (bg) {
 			// use custom background
-			this.ui.setBackground(this.bgNode, 'assets/bg', <string>bg + '.webp');
+			this.ui.setBackground(this.bgNode, 'assets/bg', bg);
 		}
 		else {
 			// use default background
@@ -215,7 +215,7 @@ export class App extends Component {
 		}
 	}
 
-	// adjust zoom level according to device DPI
+	/** Adjust zoom level according to device DPI. */
 	resize() {
 		// actual window size
 		const width = window.innerWidth;

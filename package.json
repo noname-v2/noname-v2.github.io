@@ -7,10 +7,7 @@
 		"electron": "npx electron scripts/electron.js"
 	},
 	"license": "GPL-3.0",
-	"intro": "Web based card game",
-	"config": {
-		"ruleset": "sgs"
-	},
+	"description": "Web based card game",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/noname-v2/noname-v2.github.io.git"
