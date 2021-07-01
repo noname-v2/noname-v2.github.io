@@ -11,7 +11,6 @@ const clients = new Map();
 const plans = new Map();
 
 const messages = {
-
     /** Initialize a client with uid and info. */
     init(msg) {
         [this.uid, this.info] = JSON.parse(msg);
@@ -26,10 +25,7 @@ const messages = {
         if (old) {
             if (typeof old.joined === 'string') {
                 // rejoint previous room if possible
-                const owner = clients.get(clients.joined);
-                if (owner && owner.joined.has(this.uid)) {
-                    messages.join.call(this, owner.uid);
-                }
+                messages.join.call(this, old.joined);
             }
             else if (old.room) {
                 // tell reconnected room owner currently joined clients
@@ -39,7 +35,7 @@ const messages = {
             }
         }
 
-        // send room info to new client
+        // send room info to client
         if (client.joined === null) {
             const rooms = {};
             for (const client of clients) {
@@ -52,43 +48,64 @@ const messages = {
     },
 
     /** A client join a room. */
-    join(msg) {
-        const owner = clients.get(msg);
+    join(uid) {
+        const owner = clients.get(uid);
         if (owner && owner.room) {
+            if (this.joined !== uid) {
+                messages.leave.call(this);
+            }
+            if (this.room) {
+                messages.room.call(this, null);
+            }
+            this.joined = uid;
             owner.joined.add(this.uid);
             owner.send('join:' + this.uid);
             messages.update({[owner.uid]: owner.joined.size});
         }
     },
 
-    /** A client leaves its current room */
+    /** A client leaves its current room. */
     leave() {
         if (typeof this.joined === 'string') {
             const owner = clients.get(this.joined);
-            if (owner) {
-                messages.kick.call(owner, this.uid);
-                this.joined = null;
+            this.joined = null;
+            if (owner && owner.room && owner.joined.has(this.uid)) {
+                owner.send('leave:' + uid);
+                owner.joined.delete(uid);
+                messages.update({[owner.uid]: owner.joined.size});
+            }
+
+            // delete closed client without a room
+            if (this.CLOSED) {
+                clients.delete(this.uid);
             }
         }
     },
 
     /** A room owner kicks a member away. */
-    kick(msg) {
-        if (this.room && this.joined.has(msg)) {
-            this.send('leave:' + msg);
-            this.joined.delete(msg);
-            messages.update({[owner.uid]: owner.joined.size});
-            clients.get(msg)?.joined = null;
+    kick(uid) {
+        const client = clients.get(uid);
+        if (client && client.joined === this.uid) {
+            messages.leave.call(client);
         }
     },
 
-    /** Create or modify a room. */
-    room(msg) {
-        messages.leave.call(this);
-        if (!(this.joined instanceof Set)) {
-            client.joined = new Set();
+    /** Create or modify or delete a room. */
+    room(room) {
+        if (room === null) {
+            if (this.room) {
+                messages.bcast.call(this, 'end');
+            }
+            this.joined = null;
         }
-        messages.update({[this.uid]: msg});
+        else {
+            messages.leave.call(this);
+            if (!(this.joined instanceof Set)) {
+                this.joined = new Set();
+            }
+        }
+        this.room = room;
+        messages.update({[this.uid]: room});
     },
 
     /** Send a message to a member of the room. */
@@ -162,12 +179,17 @@ wss.on('connection', client => {
         try {
             if (client.room) {
                 messages.bcast.call(this, 'down');
+
+                // close room after 90s
+                setTimeout(() => {
+                    if (clients.get(client.uid) === client) {
+                        messages.room.call(client, null);
+                        clients.delete(client.uid);
+                    }
+                }, 90000);
             }
             else if (client.joined) {
-                const owner = clients.get(client.joined);
-                if (owner && owner.room) {
-                    owner.send('left:' + client.uid);
-                }
+                clients.get(client.joined)?.send('leave:' + client.uid);
             }
             else {
                 this.clients.delete(client.uid);
