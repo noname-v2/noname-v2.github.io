@@ -13,7 +13,6 @@
 		"transition-slower": "0.7s",
 		"blurred-opacity": "0.2",
 		"select-opacity": "0.5",
-		"popup-transform": "0.8",
 		"splash-transform": "0.8"
 	},
 
@@ -130,6 +129,14 @@
 	"gallery": {
 		"indicator-background": "rgba(0, 0, 0, 0.4)",
 		"indicator-background-current": "rgba(255, 255, 255, 0.8)"
+	},
+
+	"popup": {
+		"transform": "0.8",
+		"portrait-width": "410px",
+		"portrait-height": "480px",
+		"landscape-width": "520px",
+		"landscape-height": "410px"
 	},
 
 	"icon": {

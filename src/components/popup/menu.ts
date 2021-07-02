@@ -10,17 +10,12 @@ export class PopupMenu extends Popup {
     position!: Point;
 
     open() {
-        if (this.onopen) {
-            this.onopen();
-        }
-
         this.node.classList.add('hidden');
-		this.app.node.appendChild(this.node);
-        
-        // determine location of the menu
-        let {x, y} = this.position;
+        this.app.node.appendChild(this.node);
 
         requestAnimationFrame(() => {
+            // determine location of the menu
+            let {x, y} = this.position;
             const rect1 = this.pane.node.getBoundingClientRect();
             const rect2 = this.app.node.getBoundingClientRect();
             const zoom = this.ui.zoom;
@@ -46,10 +41,7 @@ export class PopupMenu extends Popup {
             this.pane.node.style.left = x + 'px';
             this.pane.node.style.top = y + 'px';
 
-            // zoom animation
-            this.ui.animate(this.pane.node, {
-                opacity: [0, 1], scale: ['var(--app-popup-transform)', 1]
-            }, this.app.getTransition(this.transition));
+            super.open();
         });
     }
 }

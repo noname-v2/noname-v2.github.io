@@ -7,13 +7,13 @@
     }
 
     &.portrait > noname-pane {
-        width: 410px;
-        height: 480px;
+        width: var(--popup-portrait-width);
+        height: var(--popup-portrait-height);
     }
 
     &.landscape > noname-pane {
-        width: 520px;
-		height: 410px;
+        width: var(--popup-landscape-width);
+		height: var(--popup-landscape-height);
     }
 
     > noname-pane {

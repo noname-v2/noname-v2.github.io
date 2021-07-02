@@ -85,7 +85,7 @@ export class App extends Component {
 				this.loadAssets().then(() => {
 					this.splash.node.classList.add('font-loaded');
 					this.splash.createHub();
-					this.splash.createSettings();
+					this.splash.settings.create(this.splash);
 				});
 			});
 		});
