@@ -11,12 +11,28 @@ export class Popup extends Component {
 	onclose: (() => void) | null = null;
 
     /** Whether popup is closed when clicking on background layer. */
-    temp: boolean = false;
+    temp: boolean = true;
+
+	/** Whether popup appears at the center. */
+	center: boolean = true;
+
+	/** Built-in sizes. */
+	size: 'portrait' | 'landscape' | null = null;
 
 	/** Animation speed of open and close. */
 	transition: TransitionDuration = null;
 
     init() {
+		this.node.classList.add('noname-popup');
+
+		if (this.center) {
+			this.node.classList.add('center');
+		}
+
+		if (typeof this.size === 'string') {
+			this.node.classList.add(this.size);
+		}
+		
 		// block DOM events behind the pane
         this.ui.bindClick(this.pane.node, () => {});
 
@@ -47,8 +63,6 @@ export class Popup extends Component {
 		this.app.node.appendChild(this.node);
 
 		if (position) {
-			this.node.classList.remove('center');
-			
 			// determine location of the menu
 			let {x, y} = position;
 			const rect1 = this.pane.node.getBoundingClientRect();

@@ -530,25 +530,21 @@ noname-lobby.hidden > noname-seats, noname-lobby.hidden > noname-bar {
   transform: scale(0.8);
 }
 
-noname-pane.hub {
-  width: 410px;
-  height: 480px;
-}
-noname-pane.hub > noname-group {
+noname-popup-hub > noname-pane > noname-group {
   margin-top: 30px;
   height: 80px;
 }
-noname-pane.hub > noname-group > noname-widget {
+noname-popup-hub > noname-pane > noname-group > noname-widget {
   width: 80px;
   height: 80px;
   left: 40px;
   border-radius: 100%;
   position: absolute;
 }
-noname-pane.hub > noname-group > noname-widget > noname-image {
+noname-popup-hub > noname-pane > noname-group > noname-widget > noname-image {
   border-radius: 100%;
 }
-noname-pane.hub > noname-group > noname-span {
+noname-popup-hub > noname-pane > noname-group > noname-span {
   position: absolute;
   left: 140px;
   height: 27px;
@@ -556,98 +552,91 @@ noname-pane.hub > noname-group > noname-span {
   font-size: 22px;
   font-family: var(--app-caption-font);
 }
-noname-pane.hub > noname-group > noname-input {
+noname-popup-hub > noname-pane > noname-group > noname-input {
   position: absolute;
   left: 197px;
   width: 40%;
 }
-noname-pane.hub > noname-group > .nickname {
+noname-popup-hub > noname-pane > noname-group > .nickname {
   top: 7px;
 }
-noname-pane.hub > noname-group > .address {
+noname-popup-hub > noname-pane > noname-group > .address {
   top: 47px;
 }
-noname-pane.hub > noname-caption {
+noname-popup-hub > noname-pane > noname-caption {
   text-align: center;
   height: 240px;
   line-height: 240px;
   font-size: 40px;
 }
-noname-pane.hub > noname-rooms {
+noname-popup-hub > noname-pane > noname-rooms {
   height: calc(100% - 120px);
 }
-noname-pane.hub > noname-caption, noname-pane.hub > noname-rooms {
+noname-popup-hub > noname-pane > noname-caption, noname-popup-hub > noname-pane > noname-rooms {
   position: absolute;
   top: 120px;
   display: block;
   width: 100%;
   transition: opacity var(--app-transition);
 }
-noname-pane.hub > noname-caption:not(.shown), noname-pane.hub > noname-rooms:not(.shown) {
-  opacity: 0;
-}
 
-noname-pane.settings {
-  width: 410px;
-  height: 480px;
-}
-noname-pane.settings > noname-gallery {
+noname-popup-settings > noname-pane > noname-gallery {
   height: 80px;
 }
-noname-pane.settings > noname-gallery.with-indicator {
+noname-popup-settings > noname-pane > noname-gallery.with-indicator {
   height: 100px;
 }
-noname-pane.settings > noname-gallery noname-item {
+noname-popup-settings > noname-pane > noname-gallery noname-item {
   width: 120px;
   height: 70px;
 }
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content {
+noname-popup-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > * {
+noname-popup-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > * {
   position: relative;
 }
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
+noname-popup-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
   font-size: 18px;
 }
-noname-pane.settings > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
+noname-popup-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
   font-size: 36px;
   margin-bottom: 1px;
 }
-noname-pane.settings > noname-gallery.music {
+noname-popup-settings > noname-pane > noname-gallery.music {
   height: 62px;
 }
-noname-pane.settings > noname-gallery.music.with-indicator {
+noname-popup-settings > noname-pane > noname-gallery.music.with-indicator {
   height: 82px;
 }
-noname-pane.settings > noname-gallery.music noname-item {
+noname-popup-settings > noname-pane > noname-gallery.music noname-item {
   width: 50px;
   height: 50px;
 }
-noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp {
+noname-popup-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp {
   border-radius: 50px;
 }
-noname-pane.settings > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
+noname-popup-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
   border-radius: 50px;
 }
-noname-pane.settings > noname-gallery.music noname-page > noname-layer {
+noname-popup-settings > noname-pane > noname-gallery.music noname-page > noname-layer {
   width: calc(100% - 20px);
   left: 10px;
 }
-noname-pane.settings > noname-gallery.volume {
+noname-popup-settings > noname-pane > noname-gallery.volume {
   height: 62px;
   margin-bottom: -8px;
 }
-noname-pane.settings > noname-gallery.volume noname-item {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item {
   width: 180px;
   height: 40px;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget {
   border-radius: 20px;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image {
   overflow: hidden;
   border-radius: 25px;
   background: var(--toggle-button-background);
@@ -655,34 +644,34 @@ noname-pane.settings > noname-gallery.volume noname-item > noname-widget > nonam
   mask-image: -webkit-radial-gradient(white, black);
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
   width: 200%;
   height: 100%;
   position: absolute;
   white-space: nowrap;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
   width: 50%;
   height: 100%;
   display: inline-block;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
   background: var(--toggle-background-on);
   box-shadow: var(--toggle-shadow);
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
   transition: transform var(--app-transition);
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
   transform: translateX(-180px);
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content {
   pointer-events: none;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
   margin-bottom: 1px;
 }
-noname-pane.settings > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
+noname-popup-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
   display: inline-block;
   width: 20px;
 }
@@ -804,7 +793,7 @@ noname-pane > noname-text:last-child {
   margin-bottom: 2px;
 }
 
-noname-popup {
+.noname-popup {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -814,24 +803,28 @@ noname-popup {
   position: absolute;
   z-index: 20;
 }
-noname-popup.center {
+.noname-popup.center {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-noname-popup.center > * {
+.noname-popup.center > * {
   position: relative;
 }
-noname-popup.full {
+.noname-popup.portrait > noname-pane {
+  width: 410px;
+  height: 480px;
+}
+.noname-popup.landscape > noname-pane {
   width: 520px;
   height: 410px;
 }
-noname-popup > noname-pane {
+.noname-popup > noname-pane {
   background: var(--widget-background);
   border-radius: var(--widget-radius);
   box-shadow: var(--widget-shadow);
 }
-noname-popup > noname-pane > noname-image {
+.noname-popup > noname-pane > noname-image {
   position: absolute;
   width: calc(100% - 2 * var(--widget-image-margin));
   height: calc(100% - 2 * var(--widget-image-margin));
@@ -840,7 +833,7 @@ noname-popup > noname-pane > noname-image {
   border-radius: var(--widget-image-radius);
   box-shadow: var(--widget-image-shadow);
 }
-noname-popup > noname-pane.menu {
+.noname-popup > noname-pane.menu {
   border-radius: var(--widget-radius-sharp);
   padding-top: 3px;
   padding-bottom: 3px;
@@ -849,19 +842,19 @@ noname-popup > noname-pane.menu {
   width: auto;
   height: auto;
 }
-noname-popup > noname-pane.menu > noname-image {
+.noname-popup > noname-pane.menu > noname-image {
   width: calc(100% - 2 * var(--widget-image-margin-sharp));
   height: calc(100% - 2 * var(--widget-image-margin-sharp));
   left: var(--widget-image-margin-sharp);
   top: var(--widget-image-margin-sharp);
   border-radius: var(--widget-image-radius-sharp);
 }
-noname-popup > noname-pane.menu > noname-option {
+.noname-popup > noname-pane.menu > noname-option {
   display: block;
   padding: 3px 10px 3px 10px;
   position: relative;
 }
-noname-popup > noname-pane.menu > noname-option:hover {
+.noname-popup > noname-pane.menu > noname-option:hover {
   background: var(--fill-blue);
   box-shadow: var(--widget-image-shadow);
 }

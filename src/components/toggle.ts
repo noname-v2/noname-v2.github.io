@@ -1,4 +1,4 @@
-import { Component, Popup } from '../components';
+import { Component, PopupMenu } from '../components';
 
 export class Toggle extends Component {
     // caption text
@@ -24,7 +24,7 @@ export class Toggle extends Component {
 			this.ui.bindClick(popup, () => {
 				// open context menu
 				const rect = popup.getBoundingClientRect();
-                const menu = <Popup>this.ui.create('popup');
+                const menu = <PopupMenu>this.ui.create('popup-menu');
                 menu.temp = true;
                 menu.transition = 'fast';
                 for (const [id, name] of choices) {
@@ -34,7 +34,8 @@ export class Toggle extends Component {
 						menu.close();
                     })
                 }
-                menu.open({x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3});
+				menu.position = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
+                menu.open();
 			});
 
 			// save captions corresponding to option values

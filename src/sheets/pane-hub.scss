@@ -1,7 +1,4 @@
-noname-pane.hub {
-    width: 410px;
-    height: 480px;
-
+noname-popup-hub > noname-pane {
     // nickname, avatar and address
     > noname-group {
         margin-top: 30px;
@@ -62,9 +59,5 @@ noname-pane.hub {
         display: block;
         width: 100%;
         transition: opacity var(--app-transition);
-
-        &:not(.shown) {
-            opacity: 0;
-        }
     }
 }

@@ -1,4 +1,4 @@
-noname-popup {
+.noname-popup {
     @include layer;
     z-index: 20;
 
@@ -6,7 +6,12 @@ noname-popup {
         @include flex-center;
     }
 
-    &.full {
+    &.portrait > noname-pane {
+        width: 410px;
+        height: 480px;
+    }
+
+    &.landscape > noname-pane {
         width: 520px;
 		height: 410px;
     }

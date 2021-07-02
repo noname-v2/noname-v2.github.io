@@ -1,4 +1,4 @@
-import { Component, Popup, Gallery, Button, Input } from '../components';
+import { Component, PopupHub, PopupSettings, PopupMenu, Gallery, Button, Input } from '../components';
 import { homepage } from '../version';
 
 interface ExtensionIndex {
@@ -20,10 +20,10 @@ export class Splash extends Component {
 	buttons = <{[key: string]: Button}>{};
 
 	// settings menu
-	settings = <Popup>this.ui.create('popup');
+	settings = <PopupSettings>this.ui.create('popup-settings');
 
 	// hub menu
-	hub = <Popup>this.ui.create('popup');
+	hub = <PopupHub>this.ui.create('popup-hub');
 
 	private createModeEntry(mode: string, extensions: ExtensionIndex) {
         const ui = this.ui;
@@ -116,8 +116,6 @@ export class Splash extends Component {
 
 	createHub() {
 		const hub = this.hub;
-		hub.temp = true;
-		hub.pane.node.classList.add('hub');
 
 		// nickname, avatar and hub address
 		const group = this.ui.createElement('group');
@@ -139,15 +137,15 @@ export class Splash extends Component {
 		};
 		
 		// caption message in hub menu
-		const hubCaption = this.ui.createElement('caption');
+		const hubCaption = this.ui.createElement('caption.hidden');
 		hub.pane.node.appendChild(hubCaption);
 		
 		const setCaption = (caption: string) => {
-			hubRooms.classList.remove('shown');
+			hubRooms.classList.add('hidden');
 			if (caption) {
 				hubCaption.innerHTML = caption;
 			}
-			hubCaption.classList[caption ? 'add' : 'remove']('shown');
+			hubCaption.classList[caption ? 'remove' : 'add']('hidden');
 		};
 
 		// avatar
@@ -174,7 +172,6 @@ export class Splash extends Component {
 		});
 		nickname.callback = async val => {
 			if (val) {
-				console.log(val)
 				this.db.set('nickname', val);
 				nickname.set('icon', 'emote');
 				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
@@ -267,9 +264,6 @@ export class Splash extends Component {
 	createSettings() {
 		// setup dialog
 		const settings = this.settings;
-		settings.temp = true;
-		settings.pane.node.classList.add('settings');
-
 		const rotating: [HTMLElement | null, Animation | null] = [null, null];
 
 		const rotate = (node: HTMLElement) => {
@@ -513,9 +507,7 @@ export class Splash extends Component {
 							const rotating_bak: [HTMLElement | null, Animation | null] = [rotating[0], rotating[1]];
 							this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
 							this.app.bgmNode.play();
-							const menu = <Popup>this.ui.create('popup');
-							menu.temp = true;
-							menu.transition = 'fast';
+							const menu = <PopupMenu>this.ui.create('popup-menu');
 							rotate(node);
 							const restore = () => {
 								if (rotating_bak[0] && rotating_bak[0] !== node) {
@@ -550,7 +542,8 @@ export class Splash extends Component {
 								unsetGame();
 								restore();
 							};
-							menu.open(e);
+							menu.position = e;
+							menu.open();
 						});
 
 						add(node);

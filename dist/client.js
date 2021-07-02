@@ -917,12 +917,22 @@
             /** Trigger when dialog is closed. */
             this.onclose = null;
             /** Whether popup is closed when clicking on background layer. */
-            this.temp = false;
+            this.temp = true;
+            /** Whether popup appears at the center. */
+            this.center = true;
+            /** Built-in sizes. */
+            this.size = null;
             /** Animation speed of open and close. */
             this.transition = null;
         }
         init() {
-            this.node.classList.add('popup');
+            this.node.classList.add('noname-popup');
+            if (this.center) {
+                this.node.classList.add('center');
+            }
+            if (typeof this.size === 'string') {
+                this.node.classList.add(this.size);
+            }
             // block DOM events behind the pane
             this.ui.bindClick(this.pane.node, () => { });
             // close when clicking on background layer
@@ -948,7 +958,6 @@
             }
             this.app.node.appendChild(this.node);
             if (position) {
-                this.node.classList.remove('center');
                 // determine location of the menu
                 let { x, y } = position;
                 const rect1 = this.pane.node.getBoundingClientRect();
@@ -977,6 +986,64 @@
             this.ui.animate(this.pane.node, {
                 opacity: [0, 1], scale: ['var(--app-popup-transform)', 1]
             }, this.app.getTransition(this.transition));
+        }
+    }
+
+    class PopupHub extends Popup {
+        constructor() {
+            super(...arguments);
+            this.size = 'portrait';
+        }
+    }
+
+    class PopupMenu extends Popup {
+        constructor() {
+            super(...arguments);
+            /** Popup mode. */
+            this.center = false;
+            this.transition = 'fast';
+        }
+        open() {
+            if (this.onopen) {
+                this.onopen();
+            }
+            this.node.classList.add('hidden');
+            this.app.node.appendChild(this.node);
+            // determine location of the menu
+            let { x, y } = this.position;
+            requestAnimationFrame(() => {
+                const rect1 = this.pane.node.getBoundingClientRect();
+                const rect2 = this.app.node.getBoundingClientRect();
+                const zoom = this.ui.zoom;
+                this.node.classList.remove('hidden');
+                x += 2;
+                y -= 2;
+                if (x < 10) {
+                    x = 10;
+                }
+                else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
+                    x = rect2.width / zoom - 10 - rect1.width / zoom;
+                }
+                if (y < 10) {
+                    y = 10;
+                }
+                else if (y + rect1.height / zoom + 10 > rect2.height / zoom) {
+                    y = rect2.height / zoom - 10 - rect1.height / zoom;
+                }
+                this.pane.node.style.left = x + 'px';
+                this.pane.node.style.top = y + 'px';
+                // zoom animation
+                this.ui.animate(this.pane.node, {
+                    opacity: [0, 1], scale: ['var(--app-popup-transform)', 1]
+                }, this.app.getTransition(this.transition));
+            });
+        }
+    }
+
+    class PopupSettings extends Popup {
+        constructor() {
+            super(...arguments);
+            this.size = 'portrait';
         }
     }
 
@@ -1027,9 +1094,9 @@
             // bottom toolbar buttons
             this.buttons = {};
             // settings menu
-            this.settings = this.ui.create('popup');
+            this.settings = this.ui.create('popup-settings');
             // hub menu
-            this.hub = this.ui.create('popup');
+            this.hub = this.ui.create('popup-hub');
         }
         createModeEntry(mode, extensions) {
             const ui = this.ui;
@@ -1106,8 +1173,6 @@
         }
         createHub() {
             const hub = this.hub;
-            hub.temp = true;
-            hub.pane.node.classList.add('hub');
             // nickname, avatar and hub address
             const group = this.ui.createElement('group');
             hub.pane.node.appendChild(group);
@@ -1117,14 +1182,14 @@
             hub.pane.node.appendChild(hubRooms);
             this.ui.enableScroll(hubRooms);
             // caption message in hub menu
-            const hubCaption = this.ui.createElement('caption');
+            const hubCaption = this.ui.createElement('caption.hidden');
             hub.pane.node.appendChild(hubCaption);
             const setCaption = (caption) => {
-                hubRooms.classList.remove('shown');
+                hubRooms.classList.add('hidden');
                 if (caption) {
                     hubCaption.innerHTML = caption;
                 }
-                hubCaption.classList[caption ? 'add' : 'remove']('shown');
+                hubCaption.classList[caption ? 'remove' : 'add']('hidden');
             };
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
@@ -1148,7 +1213,6 @@
             });
             nickname.callback = async (val) => {
                 if (val) {
-                    console.log(val);
                     this.db.set('nickname', val);
                     nickname.set('icon', 'emote');
                     await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
@@ -1237,8 +1301,6 @@
         createSettings() {
             // setup dialog
             const settings = this.settings;
-            settings.temp = true;
-            settings.pane.node.classList.add('settings');
             const rotating = [null, null];
             const rotate = (node) => {
                 if (rotating && rotating[0] !== node) {
@@ -1441,9 +1503,7 @@
                                 const rotating_bak = [rotating[0], rotating[1]];
                                 this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
                                 this.app.bgmNode.play();
-                                const menu = this.ui.create('popup');
-                                menu.temp = true;
-                                menu.transition = 'fast';
+                                const menu = this.ui.create('popup-menu');
                                 rotate(node);
                                 const restore = () => {
                                     if (rotating_bak[0] && rotating_bak[0] !== node) {
@@ -1478,7 +1538,8 @@
                                     unsetGame();
                                     restore();
                                 };
-                                menu.open(e);
+                                menu.position = e;
+                                menu.open();
                             });
                             add(node);
                         }
@@ -1558,7 +1619,7 @@
                 this.ui.bindClick(popup, () => {
                     // open context menu
                     const rect = popup.getBoundingClientRect();
-                    const menu = this.ui.create('popup');
+                    const menu = this.ui.create('popup-menu');
                     menu.temp = true;
                     menu.transition = 'fast';
                     for (const [id, name] of choices) {
@@ -1568,7 +1629,8 @@
                             menu.close();
                         });
                     }
-                    menu.open({ x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 });
+                    menu.position = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
+                    menu.open();
                 });
                 // save captions corresponding to option values
                 this.choices = new Map(choices);
@@ -1608,6 +1670,9 @@
     componentClasses.set('input', Input);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('pane', Pane);
+    componentClasses.set('popup-hub', PopupHub);
+    componentClasses.set('popup-menu', PopupMenu);
+    componentClasses.set('popup-settings', PopupSettings);
     componentClasses.set('popup', Popup);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('splash', Splash);
