@@ -1098,9 +1098,9 @@
             this.pane.addSection('背景');
             const bgs = Array.from(Object.keys(this.app.assets.bg));
             const bgGallery = this.pane.addGallery(1, this.ncols, this.width);
-            for (let i = 0; i <= bgs.length; i += 3) {
+            for (let i = 0; i <= bgs.length; i += this.ncols) {
                 bgGallery.addPage(add => {
-                    for (let j = 0; j < 3; j++) {
+                    for (let j = 0; j < this.ncols; j++) {
                         const bg = bgs[i + j];
                         if (bg) {
                             const node = this.ui.createElement('widget.sharp');
@@ -1157,78 +1157,7 @@
                             if (bgm === this.db.get('game-music')) {
                                 node.classList.add('active');
                             }
-                            const setSplash = () => {
-                                this.rotate(node);
-                                this.db.set('splash-music', bgm);
-                            };
-                            const unsetSplash = () => {
-                                if (this.rotating === node) {
-                                    this.rotatingAnimation?.pause();
-                                    this.rotating = null;
-                                    this.rotatingAnimation = null;
-                                }
-                                if (this.db.get('splash-music') === bgm) {
-                                    this.db.set('splash-music', 'none');
-                                }
-                            };
-                            const setGame = () => {
-                                node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                                node.classList.add('active');
-                                this.db.set('game-music', bgm);
-                            };
-                            const unsetGame = () => {
-                                node.classList.remove('active');
-                                if (this.db.get('game-music') === bgm) {
-                                    this.db.set('game-music', 'none');
-                                }
-                            };
-                            this.ui.bindClick(node, e => {
-                                const rotating_bak = [this.rotating, this.rotatingAnimation];
-                                this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
-                                this.app.bgmNode.play();
-                                const menu = this.ui.create('popup-menu');
-                                this.rotate(node);
-                                const restore = () => {
-                                    if (rotating_bak[0] && rotating_bak[0] !== node) {
-                                        this.rotating = rotating_bak[0];
-                                        this.rotatingAnimation = rotating_bak[1];
-                                        if (this.rotatingAnimation) {
-                                            this.rotatingAnimation.play();
-                                        }
-                                        else {
-                                            this.rotate(this.rotating);
-                                        }
-                                    }
-                                    this.app.playMusic();
-                                };
-                                const cleanUp = () => {
-                                    menu.onclose = null;
-                                    menu.close();
-                                };
-                                menu.pane.addOption('等待音乐', () => {
-                                    setSplash();
-                                    unsetGame();
-                                    cleanUp();
-                                });
-                                menu.pane.addOption('游戏音乐', () => {
-                                    setGame();
-                                    unsetSplash();
-                                    restore();
-                                    cleanUp();
-                                });
-                                menu.pane.addOption('全部应用', () => {
-                                    setSplash();
-                                    setGame();
-                                    cleanUp();
-                                });
-                                menu.onclose = () => {
-                                    unsetSplash();
-                                    unsetGame();
-                                    restore();
-                                };
-                                menu.position = e;
-                                menu.open();
-                            });
+                            this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
                             add(node);
                         }
                         else if (i + j === bgms.length) {
@@ -1287,6 +1216,75 @@
             }, { passive: true });
             updatetVolume(this.db.get(key));
             return node;
+        }
+        musicMenu(node, bgm, e) {
+            const rotating_bak = [this.rotating, this.rotatingAnimation];
+            this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
+            this.app.bgmNode.play();
+            const menu = this.ui.create('popup-menu');
+            this.rotate(node);
+            const restore = () => {
+                if (rotating_bak[0] && rotating_bak[0] !== node) {
+                    this.rotating = rotating_bak[0];
+                    this.rotatingAnimation = rotating_bak[1];
+                    if (this.rotatingAnimation) {
+                        this.rotatingAnimation.play();
+                    }
+                    else {
+                        this.rotate(this.rotating);
+                    }
+                }
+                this.app.playMusic();
+            };
+            menu.pane.addOption('等待音乐', () => {
+                this.rotateMusic(node, bgm, true, false);
+                menu.onclose = null;
+                menu.close();
+            });
+            menu.pane.addOption('游戏音乐', () => {
+                this.rotateMusic(node, bgm, false, true);
+                restore();
+                menu.onclose = null;
+                menu.close();
+            });
+            menu.pane.addOption('全部应用', () => {
+                this.rotateMusic(node, bgm, true, true);
+                menu.onclose = null;
+                menu.close();
+            });
+            menu.onclose = () => {
+                this.rotateMusic(node, bgm, false, false);
+                restore();
+            };
+            menu.position = e;
+            menu.open();
+        }
+        rotateMusic(node, bgm, splash, game) {
+            if (splash) {
+                this.rotate(node);
+                this.db.set('splash-music', bgm);
+            }
+            else {
+                if (this.rotating === node) {
+                    this.rotatingAnimation?.pause();
+                    this.rotating = null;
+                    this.rotatingAnimation = null;
+                }
+                if (this.db.get('splash-music') === bgm) {
+                    this.db.set('splash-music', 'none');
+                }
+            }
+            if (game) {
+                node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                node.classList.add('active');
+                this.db.set('game-music', bgm);
+            }
+            else {
+                node.classList.remove('active');
+                if (this.db.get('game-music') === bgm) {
+                    this.db.set('game-music', 'none');
+                }
+            }
         }
     }
 
