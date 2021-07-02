@@ -38,12 +38,7 @@ export class Worker {
     constructor() {
         self.onmessage = ({data}: {data: ClientMessage}) => {
             this.uid = data[0];
-            if (typeof data[3] === 'string') {
-                console.log(data[3]);
-            }
-            else {
-                this.game = new Game(data[3], this);
-            }
+            this.game = new Game(data[3], this);
         }
 
         (self as any).postMessage('ready');

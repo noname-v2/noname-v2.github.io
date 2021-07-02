@@ -282,37 +282,35 @@ noname-input > input {
   outline: none;
   border: none;
   top: 1px;
-  left: 2px;
-  width: calc(100% - 4px);
+  left: 3px;
+  width: calc(100% - 6px);
   height: 25px;
   background: none;
   box-shadow: none;
   padding: 0;
 }
-noname-input > input:focus {
-  width: calc(100% - 30px);
+noname-input > input:disabled {
+  opacity: 1;
 }
-noname-input > input:focus + noname-clear {
-  visibility: visible;
-}
-noname-input > noname-clear {
+noname-input > noname-icon {
   position: absolute;
   width: 50px;
   height: 37px;
   left: calc(100% - 42px);
   top: -5px;
-  background-image: var(--icon-clear);
   background-size: 17px 17px;
   background-repeat: no-repeat;
   background-position: 21px 10px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--app-transition-fast);
+}
+noname-input.with-icon > input {
+  width: calc(100% - 30px);
+}
+noname-input.with-icon > noname-icon {
   opacity: 0.5;
-  visibility: hidden;
-}
-noname-input > noname-clear.clickdown {
-  visibility: visible;
-}
-noname-input:hover > noname-clear {
-  visibility: visible;
+  pointer-events: all;
 }
 
 noname-lobby {
@@ -568,6 +566,25 @@ noname-pane.hub > noname-group > .nickname {
 }
 noname-pane.hub > noname-group > .address {
   top: 47px;
+}
+noname-pane.hub > noname-caption {
+  text-align: center;
+  height: 240px;
+  line-height: 240px;
+  font-size: 40px;
+}
+noname-pane.hub > noname-rooms {
+  height: calc(100% - 120px);
+}
+noname-pane.hub > noname-caption, noname-pane.hub > noname-rooms {
+  position: absolute;
+  top: 120px;
+  display: block;
+  width: 100%;
+  transition: opacity var(--app-transition);
+}
+noname-pane.hub > noname-caption:not(.shown), noname-pane.hub > noname-rooms:not(.shown) {
+  opacity: 0;
 }
 
 noname-pane.settings {

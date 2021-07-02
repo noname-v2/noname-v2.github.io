@@ -1,5 +1,4 @@
-import { Component, Pane } from '../components';
-import type { Point } from '../client/ui';
+import { Component, Pane, Point, TransitionDuration } from '../components';
 
 export class Popup extends Component {
     /** Main content. */
@@ -15,7 +14,7 @@ export class Popup extends Component {
     temp: boolean = false;
 
 	/** Animation speed of open and close. */
-	transition: string | null = null;
+	transition: TransitionDuration = null;
 
     init() {
 		// block DOM events behind the pane

@@ -12,6 +12,9 @@ export type Region = {x: [number, number], y: [number, number]};
 // return value of onmove
 export type MoveState = unknown;
 
+// transition duration names
+export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
+
 // type for event point location
 type EventPoint = {clientX: number, clientY: number}
 
@@ -274,7 +277,7 @@ export class UI {
         componentClasses.set(key, cls);
     }
 
-    // set binding for ClickEvent
+    /** Set binding for ClickEvent. */
 	bindClick(node: HTMLElement, onclick: (e: Point) => void) {
 		// get or create registry for node
 		const binding = this.bindings.get(node) || this.register(node);
@@ -283,7 +286,123 @@ export class UI {
 		binding.onclick = onclick;
 	}
 
-	// wrapper of HTMLElement.animate()
+	/** Set binding for MoveEvent. */
+	bindMove(node: HTMLElement, config: {
+		movable: Region,
+		ondown?: (e: Point) => void
+		onmove?: (e: Point) => MoveState,
+		onmoveend?: (arg?: MoveState) => void,
+		onoff?: (e1: Point, e2: Point) => Point,
+		offset?: Point
+	}) {
+		// get or create registry for node
+		const binding = this.bindings.get(node) || this.register(node);
+
+		// set move area
+		binding.movable = config.movable;
+
+		// bind pointerdown event
+		binding.ondown = config.ondown || null;
+
+		// bind move event
+		binding.onmove = config.onmove || null;
+
+		// bind moveend event
+		binding.onmoveend = config.onmoveend || null;
+
+		// bind onoff event
+		binding.onoff = config.onoff || null;
+
+		// initial offset
+		binding.offset = config.offset || null;
+	}
+
+	/** Fire click event. */
+	dispatchClick(node: HTMLElement) {
+		// onclick
+		const binding = this.bindings.get(node);
+
+		if (binding && binding.onclick) {
+			if (this.clicking && this.clicking[0] === node) {
+				// use the location of this.clicking if applicable
+				binding.onclick.call(node, this.clicking[1]);
+			}
+			else {
+				// a pseudo click event without location info
+				binding.onclick.call(node, {x: 0, y: 0});
+			}
+		}
+
+		// avoid duplicate trigger
+		this.resetClick(node);
+		this.resetMove(node);
+	}
+
+	/** Fire move event. */
+	dispatchMove(node: HTMLElement, location: Point) {
+		const binding = this.bindings.get(node);
+
+		if (binding && binding.movable) {
+			// get offset of node
+			const movable = binding.movable;
+			let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
+			let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
+
+			// trigger onoff
+			if (binding.onoff && (x != location.x || y != location.y)) {
+				const off = binding.onoff({x, y}, {x: location.x, y: location.y});
+				x = off.x;
+				y = off.y;
+			}
+			
+			// set and save node offset
+			node.style.transform = `translate(${x}px, ${y}px)`;
+			binding.offset = {x, y};
+
+			// trigger onmove
+			if (binding.onmove) {
+				const state = binding.onmove(binding.offset);
+
+				// save move state to this.moving if applicable
+				if (this.moving && this.moving[0] === node) {
+					this.moving[3] = state;
+				}
+			}
+		}
+	}
+
+	/** Fire moveend event. */
+	dispatchMoveEnd(node: HTMLElement) {
+		// onmoveend
+		const binding = this.bindings.get(node);
+
+		if (binding && binding.onmoveend) {
+			if (this.moving && this.moving[0] === node) {
+				// pass the state of this.moving if applicable
+				binding.onmoveend(this.moving[3]);
+			}
+			else {
+				// a pseudo moveend event without current state
+				binding.onmoveend(null);
+			}
+		}
+
+		// avoid duplicate trigger
+		this.resetClick(node);
+		this.resetMove(node);
+	}
+
+	/** Enable vertical scrolling. */
+	enableScroll(node: HTMLElement) {
+		node.classList.add('scroll');
+        node.addEventListener('wheel', e => {
+            if (e.deltaX === 0) {
+                e.stopPropagation();
+            }
+        }, {passive: false});
+	}
+
+	/** Wrapper of HTMLElement.animate(). */
 	animate(node: HTMLElement, animation: {
 			x?: (number | string)[],
 			y?: (number | string)[],
@@ -347,111 +466,5 @@ export class UI {
 		}
 
 		return node.animate(keyframes, config);
-	}
-
-	// set binding for MoveEvent
-	bindMove(node: HTMLElement, config: {
-		movable: Region,
-		ondown?: (e: Point) => void
-		onmove?: (e: Point) => MoveState,
-		onmoveend?: (arg?: MoveState) => void,
-		onoff?: (e1: Point, e2: Point) => Point,
-		offset?: Point
-	}) {
-		// get or create registry for node
-		const binding = this.bindings.get(node) || this.register(node);
-
-		// set move area
-		binding.movable = config.movable;
-
-		// bind pointerdown event
-		binding.ondown = config.ondown || null;
-
-		// bind move event
-		binding.onmove = config.onmove || null;
-
-		// bind moveend event
-		binding.onmoveend = config.onmoveend || null;
-
-		// bind onoff event
-		binding.onoff = config.onoff || null;
-
-		// initial offset
-		binding.offset = config.offset || null;
-	}
-
-	// fire click event
-	dispatchClick(node: HTMLElement) {
-		// onclick
-		const binding = this.bindings.get(node);
-
-		if (binding && binding.onclick) {
-			if (this.clicking && this.clicking[0] === node) {
-				// use the location of this.clicking if applicable
-				binding.onclick.call(node, this.clicking[1]);
-			}
-			else {
-				// a pseudo click event without location info
-				binding.onclick.call(node, {x: 0, y: 0});
-			}
-		}
-
-		// avoid duplicate trigger
-		this.resetClick(node);
-		this.resetMove(node);
-	}
-
-	// fire move event
-	dispatchMove(node: HTMLElement, location: Point) {
-		const binding = this.bindings.get(node);
-
-		if (binding && binding.movable) {
-			// get offset of node
-			const movable = binding.movable;
-			let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
-			let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
-
-			// trigger onoff
-			if (binding.onoff && (x != location.x || y != location.y)) {
-				const off = binding.onoff({x, y}, {x: location.x, y: location.y});
-				x = off.x;
-				y = off.y;
-			}
-			
-			// set and save node offset
-			node.style.transform = `translate(${x}px, ${y}px)`;
-			binding.offset = {x, y};
-
-			// trigger onmove
-			if (binding.onmove) {
-				const state = binding.onmove(binding.offset);
-
-				// save move state to this.moving if applicable
-				if (this.moving && this.moving[0] === node) {
-					this.moving[3] = state;
-				}
-			}
-		}
-	}
-
-	// fire moveend event
-	dispatchMoveEnd(node: HTMLElement) {
-		// onmoveend
-		const binding = this.bindings.get(node);
-
-		if (binding && binding.onmoveend) {
-			if (this.moving && this.moving[0] === node) {
-				// pass the state of this.moving if applicable
-				binding.onmoveend(this.moving[3]);
-			}
-			else {
-				// a pseudo moveend event without current state
-				binding.onmoveend(null);
-			}
-		}
-
-		// avoid duplicate trigger
-		this.resetClick(node);
-		this.resetMove(node);
 	}
 }

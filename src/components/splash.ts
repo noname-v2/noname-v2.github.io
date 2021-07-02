@@ -1,4 +1,5 @@
-import { Component, Popup, Gallery, Button } from '../components';
+import { Component, Popup, Gallery, Button, Input } from '../components';
+import { homepage } from '../version';
 
 interface ExtensionIndex {
 	[key: string]: {
@@ -117,19 +118,37 @@ export class Splash extends Component {
 		const hub = this.hub;
 		hub.temp = true;
 		hub.pane.node.classList.add('hub');
-		hub.onopen = () => {
-			this.node.classList.add('blurred');
-			// if (!this.client.connection) {
-
-			// }
-		};
-		hub.onclose = () => {
-			this.node.classList.remove('blurred');
-		};
 
 		// nickname, avatar and hub address
 		const group = this.ui.createElement('group');
 		hub.pane.node.appendChild(group);
+
+		// room list in hub menu
+		const rooms = new Map<string, any>();
+		const hubRooms = this.ui.createElement('rooms');
+		hub.pane.node.appendChild(hubRooms);
+		this.ui.enableScroll(hubRooms);
+
+		const updateRooms = () => {
+			if (rooms.size) {
+
+			}
+			else {
+				setCaption('暂无房间');
+			}
+		};
+		
+		// caption message in hub menu
+		const hubCaption = this.ui.createElement('caption');
+		hub.pane.node.appendChild(hubCaption);
+		
+		const setCaption = (caption: string) => {
+			hubRooms.classList.remove('shown');
+			if (caption) {
+				hubCaption.innerHTML = caption;
+			}
+			hubCaption.classList[caption ? 'add' : 'remove']('shown');
+		};
 
 		// avatar
 		const avatarNode = this.ui.createElement('widget', group);
@@ -148,10 +167,98 @@ export class Splash extends Component {
 		this.ui.createElement('span.address', group).innerHTML = '地址';
 
 		// input
-		const nickname = this.ui.create('input', group);
+		const nickname = <Input>this.ui.create('input', group);
 		nickname.node.classList.add('nickname');
-		const address = this.ui.create('input', group);
+		nickname.ready.then(() => {
+			nickname.input.value = this.db.get('nickname') || '无名玩家';
+		});
+		nickname.callback = async val => {
+			if (val) {
+				console.log(val)
+				this.db.set('nickname', val);
+				nickname.set('icon', 'emote');
+				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
+				nickname.set('icon', null);
+			}
+		};
+		const address = <Input>this.ui.create('input', group);
 		address.node.classList.add('address');
+		address.ready.then(() => {
+			address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
+			address.input.disabled = true;
+		});
+		const resetConnection = () => {
+			this.client.disconnect();
+			rooms.clear();
+			address.set('icon', null);
+			address.onicon = null;
+			setCaption('已断开');
+		};
+		const connect = address.callback = val => {
+			if (val) {
+				try {
+					this.client.connect('wss://' + val);
+					address.set('icon', 'clear');
+					const ws = this.client.connection as WebSocket;
+					setCaption('正在连接');
+					return new Promise(resolve => {
+						address.onicon = () => {
+							ws.close();
+						};
+						ws.onclose = () => {
+							resetConnection();
+							setTimeout(resolve, 100);
+						};
+						ws.onopen = () => {
+							address.set('icon', 'ok');
+							setCaption('');
+							const info = JSON.stringify([
+								this.db.get('nickname') || '无名玩家',
+								this.db.get('avatar') ?? 'standard:caocao'
+							]);
+							ws.send('init:' + JSON.stringify([this.client.uid, info]));
+						};
+						ws.onmessage = ({data}: {data: string}) => {
+							try {
+								if (data.startsWith('error:')) {
+									ws.close();
+								}
+								else if (data.startsWith('update:')) {
+									const updates = JSON.parse(data.slice(7));
+									for (const uid in updates) {
+										if (typeof updates[uid] === 'number') {
+											// rooms.get(uid)?[1] = updates[uid];
+										}
+									}
+								}
+							}
+							catch {
+								ws.close();
+							}
+						};
+					});
+				}
+				catch {
+					resetConnection();
+				}
+			}
+		};
+
+		hub.onopen = () => {
+			this.node.classList.add('blurred');
+			setTimeout(async () => {
+				if (!this.client.connection) {
+					await connect(address.input.value);
+					address.input.disabled = false;
+				}
+			}, 500);
+			// if (!this.client.connection) {
+
+			// }
+		};
+		hub.onclose = () => {
+			this.node.classList.remove('blurred');
+		};
 
 		// enable button click after creation finish
 		this.buttons.hub.node.classList.remove('disabled');

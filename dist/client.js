@@ -376,7 +376,7 @@
             }
         }
         /** Get the duration of transition.
-         * @param {'normal' | 'fast' | 'slow' | 'faster' | 'slower'} type - transition type
+         * @param {TransitionDuration} type - transition type
          */
         getTransition(type = null) {
             let key = 'transition';
@@ -729,22 +729,66 @@
     class Input extends Component {
         constructor() {
             super(...arguments);
-            // clear input button
-            this.clear = this.ui.createElement('clear');
+            // icon in <input>
+            this.icon = this.ui.createElement('icon');
+            // callback when blur or pressed enter
+            this.callback = null;
+            // callback when clicking icon
+            this.onicon = null;
         }
         init() {
             this.input = document.createElement('input');
             this.node.appendChild(this.input);
-            this.node.appendChild(this.clear);
-            this.input.onblur = () => {
-                if (this.callback) {
-                    this.callback(this.input.value);
+            this.node.appendChild(this.icon);
+            this.input.onfocus = () => {
+                if (!this.input.disabled && this.input.value.length) {
+                    this.input.setSelectionRange(0, this.input.value.length);
                 }
             };
-            this.ui.bindClick(this.clear, () => {
-                this.input.value = '';
-                this.input.focus();
+            this.input.onblur = async () => {
+                if (this.callback && !this.input.disabled) {
+                    getSelection()?.removeAllRanges();
+                    this.input.disabled = true;
+                    await this.callback(this.input.value);
+                    this.input.disabled = false;
+                }
+            };
+            this.input.onkeyup = e => {
+                if (e.key === 'Enter') {
+                    this.input.blur();
+                }
+            };
+            this.input.ontouchstart = () => {
+                if (this.input.disabled) {
+                    return;
+                }
+                const val = this.input.value;
+                this.input.disabled = true;
+                this.input.value = prompt('', this.input.value) || val;
+                Promise.all([
+                    new Promise(resolve => setTimeout(resolve, 100)),
+                    new Promise(async (resolve) => {
+                        if (this.callback) {
+                            await this.callback(this.input.value);
+                        }
+                        resolve();
+                    })
+                ]).then(() => this.input.disabled = false);
+            };
+            this.ui.bindClick(this.icon, e => {
+                if (this.onicon) {
+                    this.onicon(e);
+                }
             });
+        }
+        $icon(name) {
+            if (name) {
+                this.node.classList.add('with-icon');
+                this.icon.style.backgroundImage = `var(--icon-${name})`;
+            }
+            else {
+                this.node.classList.remove('with-icon');
+            }
         }
     }
 
@@ -859,12 +903,7 @@
         }
         /** Enable vertical scrolling. */
         enableScroll() {
-            this.node.classList.add('scroll');
-            this.node.addEventListener('wheel', e => {
-                if (e.deltaX === 0) {
-                    e.stopPropagation();
-                }
-            }, { passive: false });
+            this.ui.enableScroll(this.node);
         }
     }
 
@@ -883,6 +922,7 @@
             this.transition = null;
         }
         init() {
+            this.node.classList.add('popup');
             // block DOM events behind the pane
             this.ui.bindClick(this.pane.node, () => { });
             // close when clicking on background layer
@@ -973,6 +1013,9 @@
             this.node.classList.remove('with-footer');
         }
     }
+
+    const version = '2.0.0';
+    const homepage = 'noname.pub';
 
     class Splash extends Component {
         constructor() {
@@ -1065,17 +1108,24 @@
             const hub = this.hub;
             hub.temp = true;
             hub.pane.node.classList.add('hub');
-            hub.onopen = () => {
-                this.node.classList.add('blurred');
-                // if (!this.client.connection) {
-                // }
-            };
-            hub.onclose = () => {
-                this.node.classList.remove('blurred');
-            };
             // nickname, avatar and hub address
             const group = this.ui.createElement('group');
             hub.pane.node.appendChild(group);
+            // room list in hub menu
+            const rooms = new Map();
+            const hubRooms = this.ui.createElement('rooms');
+            hub.pane.node.appendChild(hubRooms);
+            this.ui.enableScroll(hubRooms);
+            // caption message in hub menu
+            const hubCaption = this.ui.createElement('caption');
+            hub.pane.node.appendChild(hubCaption);
+            const setCaption = (caption) => {
+                hubRooms.classList.remove('shown');
+                if (caption) {
+                    hubCaption.innerHTML = caption;
+                }
+                hubCaption.classList[caption ? 'add' : 'remove']('shown');
+            };
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.ui.createElement('image', avatarNode);
@@ -1093,8 +1143,94 @@
             // input
             const nickname = this.ui.create('input', group);
             nickname.node.classList.add('nickname');
+            nickname.ready.then(() => {
+                nickname.input.value = this.db.get('nickname') || '无名玩家';
+            });
+            nickname.callback = async (val) => {
+                if (val) {
+                    console.log(val);
+                    this.db.set('nickname', val);
+                    nickname.set('icon', 'emote');
+                    await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
+                    nickname.set('icon', null);
+                }
+            };
             const address = this.ui.create('input', group);
             address.node.classList.add('address');
+            address.ready.then(() => {
+                address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
+                address.input.disabled = true;
+            });
+            const resetConnection = () => {
+                this.client.disconnect();
+                rooms.clear();
+                address.set('icon', null);
+                address.onicon = null;
+                setCaption('已断开');
+            };
+            const connect = address.callback = val => {
+                if (val) {
+                    try {
+                        this.client.connect('wss://' + val);
+                        address.set('icon', 'clear');
+                        const ws = this.client.connection;
+                        setCaption('正在连接');
+                        return new Promise(resolve => {
+                            address.onicon = () => {
+                                ws.close();
+                            };
+                            ws.onclose = () => {
+                                resetConnection();
+                                setTimeout(resolve, 100);
+                            };
+                            ws.onopen = () => {
+                                address.set('icon', 'ok');
+                                setCaption('');
+                                const info = JSON.stringify([
+                                    this.db.get('nickname') || '无名玩家',
+                                    this.db.get('avatar') ?? 'standard:caocao'
+                                ]);
+                                ws.send('init:' + JSON.stringify([this.client.uid, info]));
+                            };
+                            ws.onmessage = ({ data }) => {
+                                try {
+                                    if (data.startsWith('error:')) {
+                                        ws.close();
+                                    }
+                                    else if (data.startsWith('update:')) {
+                                        const updates = JSON.parse(data.slice(7));
+                                        for (const uid in updates) {
+                                            if (typeof updates[uid] === 'number') {
+                                                // rooms.get(uid)?[1] = updates[uid];
+                                            }
+                                        }
+                                    }
+                                }
+                                catch {
+                                    ws.close();
+                                }
+                            };
+                        });
+                    }
+                    catch {
+                        resetConnection();
+                    }
+                }
+            };
+            hub.onopen = () => {
+                this.node.classList.add('blurred');
+                setTimeout(async () => {
+                    if (!this.client.connection) {
+                        await connect(address.input.value);
+                        address.input.disabled = false;
+                    }
+                }, 500);
+                // if (!this.client.connection) {
+                // }
+            };
+            hub.onclose = () => {
+                this.node.classList.remove('blurred');
+            };
             // enable button click after creation finish
             this.buttons.hub.node.classList.remove('disabled');
         }
@@ -1678,14 +1814,103 @@
         registerComponent(key, cls) {
             componentClasses.set(key, cls);
         }
-        // set binding for ClickEvent
+        /** Set binding for ClickEvent. */
         bindClick(node, onclick) {
             // get or create registry for node
             const binding = this.bindings.get(node) || this.register(node);
             // bind click event
             binding.onclick = onclick;
         }
-        // wrapper of HTMLElement.animate()
+        /** Set binding for MoveEvent. */
+        bindMove(node, config) {
+            // get or create registry for node
+            const binding = this.bindings.get(node) || this.register(node);
+            // set move area
+            binding.movable = config.movable;
+            // bind pointerdown event
+            binding.ondown = config.ondown || null;
+            // bind move event
+            binding.onmove = config.onmove || null;
+            // bind moveend event
+            binding.onmoveend = config.onmoveend || null;
+            // bind onoff event
+            binding.onoff = config.onoff || null;
+            // initial offset
+            binding.offset = config.offset || null;
+        }
+        /** Fire click event. */
+        dispatchClick(node) {
+            // onclick
+            const binding = this.bindings.get(node);
+            if (binding && binding.onclick) {
+                if (this.clicking && this.clicking[0] === node) {
+                    // use the location of this.clicking if applicable
+                    binding.onclick.call(node, this.clicking[1]);
+                }
+                else {
+                    // a pseudo click event without location info
+                    binding.onclick.call(node, { x: 0, y: 0 });
+                }
+            }
+            // avoid duplicate trigger
+            this.resetClick(node);
+            this.resetMove(node);
+        }
+        /** Fire move event. */
+        dispatchMove(node, location) {
+            const binding = this.bindings.get(node);
+            if (binding && binding.movable) {
+                // get offset of node
+                const movable = binding.movable;
+                let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
+                let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
+                // trigger onoff
+                if (binding.onoff && (x != location.x || y != location.y)) {
+                    const off = binding.onoff({ x, y }, { x: location.x, y: location.y });
+                    x = off.x;
+                    y = off.y;
+                }
+                // set and save node offset
+                node.style.transform = `translate(${x}px, ${y}px)`;
+                binding.offset = { x, y };
+                // trigger onmove
+                if (binding.onmove) {
+                    const state = binding.onmove(binding.offset);
+                    // save move state to this.moving if applicable
+                    if (this.moving && this.moving[0] === node) {
+                        this.moving[3] = state;
+                    }
+                }
+            }
+        }
+        /** Fire moveend event. */
+        dispatchMoveEnd(node) {
+            // onmoveend
+            const binding = this.bindings.get(node);
+            if (binding && binding.onmoveend) {
+                if (this.moving && this.moving[0] === node) {
+                    // pass the state of this.moving if applicable
+                    binding.onmoveend(this.moving[3]);
+                }
+                else {
+                    // a pseudo moveend event without current state
+                    binding.onmoveend(null);
+                }
+            }
+            // avoid duplicate trigger
+            this.resetClick(node);
+            this.resetMove(node);
+        }
+        /** Enable vertical scrolling. */
+        enableScroll(node) {
+            node.classList.add('scroll');
+            node.addEventListener('wheel', e => {
+                if (e.deltaX === 0) {
+                    e.stopPropagation();
+                }
+            }, { passive: false });
+        }
+        /** Wrapper of HTMLElement.animate(). */
         animate(node, animation, config) {
             const keyframes = [];
             let length = 0;
@@ -1738,89 +1963,7 @@
             }
             return node.animate(keyframes, config);
         }
-        // set binding for MoveEvent
-        bindMove(node, config) {
-            // get or create registry for node
-            const binding = this.bindings.get(node) || this.register(node);
-            // set move area
-            binding.movable = config.movable;
-            // bind pointerdown event
-            binding.ondown = config.ondown || null;
-            // bind move event
-            binding.onmove = config.onmove || null;
-            // bind moveend event
-            binding.onmoveend = config.onmoveend || null;
-            // bind onoff event
-            binding.onoff = config.onoff || null;
-            // initial offset
-            binding.offset = config.offset || null;
-        }
-        // fire click event
-        dispatchClick(node) {
-            // onclick
-            const binding = this.bindings.get(node);
-            if (binding && binding.onclick) {
-                if (this.clicking && this.clicking[0] === node) {
-                    // use the location of this.clicking if applicable
-                    binding.onclick.call(node, this.clicking[1]);
-                }
-                else {
-                    // a pseudo click event without location info
-                    binding.onclick.call(node, { x: 0, y: 0 });
-                }
-            }
-            // avoid duplicate trigger
-            this.resetClick(node);
-            this.resetMove(node);
-        }
-        // fire move event
-        dispatchMove(node, location) {
-            const binding = this.bindings.get(node);
-            if (binding && binding.movable) {
-                // get offset of node
-                const movable = binding.movable;
-                let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
-                let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
-                // trigger onoff
-                if (binding.onoff && (x != location.x || y != location.y)) {
-                    const off = binding.onoff({ x, y }, { x: location.x, y: location.y });
-                    x = off.x;
-                    y = off.y;
-                }
-                // set and save node offset
-                node.style.transform = `translate(${x}px, ${y}px)`;
-                binding.offset = { x, y };
-                // trigger onmove
-                if (binding.onmove) {
-                    const state = binding.onmove(binding.offset);
-                    // save move state to this.moving if applicable
-                    if (this.moving && this.moving[0] === node) {
-                        this.moving[3] = state;
-                    }
-                }
-            }
-        }
-        // fire moveend event
-        dispatchMoveEnd(node) {
-            // onmoveend
-            const binding = this.bindings.get(node);
-            if (binding && binding.onmoveend) {
-                if (this.moving && this.moving[0] === node) {
-                    // pass the state of this.moving if applicable
-                    binding.onmoveend(this.moving[3]);
-                }
-                else {
-                    // a pseudo moveend event without current state
-                    binding.onmoveend(null);
-                }
-            }
-            // avoid duplicate trigger
-            this.resetClick(node);
-            this.resetMove(node);
-        }
     }
-
-    const version = '2.0.0';
 
     /**
      * Executor of worker commands.
@@ -1887,28 +2030,38 @@
         }
         /** Connect to web worker. */
         connect(config) {
-            this.connection?.terminate();
-            const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
-            connection.onmessage = ({ data }) => {
-                if (data === 'ready') {
-                    connection.onmessage = ({ data }) => this.dispatch(data);
-                    if (Array.isArray(config)) {
+            this.disconnect();
+            if (Array.isArray(config)) {
+                const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
+                connection.onmessage = ({ data }) => {
+                    if (data === 'ready') {
+                        connection.onmessage = ({ data }) => this.dispatch(data);
                         config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                         config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(this.db.get(config[0] + ':config') || {});
+                        this.send(0, config, true);
                     }
-                    this.send(0, config, true);
-                }
-            };
+                };
+            }
+            else {
+                this.connection = new WebSocket(config);
+            }
         }
         /** Disconnect from web worker. */
         disconnect() {
-            this.connection?.terminate();
+            if (this.connection instanceof Worker) {
+                this.connection.terminate();
+            }
+            else if (this.connection instanceof WebSocket) {
+                this.connection.close();
+            }
             this.components.clear();
             this.yielding.clear();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
-            this.ui.app.splash.show();
+            if (!this.ui.app.splash.node.parentNode) {
+                this.ui.app.splash.show();
+            }
             this.sid = 0;
             this.connection = null;
         }
@@ -1919,7 +2072,13 @@
          * @param {...any[]} args - Message content.
          */
         send(id, result, done) {
-            this.connection?.postMessage([this.uid, this.sid, id, result, done]);
+            const msg = [this.uid, this.sid, id, result, done];
+            if (this.connection instanceof Worker) {
+                this.connection.postMessage(msg);
+            }
+            else if (this.connection instanceof WebSocket) {
+                this.connection.send('resp:' + JSON.stringify(msg));
+            }
         }
         /**
          * Call or check the existence of a plugin method.

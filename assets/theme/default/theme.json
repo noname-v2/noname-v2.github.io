@@ -138,6 +138,7 @@
 		"clear": "@(icon-clear.svg)",
 		"emote": "@(icon-emote.svg)",
 		"erase": "@(icon-erase.svg)",
-		"up": "@(icon-up.svg)"
+		"up": "@(icon-up.svg)",
+		"ok": "@(icon-ok.svg)"
 	}
 }

@@ -557,12 +557,7 @@
             this.connection = null;
             self.onmessage = ({ data }) => {
                 this.uid = data[0];
-                if (typeof data[3] === 'string') {
-                    console.log(data[3]);
-                }
-                else {
-                    this.game = new Game(data[3], this);
-                }
+                this.game = new Game(data[3], this);
             };
             self.postMessage('ready');
         }

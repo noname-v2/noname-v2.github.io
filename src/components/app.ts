@@ -1,4 +1,4 @@
-import { Component, Arena, Splash } from '../components';
+import { Component, Arena, Splash, TransitionDuration } from '../components';
 
 export class App extends Component {
 	/** Arena component. */
@@ -250,9 +250,9 @@ export class App extends Component {
 	}
 
 	/** Get the duration of transition.
-	 * @param {'normal' | 'fast' | 'slow' | 'faster' | 'slower'} type - transition type
+	 * @param {TransitionDuration} type - transition type
 	 */
-	getTransition(type: string | null = null) {
+	getTransition(type: TransitionDuration = null) {
 		let key = 'transition';
 		if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
 			key += '-' + type;

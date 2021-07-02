@@ -36,11 +36,6 @@ export class Pane extends Component {
 
 	/** Enable vertical scrolling. */
 	enableScroll() {
-		this.node.classList.add('scroll');
-        this.node.addEventListener('wheel', e => {
-            if (e.deltaX === 0) {
-                e.stopPropagation();
-            }
-        }, {passive: false});
+		this.ui.enableScroll(this.node);
 	}
 }

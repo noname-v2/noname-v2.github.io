@@ -20,6 +20,7 @@ export function buildComponents() {
     ];
 
     const types = [
+        `export type { Point, Region, MoveState, TransitionDuration } from '../src/client/ui'`,
         `export { Component } from '../src/client/component'`
     ];
 

@@ -15,7 +15,7 @@ const messages = {
     init(msg) {
         const [uid, info, room] = JSON.parse(msg);
         if (!uid || !info || typeof uid !== 'string' || typeof info !== 'string') {
-            client.close(1002, 'init');
+            this.close(1002, 'init');
             return;
         }
         this.uid = uid;
@@ -33,7 +33,7 @@ const messages = {
                 // tell reconnected room owner currently joined clients
                 this.room = old.room;
                 this.joined = old.joined;
-                client.send('up:' + JSON.stringify(Array.from(this.joined)));
+                this.send('up:' + JSON.stringify(Array.from(this.joined)));
             }
         }
 
@@ -41,14 +41,14 @@ const messages = {
         if (room && typeof room === 'string') {
             messages.room.call(clients, room);
         }
-        else if (client.joined === null) {
+        else if (this.joined === null) {
             const rooms = {};
             for (const client of clients) {
                 if (client.room) {
                     rooms[client.uid] = [client.room, client.joined.size];
                 }
             }
-            client.send('update:' + JSON.stringify(rooms));
+            this.send('update:' + JSON.stringify(rooms));
         }
     },
 
@@ -174,10 +174,12 @@ wss.on('connection', client => {
             const msg2 = msg.slice(idx + 1);
 
             if (method === 'init' || clients.has(client.uid)) {
-                messages[method]?.call(this, msg2);
+                messages[method]?.call(client, msg2);
             }
         }
-        catch {}
+        catch (e) {
+            client.send('error:' + e.toString());
+        }
     });
 
     client.on('close', () => {

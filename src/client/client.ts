@@ -12,7 +12,7 @@ export class Client {
     version = version;
 
     /** Worker object. */
-    connection: Worker | null = null;
+    connection: Worker | WebSocket | null = null;
 
     /** Service worker. */
     registration: ServiceWorkerRegistration | null = null;
@@ -88,30 +88,40 @@ export class Client {
 
     /** Connect to web worker. */
     connect(config: [string, string[]] | string) {
-        this.connection?.terminate();
+        this.disconnect();
 
-		const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
-        connection.onmessage = ({data}) => {
-            if (data === 'ready') {
-                connection.onmessage = ({data}) => this.dispatch(data);
-                if (Array.isArray(config)) {
+        if (Array.isArray(config)) {
+            const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
+            connection.onmessage = ({data}) => {
+                if (data === 'ready') {
+                    connection.onmessage = ({data}) => this.dispatch(data);
                     config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                     config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(this.db.get(config[0] + ':config') || {});
+                    this.send(0, config, true);
                 }
-                this.send(0, config, true);
             }
+        }
+        else {
+            this.connection = new WebSocket(config);
         }
     }
 
     /** Disconnect from web worker. */
     disconnect() {
-        this.connection?.terminate();
+        if (this.connection instanceof Worker) {
+            this.connection.terminate();
+        }
+        else if (this.connection instanceof WebSocket) {
+            this.connection.close();
+        }
         this.components.clear();
         this.yielding.clear();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
-        this.ui.app.splash.show();
+        if (!this.ui.app.splash.node.parentNode) {
+            this.ui.app.splash.show();
+        }
         this.sid = 0;
         this.connection = null;
     }
@@ -123,7 +133,13 @@ export class Client {
      * @param {...any[]} args - Message content.
      */
     send(id: number, result: any, done: boolean) {
-        this.connection?.postMessage(<ClientMessage>[this.uid, this.sid, id, result, done])
+        const msg = <ClientMessage>[this.uid, this.sid, id, result, done];
+        if (this.connection instanceof Worker) {
+            this.connection.postMessage(msg)
+        }
+        else if (this.connection instanceof WebSocket) {
+            this.connection.send('resp:' + JSON.stringify(msg));
+        }
     }
 
     /**
