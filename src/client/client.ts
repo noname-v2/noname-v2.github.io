@@ -115,6 +115,12 @@ export class Client {
         else if (this.connection instanceof WebSocket) {
             this.connection.close();
         }
+        this.connection = null;
+        this.clear();
+    }
+
+    /** Clear currently connection status without disconnecting. */
+    clear() {
         this.components.clear();
         this.yielding.clear();
         this.ui.app.arena?.remove();
@@ -123,7 +129,6 @@ export class Client {
             this.ui.app.splash.show();
         }
         this.sid = 0;
-        this.connection = null;
     }
 
     /**

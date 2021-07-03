@@ -1,0 +1,20 @@
+{
+	"name": "noname-v2-hub",
+	"version": "2.0.0",
+	"homepage": "ws.noname.pub:8080",
+	"scripts": {
+		"start": "npx forever start main.mjs",
+		"stop": "npx forever stop main.mjs",
+		"ls": "npx forever list"
+	},
+	"license": "GPL-3.0",
+	"description": "Hub backend for noname-v2",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/noname-v2/noname-v2.github.io.git"
+	},
+	"dependencies": {
+		"forever": "^4.0.1",
+		"ws": "^7.4.5"
+	}
+}

@@ -32,7 +32,7 @@ export class Gallery extends Component {
 	private acceleration: (number | null)[] = [];
 	private accelerationTimeout = 0;
 	private scrollTimeout = 0;
-	private smoothScroll = false;
+	private static smoothScroll = false;
 
 	/** Current number of pages. */
 	get pageCount() {
@@ -72,9 +72,9 @@ export class Gallery extends Component {
 		const direction = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
 
 		if (Math.abs(direction) > 5) {
-			this.smoothScroll = true;
+			Gallery.smoothScroll = true;
 		}
-		else if (this.smoothScroll) {
+		else if (Gallery.smoothScroll) {
 			return;
 		}
 
