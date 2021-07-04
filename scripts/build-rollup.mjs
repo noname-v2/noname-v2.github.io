@@ -4,7 +4,7 @@ import walk from './walk.mjs';
 /**
  * Bundle sources into single files.
  */
- async function build(input, output, format='iife') {
+ async function bundle(input, output, format='iife') {
 	console.log('packing', input);
     
 	const bundle = await rollup({
@@ -15,13 +15,13 @@ import walk from './walk.mjs';
 }
 
 // bundle sources
-await build('client/main', 'dist/client');
-await build('client/service', 'dist/service');
-await build('worker/main', 'dist/worker');
+await bundle('client/main', 'dist/client');
+await bundle('client/service', 'dist/service');
+await bundle('worker/main', 'dist/worker');
 
 // bundle extensions
 for (const file of walk('src/extensions', '.ts')) {
     if (file.endsWith('/main')) {
-        await build(`extensions/${file}`, `extensions/${file}`, 'esm')
+        await bundle(`extensions/${file}`, `extensions/${file}`, 'esm')
     }
 }
