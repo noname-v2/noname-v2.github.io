@@ -20,7 +20,7 @@ export class Lobby extends Component {
                 this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
             });
             this.sidebar.setFooter('开始游戏', () => {
-                console.log('start');
+                this.yield(null);
             });
         });
         this.sidebar.pane.node.classList.add('fixed');

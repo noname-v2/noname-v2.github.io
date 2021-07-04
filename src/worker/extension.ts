@@ -15,4 +15,7 @@ export interface Extension {
     card?: {[key: string]: Section};
     hero?: {[key: string]: Section};
     ruleset?: {[key: string]: any};
+    heropack?: string;
+    cardpack?: string;
+    tags?: string[];
 }

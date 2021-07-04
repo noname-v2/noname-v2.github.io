@@ -50,7 +50,7 @@
                 const mode = cmd === 'get' ? 'readonly' : 'readwrite';
                 const store = this.db.transaction(name, mode).objectStore(name);
                 const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
-                request.onsuccess = () => resolve(request.result);
+                request.onsuccess = () => resolve(request.result ?? null);
             });
         }
         /** Get value of synchronous database entry. */
@@ -72,7 +72,7 @@
         }
         /** Get value from asynchronous database. */
         readFile(key) {
-            return this.transact('files', 'get', key) ?? null;
+            return this.transact('files', 'get', key);
         }
         /** Set value to asynchronous database. */
         writeFile(key, value) {
@@ -409,7 +409,7 @@
                     this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
                 });
                 this.sidebar.setFooter('开始游戏', () => {
-                    console.log('start');
+                    this.yield(true);
                 });
             });
             this.sidebar.pane.node.classList.add('fixed');
@@ -1115,26 +1115,61 @@
             this.ncols = 5;
             /** Default window width. */
             this.width = 900;
+            /** Extension index. */
+            this.index = {};
         }
         async init() {
             super.init();
-            const extensions = await this.client.readJSON('extensions/index.json');
+            this.index = await this.db.readFile('extensions/index.json') || {};
+            const extensions = await this.client.readJSON('extensions/extensions.json');
             const modes = [];
-            for (const name in extensions) {
-                if (extensions[name]['mode']) {
-                    extensions[name]['mode'];
+            // udpate index.json
+            let write = false;
+            for (const name of extensions) {
+                if (!this.index[name]) {
+                    await this.loadExtension(name);
+                    if (this.index[name]) {
+                        write = true;
+                    }
+                }
+                if (this.index[name]?.mode) {
+                    this.index[name].mode;
                     modes.push(name);
                 }
+            }
+            if (write) {
+                await this.db.writeFile('extensions/index.json', this.index);
             }
             for (let i = 0; i < modes.length; i += 5) {
                 this.addPage(add => {
                     for (let j = 0; j < 5; j++) {
                         const mode = modes[i + j];
                         if (mode) {
-                            add(this.addMode(mode, extensions));
+                            add(this.addMode(mode, this.index));
                         }
                     }
                 });
+            }
+        }
+        async loadExtension(name) {
+            if (!this.index[name]) {
+                try {
+                    const idx = {};
+                    const ext = (await import(`../extensions/${name}/main.js`)).default;
+                    if (ext.heropack || ext.cardpack) {
+                        idx.pack = true;
+                    }
+                    if (ext.mode?.name) {
+                        idx.mode = ext.mode.name;
+                    }
+                    if (ext.tags) {
+                        idx.tags = ext.tags;
+                    }
+                    this.index[name] = idx;
+                }
+                catch {
+                    console.log(name);
+                }
             }
         }
         addMode(mode, extensions) {

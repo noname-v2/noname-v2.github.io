@@ -8,7 +8,7 @@ export class Database  {
 			const mode = cmd === 'get' ? 'readonly' : 'readwrite';
 			const store = (<IDBDatabase>this.db).transaction(name, mode).objectStore(name);
 			const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
-			request.onsuccess = () => resolve(request.result);
+			request.onsuccess = () => resolve(request.result ?? null);
 		});
 	}
 
@@ -86,7 +86,7 @@ export class Database  {
 
 	/** Get value from asynchronous database. */
 	readFile(key: string): any {
-		return this.transact('files', 'get', key) ?? null;
+		return this.transact('files', 'get', key);
 	}
 
 	/** Set value to asynchronous database. */

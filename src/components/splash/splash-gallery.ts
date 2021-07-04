@@ -1,13 +1,15 @@
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
+import type { Extension } from '../../worker/extension';
 
+interface ExtensionMeta {
+	mode: string;
+	pack: boolean;
+	tags: string[];
+}
 
 interface ExtensionIndex {
-	[key: string]: {
-		mode: string;
-		pack: boolean;
-		tags: string[];
-	}
+	[key: string]: ExtensionMeta
 }
 
 export class SplashGallery extends Gallery {
@@ -29,18 +31,35 @@ export class SplashGallery extends Gallery {
     /** Default window width. */
     width = 900;
 
+	/** Extension index. */
+	index: ExtensionIndex = {};
+
     async init() {
         super.init();
 
-        const extensions = await this.client.readJSON<ExtensionIndex>('extensions/index.json');
+		this.index = await this.db.readFile('extensions/index.json') || {};
+		const extensions = await this.client.readJSON<string[]>('extensions/extensions.json');
 		const modeNames = <{[key: string]: string}>{};
 		const modes = <string[]>[];
 
-		for (const name in extensions) {
-			if (extensions[name]['mode']) {
-				modeNames[name] = extensions[name]['mode'];
+		// udpate index.json
+		let write = false;
+
+		for (const name of extensions) {
+			if (!this.index[name]) {
+				await this.loadExtension(name);
+				if (this.index[name]) {
+					write = true;
+				}
+			}
+			if (this.index[name]?.mode) {
+				modeNames[name] = this.index[name].mode;
 				modes.push(name);
 			}
+		}
+
+		if (write) {
+			await this.db.writeFile('extensions/index.json', this.index);
 		}
 
 		for (let i = 0; i < modes.length; i += 5) {
@@ -48,12 +67,34 @@ export class SplashGallery extends Gallery {
 				for (let j = 0; j < 5; j++) {
 					const mode = modes[i + j];
 					if (mode) {
-						add(this.addMode(mode, extensions));
+						add(this.addMode(mode, this.index));
 					}
 				}
 			});
 		}
     }
+
+	async loadExtension(name: string) {
+		if (!this.index[name]) {
+			try {
+				const idx = <ExtensionMeta>{};
+				const ext = <Extension>(await import(`../extensions/${name}/main.js`)).default;
+				if (ext.heropack || ext.cardpack) {
+					idx.pack = true;
+				}
+				if (ext.mode?.name) {
+					idx.mode = ext.mode.name
+				}
+				if (ext.tags) {
+					idx.tags = ext.tags;
+				}
+				this.index[name] = idx;
+			}
+			catch {
+				console.log(name);
+			}
+		}
+	}
 
     addMode(mode: string, extensions: ExtensionIndex) {
         const ui = this.ui;

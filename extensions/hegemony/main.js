@@ -1,7 +1,7 @@
 var main = {
     mode: {
         ruleset: 'sgs',
-        name: '身份',
+        name: '国战',
         content() {
             this.add('#game.init/');
             this.add('createPlayers');
@@ -10,7 +10,7 @@ var main = {
         },
         contents: {
             createPlayers() {
-                console.log('createPlayers');
+                console.log(this.game.packs);
             }
         }
     },
@@ -18,7 +18,9 @@ var main = {
         config: {},
         stage: {}
     },
-    tags: ['guess-side']
+    heropack: '国战标准',
+    cardpack: '国战标准',
+    tags: ['guess-side', 'double-hidden!']
 };
 
 export default main;

@@ -23,5 +23,6 @@ export default <SGS>{
         stage: {
             
         }
-    }
+    },
+    tags: ['guess-side']
 }

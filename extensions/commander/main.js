@@ -1,7 +1,7 @@
 var main = {
     mode: {
         ruleset: 'sgs',
-        name: '身份',
+        name: '统率',
         content() {
             this.add('#game.init/');
             this.add('createPlayers');
@@ -10,15 +10,11 @@ var main = {
         },
         contents: {
             createPlayers() {
-                console.log('createPlayers');
+                console.log(this.game.packs);
             }
         }
     },
-    ruleset: {
-        config: {},
-        stage: {}
-    },
-    tags: ['guess-side']
+    tags: ['swap']
 };
 
 export default main;
