@@ -2,22 +2,22 @@ import { Component } from '../components';
 
 export class Gallery extends Component {
 	/** Page container. */
-	private pages: HTMLElement = this.ui.createElement('pages', this.node);
+	pages: HTMLElement = this.ui.createElement('pages', this.node);
 
 	/** Page indicator */
-	private indicator: HTMLElement = this.ui.createElement('indicator', this.node);
+	indicator: HTMLElement = this.ui.createElement('indicator', this.node);
 
     /** Number of rows. */
-    private nrows!: number;
+    nrows!: number;
 
 	/** Number of nodes in a row. */
-    private ncols!: number;
+    ncols!: number;
 
 	/** Width of the gallery */
-	private width!: number;
+	width!: number;
 
 	/** Whether other pages are visible. */
-	private visible!: boolean;
+	#overflow!: boolean;
 
     /** Index of current page. */
     private currentPage: number = 0;
@@ -37,6 +37,16 @@ export class Gallery extends Component {
 	/** Current number of pages. */
 	get pageCount() {
 		return this.pages.childNodes.length;
+	}
+
+	/** Getter and setter of overflow property. */
+	get overflow() {
+		return this.#overflow;
+	}
+
+	set overflow(val: boolean) {
+		this.#overflow = val;
+		this.node.classList[val ? 'add' : 'remove']('overflow');
 	}
 
 	/** Create page when needed. */
@@ -226,7 +236,7 @@ export class Gallery extends Component {
 						this.createPage(this.currentPage + 2 + i);
 					}
 				}
-				if (this.visible) {
+				if (this.overflow) {
 					const dx = x + this.currentPage * this.width;
 					const current = this.pages.querySelector('.current');
 					this.pages.classList.add('moving');
@@ -289,7 +299,7 @@ export class Gallery extends Component {
 		}
 
 		// highlight current page
-		if (this.visible) {
+		if (this.overflow) {
 			this.pages.classList.remove('moving');
 			for (const node of this.pages.childNodes) {
 				(node as HTMLElement).style.opacity = '';
@@ -301,16 +311,5 @@ export class Gallery extends Component {
 		// show indicator
 		this.indicator.querySelector('.current')?.classList.remove('current');
 		(<HTMLElement>this.indicator.childNodes[page]).classList.add('current');
-	}
-
-	setup(nrows: number, ncols: number, width: number, visible: boolean = false) {
-		this.nrows = nrows;
-		this.ncols = ncols;
-		this.width = width;
-		this.visible = visible;
-
-		if (visible) {
-			this.node.classList.add('visible');
-		}
 	}
 }

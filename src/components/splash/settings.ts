@@ -35,7 +35,7 @@ export class SplashSettings extends Popup {
         this.addMusic();
 
 		// enable button click after creation finish
-		splash.buttons.settings.node.classList.remove('disabled');
+		splash.bar.buttons.settings.node.classList.remove('disabled');
     }
 
     rotate(node: HTMLElement) {

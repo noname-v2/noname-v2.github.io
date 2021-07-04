@@ -11,7 +11,9 @@ export class Pane extends Component {
 	/** Gallery of selectable items. */
 	addGallery(nrows: number, ncols: number, width: number) {
 		const gallery = <Gallery>this.ui.create('gallery');
-		gallery.setup(nrows, ncols, width);
+		gallery.nrows = nrows;
+		gallery.ncols = ncols;
+		gallery.width = width;
 		this.node.appendChild(gallery.node);
 		return gallery;
 	}

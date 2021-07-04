@@ -1,11 +1,11 @@
 noname-gallery {
     width: 100%;
 
-    &:not(.visible) {
+    &:not(.overflow) {
         overflow: hidden;        
     }
 
-    &.visible > noname-pages {
+    &.overflow > noname-pages {
         > noname-page:not(.current) {
             opacity: 0;
             pointer-events: none;

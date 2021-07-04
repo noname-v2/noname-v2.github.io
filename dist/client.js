@@ -480,9 +480,19 @@
             this.accelerationTimeout = 0;
             this.scrollTimeout = 0;
         }
+        /** Whether other pages are visible. */
+        #overflow;
         /** Current number of pages. */
         get pageCount() {
             return this.pages.childNodes.length;
+        }
+        /** Getter and setter of overflow property. */
+        get overflow() {
+            return this.#overflow;
+        }
+        set overflow(val) {
+            this.#overflow = val;
+            this.node.classList[val ? 'add' : 'remove']('overflow');
         }
         /** Create page when needed. */
         createPage(i) {
@@ -643,7 +653,7 @@
                             this.createPage(this.currentPage + 2 + i);
                         }
                     }
-                    if (this.visible) {
+                    if (this.overflow) {
                         const dx = x + this.currentPage * this.width;
                         const current = this.pages.querySelector('.current');
                         this.pages.classList.add('moving');
@@ -702,7 +712,7 @@
                 this.createPage(page + 1);
             }
             // highlight current page
-            if (this.visible) {
+            if (this.overflow) {
                 this.pages.classList.remove('moving');
                 for (const node of this.pages.childNodes) {
                     node.style.opacity = '';
@@ -713,15 +723,6 @@
             // show indicator
             this.indicator.querySelector('.current')?.classList.remove('current');
             this.indicator.childNodes[page].classList.add('current');
-        }
-        setup(nrows, ncols, width, visible = false) {
-            this.nrows = nrows;
-            this.ncols = ncols;
-            this.width = width;
-            this.visible = visible;
-            if (visible) {
-                this.node.classList.add('visible');
-            }
         }
     }
     Gallery.smoothScroll = false;
@@ -977,7 +978,9 @@
         /** Gallery of selectable items. */
         addGallery(nrows, ncols, width) {
             const gallery = this.ui.create('gallery');
-            gallery.setup(nrows, ncols, width);
+            gallery.nrows = nrows;
+            gallery.ncols = ncols;
+            gallery.width = width;
             this.node.appendChild(gallery.node);
             return gallery;
         }
@@ -1037,6 +1040,65 @@
         }
     }
 
+    class SplashBar extends Component {
+        constructor() {
+            super(...arguments);
+            this.buttons = {
+                /** Clear cached files and reload. */
+                reset: this.ui.create('button'),
+                /** Workshop button. */
+                workshop: this.ui.create('button'),
+                /** Hub button. */
+                hub: this.ui.create('button'),
+                /** Settings button. */
+                settings: this.ui.create('button')
+            };
+        }
+        init() {
+            // update button styles
+            const buttons = [
+                ['reset', '重置', 'red'],
+                ['workshop', '工坊', 'yellow'],
+                ['hub', '联机', 'green'],
+                ['settings', '选项', 'orange']
+            ];
+            for (const [name, caption, color] of buttons) {
+                const button = this.buttons[name];
+                button.update({ caption, color });
+                this.ui.bindClick(button.node, () => this[name]());
+                button.node.classList.add('disabled');
+                this.node.appendChild(button.node);
+            }
+            // hide reset button outside dev mode
+            if (!this.client.debug) {
+                this.buttons.reset.node.style.display = 'none';
+            }
+            else {
+                this.buttons.reset.node.classList.remove('disabled');
+            }
+        }
+        async reset() {
+            this.app.node.style.opacity = '0.5';
+            if (window['caches']) {
+                await window['caches'].delete(this.client.version);
+            }
+            for (const file of await this.db.readdir()) {
+                if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
+                    await this.db.writeFile(file, null);
+                }
+            }
+            window.location.reload();
+        }
+        workshop() {
+        }
+        hub() {
+            this.splash?.hub.open();
+        }
+        settings() {
+            this.splash?.settings.open();
+        }
+    }
+
     const version = '2.0.0';
     const homepage = 'noname.pub';
 
@@ -1077,7 +1139,7 @@
                 splash.node.classList.remove('blurred');
             };
             // enable button click after creation finish
-            splash.buttons.hub.node.classList.remove('disabled');
+            splash.bar.buttons.hub.node.classList.remove('disabled');
         }
         clearRooms() {
             for (const room of this.rooms.values()) {
@@ -1228,7 +1290,7 @@
             this.addBackgrounds();
             this.addMusic();
             // enable button click after creation finish
-            splash.buttons.settings.node.classList.remove('disabled');
+            splash.bar.buttons.settings.node.classList.remove('disabled');
         }
         rotate(node) {
             if (this.rotating !== node) {
@@ -1483,9 +1545,7 @@
             // gallery of modes
             this.gallery = this.ui.create('gallery');
             // bottom toolbar
-            this.bar = this.ui.createElement('bar');
-            // bottom toolbar buttons
-            this.buttons = {};
+            this.bar = this.ui.create('splash-bar');
             // settings menu
             this.settings = this.ui.create('splash-settings');
             // hub menu
@@ -1544,7 +1604,10 @@
                     modes.push(name);
                 }
             }
-            this.gallery.setup(1, 5, 900, true);
+            this.gallery.nrows = 1;
+            this.gallery.ncols = 5;
+            this.gallery.width = 900;
+            this.gallery.overflow = true;
             for (let i = 0; i < modes.length; i += 5) {
                 this.gallery.addPage(add => {
                     for (let j = 0; j < 5; j++) {
@@ -1556,44 +1619,13 @@
                 });
             }
         }
-        createButton(caption, color, onclick) {
-            const button = this.ui.create('button');
-            button.update({ caption, color });
-            button.node.classList.add('disabled');
-            this.ui.bindClick(button.node, onclick);
-            this.bar.appendChild(button.node);
-            return button;
-        }
         init() {
             // create mode selection gallery
             this.createGallery();
-            // reset game in debug mode
-            if (this.client.debug) {
-                this.createButton('重置', 'red', async () => {
-                    this.app.node.style.opacity = '0.5';
-                    if (window['caches']) {
-                        await window['caches'].delete(this.client.version);
-                    }
-                    for (const file of await this.db.readdir()) {
-                        if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
-                            await this.db.writeFile(file, null);
-                        }
-                    }
-                    window.location.reload();
-                }).node.classList.remove('disabled');
-            }
-            // create buttom buttons
-            this.buttons.workshop = this.createButton('工坊', 'yellow', () => {
-                console.log('yellow');
-            });
-            this.buttons.hub = this.createButton('联机', 'green', () => {
-                this.hub.open();
-            });
-            this.buttons.settings = this.createButton('选项', 'orange', () => {
-                this.settings.open();
-            });
             this.node.appendChild(this.gallery.node);
-            this.node.appendChild(this.bar);
+            // bottom button bar
+            this.bar.splash = this;
+            this.node.appendChild(this.bar.node);
         }
         hide() {
             this.ui.animate(this.node, {
@@ -1680,6 +1712,7 @@
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
     componentClasses.set('sidebar', Sidebar);
+    componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-hub', SplashHub);
     componentClasses.set('splash-room', SplashRoom);
     componentClasses.set('splash-settings', SplashSettings);

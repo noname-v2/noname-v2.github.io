@@ -47,7 +47,7 @@ export class SplashHub extends Popup {
 		};
 
 		// enable button click after creation finish
-		splash.buttons.hub.node.classList.remove('disabled');
+		splash.bar.buttons.hub.node.classList.remove('disabled');
     }
 
     clearRooms() {

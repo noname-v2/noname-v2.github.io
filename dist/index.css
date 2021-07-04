@@ -95,14 +95,14 @@ noname-button > noname-content > noname-caption:last-child {
 noname-gallery {
   width: 100%;
 }
-noname-gallery:not(.visible) {
+noname-gallery:not(.overflow) {
   overflow: hidden;
 }
-noname-gallery.visible > noname-pages > noname-page:not(.current) {
+noname-gallery.overflow > noname-pages > noname-page:not(.current) {
   opacity: 0;
   pointer-events: none;
 }
-noname-gallery.visible > noname-pages:not(.moving) > noname-page {
+noname-gallery.overflow > noname-pages:not(.moving) > noname-page {
   transition: opacity var(--app-transition);
 }
 noname-gallery > noname-pages {
@@ -1054,7 +1054,7 @@ noname-splash > noname-gallery noname-item > noname-widget > noname-caption {
   font-size: 50px;
   writing-mode: vertical-rl;
 }
-noname-splash > noname-bar {
+noname-splash > noname-splash-bar {
   bottom: calc(25% - 78.5px);
   width: 100%;
   height: 52px;
@@ -1062,15 +1062,15 @@ noname-splash > noname-bar {
   text-align: center;
   position: absolute;
 }
-noname-splash > noname-bar > noname-button {
+noname-splash > noname-splash-bar > noname-button {
   margin-left: 15px;
   margin-right: 15px;
 }
-noname-splash > noname-bar > noname-button > noname-content > noname-caption {
+noname-splash > noname-splash-bar > noname-button > noname-content > noname-caption {
   opacity: 0;
   transition: opacity var(--app-transition);
 }
-noname-splash.font-loaded > noname-bar > noname-button > noname-content > noname-caption,
+noname-splash.font-loaded > noname-splash-bar > noname-button > noname-content > noname-caption,
 noname-splash.font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
   opacity: 1;
 }

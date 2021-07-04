@@ -1,4 +1,4 @@
-import { Component, SplashHub, SplashSettings, Gallery, Button } from '../components';
+import { Component, SplashHub, SplashSettings, Gallery, SplashBar } from '../components';
 
 interface ExtensionIndex {
 	[key: string]: {
@@ -13,10 +13,7 @@ export class Splash extends Component {
 	gallery = <Gallery>this.ui.create('gallery');
 
 	// bottom toolbar
-	bar = this.ui.createElement('bar');
-
-	// bottom toolbar buttons
-	buttons = <{[key: string]: Button}>{};
+	bar = <SplashBar>this.ui.create('splash-bar');
 
 	// settings menu
 	settings = <SplashSettings>this.ui.create('splash-settings');
@@ -90,7 +87,10 @@ export class Splash extends Component {
 			}
 		}
 		
-		this.gallery.setup(1, 5, 900, true);
+		this.gallery.nrows = 1;
+		this.gallery.ncols = 5;
+		this.gallery.width = 900;
+		this.gallery.overflow = true;
 
 		for (let i = 0; i < modes.length; i += 5) {
 			this.gallery.addPage(add => {
@@ -103,54 +103,15 @@ export class Splash extends Component {
 			});
 		}
 	}
-
-    private createButton(caption: string, color: string, onclick: () => void) {
-        const button = <Button>this.ui.create('button');
-        button.update({ caption, color });
-		button.node.classList.add('disabled');
-        this.ui.bindClick(button.node, onclick);
-        this.bar.appendChild(button.node);
-		return button;
-    }
 	
 	init() {
 		// create mode selection gallery
 		this.createGallery();
-
-		// reset game in debug mode
-		if (this.client.debug) {
-			this.createButton('重置', 'red', async () => {
-				this.app.node.style.opacity = '0.5';
-				
-				if (window['caches']) {
-					await window['caches'].delete(this.client.version);
-				}
-
-				for (const file of await this.db.readdir()) {
-					if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
-						await this.db.writeFile(file, null);
-					}
-				}
-
-				window.location.reload();
-			}).node.classList.remove('disabled');
-		}
-
-		// create buttom buttons
-        this.buttons.workshop = this.createButton('工坊', 'yellow', () => {
-            console.log('yellow');
-        });
-
-        this.buttons.hub = this.createButton('联机', 'green', () => {
-            this.hub.open();
-        });
-
-        this.buttons.settings = this.createButton('选项', 'orange', () => {
-            this.settings.open();
-        });
-
 		this.node.appendChild(this.gallery.node);
-        this.node.appendChild(this.bar);
+		
+		// bottom button bar
+		this.bar.splash = this;
+        this.node.appendChild(this.bar.node);
 	}
 
 	hide() {
