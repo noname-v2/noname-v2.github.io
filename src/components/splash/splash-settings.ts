@@ -70,39 +70,34 @@ export class SplashSettings extends Popup {
 		const themes = Array.from(Object.keys(this.app.assets.theme));
 		const themeGallery = this.pane.addGallery(1, this.ncols, this.width);
 
-		for (let i = 0; i <= themes.length; i += this.ncols) {
-			themeGallery.addPage(add => {
-				for (let j = 0; j < this.ncols; j++) {
-					const theme = themes[i + j];
-					if (theme) {
-						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
+        for (const theme of themes) {
+            themeGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
 
-						if (theme === this.db.get('theme')) {
-							node.classList.add('active')
-						}
+                if (theme === this.db.get('theme')) {
+                    node.classList.add('active')
+                }
 
-						this.ui.bindClick(node, () => {
-							if (theme !== this.db.get('theme')) {
-								node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-								node.classList.add('active');
-								this.db.set('theme', theme);
-								this.app.loadTheme();
-							}
-						});
+                this.ui.bindClick(node, () => {
+                    if (theme !== this.db.get('theme')) {
+                        node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                        node.classList.add('active');
+                        this.db.set('theme', theme);
+                        this.app.loadTheme();
+                    }
+                });
 
-						add(node);
-					}
-					else if (i + j === themes.length) {
-						const node = this.ui.createElement('widget.sharp');
-						const content = this.ui.createElement('content', node);
-						this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
+                return node;
+            });
+        }
 
-						add(node);
-					}
-				}
-			});
-		}
+        themeGallery.add(() => {
+            const node = this.ui.createElement('widget.sharp');
+            const content = this.ui.createElement('content', node);
+            this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
+            return node;
+        });
     }
 
     addBackgrounds() {
@@ -111,44 +106,39 @@ export class SplashSettings extends Popup {
 		const bgs = Array.from(Object.keys(this.app.assets.bg));
 		const bgGallery = this.pane.addGallery(1, this.ncols, this.width);
 
-		for (let i = 0; i <= bgs.length; i += this.ncols) {
-			bgGallery.addPage(add => {
-				for (let j = 0; j < this.ncols; j++) {
-					const bg = bgs[i + j];
-					if (bg) {
-						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
+        for (const bg of bgs) {
+            bgGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
 
-						if (bg === this.db.get('bg')) {
-							node.classList.add('active')
-						}
+                if (bg === this.db.get('bg')) {
+                    node.classList.add('active')
+                }
 
-						this.ui.bindClick(node, () => {
-							if (bg !== this.db.get('bg')) {
-								node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-								node.classList.add('active');
-								this.db.set('bg', bg);
-								this.app.loadBackground();
-							}
-							else {
-								node.classList.remove('active');
-								this.db.set('bg', null);
-								this.app.loadBackground();
-							}
-						});
+                this.ui.bindClick(node, () => {
+                    if (bg !== this.db.get('bg')) {
+                        node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                        node.classList.add('active');
+                        this.db.set('bg', bg);
+                        this.app.loadBackground();
+                    }
+                    else {
+                        node.classList.remove('active');
+                        this.db.set('bg', null);
+                        this.app.loadBackground();
+                    }
+                });
 
-						add(node);
-					}
-					else if (i + j === bgs.length) {
-						const node = this.ui.createElement('widget.sharp');
-						const content = this.ui.createElement('content', node);
-						this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
+                return node;
+            });
+        }
 
-						add(node);
-					}
-				}
-			});
-		}
+        bgGallery.add(() => {
+            const node = this.ui.createElement('widget.sharp');
+            const content = this.ui.createElement('content', node);
+            this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
+            return node;
+        });
     }
 
     addMusic() {
@@ -156,45 +146,38 @@ export class SplashSettings extends Popup {
 
 		const volGallery = this.pane.addGallery(1, 2, this.width);
 		volGallery.node.classList.add('volume');
-		volGallery.addPage(add => {
-			add(this.createSlider('音乐音量：', 'music-volume'));
-			add(this.createSlider('音效音量：', 'audio-volume'));
-		});
+        volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
+        volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
 
 		const bgms = Array.from(Object.keys(this.app.assets.bgm));
 		const bgmGallery = this.pane.addGallery(1, this.ncols * 2, this.width);
 		bgmGallery.node.classList.add('music');
 
-		for (let i = 0; i <= bgms.length; i += this.ncols * 2) {
-			bgmGallery.addPage(add => {
-				for (let j = 0; j < this.ncols * 2; j++) {
-					const bgm = bgms[i + j];
-					if (bgm) {
-						const node = this.ui.createElement('widget.sharp');
-						this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
+        for (const bgm of bgms) {
+            bgmGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
 
-						if (bgm === this.db.get('splash-music')) {
-							this.rotating = node;
-						}
+                if (bgm === this.db.get('splash-music')) {
+                    this.rotating = node;
+                }
 
-						if (bgm === this.db.get('game-music')) {
-							node.classList.add('active');
-						}
+                if (bgm === this.db.get('game-music')) {
+                    node.classList.add('active');
+                }
 
-						this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
+                this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
 
-						add(node);
-					}
-					else if (i + j === bgms.length) {
-						const node = this.ui.createElement('widget.sharp');
-						const content = this.ui.createElement('content.plus', node);
-						this.ui.createElement('caption', content).innerHTML = '+';
+                return node;
+            });
+        }
 
-						add(node);
-					}
-				}
-			});
-		}
+        bgmGallery.add(() => {
+            const node = this.ui.createElement('widget.sharp');
+            const content = this.ui.createElement('content.plus', node);
+            this.ui.createElement('caption', content).innerHTML = '+';
+            return node;
+        });
     }
 
     createSlider(caption: string, key: string) {

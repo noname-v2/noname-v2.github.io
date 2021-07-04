@@ -1,5 +1,7 @@
 import { Component } from '../components';
 
+type GalleryItem = HTMLElement | (() => HTMLElement | null) | null;
+
 export class Gallery extends Component {
 	/** Page container. */
 	pages: HTMLElement = this.ui.createElement('pages', this.node);
@@ -19,14 +21,17 @@ export class Gallery extends Component {
 	/** Whether other pages are visible. */
 	overflow: boolean = false;
 
+	/** Rendered pages. */
+	private rendered = new Set<number>();
+
+	/** Gallery items. */
+	private items = <GalleryItem[]>[];
+
     /** Index of current page. */
     private currentPage: number = 0;
 
 	/** Currently being blocked. */
 	private moving = false;
-
-	/** Page creators. */
-	private creators = new Map<HTMLElement, (add: (node: HTMLElement) => void) => void>();
 
 	/** Block accelerated scrolling with mac trackpad. */
 	private acceleration: (number | null)[] = [];
@@ -40,25 +45,38 @@ export class Gallery extends Component {
 	}
 
 	/** Create page when needed. */
-	private createPage(i: number) {
+	private renderPage(i: number) {
 		const page = <HTMLElement>this.pages.childNodes[i];
-		const creator = this.creators.get(page);
 
-		if (page && creator) {
-			this.creators.delete(page);
+		if (!page || this.rendered.has(i)) {
+			return;
+		}
+		this.rendered.add(i);
+		console.log('render', i)
 
-			for (let i = 0; i < this.nrows * this.ncols; i++) {
-				page.firstChild!.appendChild(this.ui.createElement('item'));
+		const start = this.nrows * this.ncols * i;
+		const containers = document.createDocumentFragment();
+
+		for (let i = 0; i < this.nrows * this.ncols; i++) {
+			let item = this.items[start + i];
+			if (typeof item === 'function') {
+				item = this.items[start + i] = item();
 			}
 
-			let currentItem = 0;
+			let container = page.firstChild!.childNodes[i];
 
-			const add = (node: HTMLElement) => {
-				page.firstChild?.childNodes[currentItem].appendChild(node);
-				currentItem++;
-			};
+			if (!container) {
+				container = this.ui.createElement('item');
+				containers.appendChild(container);
+			}
 
-			creator(add);
+			if (item && !container.contains(item)) {
+				container.appendChild(item);
+			}
+		}
+
+		if (containers.childNodes.length) {
+			page.firstChild!.appendChild(containers);
 		}
 	}
 
@@ -175,21 +193,32 @@ export class Gallery extends Component {
 		}
 	}
 
-	addPage(creator: (add: (node: HTMLElement) => void) => void) {
-		const page = this.ui.createElement('page');
-		page.style.width = this.width + 'px';
-		this.ui.createElement('layer', page);
-        this.pages.appendChild(page);
-		this.creators.set(page, creator);
-		const dot = this.ui.createElement('dot', this.indicator);
-		this.ui.createElement('layer', dot);
-		this.ui.createElement('layer', dot);
-		this.turnPage(0, false);
-		requestAnimationFrame(() => {
-			this.createPage(1);
-		});
-		if (this.pageCount > 1) {
-			this.node.classList.add('with-indicator');
+	add(item: GalleryItem) {
+		// page index
+		const idx = Math.floor(this.items.length / (this.nrows * this.ncols))
+		this.items.push(item);
+
+		if (idx >= this.pageCount) {
+			const page = this.ui.createElement('page');
+			page.style.width = this.width + 'px';
+			this.ui.createElement('layer', page);
+			this.pages.appendChild(page);
+			const dot = this.ui.createElement('dot', this.indicator);
+			this.ui.createElement('layer', dot);
+			this.ui.createElement('layer', dot);
+			if (this.pageCount > 1) {
+				this.node.classList.add('with-indicator');
+			}
+			else {
+				this.turnPage(0, false);
+			}
+		}
+		else {
+			this.rendered.delete(idx);
+		}
+
+		if (idx < 2) {
+			this.renderPage(idx);
 		}
 	}
 
@@ -226,7 +255,7 @@ export class Gallery extends Component {
 				if (x < offset - this.width) {
 					const n = Math.ceil((offset - this.width - x) / this.width);
 					for (let i = 0; i < n; i++) {
-						this.createPage(this.currentPage + 2 + i);
+						this.renderPage(this.currentPage + 2 + i);
 					}
 				}
 				if (this.overflow) {
@@ -285,11 +314,9 @@ export class Gallery extends Component {
 		});
 
 		// create current and next page
-		this.createPage(page);
-
-		if (animate) {
-			this.createPage(page + 1);
-		}
+		this.renderPage(page);
+		this.renderPage(page + 1);
+		this.renderPage(page - 1);
 
 		// highlight current page
 		if (this.overflow) {

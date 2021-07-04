@@ -62,15 +62,8 @@ export class SplashGallery extends Gallery {
 			await this.db.writeFile('extensions/index.json', this.index);
 		}
 
-		for (let i = 0; i < modes.length; i += 5) {
-			this.addPage(add => {
-				for (let j = 0; j < 5; j++) {
-					const mode = modes[i + j];
-					if (mode) {
-						add(this.addMode(mode, this.index));
-					}
-				}
-			});
+		for (const name of modes) {
+			this.add(() => this.addMode(name));
 		}
     }
 
@@ -96,10 +89,10 @@ export class SplashGallery extends Gallery {
 		}
 	}
 
-    addMode(mode: string, extensions: ExtensionIndex) {
+    addMode(mode: string) {
         const ui = this.ui;
 		const entry = ui.createElement('widget');
-		const name = extensions[mode]['mode'];
+		const name = this.index[mode].mode;
 		
 		// set mode backgrround
 		const bg = ui.createElement('image', entry);
@@ -113,13 +106,17 @@ export class SplashGallery extends Gallery {
 		ui.bindClick(entry, () => {
 			const packs = [];
 
-			for (const name in extensions) {
+			for (const name in this.index) {
 				let add = true;
 
-				if (extensions[mode]['tags']) {
-					for (const tag of extensions[mode]['tags']) {
+				if (!this.index[name].pack) {
+					continue;
+				}
+
+				if (this.index[mode].tags) {
+					for (const tag of this.index[mode].tags) {
 						if (tag[tag.length-1] === '!') {
-							if (!extensions[name]['tags'] || !extensions[name]['tags'].includes(tag)) {
+							if (!(this.index[name].tags?.includes(tag))) {
 								add = false;
 								break;
 							}
@@ -127,10 +124,10 @@ export class SplashGallery extends Gallery {
 					}
 				}
 				
-				if (add && extensions[name]['tags']) {
-					for (const tag of extensions[name]['tags']) {
+				if (add && this.index[name].tags) {
+					for (const tag of this.index[name].tags) {
 						if (tag[tag.length-1] === '!') {
-							if (!extensions[mode]['tags'] || !extensions[mode]['tags'].includes(tag)) {
+							if (!(this.index[mode].tags?.includes(tag))) {
 								add = false;
 								break;
 							}
@@ -138,7 +135,7 @@ export class SplashGallery extends Gallery {
 					}
 				}
 				
-				if (add && extensions[name].pack) {
+				if (add) {
 					packs.push(name);
 				}
 			}

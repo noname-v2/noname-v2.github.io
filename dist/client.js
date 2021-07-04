@@ -409,7 +409,7 @@
                     this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
                 });
                 this.sidebar.setFooter('开始游戏', () => {
-                    this.yield(true);
+                    this.yield(null);
                 });
             });
             this.sidebar.pane.node.classList.add('fixed');
@@ -589,12 +589,14 @@
             this.indicator = this.ui.createElement('indicator', this.node);
             /** Whether other pages are visible. */
             this.overflow = false;
+            /** Rendered pages. */
+            this.rendered = new Set();
+            /** Gallery items. */
+            this.items = [];
             /** Index of current page. */
             this.currentPage = 0;
             /** Currently being blocked. */
             this.moving = false;
-            /** Page creators. */
-            this.creators = new Map();
             /** Block accelerated scrolling with mac trackpad. */
             this.acceleration = [];
             this.accelerationTimeout = 0;
@@ -605,20 +607,31 @@
             return this.pages.childNodes.length;
         }
         /** Create page when needed. */
-        createPage(i) {
+        renderPage(i) {
             const page = this.pages.childNodes[i];
-            const creator = this.creators.get(page);
-            if (page && creator) {
-                this.creators.delete(page);
-                for (let i = 0; i < this.nrows * this.ncols; i++) {
-                    page.firstChild.appendChild(this.ui.createElement('item'));
+            if (!page || this.rendered.has(i)) {
+                return;
+            }
+            this.rendered.add(i);
+            console.log('render', i);
+            const start = this.nrows * this.ncols * i;
+            const containers = document.createDocumentFragment();
+            for (let i = 0; i < this.nrows * this.ncols; i++) {
+                let item = this.items[start + i];
+                if (typeof item === 'function') {
+                    item = this.items[start + i] = item();
                 }
-                let currentItem = 0;
-                const add = (node) => {
-                    page.firstChild?.childNodes[currentItem].appendChild(node);
-                    currentItem++;
-                };
-                creator(add);
+                let container = page.firstChild.childNodes[i];
+                if (!container) {
+                    container = this.ui.createElement('item');
+                    containers.appendChild(container);
+                }
+                if (item && !container.contains(item)) {
+                    container.appendChild(item);
+                }
+            }
+            if (containers.childNodes.length) {
+                page.firstChild.appendChild(containers);
             }
         }
         /** Turn page with mousewheel (with support for mac trackpad). */
@@ -717,21 +730,30 @@
                 this.node.classList.add('overflow');
             }
         }
-        addPage(creator) {
-            const page = this.ui.createElement('page');
-            page.style.width = this.width + 'px';
-            this.ui.createElement('layer', page);
-            this.pages.appendChild(page);
-            this.creators.set(page, creator);
-            const dot = this.ui.createElement('dot', this.indicator);
-            this.ui.createElement('layer', dot);
-            this.ui.createElement('layer', dot);
-            this.turnPage(0, false);
-            requestAnimationFrame(() => {
-                this.createPage(1);
-            });
-            if (this.pageCount > 1) {
-                this.node.classList.add('with-indicator');
+        add(item) {
+            // page index
+            const idx = Math.floor(this.items.length / (this.nrows * this.ncols));
+            this.items.push(item);
+            if (idx >= this.pageCount) {
+                const page = this.ui.createElement('page');
+                page.style.width = this.width + 'px';
+                this.ui.createElement('layer', page);
+                this.pages.appendChild(page);
+                const dot = this.ui.createElement('dot', this.indicator);
+                this.ui.createElement('layer', dot);
+                this.ui.createElement('layer', dot);
+                if (this.pageCount > 1) {
+                    this.node.classList.add('with-indicator');
+                }
+                else {
+                    this.turnPage(0, false);
+                }
+            }
+            else {
+                this.rendered.delete(idx);
+            }
+            if (idx < 2) {
+                this.renderPage(idx);
             }
         }
         turnPage(page, animate = true) {
@@ -763,7 +785,7 @@
                     if (x < offset - this.width) {
                         const n = Math.ceil((offset - this.width - x) / this.width);
                         for (let i = 0; i < n; i++) {
-                            this.createPage(this.currentPage + 2 + i);
+                            this.renderPage(this.currentPage + 2 + i);
                         }
                     }
                     if (this.overflow) {
@@ -820,10 +842,9 @@
                 ondown: () => this.moving = true
             });
             // create current and next page
-            this.createPage(page);
-            if (animate) {
-                this.createPage(page + 1);
-            }
+            this.renderPage(page);
+            this.renderPage(page + 1);
+            this.renderPage(page - 1);
             // highlight current page
             if (this.overflow) {
                 this.pages.classList.remove('moving');
@@ -1140,15 +1161,8 @@
             if (write) {
                 await this.db.writeFile('extensions/index.json', this.index);
             }
-            for (let i = 0; i < modes.length; i += 5) {
-                this.addPage(add => {
-                    for (let j = 0; j < 5; j++) {
-                        const mode = modes[i + j];
-                        if (mode) {
-                            add(this.addMode(mode, this.index));
-                        }
-                    }
-                });
+            for (const name of modes) {
+                this.add(() => this.addMode(name));
             }
         }
         async loadExtension(name) {
@@ -1172,10 +1186,10 @@
                 }
             }
         }
-        addMode(mode, extensions) {
+        addMode(mode) {
             const ui = this.ui;
             const entry = ui.createElement('widget');
-            const name = extensions[mode]['mode'];
+            const name = this.index[mode].mode;
             // set mode backgrround
             const bg = ui.createElement('image', entry);
             ui.setBackground(bg, 'extensions', mode, 'mode');
@@ -1185,29 +1199,32 @@
             // bind click
             ui.bindClick(entry, () => {
                 const packs = [];
-                for (const name in extensions) {
+                for (const name in this.index) {
                     let add = true;
-                    if (extensions[mode]['tags']) {
-                        for (const tag of extensions[mode]['tags']) {
+                    if (!this.index[name].pack) {
+                        continue;
+                    }
+                    if (this.index[mode].tags) {
+                        for (const tag of this.index[mode].tags) {
                             if (tag[tag.length - 1] === '!') {
-                                if (!extensions[name]['tags'] || !extensions[name]['tags'].includes(tag)) {
+                                if (!(this.index[name].tags?.includes(tag))) {
                                     add = false;
                                     break;
                                 }
                             }
                         }
                     }
-                    if (add && extensions[name]['tags']) {
-                        for (const tag of extensions[name]['tags']) {
+                    if (add && this.index[name].tags) {
+                        for (const tag of this.index[name].tags) {
                             if (tag[tag.length - 1] === '!') {
-                                if (!extensions[mode]['tags'] || !extensions[mode]['tags'].includes(tag)) {
+                                if (!(this.index[mode].tags?.includes(tag))) {
                                     add = false;
                                     break;
                                 }
                             }
                         }
                     }
-                    if (add && extensions[name].pack) {
+                    if (add) {
                         packs.push(name);
                     }
                 }
@@ -1440,111 +1457,94 @@
             this.pane.addSection('主题');
             const themes = Array.from(Object.keys(this.app.assets.theme));
             const themeGallery = this.pane.addGallery(1, this.ncols, this.width);
-            for (let i = 0; i <= themes.length; i += this.ncols) {
-                themeGallery.addPage(add => {
-                    for (let j = 0; j < this.ncols; j++) {
-                        const theme = themes[i + j];
-                        if (theme) {
-                            const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
-                            if (theme === this.db.get('theme')) {
-                                node.classList.add('active');
-                            }
-                            this.ui.bindClick(node, () => {
-                                if (theme !== this.db.get('theme')) {
-                                    node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                                    node.classList.add('active');
-                                    this.db.set('theme', theme);
-                                    this.app.loadTheme();
-                                }
-                            });
-                            add(node);
-                        }
-                        else if (i + j === themes.length) {
-                            const node = this.ui.createElement('widget.sharp');
-                            const content = this.ui.createElement('content', node);
-                            this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
-                            add(node);
-                        }
+            for (const theme of themes) {
+                themeGallery.add(() => {
+                    const node = this.ui.createElement('widget.sharp');
+                    this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
+                    if (theme === this.db.get('theme')) {
+                        node.classList.add('active');
                     }
+                    this.ui.bindClick(node, () => {
+                        if (theme !== this.db.get('theme')) {
+                            node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                            node.classList.add('active');
+                            this.db.set('theme', theme);
+                            this.app.loadTheme();
+                        }
+                    });
+                    return node;
                 });
             }
+            themeGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                const content = this.ui.createElement('content', node);
+                this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
+                return node;
+            });
         }
         addBackgrounds() {
             this.pane.addSection('背景');
             const bgs = Array.from(Object.keys(this.app.assets.bg));
             const bgGallery = this.pane.addGallery(1, this.ncols, this.width);
-            for (let i = 0; i <= bgs.length; i += this.ncols) {
-                bgGallery.addPage(add => {
-                    for (let j = 0; j < this.ncols; j++) {
-                        const bg = bgs[i + j];
-                        if (bg) {
-                            const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
-                            if (bg === this.db.get('bg')) {
-                                node.classList.add('active');
-                            }
-                            this.ui.bindClick(node, () => {
-                                if (bg !== this.db.get('bg')) {
-                                    node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                                    node.classList.add('active');
-                                    this.db.set('bg', bg);
-                                    this.app.loadBackground();
-                                }
-                                else {
-                                    node.classList.remove('active');
-                                    this.db.set('bg', null);
-                                    this.app.loadBackground();
-                                }
-                            });
-                            add(node);
-                        }
-                        else if (i + j === bgs.length) {
-                            const node = this.ui.createElement('widget.sharp');
-                            const content = this.ui.createElement('content', node);
-                            this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
-                            add(node);
-                        }
+            for (const bg of bgs) {
+                bgGallery.add(() => {
+                    const node = this.ui.createElement('widget.sharp');
+                    this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
+                    if (bg === this.db.get('bg')) {
+                        node.classList.add('active');
                     }
+                    this.ui.bindClick(node, () => {
+                        if (bg !== this.db.get('bg')) {
+                            node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                            node.classList.add('active');
+                            this.db.set('bg', bg);
+                            this.app.loadBackground();
+                        }
+                        else {
+                            node.classList.remove('active');
+                            this.db.set('bg', null);
+                            this.app.loadBackground();
+                        }
+                    });
+                    return node;
                 });
             }
+            bgGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                const content = this.ui.createElement('content', node);
+                this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
+                return node;
+            });
         }
         addMusic() {
             this.pane.addSection('音乐');
             const volGallery = this.pane.addGallery(1, 2, this.width);
             volGallery.node.classList.add('volume');
-            volGallery.addPage(add => {
-                add(this.createSlider('音乐音量：', 'music-volume'));
-                add(this.createSlider('音效音量：', 'audio-volume'));
-            });
+            volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
+            volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
             const bgms = Array.from(Object.keys(this.app.assets.bgm));
             const bgmGallery = this.pane.addGallery(1, this.ncols * 2, this.width);
             bgmGallery.node.classList.add('music');
-            for (let i = 0; i <= bgms.length; i += this.ncols * 2) {
-                bgmGallery.addPage(add => {
-                    for (let j = 0; j < this.ncols * 2; j++) {
-                        const bgm = bgms[i + j];
-                        if (bgm) {
-                            const node = this.ui.createElement('widget.sharp');
-                            this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
-                            if (bgm === this.db.get('splash-music')) {
-                                this.rotating = node;
-                            }
-                            if (bgm === this.db.get('game-music')) {
-                                node.classList.add('active');
-                            }
-                            this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
-                            add(node);
-                        }
-                        else if (i + j === bgms.length) {
-                            const node = this.ui.createElement('widget.sharp');
-                            const content = this.ui.createElement('content.plus', node);
-                            this.ui.createElement('caption', content).innerHTML = '+';
-                            add(node);
-                        }
+            for (const bgm of bgms) {
+                bgmGallery.add(() => {
+                    const node = this.ui.createElement('widget.sharp');
+                    this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
+                    if (bgm === this.db.get('splash-music')) {
+                        this.rotating = node;
                     }
+                    if (bgm === this.db.get('game-music')) {
+                        node.classList.add('active');
+                    }
+                    this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
+                    return node;
                 });
             }
+            bgmGallery.add(() => {
+                const node = this.ui.createElement('widget.sharp');
+                const content = this.ui.createElement('content.plus', node);
+                this.ui.createElement('caption', content).innerHTML = '+';
+                return node;
+            });
         }
         createSlider(caption, key) {
             const node = this.ui.createElement('widget.sharp');
