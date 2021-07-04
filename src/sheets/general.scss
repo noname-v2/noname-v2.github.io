@@ -60,6 +60,10 @@ noname-widget {
 	-webkit-overflow-scrolling: touch;
 }
 
+.mono {
+	font-family: ui-monospace, monospace;
+}
+
 ::-webkit-scrollbar {
 	display: none
 }

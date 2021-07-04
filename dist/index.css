@@ -261,6 +261,10 @@ noname-widget.active > noname-image, noname-widget.focus > noname-image {
   -webkit-overflow-scrolling: touch;
 }
 
+.mono {
+  font-family: ui-monospace, monospace;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }

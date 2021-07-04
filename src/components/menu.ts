@@ -1,7 +1,7 @@
-import { Popup } from '../popup';
-import { Point } from '../../components';
+import { Popup } from './popup';
+import { Point } from '../components';
 
-export class PopupMenu extends Popup {
+export class Menu extends Popup {
     /** Popup mode. */
     center = false;
     transition = 'fast' as const;

@@ -13,10 +13,10 @@ export const config = {
         name: '出牌时限',
         init: 30,
         options: [
-            [15, '15秒'],
-            [30, '30秒'],
-            [60, '1分钟'],
-            [120, '2分钟']
+            [15, '<span class="mono">15</span>秒'],
+            [30, '<span class="mono">30</span>秒'],
+            [60, '<span class="mono">1</span>分钟'],
+            [120, '<span class="mono">2</span>分钟']
         ]
     },
     specify_hero: {

@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { Splash, PopupMenu, Point } from '../../components';
+import { Splash, Menu, Point } from '../../components';
 
 export class PopupSettings extends Popup {
     size = 'portrait' as const;
@@ -253,7 +253,7 @@ export class PopupSettings extends Popup {
         const rotating_bak: [HTMLElement | null, Animation | null] = [this.rotating, this.rotatingAnimation];
         this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
         this.app.bgmNode.play();
-        const menu = <PopupMenu>this.ui.create('popup-menu');
+        const menu = <Menu>this.ui.create('menu');
         this.rotate(node);
 
         const restore = () => {

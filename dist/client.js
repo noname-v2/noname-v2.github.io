@@ -871,42 +871,6 @@
         }
     }
 
-    class Pane extends Component {
-        /** Section title. */
-        addSection(caption) {
-            const section = this.ui.createElement('section', this.node);
-            this.ui.createElement('span', section).innerHTML = caption;
-            return section;
-        }
-        /** Gallery of selectable items. */
-        addGallery(nrows, ncols, width) {
-            const gallery = this.ui.create('gallery');
-            gallery.setup(nrows, ncols, width);
-            this.node.appendChild(gallery.node);
-            return gallery;
-        }
-        /** Add context menu item. */
-        addOption(caption, onclick) {
-            this.node.classList.add('menu');
-            const option = this.ui.createElement('option');
-            option.innerHTML = caption;
-            this.ui.bindClick(option, onclick);
-            this.node.appendChild(option);
-            return option;
-        }
-        /** Add a toggle. */
-        addToggle(caption, onclick, choices) {
-            const toggle = this.ui.create('toggle');
-            toggle.setup(caption, onclick, choices);
-            this.node.appendChild(toggle.node);
-            return toggle;
-        }
-        /** Enable vertical scrolling. */
-        enableScroll() {
-            this.ui.enableScroll(this.node);
-        }
-    }
-
     class Popup extends Component {
         constructor() {
             super(...arguments);
@@ -962,6 +926,80 @@
             this.ui.animate(this.pane.node, {
                 opacity: [0, 1], scale: ['var(--popup-transform)', 1]
             }, this.app.getTransition(this.transition));
+        }
+    }
+
+    class Menu extends Popup {
+        constructor() {
+            super(...arguments);
+            /** Popup mode. */
+            this.center = false;
+            this.transition = 'fast';
+        }
+        open() {
+            this.node.classList.add('hidden');
+            this.app.node.appendChild(this.node);
+            requestAnimationFrame(() => {
+                // determine location of the menu
+                let { x, y } = this.position;
+                const rect1 = this.pane.node.getBoundingClientRect();
+                const rect2 = this.app.node.getBoundingClientRect();
+                const zoom = this.ui.zoom;
+                this.node.classList.remove('hidden');
+                x += 2;
+                y -= 2;
+                if (x < 10) {
+                    x = 10;
+                }
+                else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
+                    x = rect2.width / zoom - 10 - rect1.width / zoom;
+                }
+                if (y < 10) {
+                    y = 10;
+                }
+                else if (y + rect1.height / zoom + 10 > rect2.height / zoom) {
+                    y = rect2.height / zoom - 10 - rect1.height / zoom;
+                }
+                this.pane.node.style.left = x + 'px';
+                this.pane.node.style.top = y + 'px';
+                super.open();
+            });
+        }
+    }
+
+    class Pane extends Component {
+        /** Section title. */
+        addSection(caption) {
+            const section = this.ui.createElement('section', this.node);
+            this.ui.createElement('span', section).innerHTML = caption;
+            return section;
+        }
+        /** Gallery of selectable items. */
+        addGallery(nrows, ncols, width) {
+            const gallery = this.ui.create('gallery');
+            gallery.setup(nrows, ncols, width);
+            this.node.appendChild(gallery.node);
+            return gallery;
+        }
+        /** Add context menu item. */
+        addOption(caption, onclick) {
+            this.node.classList.add('menu');
+            const option = this.ui.createElement('option');
+            option.innerHTML = caption;
+            this.ui.bindClick(option, onclick);
+            this.node.appendChild(option);
+            return option;
+        }
+        /** Add a toggle. */
+        addToggle(caption, onclick, choices) {
+            const toggle = this.ui.create('toggle');
+            toggle.setup(caption, onclick, choices);
+            this.node.appendChild(toggle.node);
+            return toggle;
+        }
+        /** Enable vertical scrolling. */
+        enableScroll() {
+            this.ui.enableScroll(this.node);
         }
     }
 
@@ -1121,44 +1159,6 @@
                 address.input.disabled = true;
             });
             address.callback = () => this.connect();
-        }
-    }
-
-    class PopupMenu extends Popup {
-        constructor() {
-            super(...arguments);
-            /** Popup mode. */
-            this.center = false;
-            this.transition = 'fast';
-        }
-        open() {
-            this.node.classList.add('hidden');
-            this.app.node.appendChild(this.node);
-            requestAnimationFrame(() => {
-                // determine location of the menu
-                let { x, y } = this.position;
-                const rect1 = this.pane.node.getBoundingClientRect();
-                const rect2 = this.app.node.getBoundingClientRect();
-                const zoom = this.ui.zoom;
-                this.node.classList.remove('hidden');
-                x += 2;
-                y -= 2;
-                if (x < 10) {
-                    x = 10;
-                }
-                else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
-                    x = rect2.width / zoom - 10 - rect1.width / zoom;
-                }
-                if (y < 10) {
-                    y = 10;
-                }
-                else if (y + rect1.height / zoom + 10 > rect2.height / zoom) {
-                    y = rect2.height / zoom - 10 - rect1.height / zoom;
-                }
-                this.pane.node.style.left = x + 'px';
-                this.pane.node.style.top = y + 'px';
-                super.open();
-            });
         }
     }
 
@@ -1376,7 +1376,7 @@
             const rotating_bak = [this.rotating, this.rotatingAnimation];
             this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
             this.app.bgmNode.play();
-            const menu = this.ui.create('popup-menu');
+            const menu = this.ui.create('menu');
             this.rotate(node);
             const restore = () => {
                 if (rotating_bak[0] && rotating_bak[0] !== node) {
@@ -1628,9 +1628,7 @@
                 this.ui.bindClick(popup, () => {
                     // open context menu
                     const rect = popup.getBoundingClientRect();
-                    const menu = this.ui.create('popup-menu');
-                    menu.temp = true;
-                    menu.transition = 'fast';
+                    const menu = this.ui.create('menu');
                     for (const [id, name] of choices) {
                         menu.pane.addOption(name, () => {
                             this.node.classList.add('fixed');
@@ -1678,9 +1676,9 @@
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);
     componentClasses.set('lobby', Lobby);
+    componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup-hub', PopupHub);
-    componentClasses.set('popup-menu', PopupMenu);
     componentClasses.set('popup-room', PopupRoom);
     componentClasses.set('popup-settings', PopupSettings);
     componentClasses.set('popup', Popup);
