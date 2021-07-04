@@ -1,4 +1,4 @@
-import { Component, PopupHub, PopupSettings, Gallery, Button } from '../components';
+import { Component, SplashHub, SplashSettings, Gallery, Button } from '../components';
 
 interface ExtensionIndex {
 	[key: string]: {
@@ -19,10 +19,10 @@ export class Splash extends Component {
 	buttons = <{[key: string]: Button}>{};
 
 	// settings menu
-	settings = <PopupSettings>this.ui.create('popup-settings');
+	settings = <SplashSettings>this.ui.create('popup-settings');
 
 	// hub menu
-	hub = <PopupHub>this.ui.create('popup-hub');
+	hub = <SplashHub>this.ui.create('splash-hub');
 
 	private createModeEntry(mode: string, extensions: ExtensionIndex) {
         const ui = this.ui;

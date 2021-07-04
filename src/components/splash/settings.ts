@@ -1,7 +1,7 @@
 import { Popup } from '../popup';
 import { Splash, Menu, Point } from '../../components';
 
-export class PopupSettings extends Popup {
+export class SplashSettings extends Popup {
     size = 'portrait' as const;
 
     /** Currently rotating music nodes. */

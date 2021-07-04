@@ -2,7 +2,7 @@ import { Popup } from '../popup';
 import { Splash, Input } from '../../components';
 import { homepage } from '../../version';
 
-export class PopupHub extends Popup {
+export class SplashHub extends Popup {
     size = 'portrait' as const;
 
     /** Room widgets. */

@@ -1003,10 +1003,44 @@
         }
     }
 
+    class Sidebar extends Component {
+        constructor() {
+            super(...arguments);
+            // header text
+            this.header = this.ui.createElement('caption', this.node);
+            // pane container
+            this.pane = this.ui.create('pane', this.node);
+            // pane footer
+            this.footer = this.ui.createElement('caption.footer', this.node);
+        }
+        ;
+        init() {
+            // header with text and back button
+            this.pane.enableScroll();
+            this.ui.createElement('span', this.header);
+            this.ui.createElement('image', this.header);
+            this.ui.createElement('span', this.footer);
+        }
+        setHeader(caption, onclick) {
+            this.ui.bindClick(this.header, onclick);
+            this.header.firstChild.innerHTML = caption;
+        }
+        setFooter(caption, onclick) {
+            this.ui.bindClick(this.footer, onclick);
+            this.footer.firstChild.innerHTML = caption;
+        }
+        showFooter() {
+            this.node.classList.add('with-footer');
+        }
+        hideFooter() {
+            this.node.classList.remove('with-footer');
+        }
+    }
+
     const version = '2.0.0';
     const homepage = 'noname.pub';
 
-    class PopupHub extends Popup {
+    class SplashHub extends Popup {
         constructor() {
             super(...arguments);
             this.size = 'portrait';
@@ -1162,10 +1196,10 @@
         }
     }
 
-    class PopupRoom extends Component {
+    class SplashRoom extends Component {
     }
 
-    class PopupSettings extends Popup {
+    class SplashSettings extends Popup {
         constructor() {
             super(...arguments);
             this.size = 'portrait';
@@ -1443,40 +1477,6 @@
         }
     }
 
-    class Sidebar extends Component {
-        constructor() {
-            super(...arguments);
-            // header text
-            this.header = this.ui.createElement('caption', this.node);
-            // pane container
-            this.pane = this.ui.create('pane', this.node);
-            // pane footer
-            this.footer = this.ui.createElement('caption.footer', this.node);
-        }
-        ;
-        init() {
-            // header with text and back button
-            this.pane.enableScroll();
-            this.ui.createElement('span', this.header);
-            this.ui.createElement('image', this.header);
-            this.ui.createElement('span', this.footer);
-        }
-        setHeader(caption, onclick) {
-            this.ui.bindClick(this.header, onclick);
-            this.header.firstChild.innerHTML = caption;
-        }
-        setFooter(caption, onclick) {
-            this.ui.bindClick(this.footer, onclick);
-            this.footer.firstChild.innerHTML = caption;
-        }
-        showFooter() {
-            this.node.classList.add('with-footer');
-        }
-        hideFooter() {
-            this.node.classList.remove('with-footer');
-        }
-    }
-
     class Splash extends Component {
         constructor() {
             super(...arguments);
@@ -1489,7 +1489,7 @@
             // settings menu
             this.settings = this.ui.create('popup-settings');
             // hub menu
-            this.hub = this.ui.create('popup-hub');
+            this.hub = this.ui.create('splash-hub');
         }
         createModeEntry(mode, extensions) {
             const ui = this.ui;
@@ -1678,11 +1678,11 @@
     componentClasses.set('lobby', Lobby);
     componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
-    componentClasses.set('popup-hub', PopupHub);
-    componentClasses.set('popup-room', PopupRoom);
-    componentClasses.set('popup-settings', PopupSettings);
     componentClasses.set('popup', Popup);
     componentClasses.set('sidebar', Sidebar);
+    componentClasses.set('splash-hub', SplashHub);
+    componentClasses.set('splash-room', SplashRoom);
+    componentClasses.set('splash-settings', SplashSettings);
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);
 

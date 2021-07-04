@@ -1,5 +1,5 @@
 import { Component } from '../../components';
 
-export class PopupRoom extends Component {
+export class SplashRoom extends Component {
     
 }
