@@ -1,1 +1,1 @@
-../build/classes.ts
+export { componentClasses } from '../build/classes';

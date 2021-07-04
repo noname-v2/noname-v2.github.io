@@ -17,10 +17,7 @@ export function buildClasses() {
         `import type { ComponentClass } from '../src/client/component'`
     ];
 
-    const types = [
-        `export type { Point, Region, MoveState, TransitionDuration } from '../src/client/ui'`,
-        `export { Component } from '../src/client/component'`
-    ];
+    const types = [];
 
     const insertions = [
         'export const componentClasses = new Map<string, ComponentClass>()'

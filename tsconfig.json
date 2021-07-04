@@ -3,7 +3,7 @@
 		"strict": true,
 		"module": "ESNext",
 		"target": "ESNext",
-		"outDir": "build/src"
+		"outDir": "build"
 	},
 	"include": [
 		"src/client/main.ts",

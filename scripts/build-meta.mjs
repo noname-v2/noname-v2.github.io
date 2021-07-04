@@ -3,9 +3,11 @@ import fs from 'fs';
 import { buildClasses } from './build-classes.mjs';
 import { buildSheets } from './build-sheets.mjs';
 
-// update version
+// get info from package.json
 const pack = JSON.parse(fs.readFileSync('package.json'));
-fs.writeFileSync('build/version.ts', `export const version = '${pack.version}';\nexport const homepage = '${pack.homepage}';`);
+fs.writeFileSync('build/version.ts',
+    `export const version = '${pack.version}';\n` +
+    `export const homepage = '${pack.homepage};'`);
 
 // index components and stylesheets for src
 buildClasses();
