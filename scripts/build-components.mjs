@@ -16,7 +16,7 @@ import walk from './walk.mjs';
 export function buildComponents() {
     const imports = [
         `import type { Client } from '../src/client/client'`,
-        `import type { Component } from '../src/client/component'`
+        `import type { Component, ComponentClass } from '../src/client/component'`
     ];
 
     const types = [
@@ -25,7 +25,7 @@ export function buildComponents() {
     ];
 
     const insertions = [
-        'export const componentClasses = new Map<string, new(client: Client, tag: string) => Component>()'
+        'export const componentClasses = new Map<string, ComponentClass>()'
     ];
 
     for (const src of walk('src/components', '.ts')) {

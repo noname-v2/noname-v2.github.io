@@ -2,7 +2,8 @@ import { Popup } from './popup';
 import { Point } from '../components';
 
 export class Menu extends Popup {
-    /** Popup mode. */
+    /** Override default properties. */
+    static tag = 'popup';
     center = false;
     transition = 'fast' as const;
 

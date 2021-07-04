@@ -1,9 +1,14 @@
 import type { Client } from './client';
 
+// type for component constructor
+export type ComponentClass = {tag: string | null, new(client: Client, tag: string): Component};
 
 export abstract class Component {
     /** Properties synced with worker. */
     private props = new Map<string, any>();
+
+    /** HTMLElement tag  name */
+    static tag: string | null = null;
 
     /** Component ID (for worker-managed components). */
     id: number | null = null;

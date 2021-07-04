@@ -177,6 +177,8 @@
             }
         }
     }
+    /** HTMLElement tag  name */
+    Component.tag = null;
 
     class App extends Component {
         constructor() {
@@ -933,7 +935,6 @@
     class Menu extends Popup {
         constructor() {
             super(...arguments);
-            /** Popup mode. */
             this.center = false;
             this.transition = 'fast';
         }
@@ -967,6 +968,8 @@
             });
         }
     }
+    /** Override default properties. */
+    Menu.tag = 'popup';
 
     class Pane extends Component {
         /** Section title. */
@@ -1098,6 +1101,8 @@
             this.splash?.settings.open();
         }
     }
+    /** Override default properties. */
+    SplashBar.tag = 'bar';
 
     const version = '2.0.0';
     const homepage = 'noname.pub';
@@ -1257,6 +1262,8 @@
             address.callback = () => this.connect();
         }
     }
+    /** Override default properties. */
+    SplashHub.tag = 'popup';
 
     class SplashRoom extends Component {
     }
@@ -1538,6 +1545,8 @@
             }
         }
     }
+    /** Override default properties. */
+    SplashSettings.tag = 'popup';
 
     class Splash extends Component {
         constructor() {
@@ -1884,7 +1893,11 @@
         }
         /** Create new component. */
         create(tag, parent = null) {
-            const component = new (componentClasses.get(tag))(this.client, tag);
+            const cls = componentClasses.get(tag);
+            const component = new cls(this.client, cls.tag || tag);
+            if (cls.tag) {
+                component.node.classList.add(tag);
+            }
             if (parent) {
                 parent.appendChild(component.node);
             }

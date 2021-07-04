@@ -1,6 +1,6 @@
 import type { Client } from './client';
 import type { App } from '../components/app';
-import { Component } from './component';
+import type { ComponentClass } from './component';
 import { componentClasses } from '../classes';
 
 // type for point location
@@ -231,7 +231,12 @@ export class UI {
 
     /** Create new component. */
     create(tag: string, parent: null | HTMLElement = null) {
-        const component = new (componentClasses.get(tag)!)(this.client, tag);
+		const cls = componentClasses.get(tag)!;
+        const component = new cls(this.client, cls.tag || tag);
+
+		if (cls.tag) {
+			component.node.classList.add(tag);
+		}
 		
 		if (parent) {
 			parent.appendChild(component.node);
@@ -273,7 +278,7 @@ export class UI {
 	}
 
     /** Register component constructor. */
-    registerComponent(key: string, cls: new() => Component) {
+    registerComponent(key: string, cls: ComponentClass) {
         componentClasses.set(key, cls);
     }
 

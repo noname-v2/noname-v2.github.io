@@ -53,7 +53,7 @@ noname-splash {
 	}
 
 	// bottom toolbar
-	> noname-splash-bar {
+	> noname-bar.splash-bar {
 		bottom: calc(25% - 78.5px);
 		width: 100%;
 		height: 52px;
@@ -73,7 +73,7 @@ noname-splash {
 	}
 
 	&.font-loaded {
-		> noname-splash-bar > noname-button > noname-content > noname-caption,
+		> noname-bar.splash-bar > noname-button > noname-content > noname-caption,
 		> noname-gallery noname-item > noname-widget > noname-caption {
 			opacity: 1;
 		}
