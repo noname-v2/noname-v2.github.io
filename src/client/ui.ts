@@ -1,5 +1,5 @@
 import type { Client } from './client';
-import type { App } from '../components/app';
+import type { App } from '../components';
 import type { ComponentClass } from './component';
 import { componentClasses } from '../classes';
 

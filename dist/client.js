@@ -390,6 +390,122 @@
         }
     }
 
+    class Lobby extends Component {
+        constructor() {
+            super(...arguments);
+            this.sidebar = this.ui.create('sidebar', this.node);
+            /** Toggles for mode configuration. */
+            this.configToggles = new Map();
+            /** Toggles for hero packs. */
+            this.heroToggles = new Map();
+            /** Toggles for card packs. */
+            this.cardToggles = new Map();
+        }
+        init() {
+            this.app.arena.node.appendChild(this.node);
+            this.sidebar.ready.then(() => {
+                this.sidebar.setHeader('返回', () => {
+                    this.client.disconnect();
+                    this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
+                });
+                this.sidebar.setFooter('开始游戏', () => {
+                    console.log('start');
+                });
+            });
+            this.sidebar.pane.node.classList.add('fixed');
+            this.ui.animate(this.sidebar.node, { x: [-220, 0] });
+        }
+        $pane(configs) {
+            this.sidebar.pane.addSection('选项');
+            for (const name in configs.configs) {
+                const config = configs.configs[name];
+                const toggle = this.sidebar.pane.addToggle(config.name, result => {
+                    this.yield(['config', name, result], false);
+                }, config.options);
+                this.configToggles.set(name, toggle);
+            }
+            this.sidebar.pane.addSection('武将');
+            for (const name in configs.heropacks) {
+                const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
+                    this.yield(['hero', name, result], false);
+                });
+                this.heroToggles.set(name, toggle);
+            }
+            this.sidebar.pane.addSection('卡牌');
+            for (const name in configs.cardpacks) {
+                const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
+                    this.yield(['card', name, result], false);
+                });
+                this.cardToggles.set(name, toggle);
+            }
+        }
+        $owner(uid) {
+            this.sidebar.pane.node.classList[uid === this.client.uid ? 'remove' : 'add']('fixed');
+            this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
+        }
+        $config(config) {
+            for (const key in config) {
+                this.configToggles.get(key)?.assign(config[key]);
+            }
+            if (this.owner === this.client.uid) {
+                this.db.set(this.get('mode') + ':config', config);
+            }
+        }
+        $disabledHeropacks(packs) {
+            for (const [name, toggle] of this.heroToggles.entries()) {
+                toggle.assign(!packs.includes(name));
+            }
+            if (this.owner === this.client.uid) {
+                this.db.set(this.get('mode') + ':disabledHeropacks', packs.length > 0 ? packs : null);
+            }
+        }
+        $disabledCardpacks(packs) {
+            for (const [name, toggle] of this.cardToggles.entries()) {
+                toggle.assign(!packs.includes(name));
+            }
+            if (this.owner === this.client.uid) {
+                this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
+            }
+        }
+    }
+
+    class PackGallery {
+    }
+
+    class Sidebar extends Component {
+        constructor() {
+            super(...arguments);
+            // header text
+            this.header = this.ui.createElement('caption', this.node);
+            // pane container
+            this.pane = this.ui.create('pane', this.node);
+            // pane footer
+            this.footer = this.ui.createElement('caption.footer', this.node);
+        }
+        ;
+        init() {
+            // header with text and back button
+            this.pane.enableScroll();
+            this.ui.createElement('span', this.header);
+            this.ui.createElement('image', this.header);
+            this.ui.createElement('span', this.footer);
+        }
+        setHeader(caption, onclick) {
+            this.ui.bindClick(this.header, onclick);
+            this.header.firstChild.innerHTML = caption;
+        }
+        setFooter(caption, onclick) {
+            this.ui.bindClick(this.footer, onclick);
+            this.footer.firstChild.innerHTML = caption;
+        }
+        showFooter() {
+            this.node.classList.add('with-footer');
+        }
+        hideFooter() {
+            this.node.classList.remove('with-footer');
+        }
+    }
+
     class Arena extends Component {
         constructor() {
             super(...arguments);
@@ -790,85 +906,6 @@
         }
     }
 
-    class Lobby extends Component {
-        constructor() {
-            super(...arguments);
-            this.sidebar = this.ui.create('sidebar', this.node);
-            /** Toggles for mode configuration. */
-            this.configToggles = new Map();
-            /** Toggles for hero packs. */
-            this.heroToggles = new Map();
-            /** Toggles for card packs. */
-            this.cardToggles = new Map();
-        }
-        init() {
-            this.app.arena.node.appendChild(this.node);
-            this.sidebar.ready.then(() => {
-                this.sidebar.setHeader('返回', () => {
-                    this.client.disconnect();
-                    this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
-                });
-                this.sidebar.setFooter('开始游戏', () => {
-                    console.log('start');
-                });
-            });
-            this.sidebar.pane.node.classList.add('fixed');
-            this.ui.animate(this.sidebar.node, { x: [-220, 0] });
-        }
-        $pane(configs) {
-            this.sidebar.pane.addSection('选项');
-            for (const name in configs.configs) {
-                const config = configs.configs[name];
-                const toggle = this.sidebar.pane.addToggle(config.name, result => {
-                    this.yield(['config', name, result], false);
-                }, config.options);
-                this.configToggles.set(name, toggle);
-            }
-            this.sidebar.pane.addSection('武将');
-            for (const name in configs.heropacks) {
-                const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
-                    this.yield(['hero', name, result], false);
-                });
-                this.heroToggles.set(name, toggle);
-            }
-            this.sidebar.pane.addSection('卡牌');
-            for (const name in configs.cardpacks) {
-                const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
-                    this.yield(['card', name, result], false);
-                });
-                this.cardToggles.set(name, toggle);
-            }
-        }
-        $owner(uid) {
-            this.sidebar.pane.node.classList[uid === this.client.uid ? 'remove' : 'add']('fixed');
-            this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
-        }
-        $config(config) {
-            for (const key in config) {
-                this.configToggles.get(key)?.assign(config[key]);
-            }
-            if (this.owner === this.client.uid) {
-                this.db.set(this.get('mode') + ':config', config);
-            }
-        }
-        $disabledHeropacks(packs) {
-            for (const [name, toggle] of this.heroToggles.entries()) {
-                toggle.assign(!packs.includes(name));
-            }
-            if (this.owner === this.client.uid) {
-                this.db.set(this.get('mode') + ':disabledHeropacks', packs.length > 0 ? packs : null);
-            }
-        }
-        $disabledCardpacks(packs) {
-            for (const [name, toggle] of this.cardToggles.entries()) {
-                toggle.assign(!packs.includes(name));
-            }
-            if (this.owner === this.client.uid) {
-                this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
-            }
-        }
-    }
-
     class Popup extends Component {
         constructor() {
             super(...arguments);
@@ -1006,40 +1043,6 @@
         }
     }
 
-    class Sidebar extends Component {
-        constructor() {
-            super(...arguments);
-            // header text
-            this.header = this.ui.createElement('caption', this.node);
-            // pane container
-            this.pane = this.ui.create('pane', this.node);
-            // pane footer
-            this.footer = this.ui.createElement('caption.footer', this.node);
-        }
-        ;
-        init() {
-            // header with text and back button
-            this.pane.enableScroll();
-            this.ui.createElement('span', this.header);
-            this.ui.createElement('image', this.header);
-            this.ui.createElement('span', this.footer);
-        }
-        setHeader(caption, onclick) {
-            this.ui.bindClick(this.header, onclick);
-            this.header.firstChild.innerHTML = caption;
-        }
-        setFooter(caption, onclick) {
-            this.ui.bindClick(this.footer, onclick);
-            this.footer.firstChild.innerHTML = caption;
-        }
-        showFooter() {
-            this.node.classList.add('with-footer');
-        }
-        hideFooter() {
-            this.node.classList.remove('with-footer');
-        }
-    }
-
     class SplashBar extends Component {
         constructor() {
             super(...arguments);
@@ -1058,7 +1061,7 @@
             // update button styles
             const buttons = [
                 ['reset', '重置', 'red'],
-                ['workshop', '工坊', 'yellow'],
+                ['workshop', '扩展', 'yellow'],
                 ['hub', '联机', 'green'],
                 ['settings', '选项', 'orange']
             ];
@@ -1724,15 +1727,16 @@
 
     const componentClasses = new Map();
     componentClasses.set('app', App);
+    componentClasses.set('lobby', Lobby);
+    componentClasses.set('pack-gallery', PackGallery);
+    componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);
-    componentClasses.set('lobby', Lobby);
     componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
-    componentClasses.set('sidebar', Sidebar);
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);
     componentClasses.set('splash-hub', SplashHub);

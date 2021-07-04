@@ -1,4 +1,4 @@
-import { Component, SplashHub, SplashSettings, SplashGallery, SplashBar } from '../components';
+import { Component, SplashHub, SplashSettings, SplashGallery, SplashBar } from '../../components';
 
 
 export class Splash extends Component {

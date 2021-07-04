@@ -1,4 +1,4 @@
-import { Component, Arena, Splash, TransitionDuration } from '../components';
+import { Component, Arena, Splash, TransitionDuration } from '../../components';
 
 export class App extends Component {
 	/** Arena component. */

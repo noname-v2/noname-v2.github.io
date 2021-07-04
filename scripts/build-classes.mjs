@@ -10,10 +10,9 @@ import walk from './walk.mjs';
 }
 
 /**
- * Create an index of component or elementclasses.
- * @param {'component'|'element'} target - Component or element.
+ * Create an index of component classes.
  */
-export function buildComponents() {
+export function buildClasses() {
     const imports = [
         `import type { ComponentClass } from '../src/client/component'`
     ];
@@ -29,8 +28,8 @@ export function buildComponents() {
 
     for (const src of walk('src/components', '.ts')) {
         // CamelCase class name
-        const cls = src.split('/').map(capatalize).join('');
-        const tag = src.split('/').join('-');
+        const tag = src.split('/').pop();
+        const cls = tag.split('-').map(capatalize).join('');
         imports.push(`import { ${cls} } from '../src/components/${src}'`)
         types.push(`export type { ${cls} } from '../src/components/${src}'`)
         insertions.push(`componentClasses.set('${tag}', ${cls})`);

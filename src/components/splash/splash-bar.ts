@@ -25,7 +25,7 @@ export class SplashBar extends Component {
         // update button styles
         const buttons = [
             ['reset', '重置', 'red'],
-            ['workshop', '工坊', 'yellow'],
+            ['workshop', '扩展', 'yellow'],
             ['hub', '联机', 'green'],
             ['settings', '选项', 'orange']
         ];

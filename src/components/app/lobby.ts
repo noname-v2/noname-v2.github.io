@@ -1,4 +1,4 @@
-import { Component, Sidebar, Toggle } from '../components';
+import { Component, Sidebar, Toggle } from '../../components';
 
 export class Lobby extends Component {
     sidebar = <Sidebar>this.ui.create('sidebar', this.node);
