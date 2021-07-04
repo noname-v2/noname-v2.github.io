@@ -1487,7 +1487,7 @@
             // bottom toolbar buttons
             this.buttons = {};
             // settings menu
-            this.settings = this.ui.create('popup-settings');
+            this.settings = this.ui.create('splash-settings');
             // hub menu
             this.hub = this.ui.create('splash-hub');
         }

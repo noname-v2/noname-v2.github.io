@@ -27,7 +27,7 @@ function createWindow() {
 		win = null;
 	});
 	if (server === null) {
-		server = createServer();
+		server = createServer({cache: -1});
 		portfinder.basePort = 8080;
 		portfinder.getPort((err, port) => {
 			if (err) {

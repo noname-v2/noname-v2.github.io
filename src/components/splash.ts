@@ -19,7 +19,7 @@ export class Splash extends Component {
 	buttons = <{[key: string]: Button}>{};
 
 	// settings menu
-	settings = <SplashSettings>this.ui.create('popup-settings');
+	settings = <SplashSettings>this.ui.create('splash-settings');
 
 	// hub menu
 	hub = <SplashHub>this.ui.create('splash-hub');
