@@ -2,8 +2,10 @@ import { Popup } from '../popup';
 import { Splash, Menu, Point } from '../../components';
 
 export class SplashSettings extends Popup {
-    /** Override default properties. */
+    /** Use tag <noname-popup>. */
     static tag = 'popup';
+
+    /** Portrait sized popup. */
     size = 'portrait' as const;
 
     /** Currently rotating music nodes. */

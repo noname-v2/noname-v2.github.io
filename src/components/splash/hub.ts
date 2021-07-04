@@ -3,8 +3,10 @@ import { Splash, Input } from '../../components';
 import { homepage } from '../../version';
 
 export class SplashHub extends Popup {
-    /** Override default properties. */
+    /** Use tag <noname-popup>. */
     static tag = 'popup';
+
+    /** Portrait sized popup. */
     size = 'portrait' as const;
 
     /** Room widgets. */

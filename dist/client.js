@@ -471,6 +471,8 @@
             this.pages = this.ui.createElement('pages', this.node);
             /** Page indicator */
             this.indicator = this.ui.createElement('indicator', this.node);
+            /** Whether other pages are visible. */
+            this.overflow = false;
             /** Index of current page. */
             this.currentPage = 0;
             /** Currently being blocked. */
@@ -482,19 +484,9 @@
             this.accelerationTimeout = 0;
             this.scrollTimeout = 0;
         }
-        /** Whether other pages are visible. */
-        #overflow;
         /** Current number of pages. */
         get pageCount() {
             return this.pages.childNodes.length;
-        }
-        /** Getter and setter of overflow property. */
-        get overflow() {
-            return this.#overflow;
-        }
-        set overflow(val) {
-            this.#overflow = val;
-            this.node.classList[val ? 'add' : 'remove']('overflow');
         }
         /** Create page when needed. */
         createPage(i) {
@@ -605,6 +597,9 @@
         }
         init() {
             this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
+            if (this.overflow) {
+                this.node.classList.add('overflow');
+            }
         }
         addPage(creator) {
             const page = this.ui.createElement('page');
@@ -935,7 +930,9 @@
     class Menu extends Popup {
         constructor() {
             super(...arguments);
+            /** Use mouse click location. */
             this.center = false;
+            /** Use faster transition for context menu. */
             this.transition = 'fast';
         }
         open() {
@@ -968,7 +965,7 @@
             });
         }
     }
-    /** Override default properties. */
+    /** Use <noname-popup> as tag. */
     Menu.tag = 'popup';
 
     class Pane extends Component {
@@ -1101,8 +1098,89 @@
             this.splash?.settings.open();
         }
     }
-    /** Override default properties. */
+    /** Use tag <noname-bar>. */
     SplashBar.tag = 'bar';
+
+    class SplashGallery extends Gallery {
+        constructor() {
+            super(...arguments);
+            /** Gallery has no boundary. */
+            this.overflow = true;
+            /** Single row. */
+            this.nrows = 1;
+            /** 5 Columns in a page. */
+            this.ncols = 5;
+            /** Default window width. */
+            this.width = 900;
+        }
+        async init() {
+            super.init();
+            const extensions = await this.client.readJSON('extensions/index.json');
+            const modes = [];
+            for (const name in extensions) {
+                if (extensions[name]['mode']) {
+                    extensions[name]['mode'];
+                    modes.push(name);
+                }
+            }
+            for (let i = 0; i < modes.length; i += 5) {
+                this.addPage(add => {
+                    for (let j = 0; j < 5; j++) {
+                        const mode = modes[i + j];
+                        if (mode) {
+                            add(this.addMode(mode, extensions));
+                        }
+                    }
+                });
+            }
+        }
+        addMode(mode, extensions) {
+            const ui = this.ui;
+            const entry = ui.createElement('widget');
+            const name = extensions[mode]['mode'];
+            // set mode backgrround
+            const bg = ui.createElement('image', entry);
+            ui.setBackground(bg, 'extensions', mode, 'mode');
+            // set caption
+            const caption = ui.createElement('caption', entry);
+            caption.innerHTML = name;
+            // bind click
+            ui.bindClick(entry, () => {
+                const packs = [];
+                for (const name in extensions) {
+                    let add = true;
+                    if (extensions[mode]['tags']) {
+                        for (const tag of extensions[mode]['tags']) {
+                            if (tag[tag.length - 1] === '!') {
+                                if (!extensions[name]['tags'] || !extensions[name]['tags'].includes(tag)) {
+                                    add = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (add && extensions[name]['tags']) {
+                        for (const tag of extensions[name]['tags']) {
+                            if (tag[tag.length - 1] === '!') {
+                                if (!extensions[mode]['tags'] || !extensions[mode]['tags'].includes(tag)) {
+                                    add = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (add && extensions[name].pack) {
+                        packs.push(name);
+                    }
+                }
+                this.client.connect([mode, packs]);
+                this.splash.hide();
+            });
+            return entry;
+        }
+    }
+    /** Use tag <noname-gallery>. */
+    SplashGallery.tag = 'gallery';
 
     const version = '2.0.0';
     const homepage = 'noname.pub';
@@ -1110,6 +1188,7 @@
     class SplashHub extends Popup {
         constructor() {
             super(...arguments);
+            /** Portrait sized popup. */
             this.size = 'portrait';
             /** Room widgets. */
             this.rooms = new Map();
@@ -1262,7 +1341,7 @@
             address.callback = () => this.connect();
         }
     }
-    /** Override default properties. */
+    /** Use tag <noname-popup>. */
     SplashHub.tag = 'popup';
 
     class SplashRoom extends Component {
@@ -1271,6 +1350,7 @@
     class SplashSettings extends Popup {
         constructor() {
             super(...arguments);
+            /** Portrait sized popup. */
             this.size = 'portrait';
             /** Currently rotating music nodes. */
             this.rotating = null;
@@ -1545,14 +1625,14 @@
             }
         }
     }
-    /** Override default properties. */
+    /** Use tag <noname-popup>. */
     SplashSettings.tag = 'popup';
 
     class Splash extends Component {
         constructor() {
             super(...arguments);
             // gallery of modes
-            this.gallery = this.ui.create('gallery');
+            this.gallery = this.ui.create('splash-gallery');
             // bottom toolbar
             this.bar = this.ui.create('splash-bar');
             // settings menu
@@ -1560,77 +1640,9 @@
             // hub menu
             this.hub = this.ui.create('splash-hub');
         }
-        createModeEntry(mode, extensions) {
-            const ui = this.ui;
-            const entry = ui.createElement('widget');
-            const name = extensions[mode]['mode'];
-            // set mode backgrround
-            const bg = ui.createElement('image', entry);
-            ui.setBackground(bg, 'extensions', mode, 'mode');
-            // set caption
-            const caption = ui.createElement('caption', entry);
-            caption.innerHTML = name;
-            // bind click
-            ui.bindClick(entry, () => {
-                const packs = [];
-                for (const name in extensions) {
-                    let add = true;
-                    if (extensions[mode]['tags']) {
-                        for (const tag of extensions[mode]['tags']) {
-                            if (tag[tag.length - 1] === '!') {
-                                if (!extensions[name]['tags'] || !extensions[name]['tags'].includes(tag)) {
-                                    add = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (add && extensions[name]['tags']) {
-                        for (const tag of extensions[name]['tags']) {
-                            if (tag[tag.length - 1] === '!') {
-                                if (!extensions[mode]['tags'] || !extensions[mode]['tags'].includes(tag)) {
-                                    add = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (add && extensions[name].pack) {
-                        packs.push(name);
-                    }
-                }
-                this.client.connect([mode, packs]);
-                this.hide();
-            });
-            return entry;
-        }
-        async createGallery() {
-            const extensions = await this.client.readJSON('extensions/index.json');
-            const modes = [];
-            for (const name in extensions) {
-                if (extensions[name]['mode']) {
-                    extensions[name]['mode'];
-                    modes.push(name);
-                }
-            }
-            this.gallery.nrows = 1;
-            this.gallery.ncols = 5;
-            this.gallery.width = 900;
-            this.gallery.overflow = true;
-            for (let i = 0; i < modes.length; i += 5) {
-                this.gallery.addPage(add => {
-                    for (let j = 0; j < 5; j++) {
-                        const mode = modes[i + j];
-                        if (mode) {
-                            add(this.createModeEntry(mode, extensions));
-                        }
-                    }
-                });
-            }
-        }
         init() {
             // create mode selection gallery
-            this.createGallery();
+            this.gallery.splash = this;
             this.node.appendChild(this.gallery.node);
             // bottom button bar
             this.bar.splash = this;
@@ -1722,6 +1734,7 @@
     componentClasses.set('popup', Popup);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('splash-bar', SplashBar);
+    componentClasses.set('splash-gallery', SplashGallery);
     componentClasses.set('splash-hub', SplashHub);
     componentClasses.set('splash-room', SplashRoom);
     componentClasses.set('splash-settings', SplashSettings);

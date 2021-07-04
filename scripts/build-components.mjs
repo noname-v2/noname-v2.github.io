@@ -15,8 +15,7 @@ import walk from './walk.mjs';
  */
 export function buildComponents() {
     const imports = [
-        `import type { Client } from '../src/client/client'`,
-        `import type { Component, ComponentClass } from '../src/client/component'`
+        `import type { ComponentClass } from '../src/client/component'`
     ];
 
     const types = [

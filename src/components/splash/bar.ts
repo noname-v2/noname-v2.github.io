@@ -1,7 +1,7 @@
 import { Component, Button, Splash } from '../../components';
 
 export class SplashBar extends Component {
-    /** Override default properties. */
+    /** Use tag <noname-bar>. */
     static tag = 'bar';
 
     /** Reference to Splash. */

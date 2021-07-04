@@ -17,7 +17,7 @@ export class Gallery extends Component {
 	width!: number;
 
 	/** Whether other pages are visible. */
-	#overflow!: boolean;
+	overflow: boolean = false;
 
     /** Index of current page. */
     private currentPage: number = 0;
@@ -37,16 +37,6 @@ export class Gallery extends Component {
 	/** Current number of pages. */
 	get pageCount() {
 		return this.pages.childNodes.length;
-	}
-
-	/** Getter and setter of overflow property. */
-	get overflow() {
-		return this.#overflow;
-	}
-
-	set overflow(val: boolean) {
-		this.#overflow = val;
-		this.node.classList[val ? 'add' : 'remove']('overflow');
 	}
 
 	/** Create page when needed. */
@@ -180,6 +170,9 @@ export class Gallery extends Component {
 
 	init() {
 		this.node.addEventListener('wheel', e => this.wheel(e), {passive: true});
+		if (this.overflow) {
+			this.node.classList.add('overflow');
+		}
 	}
 
 	addPage(creator: (add: (node: HTMLElement) => void) => void) {

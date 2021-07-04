@@ -2,9 +2,13 @@ import { Popup } from './popup';
 import { Point } from '../components';
 
 export class Menu extends Popup {
-    /** Override default properties. */
+    /** Use <noname-popup> as tag. */
     static tag = 'popup';
+
+    /** Use mouse click location. */
     center = false;
+
+    /** Use faster transition for context menu. */
     transition = 'fast' as const;
 
     /** Position of the click event. */
