@@ -613,7 +613,6 @@
                 return;
             }
             this.rendered.add(i);
-            console.log('render', i);
             const start = this.nrows * this.ncols * i;
             const containers = document.createDocumentFragment();
             for (let i = 0; i < this.nrows * this.ncols; i++) {
@@ -745,9 +744,7 @@
                 if (this.pageCount > 1) {
                     this.node.classList.add('with-indicator');
                 }
-                else {
-                    this.turnPage(0, false);
-                }
+                this.turnPage(0, false);
             }
             else {
                 this.rendered.delete(idx);
