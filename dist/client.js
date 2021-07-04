@@ -1007,6 +1007,10 @@
             // enable button click after creation finish
             splash.buttons.hub.node.classList.remove('disabled');
         }
+        clearRooms() {
+            for (const room of this.rooms.values()) {
+            }
+        }
         updateRooms() {
             if (this.rooms.size) {
                 this.roomGroup.classList.remove('hidden');
@@ -1042,7 +1046,7 @@
                         this.setCaption('');
                         ws.send('init:' + JSON.stringify([this.client.uid, JSON.stringify([
                                 this.db.get('nickname') || '无名玩家',
-                                this.db.get('avatar') ?? 'standard:caocao'
+                                this.db.get('avatar') || 'standard:caocao'
                             ])]));
                     };
                     ws.onmessage = ({ data }) => {
@@ -1050,8 +1054,11 @@
                             if (data.startsWith('error:')) {
                                 ws.close();
                             }
-                            else if (data.startsWith('update:')) {
+                            else if (data.startsWith('kicked:')) {
+                            }
+                            else if (data.startsWith('init:')) {
                                 const updates = JSON.parse(data.slice(7));
+                                this.clearRooms();
                                 for (const uid in updates) {
                                     if (typeof updates[uid] === 'number') {
                                         // rooms.get(uid)?[1] = updates[uid];
@@ -1071,7 +1078,7 @@
         }
         disconnect() {
             this.client.disconnect();
-            this.rooms.clear();
+            this.clearRooms();
             this.address.set('icon', null);
             this.address.onicon = null;
             this.setCaption('已断开');
@@ -1153,6 +1160,9 @@
                 super.open();
             });
         }
+    }
+
+    class PopupRoom extends Component {
     }
 
     class PopupSettings extends Popup {
@@ -1671,6 +1681,7 @@
     componentClasses.set('pane', Pane);
     componentClasses.set('popup-hub', PopupHub);
     componentClasses.set('popup-menu', PopupMenu);
+    componentClasses.set('popup-room', PopupRoom);
     componentClasses.set('popup-settings', PopupSettings);
     componentClasses.set('popup', Popup);
     componentClasses.set('sidebar', Sidebar);
@@ -2119,6 +2130,11 @@
             else if (this.connection instanceof WebSocket) {
                 this.connection.close();
             }
+            this.connection = null;
+            this.clear();
+        }
+        /** Clear currently connection status without disconnecting. */
+        clear() {
             this.components.clear();
             this.yielding.clear();
             this.ui.app.arena?.remove();
@@ -2127,7 +2143,6 @@
                 this.ui.app.splash.show();
             }
             this.sid = 0;
-            this.connection = null;
         }
         /**
          * Send message to worker.

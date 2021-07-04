@@ -3,7 +3,9 @@
 	"version": "2.0.0",
 	"homepage": "noname.pub",
 	"scripts": {
-		"build": "sh scripts/clean.sh && node scripts/build-meta.mjs && npx tsc && node scripts/build-rollup.mjs",
+		"build": "sh scripts/build.sh",
+		"build-hub": "npx tsc src/hub/*.ts --outDir hub --module commonjs --target ESNext",
+		"clean": "sh scripts/clean.sh",
 		"electron": "npx electron scripts/electron.js"
 	},
 	"license": "GPL-3.0",
