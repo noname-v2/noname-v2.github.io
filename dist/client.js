@@ -2164,7 +2164,7 @@
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
                     // create a new unique client id based on current timestamp
-                    const seed = (new Date()).getTime().toString();
+                    const seed = new Date().getTime().toString();
                     // map timestamp to random string
                     this.db.set('uid', seed.split('').map(n => {
                         // [0-9] -> [0-62]

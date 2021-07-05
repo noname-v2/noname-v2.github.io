@@ -26,11 +26,15 @@ wss.on('connection', ws => {
     ws.on('message', (msg: string) => {
         try {
             if (uid) {
-                // call owner of member methods
                 const idx = msg.indexOf(':');
                 const method = msg.slice(0, idx);
                 const arg = msg.slice(idx + 1);
-                (clients.get(uid) as any)[method](arg);
+
+                // call owner of member methods
+                const client = clients.get(uid);
+                if (client?.ws === ws) {
+                    (client as any)[method](arg);
+                }
             }
             else {
                 // create a new client
@@ -62,9 +66,12 @@ wss.on('connection', ws => {
     });
 
     ws.on('close', () => {
+        // call uninitialization method
         try {
-            // call uninitialization method
-            clients.get(uid)?.uninit();
+            const client = clients.get(uid);
+            if (client?.ws === ws) {
+                client.uninit();
+            }
             update();
         }
         catch {}

@@ -30,4 +30,10 @@ export abstract class Client {
     send(tag: string, msg: string) {
         this.ws.send(tag + ':' + msg);
     }
+
+    remove() {
+        if (clients.get(this.uid) as any === this) {
+            clients.delete(this.uid);
+        }
+    }
 }

@@ -54,7 +54,7 @@ export class Owner extends Client {
                 client.leave('end');
             }
             this.ws.close(1000);
-            clients.delete(this.uid);
+            this.remove();
         }
 
         // send room update to idle clients

@@ -55,9 +55,7 @@ export class Member extends Client {
         if (reason) {
             if (this.ws.CLOSED) {
                 // delete closed client with no room
-                if (clients.get(this.uid) === this) {
-                    clients.delete(this.uid);
-                }
+                this.remove();
             }
             else {
                 // send room list
@@ -88,7 +86,7 @@ export class Member extends Client {
             owner.send('down', this.uid);
         }
         else {
-            clients.delete(this.uid);
+            this.remove();
         }
     }
 }

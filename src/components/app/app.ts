@@ -16,9 +16,6 @@ export class App extends Component {
     /** Stylesheet for theme. */
 	themeNode = document.createElement('style');
 
-	/** Stylesheet for fonts. */
-	fontNode = document.createElement('style');
-
 	/** Node for displaying background. */
 	bgNode = this.ui.createElement('background', this.node);
 
@@ -33,7 +30,6 @@ export class App extends Component {
 
     init() {
 		document.head.appendChild(this.themeNode);
-		document.head.appendChild(this.fontNode);
 		
 		// setup triggers
 		this.resize();

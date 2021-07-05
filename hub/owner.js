@@ -50,7 +50,7 @@ class Owner extends client_1.Client {
                 client.leave('end');
             }
             this.ws.close(1000);
-            client_1.clients.delete(this.uid);
+            this.remove();
         }
         // send room update to idle clients
         const msg = JSON.stringify({ [this.uid]: room });

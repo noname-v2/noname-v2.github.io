@@ -11,6 +11,14 @@ const server = https_1.createServer({
     key: fs_1.readFileSync('key.pem'),
 });
 const wss = new ws_1.Server({ server });
+/** Send number of clients to idle clients. */
+const update = () => {
+    for (const client of client_1.clients.values()) {
+        if (client instanceof member_1.Member && client.joined === null) {
+            client.send('update', wss.clients.size.toString());
+        }
+    }
+};
 wss.on('connection', ws => {
     let uid = null;
     ws.on('message', (msg) => {
@@ -19,9 +27,14 @@ wss.on('connection', ws => {
                 const idx = msg.indexOf(':');
                 const method = msg.slice(0, idx);
                 const arg = msg.slice(idx + 1);
-                client_1.clients.get(uid)[method](arg);
+                // call owner of member methods
+                const client = client_1.clients.get(uid);
+                if (client?.ws === ws) {
+                    client[method](arg);
+                }
             }
             else {
+                // create a new client
                 if (msg.startsWith('init:')) {
                     let info, room;
                     [uid, info, room] = JSON.parse(msg.slice(5));
@@ -29,14 +42,16 @@ wss.on('connection', ws => {
                         const old = client_1.clients.get(uid) ?? null;
                         old?.ws?.close(1000, 'replace');
                         if (room) {
-                            (new owner_1.Owner(ws, uid, info)).init(old, room);
+                            new owner_1.Owner(ws, uid, info).init(old, room);
                         }
                         else {
-                            (new member_1.Member(ws, uid, info)).init(old);
+                            new member_1.Member(ws, uid, info).init(old);
                         }
+                        update();
                         return;
                     }
                 }
+                // received message without initialization
                 throw (new Error('client not initialized'));
             }
         }
@@ -45,24 +60,32 @@ wss.on('connection', ws => {
         }
     });
     ws.on('close', () => {
+        // call uninitialization method
         try {
-            client_1.clients.get(uid)?.uninit();
+            const client = client_1.clients.get(uid);
+            if (client?.ws === ws) {
+                client.uninit();
+            }
+            update();
         }
         catch { }
     });
-    setTimeout(() => {
-        if (!uid) {
-            ws.close(1002, 'init');
-        }
-    }, 10000);
     ws.on('pong', () => {
+        // assert that client is alive
         const client = client_1.clients.get(uid);
         if (client) {
             client.alive = true;
         }
     });
+    setTimeout(() => {
+        // close if not initialized within 10s
+        if (!uid) {
+            ws.close(1002, 'init');
+        }
+    }, 10000);
 });
 setInterval(() => {
+    // find and remove inactive clients
     for (const client of client_1.clients.values()) {
         try {
             if (client.alive === false) {
