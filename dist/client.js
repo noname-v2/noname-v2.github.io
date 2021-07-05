@@ -393,6 +393,8 @@
             this.sidebar = this.ui.create('sidebar', this.node);
             /** Toggles for mode configuration. */
             this.configToggles = new Map();
+            /** Toggles that show or hide based on other toggles. */
+            this.configDynamicToggles = new Map();
             /** Toggles for hero packs. */
             this.heroToggles = new Map();
             /** Toggles for card packs. */
@@ -419,6 +421,10 @@
                 const toggle = this.sidebar.pane.addToggle(config.name, result => {
                     this.yield(['config', name, result], false);
                 }, config.options);
+                toggle.confirm = config.confirm;
+                if (config.requires) {
+                    this.configDynamicToggles.set(name, config.requires);
+                }
                 this.configToggles.set(name, toggle);
             }
             this.sidebar.pane.addSection('武将');
@@ -442,7 +448,17 @@
         }
         $config(config) {
             for (const key in config) {
-                this.configToggles.get(key)?.assign(config[key]);
+                const toggle = this.configToggles.get(key);
+                toggle?.assign(config[key]);
+                const requires = this.configDynamicToggles.get(key);
+                if (requires && toggle) {
+                    if (requires[0] === '!') {
+                        toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                    }
+                    else {
+                        toggle.node.style.display = config[requires] ? '' : 'none';
+                    }
+                }
             }
             if (this.owner === this.client.uid) {
                 this.db.set(this.get('mode') + ':config', config);
@@ -1731,6 +1747,11 @@
                     const menu = this.ui.create('menu');
                     for (const [id, name] of choices) {
                         menu.pane.addOption(name, () => {
+                            if (this.confirm?.includes(id)) {
+                                if (!confirm('确定将' + caption + '设为' + name + '？')) {
+                                    return;
+                                }
+                            }
                             this.node.classList.add('fixed');
                             onclick(id);
                             menu.close();
@@ -1749,8 +1770,14 @@
                 this.ui.createElement('switcher-background', container);
                 this.ui.createElement('switcher-button', switcher);
                 this.ui.bindClick(switcher, () => {
+                    const val = !this.node.classList.contains('on');
+                    if (this.confirm?.includes(val)) {
+                        if (!confirm('确定' + (val ? '开启' : '关闭') + caption + '？')) {
+                            return;
+                        }
+                    }
                     this.node.classList.add('fixed');
-                    onclick(!this.node.classList.contains('on'));
+                    onclick(val);
                 });
             }
         }

@@ -39,7 +39,7 @@ export class Member extends Client {
         if (owner instanceof Owner && (!this.owner || this.joined === uid)) {
             this.joined = uid;
             owner.members.add(uid);
-            owner.send('join', this.uid);
+            owner.send('join', JSON.stringify([this.uid, this.info]));
         }
     }
 

@@ -15,7 +15,20 @@ var main = {
         }
     },
     ruleset: {
-        config: {},
+        config: {
+            identity: {
+                name: '选择身份',
+                init: 'random',
+                options: [
+                    ['random', '随机'],
+                    ['zhu', '主公'],
+                    ['zhong', '忠臣'],
+                    ['nei', '内奸'],
+                    ['fan', '反贼'],
+                ],
+                requires: '!online'
+            }
+        },
         stage: {}
     },
     tags: ['guess-side']

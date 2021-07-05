@@ -166,11 +166,6 @@ export class Stage {
             this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
         }
         else if (this.step === 3) {
-            // backup before user interaction
-            if (this.monitors.size) {
-                await this.game.backup();
-            }
-
             // call component methods
             this.results.clear();
             this.game.worker.broadcast([this.id, {}, Object.fromEntries(this.calls)]);
@@ -215,6 +210,11 @@ export class Stage {
 
         if (incr) {
             this.step++;
+
+            // backup before user interaction in step 3
+            if (this.step === 3 && this.monitors.size) {
+                await this.game.backup();
+            }
         }
         return true;
     }

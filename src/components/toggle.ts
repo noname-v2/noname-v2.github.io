@@ -13,6 +13,9 @@ export class Toggle extends Component {
 	// disabled choices
 	disabledChoices = new Set<string | number>();
 
+	/** Requires confirmation when toggling to a value. */
+	confirm?: any[];
+
 	setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
 		this.span.innerHTML = caption;
 		
@@ -27,6 +30,11 @@ export class Toggle extends Component {
                 const menu = <Menu>this.ui.create('menu');
                 for (const [id, name] of choices) {
                     menu.pane.addOption(name, () => {
+						if (this.confirm?.includes(id)) {
+							if (!confirm('确定将' + caption + '设为' + name + '？')) {
+								return;
+							}
+						}
                         this.node.classList.add('fixed');
                         onclick(id);
 						menu.close();
@@ -46,8 +54,14 @@ export class Toggle extends Component {
 			this.ui.createElement('switcher-background', container);
 			this.ui.createElement('switcher-button', switcher);
 			this.ui.bindClick(switcher, () => {
+				const val = !this.node.classList.contains('on');
+				if (this.confirm?.includes(val)) {
+					if (!confirm('确定' + (val ? '开启' : '关闭') + caption + '？')) {
+						return;
+					}
+				}
 				this.node.classList.add('fixed');
-                onclick(!this.node.classList.contains('on'));
+                onclick(val);
 			});
 		}
 	}

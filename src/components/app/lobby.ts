@@ -6,6 +6,9 @@ export class Lobby extends Component {
     /** Toggles for mode configuration. */
     configToggles = new Map<string, Toggle>();
 
+    /** Toggles that show or hide based on other toggles. */
+    configDynamicToggles = new Map<string, string>();
+
     /** Toggles for hero packs. */
     heroToggles = new Map<string, Toggle>();
 
@@ -34,6 +37,10 @@ export class Lobby extends Component {
             const toggle = this.sidebar.pane.addToggle(config.name, result => {
                 this.yield(['config', name, result], false);
             }, config.options);
+            toggle.confirm = config.confirm;
+            if (config.requires) {
+                this.configDynamicToggles.set(name, config.requires);
+            }
             this.configToggles.set(name, toggle);
         }
         this.sidebar.pane.addSection('武将');
@@ -59,7 +66,17 @@ export class Lobby extends Component {
 
     $config(config: {[key: string]: any}) {
         for (const key in config) {
-            this.configToggles.get(key)?.assign(config[key]);
+            const toggle = this.configToggles.get(key);
+            toggle?.assign(config[key]);
+            const requires = this.configDynamicToggles.get(key);
+            if (requires && toggle) {
+                if (requires[0] === '!') {
+                    toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                }
+                else {
+                    toggle.node.style.display = config[requires] ? '' : 'none';
+                }
+            }
         }
         if (this.owner === this.client.uid) {
             this.db.set(this.get('mode') + ':config', config);

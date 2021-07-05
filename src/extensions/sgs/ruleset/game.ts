@@ -31,9 +31,10 @@ export const game = <CollectionSGS>{
                     configs[name] = {};
                     configs[name].name = fullConfigs[name].name;
                     configs[name].intro = fullConfigs[name].intro;
-                    if (fullConfigs[name].options) {
-                        configs[name].options = fullConfigs[name].options;
-                    }
+                    configs[name].options = fullConfigs[name].options;
+                    configs[name].requires = fullConfigs[name].requires;
+                    configs[name].confirm = fullConfigs[name].confirm;
+
                     if (!(name in this.game.config)) {
                         this.game.config[name] = fullConfigs[name].init;
                     }

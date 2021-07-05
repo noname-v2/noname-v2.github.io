@@ -252,10 +252,6 @@
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
             }
             else if (this.step === 3) {
-                // backup before user interaction
-                if (this.monitors.size) {
-                    await this.game.backup();
-                }
                 // call component methods
                 this.results.clear();
                 this.game.worker.broadcast([this.id, {}, Object.fromEntries(this.calls)]);
@@ -296,6 +292,10 @@
             }
             if (incr) {
                 this.step++;
+                // backup before user interaction in step 3
+                if (this.step === 3 && this.monitors.size) {
+                    await this.game.backup();
+                }
             }
             return true;
         }
@@ -459,10 +459,8 @@
                     }
                     else {
                         to[key] = from[key];
-                        Object.freeze(to[key]);
                     }
                 }
-                Object.freeze(to);
                 return to;
             };
             const getRuleSet = async (name) => {
@@ -474,7 +472,7 @@
                 return ruleset;
             };
             getRuleSet(this.mode).then(async (ruleset) => {
-                this.ruleset = ruleset;
+                this.ruleset = this.deepFreeze(ruleset);
                 // load extensions
                 for (const name of this.packs) {
                     await this.getExtension(name);
@@ -538,6 +536,17 @@
         /** Backup game progress. */
         async backup() {
             //////
+        }
+        /** Deep freeze object. */
+        deepFreeze(obj) {
+            const propNames = Object.getOwnPropertyNames(obj);
+            for (const name of propNames) {
+                const value = obj[name];
+                if (value && typeof value === 'object') {
+                    this.deepFreeze(value);
+                }
+            }
+            return Object.freeze(obj);
         }
     }
 

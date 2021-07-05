@@ -78,10 +78,8 @@ export class Game {
                 }
                 else {
                     to[key] = from[key];
-                    Object.freeze(to[key]);
                 }
             }
-            Object.freeze(to);
             return to;
         };
 
@@ -96,7 +94,7 @@ export class Game {
         };
 
         getRuleSet(this.mode).then(async ruleset => {
-            this.ruleset = ruleset;
+            this.ruleset = this.deepFreeze(ruleset);
 
             // load extensions
             for (const name of this.packs) {
@@ -169,5 +167,20 @@ export class Game {
     /** Backup game progress. */
     async backup() {
         //////
+    }
+
+    /** Deep freeze object. */
+    deepFreeze(obj: any) {
+        const propNames = Object.getOwnPropertyNames(obj);
+
+        for (const name of propNames) {
+            const value = obj[name];
+
+            if (value && typeof value === 'object') {
+                this.deepFreeze(value);
+            }
+        }
+
+        return Object.freeze(obj);
     }
 }

@@ -63,9 +63,9 @@ const game = {
                     configs[name] = {};
                     configs[name].name = fullConfigs[name].name;
                     configs[name].intro = fullConfigs[name].intro;
-                    if (fullConfigs[name].options) {
-                        configs[name].options = fullConfigs[name].options;
-                    }
+                    configs[name].options = fullConfigs[name].options;
+                    configs[name].requires = fullConfigs[name].requires;
+                    configs[name].confirm = fullConfigs[name].confirm;
                     if (!(name in this.game.config)) {
                         this.game.config[name] = fullConfigs[name].init;
                     }
@@ -116,12 +116,14 @@ const config = {
     online: {
         name: '联机模式',
         intro: '允许其他玩家通过主页的联机键加入游戏。',
-        init: false
+        init: false,
+        confirm: [false]
     },
     online_join: {
         name: '允许中途加入',
         intro: '允许旁观玩家在游戏过程中加入游戏。',
-        init: true
+        init: true,
+        requires: 'online'
     },
     online_timeout: {
         name: '出牌时限',
@@ -131,17 +133,31 @@ const config = {
             [30, '<span class="mono">30</span>秒'],
             [60, '<span class="mono">1</span>分钟'],
             [120, '<span class="mono">2</span>分钟']
-        ]
+        ],
+        requires: 'online'
     },
-    specify_hero: {
+    online_specify: {
         name: '点将',
-        intro: '允许玩家自由选择武将。',
-        init: false
+        intro: '允许玩家在游戏开始前自由选择武将。',
+        init: false,
+        requires: 'online'
     },
-    allow_mulligan: {
+    online_mulligan: {
         name: '手气卡',
-        intro: '游戏开始时玩家可以更换一次手牌。',
-        init: true
+        intro: '游戏开始时玩家可以更换一至两次手牌。',
+        init: 0,
+        options: [
+            [0, '禁用'],
+            [1, '一次'],
+            [2, '两次']
+        ],
+        requires: 'online'
+    },
+    mulligan: {
+        name: '手气卡',
+        intro: '游戏开始时玩家可以更换任意次手牌。',
+        init: false,
+        requires: '!online'
     }
 };
 
