@@ -189,8 +189,6 @@
             this.css = {};
             /** Stylesheet for theme. */
             this.themeNode = document.createElement('style');
-            /** Stylesheet for fonts. */
-            this.fontNode = document.createElement('style');
             /** Node for displaying background. */
             this.bgNode = this.ui.createElement('background', this.node);
             /** Node for playing background music. */
@@ -200,7 +198,6 @@
         }
         init() {
             document.head.appendChild(this.themeNode);
-            document.head.appendChild(this.fontNode);
             // setup triggers
             this.resize();
             window.addEventListener('resize', this.resize.bind(this));
