@@ -11,17 +11,29 @@ const server = createServer({
 });
 
 const wss = new Server({server});
+
+/** Send number of clients to idle clients. */
+const update = () => {
+    for (const client of clients.values()) {
+        if (client instanceof Member && client.joined === null) {
+            client.send('update', wss.clients.size.toString());
+        }
+    }
+}
+
 wss.on('connection', ws => {
     let uid: string | null = null;
     ws.on('message', (msg: string) => {
         try {
             if (uid) {
+                // call owner of member methods
                 const idx = msg.indexOf(':');
                 const method = msg.slice(0, idx);
                 const arg = msg.slice(idx + 1);
                 (clients.get(uid) as any)[method](arg);
             }
             else {
+                // create a new client
                 if (msg.startsWith('init:')) {
                     let info: any, room: any;
                     [uid, info, room] = JSON.parse(msg.slice(5));
@@ -30,14 +42,17 @@ wss.on('connection', ws => {
                         const old = clients.get(uid) ?? null;
                         old?.ws?.close(1000, 'replace');
                         if (room) {
-                            (new Owner(ws, uid, info)).init(old, room);
+                            new Owner(ws, uid, info).init(old, room);
                         }
                         else {
-                            (new Member(ws, uid, info)).init(old);
+                            new Member(ws, uid, info).init(old);
                         }
+                        update();
                         return;
                     }
                 }
+
+                // received message without initialization
                 throw(new Error('client not initialized'));
             }
         }
@@ -48,26 +63,31 @@ wss.on('connection', ws => {
 
     ws.on('close', () => {
         try {
+            // call uninitialization method
             clients.get(uid)?.uninit();
+            update();
         }
         catch {}
     });
 
-    setTimeout(() => {
-        if (!uid) {
-            ws.close(1002, 'init');
-        }
-    }, 10000);
-
     ws.on('pong', () => {
+        // assert that client is alive
         const client = clients.get(uid);
         if (client) {
             client.alive = true;
         }
     });
+
+    setTimeout(() => {
+        // close if not initialized within 10s
+        if (!uid) {
+            ws.close(1002, 'init');
+        }
+    }, 10000);
 });
 
 setInterval(() => {
+    // find and remove inactive clients
     for (const client of clients.values()) {
         try {
             if (client.alive === false) {

@@ -35,11 +35,8 @@ export class Member extends Client {
 
     /** Join a room. */
     join(uid: string) {
-        if (this.owner) {
-            return;
-        }
         const owner = clients.get(uid);
-        if (owner instanceof Owner) {
+        if (owner instanceof Owner && (!this.owner || this.joined === uid)) {
             this.joined = uid;
             owner.members.add(uid);
             owner.send('join', this.uid);
@@ -47,7 +44,7 @@ export class Member extends Client {
     }
 
     /** Leave currently joined room. */
-    leave(reason: string | null = null) {
+    leave(reason: 'end' | 'kicked' | null = null) {
         // notify room owner
         const owner = this.owner;
         if (owner) {
@@ -57,7 +54,7 @@ export class Member extends Client {
 
         if (reason) {
             if (this.ws.CLOSED) {
-                // delete closed client without a room
+                // delete closed client with no room
                 if (clients.get(this.uid) === this) {
                     clients.delete(this.uid);
                 }
@@ -70,14 +67,14 @@ export class Member extends Client {
     }
 
     /** Send full room list to client. */
-    reload(reason: string) {
+    reload(reason: 'end' | 'kicked' | 'init') {
         const rooms = {};
         for (const client of clients.values()) {
             if (client instanceof Owner) {
                 rooms[client.uid] = client.room;
             }
         }
-        this.send('reload', reason + ':' + JSON.stringify(rooms));
+        this.send('reload.' + reason, JSON.stringify(rooms));
     }
 
     /** Send a response message to the owner of the room. */
