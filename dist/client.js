@@ -1252,6 +1252,8 @@
             this.nickname = this.ui.create('input');
             /** address input */
             this.address = this.ui.create('input');
+            /** Active connection that blocks address input. */
+            this.addressBlocker = null;
         }
         create(splash) {
             // nickname, avatar and this address
@@ -1264,6 +1266,7 @@
             // popup open and close
             this.onopen = () => {
                 splash.node.classList.add('blurred');
+                this.address.input.disabled = true;
                 setTimeout(async () => {
                     if (!this.client.connection) {
                         await this.connect();
@@ -1304,20 +1307,18 @@
                 const ws = this.client.connection;
                 this.setCaption('正在连接');
                 return new Promise(resolve => {
+                    this.addressBlocker = resolve;
                     this.address.onicon = () => {
                         ws.close();
                     };
-                    ws.onclose = () => {
-                        this.disconnect();
-                        setTimeout(resolve, 100);
-                    };
+                    ws.onclose = () => this.disconnect();
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.setCaption('');
-                        ws.send('init:' + JSON.stringify([this.client.uid, JSON.stringify([
+                        ws.send('init:' + JSON.stringify([this.client.uid, [
                                 this.db.get('nickname') || '无名玩家',
                                 this.db.get('avatar') || 'standard:caocao'
-                            ])]));
+                            ]]));
                     };
                     ws.onmessage = ({ data }) => {
                         try {
@@ -1352,6 +1353,10 @@
             this.address.set('icon', null);
             this.address.onicon = null;
             this.setCaption('已断开');
+            if (this.addressBlocker) {
+                setTimeout(this.addressBlocker, 100);
+                this.addressBlocker = null;
+            }
         }
         addInfo() {
             const group = this.ui.createElement('group');
@@ -1388,7 +1393,6 @@
             address.node.classList.add('address');
             address.ready.then(() => {
                 address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
-                address.input.disabled = true;
             });
             address.callback = () => this.connect();
         }

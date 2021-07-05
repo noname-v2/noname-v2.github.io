@@ -41,6 +41,7 @@ export class SplashHub extends Popup {
         // popup open and close
 		this.onopen = () => {
 			splash.node.classList.add('blurred');
+			this.address.input.disabled = true;
 			setTimeout(async () => {
 				if (!this.client.connection) {
 					await this.connect();
@@ -82,10 +83,6 @@ export class SplashHub extends Popup {
     }
 
     connect() {
-        if (this.addressBlocker) {
-            return;
-        }
-
         try {
             this.client.connect('wss://' + this.address.input.value);
             this.address.set('icon', 'clear');
@@ -148,6 +145,7 @@ export class SplashHub extends Popup {
 
         if (this.addressBlocker) {
             setTimeout(this.addressBlocker, 100);
+            this.addressBlocker = null;
         }
     }
 
@@ -189,7 +187,6 @@ export class SplashHub extends Popup {
 		address.node.classList.add('address');
 		address.ready.then(() => {
 			address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
-			address.input.disabled = true;
 		});
         address.callback = () => this.connect();
     }
