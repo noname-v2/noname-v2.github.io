@@ -7,6 +7,7 @@ class Client {
         // tested by heartbeat
         this.alive = true;
         [this.ws, this.uid, this.info] = args;
+        exports.clients.set(this.uid, this);
     }
     send(tag, msg) {
         this.ws.send(tag + ':' + msg);

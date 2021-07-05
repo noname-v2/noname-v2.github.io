@@ -44,7 +44,7 @@ export class Member extends Client {
     }
 
     /** Leave currently joined room. */
-    leave(reason: 'end' | 'kicked' | null = null) {
+    leave(reason: 'end' | 'kick' | null = null) {
         // notify room owner
         const owner = this.owner;
         if (owner) {
@@ -65,14 +65,14 @@ export class Member extends Client {
     }
 
     /** Send full room list to client. */
-    reload(reason: 'end' | 'kicked' | 'init') {
+    reload(reason: 'end' | 'kick' | 'init') {
         const rooms = {};
         for (const client of clients.values()) {
             if (client instanceof Owner) {
                 rooms[client.uid] = client.room;
             }
         }
-        this.send('reload.' + reason, JSON.stringify(rooms));
+        this.send('reload', reason + ':' + JSON.stringify(rooms));
     }
 
     /** Send a response message to the owner of the room. */

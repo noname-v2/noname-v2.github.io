@@ -569,19 +569,24 @@ noname-popup.splash-hub > noname-pane > noname-group > .address {
   top: 47px;
 }
 noname-popup.splash-hub > noname-pane > noname-caption {
+  top: 120px;
   text-align: center;
   height: 240px;
   line-height: 240px;
   font-size: 40px;
 }
 noname-popup.splash-hub > noname-pane > noname-rooms {
-  height: calc(100% - 120px);
+  top: 170px;
+  height: calc(100% - 170px);
 }
 noname-popup.splash-hub > noname-pane > noname-caption, noname-popup.splash-hub > noname-pane > noname-rooms {
   position: absolute;
-  top: 120px;
   display: block;
   width: 100%;
+  transition: opacity var(--app-transition);
+}
+noname-popup.splash-hub > noname-pane > noname-section {
+  margin-top: 20px;
   transition: opacity var(--app-transition);
 }
 

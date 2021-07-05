@@ -61,14 +61,14 @@ export class Owner extends Client {
         const msg = JSON.stringify({[this.uid]: room});
         for (const client of clients.values()) {
             if (client instanceof Member && client.joined === null) {
-                this.send('update', msg);
+                this.send('edit', msg);
             }
         }
     }
 
     /** Remove a client from room. */
     kick(uid: string) {
-        this.get(uid)?.leave('kicked');
+        this.get(uid)?.leave('kick');
     }
 
     /** Send a message to a client. */
@@ -92,6 +92,6 @@ export class Owner extends Client {
             if (this.ws === null) {
                 this.edit(null);
             }
-        });
+        }, 90000);
     }
 }

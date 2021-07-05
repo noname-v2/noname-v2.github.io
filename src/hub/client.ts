@@ -19,6 +19,7 @@ export abstract class Client {
 
     constructor(...args: [WebSocket, string, any]) {
         [this.ws, this.uid, this.info] = args;
+        clients.set(this.uid, this as any);
     }
 
     /** Initialize after object created. */

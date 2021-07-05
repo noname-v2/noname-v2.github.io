@@ -107,7 +107,7 @@
         }
     }
 
-    const version = '2.0.0';
+    const version = '2.0.0dev1';
 
     /** Database for file storage. */
     const db = new Database();

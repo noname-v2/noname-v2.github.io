@@ -74,7 +74,7 @@ export abstract class Component {
             
             if (oldVal !== newVal) {
                 newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
-                const hook = (this as any)['$' + key];
+                const hook = this['$' + key as keyof Component];
                 if (typeof hook === 'function') {
                     hooks.push([hook, newVal, oldVal]);
                 }

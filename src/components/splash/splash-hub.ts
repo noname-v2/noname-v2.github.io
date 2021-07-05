@@ -12,6 +12,9 @@ export class SplashHub extends Popup {
     /** Room widgets. */
     rooms = new Map<string, HTMLElement>();
 
+    /** Number of online clients. */
+    numSection!: HTMLElement;
+
     /** Room widget container. */
     roomGroup = this.ui.createElement('rooms.hidden');
 
@@ -24,14 +27,13 @@ export class SplashHub extends Popup {
     /** address input */
     address = <Input>this.ui.create('input');
 
-    /** Active connection that blocks address input. */
-    addressBlocker: (() => void) | null = null;
-
     create(splash: Splash) {
         // nickname, avatar and this address
         this.addInfo();
 
 		// room list in this menu
+        this.numSection = this.pane.addSection('');
+        this.numSection.classList.add('hidden');
 		this.pane.node.appendChild(this.roomGroup);
 		this.ui.enableScroll(this.roomGroup);
 		
@@ -75,6 +77,7 @@ export class SplashHub extends Popup {
     }
 
     setCaption(caption: string) {
+        this.numSection.classList.add('hidden');
         this.roomGroup.classList.add('hidden');
         if (caption) {
             this.caption.innerHTML = caption;
@@ -91,12 +94,14 @@ export class SplashHub extends Popup {
             this.setCaption('正在连接');
 
             return new Promise<void>(resolve => {
-                this.addressBlocker = resolve;
                 this.address.onicon = () => {
                     ws.close();
                 };
 
-                ws.onclose = () => this.disconnect();
+                ws.onclose = () => {
+                    this.disconnect();
+                    setTimeout(resolve, 100);
+                };
 
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
@@ -109,20 +114,12 @@ export class SplashHub extends Popup {
 
                 ws.onmessage = ({data}: {data: string}) => {
                     try {
-                        if (data.startsWith('error:')) {
-                            ws.close();
-                        }
-                        else if (data.startsWith('kicked:')) {
-
-                        }
-                        else if (data.startsWith('init:')) {
-                            const updates = JSON.parse(data.slice(7));
-                            this.clearRooms();
-                            for (const uid in updates) {
-                                if (typeof updates[uid] === 'number') {
-                                    // rooms.get(uid)?[1] = updates[uid];
-                                }
-                            }
+                        const idx = data.indexOf(':');
+                        const method = data.slice(0, idx);
+                        const arg = data.slice(idx + 1);
+                        console.log(method)
+                        if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
+                            (this as any)[method](arg);
                         }
                     }
                     catch {
@@ -142,11 +139,6 @@ export class SplashHub extends Popup {
         this.address.set('icon', null);
         this.address.onicon = null;
         this.setCaption('已断开');
-
-        if (this.addressBlocker) {
-            setTimeout(this.addressBlocker, 100);
-            this.addressBlocker = null;
-        }
     }
 
     addInfo() {
@@ -189,5 +181,22 @@ export class SplashHub extends Popup {
 			address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
 		});
         address.callback = () => this.connect();
+    }
+
+    reload(msg: string) {
+        const idx = msg.indexOf(':');
+        const reason = msg.slice(0, idx);
+        const rooms = JSON.parse(msg.slice(idx + 1));
+        console.log(reason, rooms);
+    }
+
+    edit(msg: string) {
+
+    }
+
+    num(msg: string) {
+        const num = parseInt(msg);
+        this.numSection.classList.remove('hidden');
+        (this.numSection.firstChild as HTMLElement).innerHTML = '在线：' + msg
     }
 }

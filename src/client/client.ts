@@ -196,7 +196,7 @@ export class Client {
                     else {
                         const component = this.components.get(id)!;
                         await component.ready;
-                        (component as any)[method](arg);
+                        component[method as keyof Component](arg);
                     }
                 }
             }

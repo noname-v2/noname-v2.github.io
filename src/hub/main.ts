@@ -16,7 +16,7 @@ const wss = new Server({server});
 const update = () => {
     for (const client of clients.values()) {
         if (client instanceof Member && client.joined === null) {
-            client.send('update', wss.clients.size.toString());
+            client.send('num', wss.clients.size.toString());
         }
     }
 }

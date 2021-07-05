@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const version = '2.0.0';
+    const version = '2.0.0dev1';
 
     class StageAccessor {
         constructor(stage) {

@@ -42,6 +42,7 @@ noname-popup.splash-hub > noname-pane {
 
     // caption text
     > noname-caption {
+        top: 120px;
         text-align: center;
         height: 240px;
         line-height: 240px;
@@ -50,14 +51,20 @@ noname-popup.splash-hub > noname-pane {
 
     // room list
     > noname-rooms {
-        height: calc(100% - 120px);
+        top: 170px;
+        height: calc(100% - 170px);
     }
 
     > noname-caption, > noname-rooms {
         position: absolute;
-        top: 120px;
         display: block;
         width: 100%;
+        transition: opacity var(--app-transition);
+    }
+
+    // client number section
+    > noname-section {
+        margin-top: 20px;
         transition: opacity var(--app-transition);
     }
 }

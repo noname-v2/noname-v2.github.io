@@ -70,7 +70,7 @@ class Member extends client_1.Client {
                 rooms[client.uid] = client.room;
             }
         }
-        this.send('reload.' + reason, JSON.stringify(rooms));
+        this.send('reload', reason + ':' + JSON.stringify(rooms));
     }
     /** Send a response message to the owner of the room. */
     resp(msg) {

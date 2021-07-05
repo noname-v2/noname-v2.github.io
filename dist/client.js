@@ -1231,7 +1231,7 @@
     /** Use tag <noname-gallery>. */
     SplashGallery.tag = 'gallery';
 
-    const version = '2.0.0';
+    const version = '2.0.0dev1';
     const homepage = 'noname.pub';
 
     class SplashHub extends Popup {
@@ -1249,13 +1249,13 @@
             this.nickname = this.ui.create('input');
             /** address input */
             this.address = this.ui.create('input');
-            /** Active connection that blocks address input. */
-            this.addressBlocker = null;
         }
         create(splash) {
             // nickname, avatar and this address
             this.addInfo();
             // room list in this menu
+            this.numSection = this.pane.addSection('');
+            this.numSection.classList.add('hidden');
             this.pane.node.appendChild(this.roomGroup);
             this.ui.enableScroll(this.roomGroup);
             // caption message in this menu
@@ -1291,6 +1291,7 @@
             }
         }
         setCaption(caption) {
+            this.numSection.classList.add('hidden');
             this.roomGroup.classList.add('hidden');
             if (caption) {
                 this.caption.innerHTML = caption;
@@ -1304,11 +1305,13 @@
                 const ws = this.client.connection;
                 this.setCaption('正在连接');
                 return new Promise(resolve => {
-                    this.addressBlocker = resolve;
                     this.address.onicon = () => {
                         ws.close();
                     };
-                    ws.onclose = () => this.disconnect();
+                    ws.onclose = () => {
+                        this.disconnect();
+                        setTimeout(resolve, 100);
+                    };
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.setCaption('');
@@ -1319,19 +1322,12 @@
                     };
                     ws.onmessage = ({ data }) => {
                         try {
-                            if (data.startsWith('error:')) {
-                                ws.close();
-                            }
-                            else if (data.startsWith('kicked:')) {
-                            }
-                            else if (data.startsWith('init:')) {
-                                const updates = JSON.parse(data.slice(7));
-                                this.clearRooms();
-                                for (const uid in updates) {
-                                    if (typeof updates[uid] === 'number') {
-                                        // rooms.get(uid)?[1] = updates[uid];
-                                    }
-                                }
+                            const idx = data.indexOf(':');
+                            const method = data.slice(0, idx);
+                            const arg = data.slice(idx + 1);
+                            console.log(method);
+                            if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
+                                this[method](arg);
                             }
                         }
                         catch {
@@ -1350,10 +1346,6 @@
             this.address.set('icon', null);
             this.address.onicon = null;
             this.setCaption('已断开');
-            if (this.addressBlocker) {
-                setTimeout(this.addressBlocker, 100);
-                this.addressBlocker = null;
-            }
         }
         addInfo() {
             const group = this.ui.createElement('group');
@@ -1392,6 +1384,18 @@
                 address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
             });
             address.callback = () => this.connect();
+        }
+        reload(msg) {
+            const idx = msg.indexOf(':');
+            const reason = msg.slice(0, idx);
+            const rooms = JSON.parse(msg.slice(idx + 1));
+            console.log(reason, rooms);
+        }
+        edit(msg) {
+        }
+        num(msg) {
+            this.numSection.classList.remove('hidden');
+            this.numSection.firstChild.innerHTML = '在线：' + msg;
         }
     }
     /** Use tag <noname-popup>. */
