@@ -8,7 +8,8 @@ class Client {
         this.alive = true;
         [this.ws, this.uid, this.info] = args;
     }
-    dispatch(msg) {
+    send(tag, msg, stringify = false) {
+        this.ws.send(tag + ':' + (stringify ? JSON.stringify(msg) : msg));
     }
 }
 exports.Client = Client;

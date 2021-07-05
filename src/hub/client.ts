@@ -6,7 +6,7 @@ export const clients = new Map<string, Owner | Member>();
 
 export abstract class Client {
     // WebSocket object
-    ws: WebSocket;
+    ws: WebSocket | null;
 
     // client unique identifier
     uid: string;
@@ -21,8 +21,10 @@ export abstract class Client {
         [this.ws, this.uid, this.info] = args;
     }
 
+    /** Initialize after object created. */
     abstract init(old:  Owner | Member | null, room?: any): void;
 
+    /** Handle WebSocket close. */
     abstract uninit(): void;
 
     send(tag: string, msg: string, stringify: boolean = false) {

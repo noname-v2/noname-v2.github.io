@@ -24,6 +24,9 @@ export class SplashHub extends Popup {
     /** address input */
     address = <Input>this.ui.create('input');
 
+    /** Active connection that blocks address input. */
+    addressBlocker: (() => void) | null = null;
+
     create(splash: Splash) {
         // nickname, avatar and this address
         this.addInfo();
@@ -79,6 +82,10 @@ export class SplashHub extends Popup {
     }
 
     connect() {
+        if (this.addressBlocker) {
+            return;
+        }
+
         try {
             this.client.connect('wss://' + this.address.input.value);
             this.address.set('icon', 'clear');
@@ -87,22 +94,20 @@ export class SplashHub extends Popup {
             this.setCaption('正在连接');
 
             return new Promise<void>(resolve => {
+                this.addressBlocker = resolve;
                 this.address.onicon = () => {
                     ws.close();
                 };
 
-                ws.onclose = () => {
-                    this.disconnect();
-                    setTimeout(resolve, 100);
-                };
+                ws.onclose = () => this.disconnect();
 
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.setCaption('');
-                    ws.send('init:' + JSON.stringify([this.client.uid, JSON.stringify([
+                    ws.send('init:' + JSON.stringify([this.client.uid, [
                         this.db.get('nickname') || '无名玩家',
                         this.db.get('avatar') || 'standard:caocao'
-                    ])]));
+                    ]]));
                 };
 
                 ws.onmessage = ({data}: {data: string}) => {
@@ -140,6 +145,10 @@ export class SplashHub extends Popup {
         this.address.set('icon', null);
         this.address.onicon = null;
         this.setCaption('已断开');
+
+        if (this.addressBlocker) {
+            setTimeout(this.addressBlocker, 100);
+        }
     }
 
     addInfo() {

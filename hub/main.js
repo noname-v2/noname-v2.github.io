@@ -16,7 +16,10 @@ wss.on('connection', ws => {
     ws.on('message', (msg) => {
         try {
             if (uid) {
-                client_1.clients.get(uid).dispatch(msg);
+                const idx = msg.indexOf(':');
+                const method = msg.slice(0, idx);
+                const arg = msg.slice(idx + 1);
+                client_1.clients.get(uid)[method](arg);
             }
             else {
                 if (msg.startsWith('init:')) {
@@ -25,31 +28,52 @@ wss.on('connection', ws => {
                     if (uid && info && typeof uid === 'string') {
                         const old = client_1.clients.get(uid) ?? null;
                         old?.ws?.close(1000, 'replace');
-                        const client = new (room ? owner_1.Owner : member_1.Member)(ws, uid, info);
                         if (room) {
-                            client.room = room;
+                            (new owner_1.Owner(ws, uid, info)).init(old, room);
                         }
-                        client_1.clients.set(uid, client);
-                        client.init(old);
+                        else {
+                            (new member_1.Member(ws, uid, info)).init(old);
+                        }
                         return;
                     }
                 }
-                throw ('');
+                throw (new Error('client not initialized'));
             }
         }
-        catch {
-            ws.close(1002, 'error');
+        catch (e) {
+            ws.close(1002, e.toString());
         }
     });
     ws.on('close', () => {
         try {
             client_1.clients.get(uid)?.uninit();
-            client_1.clients.delete(uid);
         }
         catch { }
     });
+    setTimeout(() => {
+        if (!uid) {
+            ws.close(1002, 'init');
+        }
+    }, 10000);
     ws.on('pong', () => {
-        client_1.clients.get(uid)?.alive = true;
+        const client = client_1.clients.get(uid);
+        if (client) {
+            client.alive = true;
+        }
     });
 });
+setInterval(() => {
+    for (const client of client_1.clients.values()) {
+        try {
+            if (client.alive === false) {
+                client.ws.close(1001, 'heartbeat');
+            }
+            else {
+                client.alive = false;
+                client.ws.ping();
+            }
+        }
+        catch { }
+    }
+}, 3000);
 server.listen(8080);

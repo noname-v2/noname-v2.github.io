@@ -8,11 +8,21 @@ export class Owner extends Client {
     /** IDs of room members. */
     members = new Set<string>();
 
-    get clients() {
+    /** Return client object if uid is a member. */
+    private get(uid: string) {
+        const client = clients.get(uid);
+        if (client instanceof Member && client.joined === this.uid) {
+            return client;
+        }
+        return null;
+    }
+
+    /** Return all member client objects. */
+    private getAll() {
         const members = <Member[]>[];
         for (const uid of this.members) {
-            const client = clients.get(uid);
-            if (client instanceof Member && client.joined === this.uid) {
+            const client = this.get(uid);
+            if (client) {
                 members.push(client);
             }
         }
@@ -22,23 +32,29 @@ export class Owner extends Client {
     init(old: Owner | Member | null, room: any) {
         this.edit(room);
 
-        // notify owner about previously joined clients
         if (old instanceof Owner) {
-            for (const client of old.clients) {
+            // send previously joined clients
+            for (const client of old.getAll()) {
                 client.join(this.uid);
             }
         }
+        else if (old instanceof Member) {
+            // notify previous room owner
+            old.leave();
+        }
     }
 
+    /** Edit room info. */
     edit(room: any) {
         this.room = room;
 
         // notify room members
         if (room === null) {
-            for (const client of this.clients) {
+            for (const client of this.getAll()) {
                 client.leave('end');
             }
             this.ws.close(1000);
+            clients.delete(this.uid);
         }
 
         // send room update to idle clients
@@ -50,11 +66,32 @@ export class Owner extends Client {
         }
     }
 
-    bcast(msg: string) {
+    /** Remove a client from room. */
+    kick(uid: string) {
+        this.get(uid)?.leave('kicked');
+    }
 
+    /** Send a message to a client. */
+    to(msg: string) {
+        const [uid, msg2] = JSON.parse(msg);
+        this.get(uid)?.send('msg', msg2);
+    }
+
+    /** Send a message to all clients. */
+    bcast(msg: string) {
+        for (const client of this.getAll()) {
+            client.send('msg', msg);
+        }
     }
 
     uninit() {
-        
+        this.bcast('down');
+
+        // close room after 90s
+        setTimeout(() => {
+            if (this.ws === null) {
+                this.edit(null);
+            }
+        });
     }
 }
