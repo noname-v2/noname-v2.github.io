@@ -259,6 +259,7 @@ noname-widget.active > noname-image, noname-widget.focus > noname-image {
   overflow-x: hidden;
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 
 .mono {

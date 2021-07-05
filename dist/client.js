@@ -1235,7 +1235,7 @@
     SplashGallery.tag = 'gallery';
 
     const version = '2.0.0';
-    const homepage = 'noname.pub;';
+    const homepage = 'noname.pub';
 
     class SplashHub extends Popup {
         constructor() {

@@ -58,6 +58,9 @@ noname-widget {
 	overflow-x: hidden;
 	overflow-y: scroll;
 	-webkit-overflow-scrolling: touch;
+
+	// hide scrollbar in firefox
+	scrollbar-width: thin;
 }
 
 .mono {

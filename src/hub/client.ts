@@ -1,4 +1,10 @@
-export class Client {
+import WebSocket from 'ws';
+import type { Owner } from './owner';
+import type { Member } from './member';
+
+export const clients = new Map<string, Owner | Member>();
+
+export abstract class Client {
     // WebSocket object
     ws: WebSocket;
 
@@ -8,15 +14,14 @@ export class Client {
     // client description
     info: any;
 
-    // room info
-    room: any;
-
     // tested by heartbeat
     alive = true;
 
-    constructor(ws: WebSocket, uid: string, info: any) {
-        this.ws = ws;
-        this.uid = uid;
-        this.info = info;
+    constructor(...args: [WebSocket, string, any]) {
+        [this.ws, this.uid, this.info] = args;
     }
+
+    abstract init(old:  Owner | Member | null, room?: any): void;
+
+    abstract uninit(): void;
 }
