@@ -1,0 +1,21 @@
+{
+  "name": "eruda",
+  "version": "2.4.1",
+  "description": "Console for Mobile Browsers",
+  "main": "eruda.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liriliri/eruda.git"
+  },
+  "keywords": [
+    "console",
+    "mobile",
+    "debug"
+  ],
+  "author": "redhoodsu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/liriliri/eruda/issues"
+  },
+  "homepage": "https://eruda.liriliri.io/"
+}

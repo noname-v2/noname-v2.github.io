@@ -1,6 +1,6 @@
 {
 	"name": "noname-v2",
-	"version": "2.0.0",
+	"version": "2.0.0dev1",
 	"homepage": "noname.pub",
 	"scripts": {
 		"build": "sh scripts/build.sh",

@@ -26,7 +26,7 @@ export class Splash extends Component {
 		// debug mode
 		if (this.client.debug && ['iOS', 'Android'].includes(this.client.platform)) {
 			const script = document.createElement('script');
-            script.src = 'lib/eruda.js';
+            script.src = 'lib/eruda/eruda.js';
             script.onload = () => (window as any).eruda.init();
             document.head.appendChild(script);
 		}
