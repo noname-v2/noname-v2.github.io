@@ -1683,6 +1683,13 @@
             // bottom button bar
             this.bar.splash = this;
             this.node.appendChild(this.bar.node);
+            // debug mode
+            if (this.client.debug && ['iOS', 'Android'].includes(this.client.platform)) {
+                const script = document.createElement('script');
+                script.src = 'dist/eruda.js';
+                script.onload = () => window.eruda.init();
+                document.head.appendChild(script);
+            }
         }
         hide() {
             this.ui.animate(this.node, {

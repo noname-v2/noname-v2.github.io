@@ -22,6 +22,14 @@ export class Splash extends Component {
 		// bottom button bar
 		this.bar.splash = this;
         this.node.appendChild(this.bar.node);
+
+		// debug mode
+		if (this.client.debug && ['iOS', 'Android'].includes(this.client.platform)) {
+			const script = document.createElement('script');
+            script.src = 'lib/eruda.js';
+            script.onload = () => (window as any).eruda.init();
+            document.head.appendChild(script);
+		}
 	}
 
 	hide() {
