@@ -96,10 +96,9 @@ noname-toggle {
 	}
 }
 
-.fixed > noname-toggle, noname-toggle.fixed {
+// fixed: static property  pending: temporary property (e.g. awaiting response)
+.fixed > noname-toggle, .pending > noname-toggle, noname-toggle.fixed, noname-toggle.pending {
 	> noname-switcher, > noname-text {
-		right: 20px;
-		width: 60px;
 		cursor: default;
 		pointer-events: none;
 	}

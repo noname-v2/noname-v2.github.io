@@ -26,6 +26,11 @@ const stage = {
         async content() {
         }
     },
+    main: {
+        async content() {
+            await this.getRule().apply(this);
+        }
+    },
     after: {
         async content() {
         }
@@ -45,6 +50,7 @@ const game = {
             },
             createLobby() {
                 const lobby = this.create('lobby');
+                this.lobbyID = lobby.id;
                 const heropacks = {};
                 const cardpacks = {};
                 const configs = {};
@@ -71,11 +77,13 @@ const game = {
                     }
                 }
                 lobby.set('pane', { heropacks, cardpacks, configs });
-                this.add('awaitStart').lobbyID = lobby.id;
+                this.add('awaitStart');
+                this.add('cleanUp');
             },
             awaitStart() {
-                const lobby = this.game.links.get(this.lobbyID);
+                const lobby = this.game.links.get(this.parent.lobbyID);
                 lobby.owner = this.game.uid;
+                lobby.sync = true;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
                 lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
@@ -84,8 +92,17 @@ const game = {
             },
             updateLobby(lobby, [type, key, val]) {
                 if (type === 'config') {
-                    this.game.config[key] = val;
-                    lobby.set('config', this.game.config);
+                    if (key === 'online' && val) {
+                        return new Promise(resolve => {
+                            setTimeout(() => {
+                                resolve('abc' + val);
+                            }, 2000);
+                        });
+                    }
+                    else {
+                        this.game.config[key] = val;
+                        lobby.set('config', this.game.config);
+                    }
                 }
                 else if (type === 'hero') {
                     this.game.disabledHeropacks[val ? 'delete' : 'add'](key);
@@ -95,6 +112,11 @@ const game = {
                     this.game.disabledCardpacks[val ? 'delete' : 'add'](key);
                     lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
                 }
+            },
+            cleanUp() {
+                const lobby = this.game.links.get(this.parent.lobbyID);
+                lobby.unlink();
+                this.game.freeze();
             },
             createGame() {
             }

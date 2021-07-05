@@ -35,7 +35,6 @@ export class Toggle extends Component {
 								return;
 							}
 						}
-                        this.node.classList.add('fixed');
                         onclick(id);
 						menu.close();
                     })
@@ -60,7 +59,6 @@ export class Toggle extends Component {
 						return;
 					}
 				}
-				this.node.classList.add('fixed');
                 onclick(val);
 			});
 		}
@@ -76,8 +74,5 @@ export class Toggle extends Component {
 			// menu based switcher
 			this.text.innerHTML = this.choices.get(value) || '';
 		}
-
-		// re-enable modification
-		this.node.classList.remove('fixed');
 	}
 }

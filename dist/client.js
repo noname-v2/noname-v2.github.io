@@ -419,7 +419,16 @@
             for (const name in configs.configs) {
                 const config = configs.configs[name];
                 const toggle = this.sidebar.pane.addToggle(config.name, result => {
-                    this.yield(['config', name, result], false);
+                    this.sidebar.pane.node.classList.add('pending');
+                    if (name === 'online' && result) {
+                        this.yield(['config', name, result], false)?.then(result => {
+                            console.log('def', result);
+                            this.sidebar.pane.node.classList.remove('pending');
+                        });
+                    }
+                    else {
+                        this.yield(['config', name, result], false);
+                    }
                 }, config.options);
                 toggle.confirm = config.confirm;
                 if (config.requires) {
@@ -430,6 +439,7 @@
             this.sidebar.pane.addSection('武将');
             for (const name in configs.heropacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
+                    this.sidebar.pane.node.classList.add('pending');
                     this.yield(['hero', name, result], false);
                 });
                 this.heroToggles.set(name, toggle);
@@ -437,6 +447,7 @@
             this.sidebar.pane.addSection('卡牌');
             for (const name in configs.cardpacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
+                    this.sidebar.pane.node.classList.add('pending');
                     this.yield(['card', name, result], false);
                 });
                 this.cardToggles.set(name, toggle);
@@ -447,6 +458,7 @@
             this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
         }
         $config(config) {
+            this.sidebar.pane.node.classList.remove('pending');
             for (const key in config) {
                 const toggle = this.configToggles.get(key);
                 toggle?.assign(config[key]);
@@ -1752,7 +1764,6 @@
                                     return;
                                 }
                             }
-                            this.node.classList.add('fixed');
                             onclick(id);
                             menu.close();
                         });
@@ -1776,7 +1787,6 @@
                             return;
                         }
                     }
-                    this.node.classList.add('fixed');
                     onclick(val);
                 });
             }
@@ -1791,8 +1801,6 @@
                 // menu based switcher
                 this.text.innerHTML = this.choices.get(value) || '';
             }
-            // re-enable modification
-            this.node.classList.remove('fixed');
         }
     }
 

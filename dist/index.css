@@ -1170,9 +1170,7 @@ noname-toggle.hidden {
   display: none;
 }
 
-.fixed > noname-toggle > noname-switcher, .fixed > noname-toggle > noname-text, noname-toggle.fixed > noname-switcher, noname-toggle.fixed > noname-text {
-  right: 20px;
-  width: 60px;
+.fixed > noname-toggle > noname-switcher, .fixed > noname-toggle > noname-text, .pending > noname-toggle > noname-switcher, .pending > noname-toggle > noname-text, noname-toggle.fixed > noname-switcher, noname-toggle.fixed > noname-text, noname-toggle.pending > noname-switcher, noname-toggle.pending > noname-text {
   cursor: default;
   pointer-events: none;
 }

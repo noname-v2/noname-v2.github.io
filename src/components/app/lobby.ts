@@ -35,7 +35,13 @@ export class Lobby extends Component {
         for (const name in configs.configs) {
             const config = configs.configs[name];
             const toggle = this.sidebar.pane.addToggle(config.name, result => {
-                this.yield(['config', name, result], false);
+                this.sidebar.pane.node.classList.add('pending');
+                if (name === 'online' && result) {
+                    this.yield(['config', name, result], false);
+                }
+                else {
+                    this.yield(['config', name, result], false);
+                }
             }, config.options);
             toggle.confirm = config.confirm;
             if (config.requires) {
@@ -46,6 +52,7 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const name in configs.heropacks) {
             const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
+                this.sidebar.pane.node.classList.add('pending');
                 this.yield(['hero', name, result], false);
             });
             this.heroToggles.set(name, toggle);
@@ -53,6 +60,7 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const name in configs.cardpacks) {
             const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
+                this.sidebar.pane.node.classList.add('pending');
                 this.yield(['card', name, result], false);
             });
             this.cardToggles.set(name, toggle);
@@ -65,6 +73,7 @@ export class Lobby extends Component {
     }
 
     $config(config: {[key: string]: any}) {
+        this.sidebar.pane.node.classList.remove('pending');
         for (const key in config) {
             const toggle = this.configToggles.get(key);
             toggle?.assign(config[key]);

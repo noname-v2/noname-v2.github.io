@@ -55,4 +55,12 @@ export class GameAccessor {
     get uid() {
         return this.#game.worker.uid;
     }
+
+    /** Disallow changing configuration during game. */
+    freeze() {
+        this.#game.deepFreeze(this.#game.config);
+        this.#game.deepFreeze(this.#game.packs);
+        this.#game.deepFreeze(this.#game.disabledHeropacks);
+        this.#game.deepFreeze(this.#game.disabledCardpacks);
+    }
 }

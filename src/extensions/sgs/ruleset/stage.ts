@@ -6,6 +6,11 @@ export const stage = <CollectionSGS>{
 
         }
     },
+    main: {
+        async content() {
+            await this.getRule().apply(this);
+        }
+    },
     after: {
         async content() {
             

@@ -177,7 +177,7 @@
             }
             return true;
         }
-        /** Add component update (called by links when this.step == 2). */
+        /** Add component update (called by links when this.step == 2 or 3). */
         update(id, items) {
             if (this.step !== 2 && this.step !== 3) {
                 throw ('cannot call update a component outside a stage');
@@ -194,7 +194,7 @@
         /** Add component function call (called by links when this.step == 2). */
         call(id, content) {
             if (this.step !== 2) {
-                throw ('cannot call update a component outside a stage');
+                throw ('cannot call call a component method outside a stage');
             }
             if (!this.calls.has(id)) {
                 this.calls.set(id, []);
@@ -206,12 +206,12 @@
             this.monitors.set(id, content);
         }
         /** Handle value returned from client. */
-        onyield(id, result, done) {
+        async onyield(id, result, done) {
             const link = this.game.links.get(id);
             const monitor = this.monitors.get(id);
             if (monitor && !done) {
-                const update = this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
-                if (link.owner) {
+                const update = await this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
+                if (link.owner && update !== undefined) {
                     this.game.worker.send(link.owner, [this.id, {}, { [id]: [['#yield', update]] }]);
                 }
             }
@@ -248,7 +248,7 @@
             else if (this.step === 2) {
                 // generate this.calls and this.main and update components (main content)
                 this.game.activeStage = this;
-                await this.accessor.getRule().apply(this.accessor);
+                await this.game.getRule('#stage.main/').apply(this.accessor);
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
             }
             else if (this.step === 3) {
@@ -346,6 +346,12 @@
         set owner(uid) {
             this.set('owner', uid);
         }
+        get sync() {
+            return this.get('#sync');
+        }
+        set sync(sync) {
+            this.set('#sync', sync);
+        }
         /** Property getter. */
         get(key) {
             return this.#props.get(key) ?? null;
@@ -416,6 +422,13 @@
         }
         get uid() {
             return this.#game.worker.uid;
+        }
+        /** Disallow changing configuration during game. */
+        freeze() {
+            this.#game.deepFreeze(this.#game.config);
+            this.#game.deepFreeze(this.#game.packs);
+            this.#game.deepFreeze(this.#game.disabledHeropacks);
+            this.#game.deepFreeze(this.#game.disabledCardpacks);
         }
     }
 

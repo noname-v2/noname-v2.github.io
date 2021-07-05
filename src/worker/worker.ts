@@ -57,7 +57,7 @@ export class Worker {
     /** Send a message to a client. */
     send(uid: string, tick: UITick) {
         if (this.game && this.connection) {
-            // broadcast tick
+            // send tick to a client
         }
         else if (uid === this.uid) {
             this.tick(tick);
