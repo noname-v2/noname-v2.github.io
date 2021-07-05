@@ -24,4 +24,8 @@ export abstract class Client {
     abstract init(old:  Owner | Member | null, room?: any): void;
 
     abstract uninit(): void;
+
+    send(tag: string, msg: string, stringify: boolean = false) {
+        this.ws.send(tag + ':' + (stringify ? JSON.stringify(msg) : msg));
+    }
 }
