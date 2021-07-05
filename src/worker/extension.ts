@@ -1,5 +1,5 @@
+import type { Component, ComponentClass } from '../client/component';
 import type { StageAccessor } from '../worker/stage-acc';
-
 
 export interface Section {
     name?: string;
@@ -18,4 +18,5 @@ export interface Extension {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
+    components?: (c: typeof Component, cs: Map<string, ComponentClass>) => void;
 }

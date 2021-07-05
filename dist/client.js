@@ -2073,7 +2073,7 @@
         enableScroll(node) {
             node.classList.add('scroll');
             node.addEventListener('wheel', e => {
-                if (e.deltaX === 0) {
+                if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
                     e.stopPropagation();
                 }
             }, { passive: false });
