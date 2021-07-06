@@ -10,7 +10,7 @@ class Client {
         exports.clients.set(this.uid, this);
     }
     send(tag, msg) {
-        this.ws.send(tag + ':' + msg);
+        this.ws.send(tag + (msg ? ':' + msg : ''));
     }
     remove() {
         if (exports.clients.get(this.uid) === this) {

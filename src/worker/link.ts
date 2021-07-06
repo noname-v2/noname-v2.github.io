@@ -30,11 +30,11 @@ export class Link {
         this.set('owner', uid);
     }
 
-    get sync() {
+    get syncing() {
         return this.get('#sync');
     }
 
-    set sync(sync: boolean) {
+    set syncing(sync: boolean) {
         this.set('#sync', sync);
     }
 

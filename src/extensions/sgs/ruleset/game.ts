@@ -47,7 +47,7 @@ export const game = <CollectionSGS>{
             awaitStart() {
                 const lobby = this.game.links.get(this.parent!.lobbyID)!;
                 lobby.owner = this.game.uid;
-                lobby.sync = true;
+                lobby.syncing = true;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
                 lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
@@ -56,8 +56,13 @@ export const game = <CollectionSGS>{
             },
             updateLobby(lobby, [type, key, val]: [string, string, any]) {
                 if (type === 'config') {
-                    if (key === 'online' && val) {
-                        
+                    if (key === 'online') {
+                        if (val) {
+                            this.game.connect(val[0], val[1]);
+                        }
+                        else {
+                            this.game.disconnect();
+                        }
                     }
                     else {
                         this.game.config[key] = val;

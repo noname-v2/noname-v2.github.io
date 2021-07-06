@@ -49,9 +49,7 @@ export class Worker {
         if (this.game && this.connection) {
             // broadcast tick
         }
-        else {
-            this.tick(tick);
-        }
+        this.tick(tick);
     }
 
     /** Send a message to a client. */

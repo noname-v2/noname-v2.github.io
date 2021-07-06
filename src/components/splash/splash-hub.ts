@@ -1,6 +1,6 @@
 import { Popup } from '../popup';
 import { Splash, Input } from '../../components';
-import { homepage } from '../../version';
+import { config } from '../../version';
 
 export class SplashHub extends Popup {
     /** Use tag <noname-popup>. */
@@ -99,17 +99,14 @@ export class SplashHub extends Popup {
                 };
 
                 ws.onclose = () => {
-                    this.disconnect();
+                    this.disconnect(this.client.connection === ws);
                     setTimeout(resolve, 100);
                 };
 
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.setCaption('');
-                    ws.send('init:' + JSON.stringify([this.client.uid, [
-                        this.db.get('nickname') || '无名玩家',
-                        this.db.get('avatar') || 'standard:caocao'
-                    ]]));
+                    ws.send('init:' + JSON.stringify(this.client.info));
                 };
 
                 ws.onmessage = ({data}: {data: string}) => {
@@ -129,12 +126,14 @@ export class SplashHub extends Popup {
             });
         }
         catch {
-            this.disconnect();
+            this.disconnect(true);
         }
     }
 
-    disconnect() {
-        this.client.disconnect();
+    disconnect(client: boolean) {
+        if (client) {
+            this.client.disconnect();
+        }
         this.clearRooms();
         this.address.set('icon', null);
         this.address.onicon = null;
@@ -148,7 +147,7 @@ export class SplashHub extends Popup {
         // avatar
 		const avatarNode = this.ui.createElement('widget', group);
 		const img = this.ui.createElement('image', avatarNode);
-		const url = this.db.get('avatar') ?? 'standard:caocao';
+		const url = this.db.get('avatar') ?? config.avatar;
 		if (url.includes(':')) {
 			const [ext, name] = url.split(':');
 			this.ui.setBackground(img, 'extensions', ext, 'images', name);
@@ -162,7 +161,7 @@ export class SplashHub extends Popup {
 		const nickname = this.nickname = <Input>this.ui.create('input', group);
 		nickname.node.classList.add('nickname');
 		nickname.ready.then(() => {
-            nickname.input.value = this.db.get('nickname') || '无名玩家';
+            nickname.input.value = this.db.get('nickname') || config.nickname;
 		});
 		nickname.callback = async val => {
             if (val) {
@@ -178,7 +177,7 @@ export class SplashHub extends Popup {
 		const address = this.address = <Input>this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
-			address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
+			address.input.value = this.client.url;
 		});
         address.callback = () => this.connect();
     }

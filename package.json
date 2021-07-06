@@ -2,6 +2,11 @@
 	"name": "noname-v2",
 	"version": "2.0.0dev1",
 	"homepage": "noname.pub",
+	"config": {
+		"ws": "ws.noname.pub:8080",
+		"nickname": "无名玩家",
+		"avatar": "standard:caocao"
+	},
 	"scripts": {
 		"build": "sh scripts/build.sh",
 		"build-hub": "sh scripts/build-hub.sh",

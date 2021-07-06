@@ -59,6 +59,8 @@ class Owner extends client_1.Client {
                 this.send('edit', msg);
             }
         }
+        // confirm to owner
+        this.send('ready');
     }
     /** Remove a client from room. */
     kick(uid) {
@@ -76,7 +78,9 @@ class Owner extends client_1.Client {
         }
     }
     uninit() {
-        this.bcast('down');
+        for (const client of this.getAll()) {
+            client.send('down');
+        }
         // close room after 90s
         setTimeout(() => {
             if (this.ws === null) {

@@ -248,6 +248,9 @@
             else if (this.step === 2) {
                 // generate this.calls and this.main and update components (main content)
                 this.game.activeStage = this;
+                if (this.game.syncPending) {
+                    this.game.sync();
+                }
                 await this.game.getRule('#stage.main/').apply(this.accessor);
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
             }
@@ -346,10 +349,10 @@
         set owner(uid) {
             this.set('owner', uid);
         }
-        get sync() {
+        get syncing() {
             return this.get('#sync');
         }
-        set sync(sync) {
+        set syncing(sync) {
             this.set('#sync', sync);
         }
         /** Property getter. */
@@ -430,6 +433,14 @@
             this.#game.deepFreeze(this.#game.disabledHeropacks);
             this.#game.deepFreeze(this.#game.disabledCardpacks);
         }
+        /** Connect to remote hub. */
+        connect(info, url) {
+            this.#game.connect(info, url);
+        }
+        /** Disconnect from remote hub. */
+        disconnect() {
+            this.#game.disconnect();
+        }
     }
 
     class Game {
@@ -442,6 +453,10 @@
             this.stages = new Map();
             /** Loaded extensions. */
             this.extensions = new Map();
+            /** IDs of connected clients. */
+            this.clients = null;
+            /** Clients updated since last UITick. */
+            this.syncPending = false;
             /** An accessor to avoid exposing unsafe properties to extensions. */
             this.accessor = new GameAccessor(this);
             self.onmessage = async ({ data: [uid, sid, id, result, done] }) => {
@@ -495,6 +510,10 @@
                     ;
                 console.log('game over');
             });
+        }
+        /** Can apply UITick. */
+        get tickable() {
+            return [2, 3].includes(this.activeStage?.step);
         }
         async getExtension(name) {
             if (!this.extensions.has(name)) {
@@ -561,6 +580,58 @@
             }
             return Object.freeze(obj);
         }
+        /** Connect to remote hub. */
+        connect(info, url) {
+            if (this.worker.connection) {
+                return false;
+            }
+            const ws = this.worker.connection = new WebSocket('wss://' + url);
+            ws.onerror = ws.onclose = () => {
+                if (this.worker.connection === ws) {
+                    this.worker.connection = null;
+                }
+                this.sync();
+            };
+            ws.onopen = () => {
+                info.push(this.getRule(this.mode + ':mode').name);
+                ws.send('init:' + JSON.stringify(info));
+            };
+            ws.onmessage = ({ data }) => {
+                if (data === 'ready') {
+                    this.clients = new Map();
+                    ws.onclose = () => {
+                        if (this.worker.connection === ws) {
+                            this.worker.connection = null;
+                        }
+                        this.sync();
+                    };
+                    this.sync();
+                }
+            };
+        }
+        /** Disconnect from remote hub. */
+        disconnect() {
+            this.clients = null;
+            this.worker.connection?.close();
+        }
+        /** Tell registered components about client update. */
+        sync() {
+            if (this.tickable) {
+                for (const link of this.links.values()) {
+                    if (link.syncing) {
+                        const ws = this.worker.connection;
+                        link.update({
+                            clients: this.clients ? Object.fromEntries(this.clients) : null,
+                            connected: (ws && ws.readyState === ws.OPEN) ? true : false
+                        });
+                    }
+                }
+                this.syncPending = false;
+            }
+            else {
+                this.syncPending = true;
+            }
+        }
     }
 
     /**
@@ -586,9 +657,7 @@
         /** Send a message to all clients. */
         broadcast(tick) {
             if (this.game && this.connection) ;
-            else {
-                this.tick(tick);
-            }
+            this.tick(tick);
         }
         /** Send a message to a client. */
         send(uid, tick) {

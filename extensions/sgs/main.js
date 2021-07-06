@@ -83,7 +83,7 @@ const game = {
             awaitStart() {
                 const lobby = this.game.links.get(this.parent.lobbyID);
                 lobby.owner = this.game.uid;
-                lobby.sync = true;
+                lobby.syncing = true;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
                 lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
@@ -92,12 +92,13 @@ const game = {
             },
             updateLobby(lobby, [type, key, val]) {
                 if (type === 'config') {
-                    if (key === 'online' && val) {
-                        return new Promise(resolve => {
-                            setTimeout(() => {
-                                resolve('abc' + val);
-                            }, 2000);
-                        });
+                    if (key === 'online') {
+                        if (val) {
+                            this.game.connect(val[0], val[1]);
+                        }
+                        else {
+                            this.game.disconnect();
+                        }
                     }
                     else {
                         this.game.config[key] = val;

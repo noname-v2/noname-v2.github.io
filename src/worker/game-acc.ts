@@ -63,4 +63,14 @@ export class GameAccessor {
         this.#game.deepFreeze(this.#game.disabledHeropacks);
         this.#game.deepFreeze(this.#game.disabledCardpacks);
     }
+
+    /** Connect to remote hub. */
+    connect(info: unknown[], url: string) {
+        this.#game.connect(info, url);
+    }
+
+    /** Disconnect from remote hub. */
+    disconnect() {
+        this.#game.disconnect();
+    }
 }

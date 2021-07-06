@@ -28,8 +28,8 @@ export abstract class Client {
     /** Handle WebSocket close. */
     abstract uninit(): void;
 
-    send(tag: string, msg: string) {
-        this.ws.send(tag + ':' + msg);
+    send(tag: string, msg?: string) {
+        this.ws.send(tag + (msg ? ':' + msg : ''));
     }
 
     remove() {

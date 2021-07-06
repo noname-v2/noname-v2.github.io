@@ -1,6 +1,6 @@
 import { Database } from './database';
 import { UI } from './ui';
-import { version } from '../version';
+import { version, config } from '../version';
 import { Component } from './component';
 import type { UITick, ClientMessage } from '../worker/worker';
 
@@ -75,6 +75,19 @@ export class Client {
         else {
             return 'Desktop';
         }
+    }
+
+    /** Initialization message. */
+    get info() {
+        return [this.uid, [
+            this.db.get('nickname') || config.nickname,
+            this.db.get('avatar') || config.avatar
+        ]];
+    }
+
+    /** WebSocket address. */
+    get url() {
+        return this.db.get('ws') || config.ws;
     }
 
     /** Fetch and parse json file. */

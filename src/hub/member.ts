@@ -53,7 +53,7 @@ export class Member extends Client {
         }
 
         if (reason) {
-            if (this.ws.CLOSED) {
+            if (this.ws.readyState === this.ws.CLOSED) {
                 // delete closed client with no room
                 this.remove();
             }

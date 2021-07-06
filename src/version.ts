@@ -1,1 +1,1 @@
-../build/version.ts
+export * from '../build/version';

@@ -40,7 +40,7 @@ class Member extends client_1.Client {
         if (owner instanceof owner_1.Owner && (!this.owner || this.joined === uid)) {
             this.joined = uid;
             owner.members.add(uid);
-            owner.send('join', this.uid);
+            owner.send('join', JSON.stringify([this.uid, this.info]));
         }
     }
     /** Leave currently joined room. */

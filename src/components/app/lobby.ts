@@ -35,9 +35,9 @@ export class Lobby extends Component {
         for (const name in configs.configs) {
             const config = configs.configs[name];
             const toggle = this.sidebar.pane.addToggle(config.name, result => {
-                this.sidebar.pane.node.classList.add('pending');
+                this.freeze();
                 if (name === 'online' && result) {
-                    this.yield(['config', name, result], false);
+                    this.yield(['config', name, [this.client.info, this.client.url]], false);
                 }
                 else {
                     this.yield(['config', name, result], false);
@@ -52,7 +52,7 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const name in configs.heropacks) {
             const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
-                this.sidebar.pane.node.classList.add('pending');
+                this.freeze();
                 this.yield(['hero', name, result], false);
             });
             this.heroToggles.set(name, toggle);
@@ -60,7 +60,7 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const name in configs.cardpacks) {
             const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
-                this.sidebar.pane.node.classList.add('pending');
+                this.freeze();
                 this.yield(['card', name, result], false);
             });
             this.cardToggles.set(name, toggle);
@@ -73,7 +73,7 @@ export class Lobby extends Component {
     }
 
     $config(config: {[key: string]: any}) {
-        this.sidebar.pane.node.classList.remove('pending');
+        this.unfreeze();
         for (const key in config) {
             const toggle = this.configToggles.get(key);
             toggle?.assign(config[key]);
@@ -108,5 +108,18 @@ export class Lobby extends Component {
         if (this.owner === this.client.uid) {
             this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
         }
+    }
+
+    $connected(val: boolean) {
+        this.unfreeze();
+        this.configToggles.get('online')?.assign(val);
+    }
+
+    freeze() {
+        this.sidebar.pane.node.classList.add('pending');
+    }
+
+    unfreeze() {
+        this.sidebar.pane.node.classList.remove('pending');
     }
 }

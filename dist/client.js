@@ -419,12 +419,9 @@
             for (const name in configs.configs) {
                 const config = configs.configs[name];
                 const toggle = this.sidebar.pane.addToggle(config.name, result => {
-                    this.sidebar.pane.node.classList.add('pending');
+                    this.freeze();
                     if (name === 'online' && result) {
-                        this.yield(['config', name, result], false)?.then(result => {
-                            console.log('def', result);
-                            this.sidebar.pane.node.classList.remove('pending');
-                        });
+                        this.yield(['config', name, [this.client.info, this.client.url]], false);
                     }
                     else {
                         this.yield(['config', name, result], false);
@@ -439,7 +436,7 @@
             this.sidebar.pane.addSection('武将');
             for (const name in configs.heropacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
-                    this.sidebar.pane.node.classList.add('pending');
+                    this.freeze();
                     this.yield(['hero', name, result], false);
                 });
                 this.heroToggles.set(name, toggle);
@@ -447,7 +444,7 @@
             this.sidebar.pane.addSection('卡牌');
             for (const name in configs.cardpacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
-                    this.sidebar.pane.node.classList.add('pending');
+                    this.freeze();
                     this.yield(['card', name, result], false);
                 });
                 this.cardToggles.set(name, toggle);
@@ -458,7 +455,7 @@
             this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
         }
         $config(config) {
-            this.sidebar.pane.node.classList.remove('pending');
+            this.unfreeze();
             for (const key in config) {
                 const toggle = this.configToggles.get(key);
                 toggle?.assign(config[key]);
@@ -491,6 +488,16 @@
             if (this.owner === this.client.uid) {
                 this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
             }
+        }
+        $connected(val) {
+            this.unfreeze();
+            this.configToggles.get('online')?.assign(val);
+        }
+        freeze() {
+            this.sidebar.pane.node.classList.add('pending');
+        }
+        unfreeze() {
+            this.sidebar.pane.node.classList.remove('pending');
         }
     }
 
@@ -1260,7 +1267,11 @@
     SplashGallery.tag = 'gallery';
 
     const version = '2.0.0dev1';
-    const homepage = 'noname.pub';
+    const config = {
+        "ws": "ws.noname.pub:8080",
+        "nickname": "无名玩家",
+        "avatar": "standard:caocao"
+    };
 
     class SplashHub extends Popup {
         constructor() {
@@ -1337,16 +1348,13 @@
                         ws.close();
                     };
                     ws.onclose = () => {
-                        this.disconnect();
+                        this.disconnect(this.client.connection === ws);
                         setTimeout(resolve, 100);
                     };
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.setCaption('');
-                        ws.send('init:' + JSON.stringify([this.client.uid, [
-                                this.db.get('nickname') || '无名玩家',
-                                this.db.get('avatar') || 'standard:caocao'
-                            ]]));
+                        ws.send('init:' + JSON.stringify(this.client.info));
                     };
                     ws.onmessage = ({ data }) => {
                         try {
@@ -1365,11 +1373,13 @@
                 });
             }
             catch {
-                this.disconnect();
+                this.disconnect(true);
             }
         }
-        disconnect() {
-            this.client.disconnect();
+        disconnect(client) {
+            if (client) {
+                this.client.disconnect();
+            }
             this.clearRooms();
             this.address.set('icon', null);
             this.address.onicon = null;
@@ -1381,7 +1391,7 @@
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.ui.createElement('image', avatarNode);
-            const url = this.db.get('avatar') ?? 'standard:caocao';
+            const url = this.db.get('avatar') ?? config.avatar;
             if (url.includes(':')) {
                 const [ext, name] = url.split(':');
                 this.ui.setBackground(img, 'extensions', ext, 'images', name);
@@ -1394,7 +1404,7 @@
             const nickname = this.nickname = this.ui.create('input', group);
             nickname.node.classList.add('nickname');
             nickname.ready.then(() => {
-                nickname.input.value = this.db.get('nickname') || '无名玩家';
+                nickname.input.value = this.db.get('nickname') || config.nickname;
             });
             nickname.callback = async (val) => {
                 if (val) {
@@ -1409,7 +1419,7 @@
             const address = this.address = this.ui.create('input', group);
             address.node.classList.add('address');
             address.ready.then(() => {
-                address.input.value = this.db.get('ws') || `ws.${homepage}:8080`;
+                address.input.value = this.client.url;
             });
             address.callback = () => this.connect();
         }
@@ -2234,6 +2244,17 @@
             else {
                 return 'Desktop';
             }
+        }
+        /** Initialization message. */
+        get info() {
+            return [this.uid, [
+                    this.db.get('nickname') || config.nickname,
+                    this.db.get('avatar') || config.avatar
+                ]];
+        }
+        /** WebSocket address. */
+        get url() {
+            return this.db.get('ws') || config.ws;
         }
         /** Fetch and parse json file. */
         readJSON(...args) {
