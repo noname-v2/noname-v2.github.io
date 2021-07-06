@@ -40,7 +40,27 @@ export const game = <CollectionSGS>{
                         this.game.config[name] = fullConfigs[name].init;
                     }
                 }
+                const np = this.getRule(this.mode + ':mode').np;
+                let npmax: number;
+                if (typeof np === 'number') {
+                    this.game.config.np = np;
+                    npmax = np;
+                }
+                else {
+                    npmax = np[np.length - 1];
+                    const nps = [];
+                    for (const n of np) {
+                        nps.push([n, `<span class="mono">${n}</span>人`]);
+                    }
+                    configs.np = {
+                        name: '游戏人数',
+                        options: nps,
+                        init: npmax
+                    };
+                    this.game.config.np = npmax;
+                }
                 lobby.set('pane', {heropacks, cardpacks, configs});
+                lobby.set('npmax', npmax);
                 this.add('awaitStart');
                 this.add('cleanUp');
             },

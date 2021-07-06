@@ -114,6 +114,10 @@ export class Lobby extends Component {
         }
     }
 
+    $np() {
+
+    }
+
     $connected(val: boolean) {
         this.unfreeze();
         this.configToggles.get('online')?.assign(val);
