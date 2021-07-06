@@ -152,12 +152,10 @@
             for (const key in items) {
                 const oldVal = this.get(key);
                 const newVal = items[key] ?? null;
-                if (oldVal !== newVal) {
-                    newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
-                    const hook = this['$' + key];
-                    if (typeof hook === 'function') {
-                        hooks.push([hook, newVal, oldVal]);
-                    }
+                newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
+                const hook = this['$' + key];
+                if (typeof hook === 'function') {
+                    hooks.push([hook, newVal, oldVal]);
                 }
             }
             for (const [hook, newVal, oldVal] of hooks) {
@@ -399,6 +397,8 @@
             this.heroToggles = new Map();
             /** Toggles for card packs. */
             this.cardToggles = new Map();
+            /** Trying to connect to server. */
+            this.connecting = false;
         }
         init() {
             this.app.arena.node.appendChild(this.node);
@@ -421,6 +421,7 @@
                 const toggle = this.sidebar.pane.addToggle(config.name, result => {
                     this.freeze();
                     if (name === 'online' && result) {
+                        this.connecting = true;
                         this.yield(['config', name, [this.client.info, this.client.url]], false);
                     }
                     else {
@@ -492,6 +493,10 @@
         $connected(val) {
             this.unfreeze();
             this.configToggles.get('online')?.assign(val);
+            if (!val && this.connecting) {
+                alert('连接失败');
+            }
+            this.connecting = false;
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
@@ -1361,7 +1366,6 @@
                             const idx = data.indexOf(':');
                             const method = data.slice(0, idx);
                             const arg = data.slice(idx + 1);
-                            console.log(method);
                             if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
                                 this[method](arg);
                             }
@@ -1425,9 +1429,8 @@
         }
         reload(msg) {
             const idx = msg.indexOf(':');
-            const reason = msg.slice(0, idx);
-            const rooms = JSON.parse(msg.slice(idx + 1));
-            console.log(reason, rooms);
+            msg.slice(0, idx);
+            JSON.parse(msg.slice(idx + 1));
         }
         edit(msg) {
         }

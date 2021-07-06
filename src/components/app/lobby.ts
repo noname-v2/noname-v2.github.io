@@ -15,6 +15,9 @@ export class Lobby extends Component {
     /** Toggles for card packs. */
     cardToggles = new Map<string, Toggle>();
 
+    /** Trying to connect to server. */
+    connecting = false;
+
     init() {
         this.app.arena!.node.appendChild(this.node);
         this.sidebar.ready.then(() => {
@@ -37,6 +40,7 @@ export class Lobby extends Component {
             const toggle = this.sidebar.pane.addToggle(config.name, result => {
                 this.freeze();
                 if (name === 'online' && result) {
+                    this.connecting = true;
                     this.yield(['config', name, [this.client.info, this.client.url]], false);
                 }
                 else {
@@ -113,6 +117,10 @@ export class Lobby extends Component {
     $connected(val: boolean) {
         this.unfreeze();
         this.configToggles.get('online')?.assign(val);
+        if (!val && this.connecting) {
+            alert('连接失败');
+        }
+        this.connecting = false;
     }
 
     freeze() {

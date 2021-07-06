@@ -49,7 +49,7 @@ export class Owner extends Client {
         this.room = room;
 
         // notify room members
-        if (room === null) {
+        if (room === 'close') {
             for (const client of this.getAll()) {
                 client.leave('end');
             }
@@ -61,7 +61,7 @@ export class Owner extends Client {
         const msg = JSON.stringify({[this.uid]: room});
         for (const client of clients.values()) {
             if (client instanceof Member && client.joined === null) {
-                this.send('edit', msg);
+                client.send('edit', msg);
             }
         }
 
@@ -95,7 +95,7 @@ export class Owner extends Client {
         // close room after 90s
         setTimeout(() => {
             if (this.ws === null) {
-                this.edit(null);
+                this.edit('close');
             }
         }, 90000);
     }

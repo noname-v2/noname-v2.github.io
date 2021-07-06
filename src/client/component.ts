@@ -71,13 +71,10 @@ export abstract class Component {
         for (const key in items) {
             const oldVal = this.get(key);
             const newVal = items[key] ?? null;
-            
-            if (oldVal !== newVal) {
-                newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
-                const hook = this['$' + key as keyof Component];
-                if (typeof hook === 'function') {
-                    hooks.push([hook, newVal, oldVal]);
-                }
+            newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
+            const hook = this['$' + key as keyof Component];
+            if (typeof hook === 'function') {
+                hooks.push([hook, newVal, oldVal]);
             }
         }
 

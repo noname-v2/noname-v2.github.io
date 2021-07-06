@@ -607,12 +607,25 @@
                     };
                     this.sync();
                 }
+                else {
+                    const idx = data.indexOf(':');
+                    data.slice(0, idx);
+                    data.slice(idx + 1);
+                }
             };
         }
         /** Disconnect from remote hub. */
         disconnect() {
             this.clients = null;
-            this.worker.connection?.close();
+            const ws = this.worker.connection;
+            if (ws) {
+                ws.send('edit:close');
+                setTimeout(() => {
+                    if (ws === this.worker.connection) {
+                        ws.close();
+                    }
+                }, 1000);
+            }
         }
         /** Tell registered components about client update. */
         sync() {

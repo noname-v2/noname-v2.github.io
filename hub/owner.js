@@ -45,7 +45,7 @@ class Owner extends client_1.Client {
     edit(room) {
         this.room = room;
         // notify room members
-        if (room === null) {
+        if (room === 'close') {
             for (const client of this.getAll()) {
                 client.leave('end');
             }
@@ -56,7 +56,7 @@ class Owner extends client_1.Client {
         const msg = JSON.stringify({ [this.uid]: room });
         for (const client of client_1.clients.values()) {
             if (client instanceof member_1.Member && client.joined === null) {
-                this.send('edit', msg);
+                client.send('edit', msg);
             }
         }
         // confirm to owner
@@ -84,7 +84,7 @@ class Owner extends client_1.Client {
         // close room after 90s
         setTimeout(() => {
             if (this.ws === null) {
-                this.edit(null);
+                this.edit('close');
             }
         }, 90000);
     }

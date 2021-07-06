@@ -52,7 +52,7 @@ class Member extends client_1.Client {
             owner.members.delete(this.uid);
         }
         if (reason) {
-            if (this.ws.CLOSED) {
+            if (this.ws.readyState === this.ws.CLOSED) {
                 // delete closed client with no room
                 this.remove();
             }

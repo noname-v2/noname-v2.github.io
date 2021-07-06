@@ -222,13 +222,29 @@ export class Game {
                 }
                 this.sync();
             }
+            else {
+                const idx = data.indexOf(':');
+                const method = data.slice(0, idx);
+                const arg = data.slice(idx + 1);
+                if (method === 'join') {
+
+                }
+            }
         };
     }
 
     /** Disconnect from remote hub. */
     disconnect() {
         this.clients = null;
-        this.worker.connection?.close();
+        const ws = this.worker.connection;
+        if (ws) {
+            ws.send('edit:close');
+            setTimeout(() => {
+                if (ws === this.worker.connection) {
+                    ws.close();
+                }
+            }, 1000);
+        }
     }
 
     /** Tell registered components about client update. */

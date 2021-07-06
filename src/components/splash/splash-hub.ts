@@ -114,7 +114,6 @@ export class SplashHub extends Popup {
                         const idx = data.indexOf(':');
                         const method = data.slice(0, idx);
                         const arg = data.slice(idx + 1);
-                        console.log(method)
                         if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
                             (this as any)[method](arg);
                         }
@@ -186,11 +185,10 @@ export class SplashHub extends Popup {
         const idx = msg.indexOf(':');
         const reason = msg.slice(0, idx);
         const rooms = JSON.parse(msg.slice(idx + 1));
-        console.log(reason, rooms);
     }
 
     edit(msg: string) {
-
+        
     }
 
     num(msg: string) {
