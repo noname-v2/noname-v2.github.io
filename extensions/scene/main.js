@@ -2,6 +2,7 @@ var main = {
     mode: {
         ruleset: 'sgs',
         name: '场景',
+        np: [2, 3, 4, 5, 6, 7, 8],
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

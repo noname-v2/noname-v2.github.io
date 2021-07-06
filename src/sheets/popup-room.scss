@@ -1,6 +1,16 @@
-noname-popup.splash-room {
+noname-splash-room {
     height: 80px;
     cursor: pointer;
+    @include widget;
+    position: relative;
+    width: 80%;
+    display: block;
+    left: 10%;
+    margin-bottom: 15px;
+
+    &:first-child {
+        margin-top: 10px;
+    }
 
     // avatar of room host
     > noname-image {
@@ -9,9 +19,7 @@ noname-popup.splash-room {
         position: absolute;
         top: 4px;
         left: 4px;
-        border-radius: var(--widget-image-radius);
-        box-shadow: var(--widget-image-shadow);
-        background-position: center -1px !important;
+        background-position: var(--widget-avatar-position) !important;
     }
 
     // name of room host

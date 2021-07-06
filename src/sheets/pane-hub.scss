@@ -13,6 +13,7 @@ noname-popup.splash-hub > noname-pane {
 
             > noname-image {
                 border-radius: 100%;
+                background-position: var(--widget-avatar-position) !important;
             }
         }
 
@@ -51,8 +52,8 @@ noname-popup.splash-hub > noname-pane {
 
     // room list
     > noname-rooms {
-        top: 170px;
-        height: calc(100% - 170px);
+        top: 160px;
+        height: calc(100% - 160px);
     }
 
     > noname-caption, > noname-rooms {
@@ -65,6 +66,7 @@ noname-popup.splash-hub > noname-pane {
     // client number section
     > noname-section {
         margin-top: 20px;
+        margin-bottom: 0;
         transition: opacity var(--app-transition);
     }
 }

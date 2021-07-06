@@ -26,6 +26,9 @@ export class Worker {
     /** User identifier. */
     uid!: string;
 
+    /** User nickname and avatar. */
+    info!: [string, string];
+
     /** Game object. */
     game: Game | null = null;
 
@@ -74,9 +77,9 @@ export class Worker {
     }
 
     /** Connect to remote hub. */
-    connect(info: unknown[], url: string) {
+    connect(url: string) {
         if (this.connection) {
-            return false;
+            return;
         }
         const ws = this.connection = new WebSocket('wss://' + url);
         ws.onerror = ws.onclose = () => {
@@ -86,12 +89,16 @@ export class Worker {
             this.sync();
         };
         ws.onopen = () => {
-            info.push(this.game!.getRule(this.game!.mode + ':mode').name);
-            ws.send('init:' + JSON.stringify(info));
+            const room = [
+                this.game?.getRule(this.game!.mode + ':mode').name,
+                1, this.game?.config.np, this.info, this.game?.started
+            ]
+            ws.send('init:' + JSON.stringify([this.uid, this.info, room]));
         };
         ws.onmessage = ({data}) => {
             if (data === 'ready') {
                 this.clients = new Map();
+                this.clients.set(this.uid, this.info);
                 ws.onclose = () => {
                     if (this.connection === ws) {
                         this.connection = null;

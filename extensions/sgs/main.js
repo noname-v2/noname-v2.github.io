@@ -76,7 +76,27 @@ const game = {
                         this.game.config[name] = fullConfigs[name].init;
                     }
                 }
+                const np = this.getRule(this.game.mode + ':mode').np;
+                let npmax;
+                if (typeof np === 'number') {
+                    this.game.config.np = np;
+                    npmax = np;
+                }
+                else {
+                    npmax = np[np.length - 1];
+                    const nps = [];
+                    for (const n of np) {
+                        nps.push([n, `<span class="mono">${n}</span>人`]);
+                    }
+                    configs.np = {
+                        name: '游戏人数',
+                        options: nps,
+                        init: npmax
+                    };
+                    this.game.config.np = npmax;
+                }
                 lobby.set('pane', { heropacks, cardpacks, configs });
+                lobby.set('npmax', npmax);
                 this.add('awaitStart');
                 this.add('cleanUp');
             },
@@ -94,7 +114,7 @@ const game = {
                 if (type === 'config') {
                     if (key === 'online') {
                         if (val) {
-                            this.game.connect(val[0], val[1]);
+                            this.game.connect(val);
                         }
                         else {
                             this.game.disconnect();
@@ -186,7 +206,7 @@ const config = {
 
 var main = {
     dependencies: ['standard', 'maneuver'],
-    ruleset: { card, player, stage, game, config }
+    ruleset: { card, player, stage, game, config, gameStage: '#game.loop/' }
 };
 
 export default main;

@@ -2,6 +2,7 @@ var main = {
     mode: {
         ruleset: 'sgs',
         name: '统率',
+        np: 2,
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

@@ -78,11 +78,11 @@ export class Client {
     }
 
     /** Initialization message. */
-    get info() {
-        return [this.uid, [
+    get info(): [string, string] {
+        return [
             this.db.get('nickname') || config.nickname,
             this.db.get('avatar') || config.avatar
-        ]];
+        ];
     }
 
     /** WebSocket address. */
@@ -111,6 +111,7 @@ export class Client {
                     config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                     config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(this.db.get(config[0] + ':config') || {});
+                    config.push(this.info);
                     this.send(0, config, true);
                 }
             }
@@ -214,7 +215,8 @@ export class Client {
                 }
             }
         }
-        catch {
+        catch (e) {
+            console.log(e);
             this.send(-1, null, false);
         }
     }

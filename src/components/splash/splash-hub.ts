@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { Splash, Input } from '../../components';
+import { Splash, SplashRoom, Input } from '../../components';
 import { config } from '../../version';
 
 export class SplashHub extends Popup {
@@ -10,7 +10,7 @@ export class SplashHub extends Popup {
     size = 'portrait' as const;
 
     /** Room widgets. */
-    rooms = new Map<string, HTMLElement>();
+    rooms = new Map<string, SplashRoom>();
 
     /** Number of online clients. */
     numSection!: HTMLElement;
@@ -62,18 +62,9 @@ export class SplashHub extends Popup {
 
     clearRooms() {
         for (const room of this.rooms.values()) {
-            
+            room.node.remove();
         }
-    }
-
-    updateRooms() {
-        if (this.rooms.size) {
-            this.roomGroup.classList.remove('hidden');
-            this.caption.classList.add('hidden');
-        }
-        else {
-            this.setCaption('暂无房间');
-        }
+        this.rooms.clear();
     }
 
     setCaption(caption: string) {
@@ -106,7 +97,7 @@ export class SplashHub extends Popup {
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.setCaption('');
-                    ws.send('init:' + JSON.stringify(this.client.info));
+                    ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
                 };
 
                 ws.onmessage = ({data}: {data: string}) => {
@@ -118,13 +109,15 @@ export class SplashHub extends Popup {
                             (this as any)[method](arg);
                         }
                     }
-                    catch {
+                    catch (e) {
+                        console.log(e);
                         ws.close();
                     }
                 };
             });
         }
-        catch {
+        catch (e) {
+            console.log(e);
             this.disconnect(true);
         }
     }
@@ -184,15 +177,40 @@ export class SplashHub extends Popup {
     reload(msg: string) {
         const idx = msg.indexOf(':');
         const reason = msg.slice(0, idx);
-        const rooms = JSON.parse(msg.slice(idx + 1));
+        if (reason === 'kick') {
+            alert('你被请出了房间');
+        }
+        else if (reason === 'end') {
+            alert('房间已关闭');
+        }
+        this.clearRooms();
+        this.roomGroup.classList.remove('hidden');
+        this.edit(msg.slice(idx + 1));
     }
 
     edit(msg: string) {
-        console.log(msg);
+        const rooms = JSON.parse(msg);
+        for (const uid in rooms) {
+            this.rooms.get(uid)?.node.remove();
+            if (rooms[uid] !== 'close') {
+                try {
+                    const room = <SplashRoom>this.ui.create('splash-room');
+                    room.setup(rooms[uid]);
+                    this.rooms.set(uid, room);
+                    this.roomGroup.appendChild(room.node);
+                }
+                catch (e) {
+                    console.log(e);
+                    this.rooms.delete(uid);
+                }
+            }
+            else {
+                this.rooms.delete(uid);
+            }
+        }
     }
 
     num(msg: string) {
-        const num = parseInt(msg);
         this.numSection.classList.remove('hidden');
         (this.numSection.firstChild as HTMLElement).innerHTML = '在线：' + msg
     }

@@ -85,7 +85,8 @@
 		"image-radius": "6px",
 		"image-radius-sharp": "3px",
 		"image-shadow": "rgba(0, 0, 0, 0.2) 0 0 0 1px",
-		"image-shadow-active": "rgba(0, 0, 0, 0.4) 0 0 0 1px"
+		"image-shadow-active": "rgba(0, 0, 0, 0.4) 0 0 0 1px",
+		"avatar-position": "center -1px"
 	},
 
 	"section": {

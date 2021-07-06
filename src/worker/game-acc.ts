@@ -48,6 +48,14 @@ export class GameAccessor {
         return this.#game.activeStage?.accessor ?? null;
     }
 
+    get gameStage() {
+        return this.#game.gameStage?.accessor ?? null;
+    }
+
+    get started() {
+        return this.#game.started;
+    }
+
     get links() {
         return this.#game.links;
     }
@@ -65,8 +73,8 @@ export class GameAccessor {
     }
 
     /** Connect to remote hub. */
-    connect(info: unknown[], url: string) {
-        this.#game.worker.connect(info, url);
+    connect(url: string) {
+        this.#game.worker.connect(url);
     }
 
     /** Disconnect from remote hub. */

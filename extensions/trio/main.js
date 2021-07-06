@@ -2,6 +2,7 @@ var main = {
     mode: {
         ruleset: 'sgs',
         name: '智斗',
+        np: 3,
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

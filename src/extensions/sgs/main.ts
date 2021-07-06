@@ -7,5 +7,5 @@ import type { SGS } from './sgs';
 
 export default <SGS>{
     dependencies: ['standard', 'maneuver'],
-    ruleset: { card, player, stage, game, config }
+    ruleset: { card, player, stage, game, config, gameStage: '#game.loop/' }
 }

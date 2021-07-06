@@ -7,10 +7,13 @@ import type { Extension } from './extension';
 
 export class Game {
     /** Root game stage. */
-    rootStage: Stage;
+    rootStage!: Stage;
 
     /** Currently active game stage. */
     activeStage: Stage | null = null;
+
+    /** Stage of the main game loop. */
+    gameStage: Stage | null = null;
 
     /** Links to components. */
     links = new Map<number, Link>();
@@ -50,7 +53,12 @@ export class Game {
         return [2, 3].includes(this.activeStage?.step!);
     }
 
-    constructor(content: [string, string[], string[], string[], {[key: string]: any}], worker: Worker) {
+    /** Main game loop has started */
+    get started() {
+        return this.gameStage?.step ? true : false;
+    }
+
+    constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
         self.onmessage = async ({data: [uid, sid, id, result, done]}: {data: ClientMessage}) => {
             if (id < 0) {
                 //////
@@ -65,11 +73,11 @@ export class Game {
 
         this.mode = content[0];
         this.worker = worker;
-        this.rootStage = this.createStage(`${this.mode}:mode/`);
         this.packs = new Set(content[1]);
         this.disabledHeropacks = new Set(content[2]);
         this.disabledCardpacks = new Set(content[3]);
         this.config = content[4];
+        this.worker.info = content[5];
 
         const apply = (from: {[key: string]: any}, to: {[key: string]: any}) => {
             for (const key in from) {
@@ -100,6 +108,7 @@ export class Game {
 
         getRuleSet(this.mode).then(async ruleset => {
             this.ruleset = this.deepFreeze(ruleset);
+            this.rootStage = this.createStage(`${this.mode}:mode/`);
 
             // load extensions
             for (const name of this.packs) {
@@ -130,6 +139,9 @@ export class Game {
         const id = this.stages.size + 1;
         const stage = new Stage(id, parent ?? null, name, this);
         this.stages.set(id, stage);
+        if (name === this.getRule('#gameStage')) {
+            this.gameStage = stage;
+        }
         return stage;
     }
 

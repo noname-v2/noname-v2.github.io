@@ -248,8 +248,8 @@
             else if (this.step === 2) {
                 // generate this.calls and this.main and update components (main content)
                 this.game.activeStage = this;
-                if (this.game.syncPending) {
-                    this.game.sync();
+                if (this.game.worker.syncPending) {
+                    this.game.worker.sync();
                 }
                 await this.game.getRule('#stage.main/').apply(this.accessor);
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
@@ -420,6 +420,12 @@
         get activeStage() {
             return this.#game.activeStage?.accessor ?? null;
         }
+        get gameStage() {
+            return this.#game.gameStage?.accessor ?? null;
+        }
+        get started() {
+            return this.#game.started;
+        }
         get links() {
             return this.#game.links;
         }
@@ -434,12 +440,12 @@
             this.#game.deepFreeze(this.#game.disabledCardpacks);
         }
         /** Connect to remote hub. */
-        connect(info, url) {
-            this.#game.connect(info, url);
+        connect(url) {
+            this.#game.worker.connect(url);
         }
         /** Disconnect from remote hub. */
         disconnect() {
-            this.#game.disconnect();
+            this.#game.worker.disconnect();
         }
     }
 
@@ -447,16 +453,14 @@
         constructor(content, worker) {
             /** Currently active game stage. */
             this.activeStage = null;
+            /** Stage of the main game loop. */
+            this.gameStage = null;
             /** Links to components. */
             this.links = new Map();
             /** Stage counter. */
             this.stages = new Map();
             /** Loaded extensions. */
             this.extensions = new Map();
-            /** IDs of connected clients. */
-            this.clients = null;
-            /** Clients updated since last UITick. */
-            this.syncPending = false;
             /** An accessor to avoid exposing unsafe properties to extensions. */
             this.accessor = new GameAccessor(this);
             self.onmessage = async ({ data: [uid, sid, id, result, done] }) => {
@@ -470,11 +474,11 @@
             };
             this.mode = content[0];
             this.worker = worker;
-            this.rootStage = this.createStage(`${this.mode}:mode/`);
             this.packs = new Set(content[1]);
             this.disabledHeropacks = new Set(content[2]);
             this.disabledCardpacks = new Set(content[3]);
             this.config = content[4];
+            this.worker.info = content[5];
             const apply = (from, to) => {
                 for (const key in from) {
                     if (typeof from[key] === 'object' && typeof to[key] === 'object') {
@@ -501,6 +505,7 @@
             };
             getRuleSet(this.mode).then(async (ruleset) => {
                 this.ruleset = this.deepFreeze(ruleset);
+                this.rootStage = this.createStage(`${this.mode}:mode/`);
                 // load extensions
                 for (const name of this.packs) {
                     await this.getExtension(name);
@@ -514,6 +519,10 @@
         /** Can apply UITick. */
         get tickable() {
             return [2, 3].includes(this.activeStage?.step);
+        }
+        /** Main game loop has started */
+        get started() {
+            return this.gameStage?.step ? true : false;
         }
         async getExtension(name) {
             if (!this.extensions.has(name)) {
@@ -531,6 +540,9 @@
             const id = this.stages.size + 1;
             const stage = new Stage(id, parent ?? null, name, this);
             this.stages.set(id, stage);
+            if (name === this.getRule('#gameStage')) {
+                this.gameStage = stage;
+            }
             return stage;
         }
         /** Get the function based on string. Format:
@@ -580,71 +592,6 @@
             }
             return Object.freeze(obj);
         }
-        /** Connect to remote hub. */
-        connect(info, url) {
-            if (this.worker.connection) {
-                return false;
-            }
-            const ws = this.worker.connection = new WebSocket('wss://' + url);
-            ws.onerror = ws.onclose = () => {
-                if (this.worker.connection === ws) {
-                    this.worker.connection = null;
-                }
-                this.sync();
-            };
-            ws.onopen = () => {
-                info.push(this.getRule(this.mode + ':mode').name);
-                ws.send('init:' + JSON.stringify(info));
-            };
-            ws.onmessage = ({ data }) => {
-                if (data === 'ready') {
-                    this.clients = new Map();
-                    ws.onclose = () => {
-                        if (this.worker.connection === ws) {
-                            this.worker.connection = null;
-                        }
-                        this.sync();
-                    };
-                    this.sync();
-                }
-                else {
-                    const idx = data.indexOf(':');
-                    data.slice(0, idx);
-                    data.slice(idx + 1);
-                }
-            };
-        }
-        /** Disconnect from remote hub. */
-        disconnect() {
-            this.clients = null;
-            const ws = this.worker.connection;
-            if (ws) {
-                ws.send('edit:close');
-                setTimeout(() => {
-                    if (ws === this.worker.connection) {
-                        ws.close();
-                    }
-                }, 1000);
-            }
-        }
-        /** Tell registered components about client update. */
-        sync() {
-            if (this.tickable) {
-                for (const link of this.links.values()) {
-                    if (link.syncing) {
-                        const ws = this.worker.connection;
-                        link.update({
-                            clients: this.clients ? Object.fromEntries(this.clients) : null,
-                            connected: (ws && ws.readyState === ws.OPEN) ? true : false
-                        });
-                    }
-                }
-                this.syncPending = false;
-            }
-            else {
-                this.syncPending = true;
-            }
-        }
     }
 
     /**
@@ -661,6 +608,10 @@
             this.game = null;
             /** Connected hub. */
             this.connection = null;
+            /** IDs of connected clients. */
+            this.clients = null;
+            /** Clients updated since last UITick. */
+            this.syncPending = false;
             self.onmessage = ({ data }) => {
                 this.uid = data[0];
                 this.game = new Game(data[3], this);
@@ -682,6 +633,75 @@
         /** Send a message to local client. */
         tick(tick) {
             self.postMessage(tick);
+        }
+        /** Connect to remote hub. */
+        connect(url) {
+            if (this.connection) {
+                return;
+            }
+            const ws = this.connection = new WebSocket('wss://' + url);
+            ws.onerror = ws.onclose = () => {
+                if (this.connection === ws) {
+                    this.connection = null;
+                }
+                this.sync();
+            };
+            ws.onopen = () => {
+                const room = [
+                    this.game?.getRule(this.game.mode + ':mode').name,
+                    1, this.game?.config.np, this.info, this.game?.started
+                ];
+                ws.send('init:' + JSON.stringify([this.uid, this.info, room]));
+            };
+            ws.onmessage = ({ data }) => {
+                if (data === 'ready') {
+                    this.clients = new Map();
+                    this.clients.set(this.uid, this.info);
+                    ws.onclose = () => {
+                        if (this.connection === ws) {
+                            this.connection = null;
+                        }
+                        this.sync();
+                    };
+                    this.sync();
+                }
+                else {
+                    const idx = data.indexOf(':');
+                    data.slice(0, idx);
+                    data.slice(idx + 1);
+                }
+            };
+        }
+        /** Disconnect from remote hub. */
+        disconnect() {
+            this.clients = null;
+            const ws = this.connection;
+            if (ws) {
+                ws.send('edit:close');
+                setTimeout(() => {
+                    if (ws === this.connection) {
+                        ws.close();
+                    }
+                }, 1000);
+            }
+        }
+        /** Tell registered components about client update. */
+        sync() {
+            if (this.game.tickable) {
+                for (const link of this.game.links.values()) {
+                    if (link.syncing) {
+                        const ws = this.connection;
+                        link.update({
+                            clients: this.clients ? Object.fromEntries(this.clients) : null,
+                            connected: (ws && ws.readyState === ws.OPEN) ? true : false
+                        });
+                    }
+                }
+                this.syncPending = false;
+            }
+            else {
+                this.syncPending = true;
+            }
         }
     }
 

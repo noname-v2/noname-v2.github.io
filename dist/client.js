@@ -422,7 +422,7 @@
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
-                        this.yield(['config', name, [this.client.info, this.client.url]], false);
+                        this.yield(['config', name, this.client.url], false);
                     }
                     else {
                         this.yield(['config', name, result], false);
@@ -489,6 +489,8 @@
             if (this.owner === this.client.uid) {
                 this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
             }
+        }
+        $np() {
         }
         $connected(val) {
             this.unfreeze();
@@ -1224,8 +1226,8 @@
                     }
                     this.index[name] = idx;
                 }
-                catch {
-                    console.log(name);
+                catch (e) {
+                    console.log(e, name);
                 }
             }
         }
@@ -1332,16 +1334,9 @@
         }
         clearRooms() {
             for (const room of this.rooms.values()) {
+                room.node.remove();
             }
-        }
-        updateRooms() {
-            if (this.rooms.size) {
-                this.roomGroup.classList.remove('hidden');
-                this.caption.classList.add('hidden');
-            }
-            else {
-                this.setCaption('暂无房间');
-            }
+            this.rooms.clear();
         }
         setCaption(caption) {
             this.numSection.classList.add('hidden');
@@ -1368,7 +1363,7 @@
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.setCaption('');
-                        ws.send('init:' + JSON.stringify(this.client.info));
+                        ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
                     };
                     ws.onmessage = ({ data }) => {
                         try {
@@ -1379,13 +1374,15 @@
                                 this[method](arg);
                             }
                         }
-                        catch {
+                        catch (e) {
+                            console.log(e);
                             ws.close();
                         }
                     };
                 });
             }
-            catch {
+            catch (e) {
+                console.log(e);
                 this.disconnect(true);
             }
         }
@@ -1438,11 +1435,37 @@
         }
         reload(msg) {
             const idx = msg.indexOf(':');
-            msg.slice(0, idx);
-            JSON.parse(msg.slice(idx + 1));
+            const reason = msg.slice(0, idx);
+            if (reason === 'kick') {
+                alert('你被请出了房间');
+            }
+            else if (reason === 'end') {
+                alert('房间已关闭');
+            }
+            this.clearRooms();
+            this.roomGroup.classList.remove('hidden');
+            this.edit(msg.slice(idx + 1));
         }
         edit(msg) {
-            console.log(msg);
+            const rooms = JSON.parse(msg);
+            for (const uid in rooms) {
+                this.rooms.get(uid)?.node.remove();
+                if (rooms[uid] !== 'close') {
+                    try {
+                        const room = this.ui.create('splash-room');
+                        room.setup(rooms[uid]);
+                        this.rooms.set(uid, room);
+                        this.roomGroup.appendChild(room.node);
+                    }
+                    catch (e) {
+                        console.log(e);
+                        this.rooms.delete(uid);
+                    }
+                }
+                else {
+                    this.rooms.delete(uid);
+                }
+            }
         }
         num(msg) {
             this.numSection.classList.remove('hidden');
@@ -1453,6 +1476,30 @@
     SplashHub.tag = 'popup';
 
     class SplashRoom extends Component {
+        constructor() {
+            super(...arguments);
+            /** Avatar image. */
+            this.avatar = this.ui.createElement('image', this.node);
+            /** Mode name. */
+            this.caption = this.ui.createElement('caption', this.node);
+            /** Status text. */
+            this.status = this.ui.createElement('span', this.node);
+            /** Nickname text. */
+            this.nickname = this.ui.createElement('span.nickname', this.node);
+        }
+        setup([name, np, npmax, [nickname, avatar], started]) {
+            if (avatar.includes(':')) {
+                const [ext, name] = avatar.split(':');
+                this.ui.setBackground(this.avatar, 'extensions', ext, 'images', name);
+            }
+            else {
+                this.ui.setBackground(this.avatar, avatar);
+            }
+            this.caption.innerHTML = name;
+            const state = started ? '游戏中' : '等待中';
+            this.status.innerHTML = `<noname-status data-state="${started ? 1 : 0}"></noname-status> ${state} ${Math.min(np, npmax)} / ${npmax}`;
+            this.nickname.innerHTML = `<noname-image></noname-image>${nickname}`;
+        }
     }
 
     class SplashSettings extends Popup {
@@ -2260,10 +2307,10 @@
         }
         /** Initialization message. */
         get info() {
-            return [this.uid, [
-                    this.db.get('nickname') || config.nickname,
-                    this.db.get('avatar') || config.avatar
-                ]];
+            return [
+                this.db.get('nickname') || config.nickname,
+                this.db.get('avatar') || config.avatar
+            ];
         }
         /** WebSocket address. */
         get url() {
@@ -2288,6 +2335,7 @@
                         config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                         config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(this.db.get(config[0] + ':config') || {});
+                        config.push(this.info);
                         this.send(0, config, true);
                     }
                 };
@@ -2382,7 +2430,8 @@
                     }
                 }
             }
-            catch {
+            catch (e) {
+                console.log(e);
                 this.send(-1, null, false);
             }
         }

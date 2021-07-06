@@ -162,8 +162,8 @@ export class Stage {
         else if (this.step === 2) {
             // generate this.calls and this.main and update components (main content)
             this.game.activeStage = this;
-            if (this.game.syncPending) {
-                this.game.sync();
+            if (this.game.worker.syncPending) {
+                this.game.worker.sync();
             }
             await this.game.getRule('#stage.main/').apply(this.accessor);
             this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);

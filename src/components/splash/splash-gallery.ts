@@ -83,8 +83,8 @@ export class SplashGallery extends Gallery {
 				}
 				this.index[name] = idx;
 			}
-			catch {
-				console.log(name);
+			catch (e) {
+				console.log(e, name);
 			}
 		}
 	}

@@ -40,7 +40,7 @@ export const game = <CollectionSGS>{
                         this.game.config[name] = fullConfigs[name].init;
                     }
                 }
-                const np = this.getRule(this.mode + ':mode').np;
+                const np = this.getRule(this.game.mode + ':mode').np;
                 let npmax: number;
                 if (typeof np === 'number') {
                     this.game.config.np = np;
@@ -78,7 +78,7 @@ export const game = <CollectionSGS>{
                 if (type === 'config') {
                     if (key === 'online') {
                         if (val) {
-                            this.game.connect(val[0], val[1]);
+                            this.game.connect(val);
                         }
                         else {
                             this.game.disconnect();
