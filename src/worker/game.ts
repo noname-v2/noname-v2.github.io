@@ -42,12 +42,6 @@ export class Game {
     /** Game ruleset. */
     ruleset!: {[key: string]: any};
 
-    /** IDs of connected clients. */
-    clients: Map<string, [string, string]> | null = null;
-
-    /** Clients updated since last UITick. */
-    syncPending = false;
-
     /** An accessor to avoid exposing unsafe properties to extensions. */
     accessor = new GameAccessor(this);
 
@@ -193,76 +187,5 @@ export class Game {
         }
 
         return Object.freeze(obj);
-    }
-
-    /** Connect to remote hub. */
-    connect(info: unknown[], url: string) {
-        if (this.worker.connection) {
-            return false;
-        }
-        const ws = this.worker.connection = new WebSocket('wss://' + url);
-        ws.onerror = ws.onclose = () => {
-            if (this.worker.connection === ws) {
-                this.worker.connection = null;
-            }
-            this.sync();
-        };
-        ws.onopen = () => {
-            info.push(this.getRule(this.mode + ':mode').name);
-            ws.send('init:' + JSON.stringify(info));
-        };
-        ws.onmessage = ({data}) => {
-            if (data === 'ready') {
-                this.clients = new Map();
-                ws.onclose = () => {
-                    if (this.worker.connection === ws) {
-                        this.worker.connection = null;
-                    }
-                    this.sync();
-                }
-                this.sync();
-            }
-            else {
-                const idx = data.indexOf(':');
-                const method = data.slice(0, idx);
-                const arg = data.slice(idx + 1);
-                if (method === 'join') {
-
-                }
-            }
-        };
-    }
-
-    /** Disconnect from remote hub. */
-    disconnect() {
-        this.clients = null;
-        const ws = this.worker.connection;
-        if (ws) {
-            ws.send('edit:close');
-            setTimeout(() => {
-                if (ws === this.worker.connection) {
-                    ws.close();
-                }
-            }, 1000);
-        }
-    }
-
-    /** Tell registered components about client update. */
-    sync() {
-        if (this.tickable) {
-            for (const link of this.links.values()) {
-                if (link.syncing) {
-                    const ws = this.worker.connection;
-                    link.update({
-                        clients: this.clients ? Object.fromEntries(this.clients) : null,
-                        connected: (ws && ws.readyState === ws.OPEN) ? true : false
-                    });
-                }
-            }
-            this.syncPending = false;
-        }
-        else {
-            this.syncPending = true;
-        }
     }
 }

@@ -32,6 +32,12 @@ export class Worker {
     /** Connected hub. */
     connection: WebSocket | null = null;
 
+    /** IDs of connected clients. */
+    clients: Map<string, [string, string]> | null = null;
+
+    /** Clients updated since last UITick. */
+    syncPending = false;
+
     /**
      * Setup communication.
      */
@@ -65,5 +71,76 @@ export class Worker {
     /** Send a message to local client. */
     tick(tick: UITick) {
         (self as any).postMessage(tick);
+    }
+
+    /** Connect to remote hub. */
+    connect(info: unknown[], url: string) {
+        if (this.connection) {
+            return false;
+        }
+        const ws = this.connection = new WebSocket('wss://' + url);
+        ws.onerror = ws.onclose = () => {
+            if (this.connection === ws) {
+                this.connection = null;
+            }
+            this.sync();
+        };
+        ws.onopen = () => {
+            info.push(this.game!.getRule(this.game!.mode + ':mode').name);
+            ws.send('init:' + JSON.stringify(info));
+        };
+        ws.onmessage = ({data}) => {
+            if (data === 'ready') {
+                this.clients = new Map();
+                ws.onclose = () => {
+                    if (this.connection === ws) {
+                        this.connection = null;
+                    }
+                    this.sync();
+                }
+                this.sync();
+            }
+            else {
+                const idx = data.indexOf(':');
+                const method = data.slice(0, idx);
+                const arg = data.slice(idx + 1);
+                if (method === 'join') {
+
+                }
+            }
+        };
+    }
+
+    /** Disconnect from remote hub. */
+    disconnect() {
+        this.clients = null;
+        const ws = this.connection;
+        if (ws) {
+            ws.send('edit:close');
+            setTimeout(() => {
+                if (ws === this.connection) {
+                    ws.close();
+                }
+            }, 1000);
+        }
+    }
+
+    /** Tell registered components about client update. */
+    sync() {
+        if (this.game!.tickable) {
+            for (const link of this.game!.links.values()) {
+                if (link.syncing) {
+                    const ws = this.connection;
+                    link.update({
+                        clients: this.clients ? Object.fromEntries(this.clients) : null,
+                        connected: (ws && ws.readyState === ws.OPEN) ? true : false
+                    });
+                }
+            }
+            this.syncPending = false;
+        }
+        else {
+            this.syncPending = true;
+        }
     }
 }

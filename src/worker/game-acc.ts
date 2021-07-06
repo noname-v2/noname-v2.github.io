@@ -66,11 +66,11 @@ export class GameAccessor {
 
     /** Connect to remote hub. */
     connect(info: unknown[], url: string) {
-        this.#game.connect(info, url);
+        this.#game.worker.connect(info, url);
     }
 
     /** Disconnect from remote hub. */
     disconnect() {
-        this.#game.disconnect();
+        this.#game.worker.disconnect();
     }
 }
