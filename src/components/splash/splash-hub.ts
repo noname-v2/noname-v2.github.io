@@ -188,7 +188,7 @@ export class SplashHub extends Popup {
     }
 
     edit(msg: string) {
-        
+        console.log(msg);
     }
 
     num(msg: string) {

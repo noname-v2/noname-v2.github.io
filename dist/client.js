@@ -493,6 +493,15 @@
         $connected(val) {
             this.unfreeze();
             this.configToggles.get('online')?.assign(val);
+            for (const [name, toggle] of this.configToggles.entries()) {
+                const requires = this.configDynamicToggles.get(name);
+                if (requires === 'online') {
+                    toggle.node.style.display = val ? '' : 'none';
+                }
+                else if (requires === '!online') {
+                    toggle.node.style.display = val ? 'none' : '';
+                }
+            }
             if (!val && this.connecting) {
                 alert('连接失败');
             }
@@ -1433,6 +1442,7 @@
             JSON.parse(msg.slice(idx + 1));
         }
         edit(msg) {
+            console.log(msg);
         }
         num(msg) {
             this.numSection.classList.remove('hidden');

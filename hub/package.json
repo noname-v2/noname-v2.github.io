@@ -3,8 +3,8 @@
 	"version": "2.0.0",
 	"homepage": "ws.noname.pub:8080",
 	"scripts": {
-		"start": "npx forever start main.mjs",
-		"stop": "npx forever stop main.mjs",
+		"start": "npx forever start main.js",
+		"stop": "npx forever stop main.js",
 		"ls": "npx forever list"
 	},
 	"license": "GPL-3.0",

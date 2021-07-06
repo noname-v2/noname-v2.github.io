@@ -4,6 +4,7 @@ export default <SGS>{
     mode: {
         ruleset: 'sgs',
         name: '竞技',
+        playerNumber: [4, 6, 8],
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

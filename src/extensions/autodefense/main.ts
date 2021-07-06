@@ -4,6 +4,7 @@ export default <SGS>{
     mode: {
         ruleset: 'sgs',
         name: '塔防',
+        playerNumber: [1, 2, 3, 4],
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

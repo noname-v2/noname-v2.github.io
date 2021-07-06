@@ -117,6 +117,15 @@ export class Lobby extends Component {
     $connected(val: boolean) {
         this.unfreeze();
         this.configToggles.get('online')?.assign(val);
+        for (const [name, toggle] of this.configToggles.entries()) {
+            const requires = this.configDynamicToggles.get(name)
+            if (requires === 'online') {
+                toggle.node.style.display = val ? '' : 'none';
+            }
+            else if (requires === '!online') {
+                toggle.node.style.display = val ? 'none' : '';
+            }
+        }
         if (!val && this.connecting) {
             alert('连接失败');
         }
