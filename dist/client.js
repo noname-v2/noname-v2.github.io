@@ -1132,6 +1132,8 @@
             this.buttons = {
                 /** Clear cached files and reload. */
                 reset: this.ui.create('button'),
+                /** Refresh page. */
+                refresh: this.ui.create('button'),
                 /** Workshop button. */
                 workshop: this.ui.create('button'),
                 /** Hub button. */
@@ -1144,6 +1146,7 @@
             // update button styles
             const buttons = [
                 ['reset', '重置', 'red'],
+                ['refresh', '刷新', 'purple'],
                 ['workshop', '扩展', 'yellow'],
                 ['hub', '联机', 'green'],
                 ['settings', '选项', 'orange']
@@ -1158,9 +1161,17 @@
             // hide reset button outside dev mode
             if (!this.client.debug) {
                 this.buttons.reset.node.style.display = 'none';
+                this.buttons.refresh.node.style.display = 'none';
             }
             else {
                 this.buttons.reset.node.classList.remove('disabled');
+                this.buttons.refresh.node.classList.remove('disabled');
+                if (['iOS', 'Android'].includes(this.client.platform)) {
+                    this.buttons.refresh.node.style.display = '';
+                }
+                else {
+                    this.buttons.refresh.node.style.display = 'none';
+                }
             }
         }
         async reset() {
@@ -1173,6 +1184,9 @@
                     await this.db.writeFile(file, null);
                 }
             }
+            window.location.reload();
+        }
+        refresh() {
             window.location.reload();
         }
         workshop() {

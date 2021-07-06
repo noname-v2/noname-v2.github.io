@@ -11,6 +11,9 @@ export class SplashBar extends Component {
         /** Clear cached files and reload. */
         reset: <Button>this.ui.create('button'),
 
+        /** Refresh page. */
+        refresh: <Button>this.ui.create('button'),
+
         /** Workshop button. */
         workshop: <Button>this.ui.create('button'),
 
@@ -25,6 +28,7 @@ export class SplashBar extends Component {
         // update button styles
         const buttons = [
             ['reset', '重置', 'red'],
+            ['refresh', '刷新', 'purple'],
             ['workshop', '扩展', 'yellow'],
             ['hub', '联机', 'green'],
             ['settings', '选项', 'orange']
@@ -41,9 +45,17 @@ export class SplashBar extends Component {
         // hide reset button outside dev mode
         if (!this.client.debug) {
             this.buttons.reset.node.style.display = 'none';
+            this.buttons.refresh.node.style.display = 'none';
         }
         else {
             this.buttons.reset.node.classList.remove('disabled');
+            this.buttons.refresh.node.classList.remove('disabled');
+            if (['iOS', 'Android'].includes(this.client.platform)) {
+                this.buttons.refresh.node.style.display = '';
+            }
+            else {
+                this.buttons.refresh.node.style.display = 'none';
+            }
         }
     }
 
@@ -60,6 +72,10 @@ export class SplashBar extends Component {
             }
         }
 
+        window.location.reload();
+    }
+
+    refresh() {
         window.location.reload();
     }
 
