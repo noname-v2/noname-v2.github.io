@@ -18,12 +18,24 @@ export class Lobby extends Component {
     /** Trying to connect to server. */
     connecting = false;
 
+    /** Trying to exit. */
+    exiting = false;
+
     init() {
         this.app.arena!.node.appendChild(this.node);
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => {
-                this.client.disconnect();
-                this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
+                if (this.get('connected')) {
+                    if (confirm('确定退出联机模式？')) {
+                        this.freeze();
+                        this.yield(['config', 'online', false], false);
+                        this.exiting = true;
+                    }
+                }
+                else {
+                    this.client.disconnect();
+                    this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
+                }
             });
             this.sidebar.setFooter('开始游戏', () => {
                 this.yield(null);
@@ -119,21 +131,27 @@ export class Lobby extends Component {
     }
 
     $connected(val: boolean) {
-        this.unfreeze();
-        this.configToggles.get('online')?.assign(val);
-        for (const [name, toggle] of this.configToggles.entries()) {
-            const requires = this.configDynamicToggles.get(name)
-            if (requires === 'online') {
-                toggle.node.style.display = val ? '' : 'none';
-            }
-            else if (requires === '!online') {
-                toggle.node.style.display = val ? 'none' : '';
-            }
+        if (!val && this.exiting) {
+            this.client.disconnect();
+            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
         }
-        if (!val && this.connecting) {
-            alert('连接失败');
+        else {
+            this.unfreeze();
+            this.configToggles.get('online')?.assign(val);
+            for (const [name, toggle] of this.configToggles.entries()) {
+                const requires = this.configDynamicToggles.get(name)
+                if (requires === 'online') {
+                    toggle.node.style.display = val ? '' : 'none';
+                }
+                else if (requires === '!online') {
+                    toggle.node.style.display = val ? 'none' : '';
+                }
+            }
+            if (!val && this.connecting) {
+                alert('连接失败');
+            }
+            this.connecting = false;
         }
-        this.connecting = false;
     }
 
     freeze() {
