@@ -57,17 +57,21 @@ export class Worker {
     broadcast(tick: UITick) {
         if (this.game && this.connection) {
             // broadcast tick
+            this.connection.send('bcast:' + JSON.stringify(tick));
         }
         this.tick(tick);
     }
 
     /** Send a message to a client. */
     send(uid: string, tick: UITick) {
-        if (this.game && this.connection) {
-            // send tick to a client
-        }
-        else if (uid === this.uid) {
+        if (uid === this.uid) {
             this.tick(tick);
+        }
+        else if (this.game && this.connection) {
+            // send tick to a remote client
+            this.connection.send('to:' + JSON.stringify([
+                uid, JSON.stringify(tick)
+            ]))
         }
     }
 
@@ -112,7 +116,10 @@ export class Worker {
                 const method = data.slice(0, idx);
                 const arg = data.slice(idx + 1);
                 if (method === 'join') {
-                    console.log('>>', arg);
+                    const [uid, info] = JSON.parse(arg);
+                    this.clients!.set(uid, info);
+                    this.send(uid, this.game!.pack());
+                    this.sync();
                 }
             }
         };

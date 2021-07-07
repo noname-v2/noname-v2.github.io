@@ -580,6 +580,10 @@ noname-popup.splash-hub > noname-pane > noname-rooms {
   top: 160px;
   height: calc(100% - 160px);
 }
+noname-popup.splash-hub > noname-pane > noname-rooms.entering {
+  opacity: 0.8;
+  pointer-events: none;
+}
 noname-popup.splash-hub > noname-pane > noname-caption, noname-popup.splash-hub > noname-pane > noname-rooms {
   position: absolute;
   display: block;

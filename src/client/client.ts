@@ -139,9 +139,7 @@ export class Client {
         this.yielding.clear();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
-        if (!this.ui.app.splash.node.parentNode) {
-            this.ui.app.splash.show();
-        }
+        this.ui.app.splash.show();
         this.sid = 0;
     }
 

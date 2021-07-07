@@ -39,7 +39,7 @@ class Member extends client_1.Client {
         const owner = client_1.clients.get(uid);
         if (owner instanceof owner_1.Owner && (!this.owner || this.joined === uid)) {
             this.joined = uid;
-            owner.members.add(uid);
+            owner.members.add(this.uid);
             owner.send('join', JSON.stringify([this.uid, this.info]));
         }
     }
@@ -47,10 +47,11 @@ class Member extends client_1.Client {
     leave(reason = null) {
         // notify room owner
         const owner = this.owner;
-        if (owner) {
+        if (owner && reason !== 'end') {
             owner.send('leave', this.uid);
             owner.members.delete(this.uid);
         }
+        this.joined = null;
         if (reason) {
             if (this.closed) {
                 // delete closed client with no room

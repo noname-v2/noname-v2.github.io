@@ -27,9 +27,6 @@ export class SplashHub extends Popup {
     /** address input */
     address = <Input>this.ui.create('input');
 
-    /** Attempting to enter a room, disable other room clicks. */
-    entering = false;
-
     create(splash: Splash) {
         // nickname, avatar and this address
         this.addInfo();
@@ -109,7 +106,7 @@ export class SplashHub extends Popup {
                         const method = data.slice(0, idx);
                         const arg = data.slice(idx + 1);
                         if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
-                            (this as any)[method](arg, ws);
+                            (this as any)[method](arg);
                         }
                     }
                     catch (e) {
@@ -177,8 +174,9 @@ export class SplashHub extends Popup {
         address.callback = () => this.connect();
     }
 
-    reload(msg: string, ws: WebSocket) {
-        this.entering = false;
+    reload(msg: string) {
+        this.app.splash.show();
+        this.roomGroup.classList.remove('entering');
         const idx = msg.indexOf(':');
         const reason = msg.slice(0, idx);
         if (reason === 'kick') {
@@ -188,11 +186,16 @@ export class SplashHub extends Popup {
             alert('房间已关闭');
         }
         this.clearRooms();
+        this.client.clear();
         this.roomGroup.classList.remove('hidden');
-        this.edit(msg.slice(idx + 1), ws);
+        this.edit(msg.slice(idx + 1));
     }
 
-    edit(msg: string, ws: WebSocket) {
+    edit(msg: string) {
+        const ws = this.client.connection;
+        if (!(ws instanceof WebSocket)) {
+            return;
+        }
         const rooms = JSON.parse(msg);
         for (const uid in rooms) {
             this.rooms.get(uid)?.node.remove();
@@ -202,8 +205,8 @@ export class SplashHub extends Popup {
                     room.setup(rooms[uid]);
                     this.rooms.set(uid, room);
                     this.ui.bindClick(room.node, () => {
-                        if (!this.entering) {
-                            this.entering = true;
+                        if (!this.roomGroup.classList.contains('entering')) {
+                            this.roomGroup.classList.add('entering');
                             ws.send('join:' + uid);
                         }
                     });
@@ -223,5 +226,20 @@ export class SplashHub extends Popup {
     num(msg: string) {
         this.numSection.classList.remove('hidden');
         (this.numSection.firstChild as HTMLElement).innerHTML = '在线：' + msg
+    }
+
+    msg(msg: string) {
+        try {
+            this.client.dispatch(JSON.parse(msg));
+            this.app.splash.hide();
+            this.close();
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+
+    down() {
+        // room owner disconnected
     }
 }

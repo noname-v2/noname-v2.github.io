@@ -408,9 +408,16 @@
                 this.sidebar.setHeader('返回', () => {
                     if (this.get('connected')) {
                         if (confirm('确定退出联机模式？')) {
-                            this.freeze();
-                            this.yield(['config', 'online', false], false);
-                            this.exiting = true;
+                            const ws = this.client.connection;
+                            if (ws instanceof WebSocket) {
+                                this.client.clear();
+                                ws.send('leave:init');
+                            }
+                            else {
+                                this.freeze();
+                                this.yield(['config', 'online', false], false);
+                                this.exiting = true;
+                            }
                         }
                     }
                     else {
@@ -469,6 +476,9 @@
         $config(config) {
             this.unfreeze();
             for (const key in config) {
+                if (key === 'online') {
+                    continue;
+                }
                 const toggle = this.configToggles.get(key);
                 toggle?.assign(config[key]);
                 const requires = this.configDynamicToggles.get(key);
@@ -525,6 +535,9 @@
                 }
                 this.connecting = false;
             }
+        }
+        $clients(val, oldVal) {
+            console.log(val, oldVal);
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
@@ -1006,6 +1019,8 @@
             this.size = null;
             /** Animation speed of open and close. */
             this.transition = null;
+            // currently hidden
+            this.hidden = true;
         }
         init() {
             this.node.classList.add('noname-popup');
@@ -1025,6 +1040,10 @@
             });
         }
         close() {
+            if (this.hidden) {
+                return;
+            }
+            this.hidden = true;
             if (this.onclose) {
                 this.onclose();
             }
@@ -1035,6 +1054,10 @@
             };
         }
         open() {
+            if (!this.hidden) {
+                return;
+            }
+            this.hidden = false;
             if (this.onopen) {
                 this.onopen();
             }
@@ -1335,8 +1358,6 @@
             this.nickname = this.ui.create('input');
             /** address input */
             this.address = this.ui.create('input');
-            /** Attempting to enter a room, disable other room clicks. */
-            this.entering = false;
         }
         create(splash) {
             // nickname, avatar and this address
@@ -1404,7 +1425,7 @@
                             const method = data.slice(0, idx);
                             const arg = data.slice(idx + 1);
                             if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
-                                this[method](arg, ws);
+                                this[method](arg);
                             }
                         }
                         catch (e) {
@@ -1466,8 +1487,9 @@
             });
             address.callback = () => this.connect();
         }
-        reload(msg, ws) {
-            this.entering = false;
+        reload(msg) {
+            this.app.splash.show();
+            this.roomGroup.classList.remove('entering');
             const idx = msg.indexOf(':');
             const reason = msg.slice(0, idx);
             if (reason === 'kick') {
@@ -1477,10 +1499,15 @@
                 alert('房间已关闭');
             }
             this.clearRooms();
+            this.client.clear();
             this.roomGroup.classList.remove('hidden');
-            this.edit(msg.slice(idx + 1), ws);
+            this.edit(msg.slice(idx + 1));
         }
-        edit(msg, ws) {
+        edit(msg) {
+            const ws = this.client.connection;
+            if (!(ws instanceof WebSocket)) {
+                return;
+            }
             const rooms = JSON.parse(msg);
             for (const uid in rooms) {
                 this.rooms.get(uid)?.node.remove();
@@ -1490,8 +1517,8 @@
                         room.setup(rooms[uid]);
                         this.rooms.set(uid, room);
                         this.ui.bindClick(room.node, () => {
-                            if (!this.entering) {
-                                this.entering = true;
+                            if (!this.roomGroup.classList.contains('entering')) {
+                                this.roomGroup.classList.add('entering');
                                 ws.send('join:' + uid);
                             }
                         });
@@ -1510,6 +1537,19 @@
         num(msg) {
             this.numSection.classList.remove('hidden');
             this.numSection.firstChild.innerHTML = '在线：' + msg;
+        }
+        msg(msg) {
+            try {
+                this.client.dispatch(JSON.parse(msg));
+                this.app.splash.hide();
+                this.close();
+            }
+            catch (e) {
+                console.log(e);
+            }
+        }
+        down() {
+            // room owner disconnected
         }
     }
     /** Use tag <noname-popup>. */
@@ -1817,6 +1857,8 @@
             this.settings = this.ui.create('splash-settings');
             // hub menu
             this.hub = this.ui.create('splash-hub');
+            // currently hidden
+            this.hidden = true;
         }
         init() {
             // create mode selection gallery
@@ -1834,6 +1876,10 @@
             }
         }
         hide() {
+            if (this.hidden) {
+                return;
+            }
+            this.hidden = true;
             this.ui.animate(this.node, {
                 scale: [1, 'var(--app-splash-transform)'], opacity: [1, 0]
             }).onfinish = () => {
@@ -1841,6 +1887,10 @@
             };
         }
         show() {
+            if (!this.hidden) {
+                return;
+            }
+            this.hidden = false;
             this.app.node.appendChild(this.node);
             this.ui.animate(this.node, {
                 scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]
@@ -2401,9 +2451,7 @@
             this.yielding.clear();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
-            if (!this.ui.app.splash.node.parentNode) {
-                this.ui.app.splash.show();
-            }
+            this.ui.app.splash.show();
             this.sid = 0;
         }
         /**

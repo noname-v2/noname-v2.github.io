@@ -2,7 +2,7 @@ import { Stage } from './stage';
 import { Link } from './link';
 import { GameAccessor } from './game-acc';
 import type { StageLocation } from './stage';
-import type { Worker, ClientMessage } from './worker';
+import type { Worker, ClientMessage, UITick } from './worker';
 import type { Extension } from './extension';
 
 export class Game {
@@ -199,5 +199,14 @@ export class Game {
         }
 
         return Object.freeze(obj);
+    }
+
+    /** Get a UITick of all links. */
+    pack(): UITick {
+        const ui = <{[key: string]: {[key: string]: any}}>{};
+        for (const [uid, link] of this.links.entries()) {
+            ui[uid] = link.flatten();
+        }
+        return [this.activeStage?.id || 0, ui, {}];
     }
 }

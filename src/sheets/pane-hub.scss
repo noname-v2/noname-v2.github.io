@@ -54,6 +54,11 @@ noname-popup.splash-hub > noname-pane {
     > noname-rooms {
         top: 160px;
         height: calc(100% - 160px);
+
+        &.entering {
+            opacity: 0.8;
+            pointer-events: none;
+        }
     }
 
     > noname-caption, > noname-rooms {

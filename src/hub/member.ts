@@ -38,19 +38,21 @@ export class Member extends Client {
         const owner = clients.get(uid);
         if (owner instanceof Owner && (!this.owner || this.joined === uid)) {
             this.joined = uid;
-            owner.members.add(uid);
+            owner.members.add(this.uid);
             owner.send('join', JSON.stringify([this.uid, this.info]));
         }
     }
 
     /** Leave currently joined room. */
-    leave(reason: 'end' | 'kick' | null = null) {
+    leave(reason: 'end' | 'kick' | 'init' | null = null) {
         // notify room owner
         const owner = this.owner;
-        if (owner) {
+        if (owner && reason !== 'end') {
             owner.send('leave', this.uid);
             owner.members.delete(this.uid);
         }
+
+        this.joined = null;
 
         if (reason) {
             if (this.closed) {

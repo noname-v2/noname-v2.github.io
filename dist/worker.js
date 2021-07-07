@@ -386,6 +386,10 @@
         unlink() {
             this.call('#unlink');
         }
+        /** Get an object of all properties. */
+        flatten() {
+            return Object.fromEntries(this.#props);
+        }
     }
 
     class GameAccessor {
@@ -592,6 +596,14 @@
             }
             return Object.freeze(obj);
         }
+        /** Get a UITick of all links. */
+        pack() {
+            const ui = {};
+            for (const [uid, link] of this.links.entries()) {
+                ui[uid] = link.flatten();
+            }
+            return [this.activeStage?.id || 0, ui, {}];
+        }
     }
 
     /**
@@ -620,14 +632,22 @@
         }
         /** Send a message to all clients. */
         broadcast(tick) {
-            if (this.game && this.connection) ;
+            if (this.game && this.connection) {
+                // broadcast tick
+                this.connection.send('bcast:' + JSON.stringify(tick));
+            }
             this.tick(tick);
         }
         /** Send a message to a client. */
         send(uid, tick) {
-            if (this.game && this.connection) ;
-            else if (uid === this.uid) {
+            if (uid === this.uid) {
                 this.tick(tick);
+            }
+            else if (this.game && this.connection) {
+                // send tick to a remote client
+                this.connection.send('to:' + JSON.stringify([
+                    uid, JSON.stringify(tick)
+                ]));
             }
         }
         /** Send a message to local client. */
@@ -670,7 +690,10 @@
                     const method = data.slice(0, idx);
                     const arg = data.slice(idx + 1);
                     if (method === 'join') {
-                        console.log('>>', arg);
+                        const [uid, info] = JSON.parse(arg);
+                        this.clients.set(uid, info);
+                        this.send(uid, this.game.pack());
+                        this.sync();
                     }
                 }
             };

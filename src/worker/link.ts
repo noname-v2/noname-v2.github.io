@@ -74,4 +74,9 @@ export class Link {
     unlink() {
         this.call('#unlink');
     }
+
+    /** Get an object of all properties. */
+    flatten() {
+        return Object.fromEntries(this.#props);
+    }
 }

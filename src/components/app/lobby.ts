@@ -27,9 +27,16 @@ export class Lobby extends Component {
             this.sidebar.setHeader('返回', () => {
                 if (this.get('connected')) {
                     if (confirm('确定退出联机模式？')) {
-                        this.freeze();
-                        this.yield(['config', 'online', false], false);
-                        this.exiting = true;
+                        const ws = this.client.connection;
+                        if (ws instanceof WebSocket) {
+                            this.client.clear();
+                            ws.send('leave:init');
+                        }
+                        else {
+                            this.freeze();
+                            this.yield(['config', 'online', false], false);
+                            this.exiting = true;
+                        }
                     }
                 }
                 else {
@@ -152,6 +159,10 @@ export class Lobby extends Component {
             }
             this.connecting = false;
         }
+    }
+
+    $clients(val: Map<string, [string, string]>, oldVal: Map<string, [string, string]>) {
+        console.log(val, oldVal)
     }
 
     freeze() {

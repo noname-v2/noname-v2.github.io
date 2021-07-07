@@ -13,6 +13,9 @@ export class Splash extends Component {
 
 	// hub menu
 	hub = <SplashHub>this.ui.create('splash-hub');
+
+	// currently hidden
+	hidden = true;
 	
 	init() {
 		// create mode selection gallery
@@ -33,6 +36,10 @@ export class Splash extends Component {
 	}
 
 	hide() {
+		if (this.hidden) {
+			return;
+		}
+		this.hidden = true;
 		this.ui.animate(this.node, {
 			scale: [1, 'var(--app-splash-transform)'], opacity: [1, 0]
 		}).onfinish = () => {
@@ -41,6 +48,10 @@ export class Splash extends Component {
 	}
 
 	show() {
+		if (!this.hidden) {
+			return;
+		}
+		this.hidden = false;
 		this.app.node.appendChild(this.node);
 		this.ui.animate(this.node, {
 			scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]

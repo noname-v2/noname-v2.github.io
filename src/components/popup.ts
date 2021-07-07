@@ -22,6 +22,9 @@ export class Popup extends Component {
 	/** Animation speed of open and close. */
 	transition: TransitionDuration = null;
 
+	// currently hidden
+	hidden = true;
+
     init() {
 		this.node.classList.add('noname-popup');
 
@@ -45,6 +48,10 @@ export class Popup extends Component {
     }
 
 	close() {
+		if (this.hidden) {
+			return;
+		}
+		this.hidden = true;
 		if (this.onclose) {
 			this.onclose();
 		}
@@ -56,6 +63,11 @@ export class Popup extends Component {
 	}
 
 	open() {
+		if (!this.hidden) {
+			return;
+		}
+		this.hidden = false;
+
         if (this.onopen) {
             this.onopen();
         }
