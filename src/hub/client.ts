@@ -28,6 +28,10 @@ export abstract class Client {
     /** Handle WebSocket close. */
     abstract uninit(): void;
 
+    get closed() {
+        return this.ws.readyState === this.ws.CLOSED;
+    }
+
     send(tag: string, msg?: string) {
         this.ws.send(tag + (msg ? ':' + msg : ''));
     }

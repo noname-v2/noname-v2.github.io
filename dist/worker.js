@@ -667,8 +667,11 @@
                 }
                 else {
                     const idx = data.indexOf(':');
-                    data.slice(0, idx);
-                    data.slice(idx + 1);
+                    const method = data.slice(0, idx);
+                    const arg = data.slice(idx + 1);
+                    if (method === 'join') {
+                        console.log('>>', arg);
+                    }
                 }
             };
         }

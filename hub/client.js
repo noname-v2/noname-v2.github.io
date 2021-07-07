@@ -9,6 +9,9 @@ class Client {
         [this.ws, this.uid, this.info] = args;
         exports.clients.set(this.uid, this);
     }
+    get closed() {
+        return this.ws.readyState === this.ws.CLOSED;
+    }
     send(tag, msg) {
         this.ws.send(tag + (msg ? ':' + msg : ''));
     }

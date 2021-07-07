@@ -1335,6 +1335,8 @@
             this.nickname = this.ui.create('input');
             /** address input */
             this.address = this.ui.create('input');
+            /** Attempting to enter a room, disable other room clicks. */
+            this.entering = false;
         }
         create(splash) {
             // nickname, avatar and this address
@@ -1402,7 +1404,7 @@
                             const method = data.slice(0, idx);
                             const arg = data.slice(idx + 1);
                             if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
-                                this[method](arg);
+                                this[method](arg, ws);
                             }
                         }
                         catch (e) {
@@ -1464,7 +1466,8 @@
             });
             address.callback = () => this.connect();
         }
-        reload(msg) {
+        reload(msg, ws) {
+            this.entering = false;
             const idx = msg.indexOf(':');
             const reason = msg.slice(0, idx);
             if (reason === 'kick') {
@@ -1475,9 +1478,9 @@
             }
             this.clearRooms();
             this.roomGroup.classList.remove('hidden');
-            this.edit(msg.slice(idx + 1));
+            this.edit(msg.slice(idx + 1), ws);
         }
-        edit(msg) {
+        edit(msg, ws) {
             const rooms = JSON.parse(msg);
             for (const uid in rooms) {
                 this.rooms.get(uid)?.node.remove();
@@ -1486,6 +1489,12 @@
                         const room = this.ui.create('splash-room');
                         room.setup(rooms[uid]);
                         this.rooms.set(uid, room);
+                        this.ui.bindClick(room.node, () => {
+                            if (!this.entering) {
+                                this.entering = true;
+                                ws.send('join:' + uid);
+                            }
+                        });
                         this.roomGroup.appendChild(room.node);
                     }
                     catch (e) {

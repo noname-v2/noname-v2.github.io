@@ -112,7 +112,7 @@ export class Worker {
                 const method = data.slice(0, idx);
                 const arg = data.slice(idx + 1);
                 if (method === 'join') {
-
+                    console.log('>>', arg);
                 }
             }
         };

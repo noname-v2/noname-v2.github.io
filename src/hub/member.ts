@@ -53,7 +53,7 @@ export class Member extends Client {
         }
 
         if (reason) {
-            if (this.ws.readyState === this.ws.CLOSED) {
+            if (this.closed) {
                 // delete closed client with no room
                 this.remove();
             }
@@ -68,7 +68,7 @@ export class Member extends Client {
     reload(reason: 'end' | 'kick' | 'init') {
         const rooms = {};
         for (const client of clients.values()) {
-            if (client instanceof Owner) {
+            if (client instanceof Owner && !client.closed) {
                 rooms[client.uid] = client.room;
             }
         }

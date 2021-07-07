@@ -56,6 +56,14 @@ export class Owner extends Client {
             this.ws.close(1000);
             this.remove();
         }
+        else if (room === 'down') {
+            // hide from room list but keep room (owner offline)
+            room = 'close';
+        }
+        else {
+            // confirm to owner
+            this.send('ready');
+        }
 
         // send room update to idle clients
         const msg = JSON.stringify({[this.uid]: room});
@@ -64,9 +72,6 @@ export class Owner extends Client {
                 client.send('edit', msg);
             }
         }
-
-        // confirm to owner
-        this.send('ready');
     }
 
     /** Remove a client from room. */
@@ -91,10 +96,11 @@ export class Owner extends Client {
         for (const client of this.getAll()) {
             client.send('down');
         }
+        this.edit('down');
 
         // close room after 90s
         setTimeout(() => {
-            if (this.ws === null) {
+            if (clients.get(this.uid) === this) {
                 this.edit('close');
             }
         }, 90000);

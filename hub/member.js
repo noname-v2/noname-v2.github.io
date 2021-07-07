@@ -52,7 +52,7 @@ class Member extends client_1.Client {
             owner.members.delete(this.uid);
         }
         if (reason) {
-            if (this.ws.readyState === this.ws.CLOSED) {
+            if (this.closed) {
                 // delete closed client with no room
                 this.remove();
             }
@@ -66,7 +66,7 @@ class Member extends client_1.Client {
     reload(reason) {
         const rooms = {};
         for (const client of client_1.clients.values()) {
-            if (client instanceof owner_1.Owner) {
+            if (client instanceof owner_1.Owner && !client.closed) {
                 rooms[client.uid] = client.room;
             }
         }
