@@ -117,6 +117,7 @@ export class Lobby extends Component {
     }
 
     $disabledHeropacks(packs: string[]) {
+        this.unfreeze();
         for (const [name, toggle] of this.heroToggles.entries()) {
             toggle.assign(!packs.includes(name));
         }
@@ -126,6 +127,7 @@ export class Lobby extends Component {
     }
     
     $disabledCardpacks(packs: string[]) {
+        this.unfreeze();
         for (const [name, toggle] of this.cardToggles.entries()) {
             toggle.assign(!packs.includes(name));
         }

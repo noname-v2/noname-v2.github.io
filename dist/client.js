@@ -494,6 +494,7 @@
             }
         }
         $disabledHeropacks(packs) {
+            this.unfreeze();
             for (const [name, toggle] of this.heroToggles.entries()) {
                 toggle.assign(!packs.includes(name));
             }
@@ -502,6 +503,7 @@
             }
         }
         $disabledCardpacks(packs) {
+            this.unfreeze();
             for (const [name, toggle] of this.cardToggles.entries()) {
                 toggle.assign(!packs.includes(name));
             }
@@ -2485,6 +2487,11 @@
                 if (sid !== this.sid) {
                     this.yielding.clear();
                     this.sid = sid;
+                }
+                // check if this is a reload
+                if (updates['1'] && updates['1']['#tag'] === 'arena') {
+                    this.ui.app.arena?.remove();
+                    this.components.clear();
                 }
                 // update component properties
                 for (const key in updates) {

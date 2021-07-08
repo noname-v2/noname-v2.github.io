@@ -185,6 +185,12 @@ export class Client {
                 this.sid = sid;
             }
 
+            // check if this is a reload
+            if (updates['1'] && updates['1']['#tag'] === 'arena') {
+                this.ui.app.arena?.remove();
+                this.components.clear();
+            }
+
             // update component properties
             for (const key in updates) {
                 const items = updates[key];
