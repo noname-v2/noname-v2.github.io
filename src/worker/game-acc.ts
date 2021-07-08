@@ -13,11 +13,12 @@ export class GameAccessor {
     /** In-game players. */
     players = <Link[]>[];
 
-    /** Reference to client.ui.app.arena. */
-    arena!: Link;
-
     constructor(game: Game) {
         this.#game = game;
+    }
+    
+    get arena() {
+        return this.#game.arena;
     }
 
     get mode() {

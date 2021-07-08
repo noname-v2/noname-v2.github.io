@@ -162,6 +162,9 @@ export class Stage {
         else if (this.step === 2) {
             // generate this.calls and this.main and update components (main content)
             this.game.activeStage = this;
+            if (!this.game.arena) {
+                this.game.arena = this.game.create('arena');
+            }
             if (this.game.worker.syncPending) {
                 this.game.worker.sync();
             }

@@ -404,11 +404,12 @@
         }
         init() {
             this.app.arena.node.appendChild(this.node);
+            this.client.syncListeners.add(this);
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => {
-                    if (this.get('connected')) {
+                    const ws = this.client.connection;
+                    if (this.client.peers || ws instanceof WebSocket) {
                         if (confirm('确定退出联机模式？')) {
-                            const ws = this.client.connection;
                             if (ws instanceof WebSocket) {
                                 this.client.clear();
                                 ws.send('leave:init');
@@ -421,8 +422,7 @@
                         }
                     }
                     else {
-                        this.client.disconnect();
-                        this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
+                        this.close();
                     }
                 });
                 this.sidebar.setFooter('开始游戏', () => {
@@ -513,37 +513,38 @@
         }
         $np() {
         }
-        $connected(val) {
-            if (!val && this.exiting) {
-                this.client.disconnect();
-                this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
+        sync() {
+            const peers = this.client.peers;
+            if (!peers && this.exiting) {
+                this.close();
             }
             else {
                 this.unfreeze();
-                this.configToggles.get('online')?.assign(val);
+                this.configToggles.get('online')?.assign(peers ? true : false);
                 for (const [name, toggle] of this.configToggles.entries()) {
                     const requires = this.configDynamicToggles.get(name);
                     if (requires === 'online') {
-                        toggle.node.style.display = val ? '' : 'none';
+                        toggle.node.style.display = peers ? '' : 'none';
                     }
                     else if (requires === '!online') {
-                        toggle.node.style.display = val ? 'none' : '';
+                        toggle.node.style.display = peers ? 'none' : '';
                     }
                 }
-                if (!val && this.connecting) {
+                if (!peers && this.connecting) {
                     alert('连接失败');
                 }
                 this.connecting = false;
             }
-        }
-        $clients(val, oldVal) {
-            console.log(val, oldVal);
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
         }
         unfreeze() {
             this.sidebar.pane.node.classList.remove('pending');
+        }
+        close() {
+            this.client.disconnect();
+            this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
         }
     }
 
@@ -587,13 +588,13 @@
     class Arena extends Component {
         constructor() {
             super(...arguments);
-            // layout mode
+            /** Layout mode. */
             this.layout = 0;
-            // player that is under control
+            /** Player that is under control. */
             this.viewport = 0;
-            // card container
+            /** Card container. */
             this.cards = this.ui.createElement('cards');
-            // player container
+            /** Player container. */
             this.players = this.ui.createElement('players');
         }
         init() {
@@ -631,6 +632,12 @@
             }).onfinish = () => {
                 this.node.remove();
             };
+        }
+        /** Connection status change. */
+        $peers() {
+            for (const cmp of this.client.syncListeners) {
+                cmp.sync();
+            }
         }
     }
 
@@ -2363,6 +2370,8 @@
             this.components = new Map();
             /** Components awaiting response from worker. */
             this.yielding = new Map();
+            /** Components that have callback on sync. */
+            this.syncListeners = new Set();
             // get user ID
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
@@ -2405,6 +2414,10 @@
         /** WebSocket address. */
         get url() {
             return this.db.get('ws') || config.ws;
+        }
+        /** Connected remote clients. */
+        get peers() {
+            return this.ui.app?.arena?.get('peers') ?? null;
         }
         /** Fetch and parse json file. */
         readJSON(...args) {
@@ -2495,9 +2508,14 @@
                         const component = this.ui.create(items['#tag']);
                         component.id = id;
                         this.components.set(id, component);
-                        await component.ready;
                     }
-                    // update properties
+                    console.log('>', id, items);
+                    await this.components.get(id).ready;
+                }
+                for (const key in updates) {
+                    // update properties after component initialization
+                    const items = updates[key];
+                    const id = parseInt(key);
                     this.components.get(id).update(items);
                 }
                 // call component methods

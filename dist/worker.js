@@ -248,6 +248,9 @@
             else if (this.step === 2) {
                 // generate this.calls and this.main and update components (main content)
                 this.game.activeStage = this;
+                if (!this.game.arena) {
+                    this.game.arena = this.game.create('arena');
+                }
                 if (this.game.worker.syncPending) {
                     this.game.worker.sync();
                 }
@@ -403,6 +406,9 @@
             this.#game = game;
         }
         #game;
+        get arena() {
+            return this.#game.arena;
+        }
         get mode() {
             return this.#game.mode;
         }
@@ -621,7 +627,7 @@
             /** Connected hub. */
             this.connection = null;
             /** IDs of connected clients. */
-            this.clients = null;
+            this.peers = null;
             /** Clients updated since last UITick. */
             this.syncPending = false;
             self.onmessage = ({ data }) => {
@@ -664,6 +670,7 @@
                 if (this.connection === ws) {
                     this.connection = null;
                 }
+                this.peers = null;
                 this.sync();
             };
             ws.onopen = () => {
@@ -675,14 +682,7 @@
             };
             ws.onmessage = ({ data }) => {
                 if (data === 'ready') {
-                    this.clients = new Map();
-                    this.clients.set(this.uid, this.info);
-                    ws.onclose = () => {
-                        if (this.connection === ws) {
-                            this.connection = null;
-                        }
-                        this.sync();
-                    };
+                    this.peers = new Map();
                     this.sync();
                 }
                 else {
@@ -691,16 +691,22 @@
                     const arg = data.slice(idx + 1);
                     if (method === 'join') {
                         const [uid, info] = JSON.parse(arg);
-                        this.clients.set(uid, info);
-                        this.send(uid, this.game.pack());
+                        this.peers.set(uid, info);
                         this.sync();
+                        this.send(uid, this.game.pack());
+                        ////// stage === 3: send stage.calls
+                    }
+                    else if (method === 'leave') {
+                        if (this.peers?.has(arg)) {
+                            this.peers.delete(arg);
+                            this.sync();
+                        }
                     }
                 }
             };
         }
         /** Disconnect from remote hub. */
         disconnect() {
-            this.clients = null;
             const ws = this.connection;
             if (ws) {
                 ws.send('edit:close');
@@ -714,15 +720,9 @@
         /** Tell registered components about client update. */
         sync() {
             if (this.game.tickable) {
-                for (const link of this.game.links.values()) {
-                    if (link.syncing) {
-                        const ws = this.connection;
-                        link.update({
-                            clients: this.clients ? Object.fromEntries(this.clients) : null,
-                            connected: (ws && ws.readyState === ws.OPEN) ? true : false
-                        });
-                    }
-                }
+                this.game.arena.update({
+                    peers: this.peers ? Object.fromEntries(this.peers) : null
+                });
                 this.syncPending = false;
             }
             else {

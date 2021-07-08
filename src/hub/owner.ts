@@ -8,6 +8,9 @@ export class Owner extends Client {
     /** IDs of room members. */
     members = new Set<string>();
 
+    /** IDs of room members with at least 1 direct message. */
+    bcastMembers = new Set<string>();
+
     /** Return client object if uid is a member. */
     private get(uid: string) {
         const client = clients.get(uid);
@@ -82,13 +85,16 @@ export class Owner extends Client {
     /** Send a message to a client. */
     to(msg: string) {
         const [uid, msg2] = JSON.parse(msg);
+        this.bcastMembers.add(uid);
         this.get(uid)?.send('msg', msg2);
     }
 
     /** Send a message to all clients. */
     bcast(msg: string) {
         for (const client of this.getAll()) {
-            client.send('msg', msg);
+            if (this.bcastMembers.has(client.uid)) {
+                client.send('msg', msg);
+            }
         }
     }
 

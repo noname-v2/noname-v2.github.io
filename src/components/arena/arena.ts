@@ -1,16 +1,16 @@
 import { Component } from '../../components';
 
 export class Arena extends Component {
-    // layout mode
+    /** Layout mode. */
 	layout = 0;
 
-	// player that is under control
+	/** Player that is under control. */
 	viewport = 0;
 
-	// card container
+	/** Card container. */
 	cards = this.ui.createElement('cards');
 
-	// player container
+	/** Player container. */
 	players = this.ui.createElement('players');
 
 	init() {
@@ -53,4 +53,11 @@ export class Arena extends Component {
 			this.node.remove();
 		};
 	}
+
+	/** Connection status change. */
+    $peers() {
+		for (const cmp of this.client.syncListeners) {
+			cmp.sync();
+		}
+    }
 }

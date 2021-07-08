@@ -3,14 +3,10 @@ import type { CollectionSGS } from '../sgs';
 export const game = <CollectionSGS>{
     init: {
         content() {
-            this.add('createArena');
             this.add('createLobby');
             this.add('createGame');
         },
         contents: {
-            createArena() {
-                this.game.arena = this.create('arena');
-            },
             createLobby() {
                 const lobby = this.create('lobby');
                 this.lobbyID = lobby.id;

@@ -38,6 +38,9 @@ export class Client {
     /** Components awaiting response from worker. */
     yielding = new Map<number, (result: any) => any>();
 
+	/** Components that have callback on sync. */
+	syncListeners = new Set<{sync: () => void}>();
+
     constructor() {
         // get user ID
         this.db.ready.then(() => {
@@ -88,6 +91,11 @@ export class Client {
     /** WebSocket address. */
     get url() {
         return this.db.get('ws') || config.ws;
+    }
+
+    /** Connected remote clients. */
+    get peers(): {[key: string]: [string, string]} | null {
+        return this.ui.app?.arena?.get('peers') ?? null;
     }
 
     /** Fetch and parse json file. */
@@ -188,10 +196,16 @@ export class Client {
                     const component = this.ui.create(items['#tag']);
                     component.id = id;
                     this.components.set(id, component);
-                    await component.ready;
                 }
-
-                // update properties
+                
+                console.log('>',id, items)
+                await this.components.get(id)!.ready;
+            }
+            
+            for (const key in updates) {
+                // update properties after component initialization
+                const items = updates[key];
+                const id = parseInt(key);
                 this.components.get(id)!.update(items);
             }
 

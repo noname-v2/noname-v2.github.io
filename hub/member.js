@@ -50,6 +50,7 @@ class Member extends client_1.Client {
         if (owner && reason !== 'end') {
             owner.send('leave', this.uid);
             owner.members.delete(this.uid);
+            owner.bcastMembers.delete(this.uid);
         }
         this.joined = null;
         if (reason) {
@@ -80,7 +81,7 @@ class Member extends client_1.Client {
     uninit() {
         const owner = this.owner;
         if (owner) {
-            owner.send('down', this.uid);
+            owner.send('leave', this.uid);
         }
         else {
             this.remove();

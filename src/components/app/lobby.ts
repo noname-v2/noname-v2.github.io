@@ -23,11 +23,12 @@ export class Lobby extends Component {
 
     init() {
         this.app.arena!.node.appendChild(this.node);
+        this.client.syncListeners.add(this);
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => {
-                if (this.get('connected')) {
+                const ws = this.client.connection;
+                if (this.client.peers || ws instanceof WebSocket) {
                     if (confirm('确定退出联机模式？')) {
-                        const ws = this.client.connection;
                         if (ws instanceof WebSocket) {
                             this.client.clear();
                             ws.send('leave:init');
@@ -40,8 +41,7 @@ export class Lobby extends Component {
                     }
                 }
                 else {
-                    this.client.disconnect();
-                    this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
+                    this.close();
                 }
             });
             this.sidebar.setFooter('开始游戏', () => {
@@ -98,6 +98,9 @@ export class Lobby extends Component {
     $config(config: {[key: string]: any}) {
         this.unfreeze();
         for (const key in config) {
+            if (key === 'online') {
+                continue;
+            }
             const toggle = this.configToggles.get(key);
             toggle?.assign(config[key]);
             const requires = this.configDynamicToggles.get(key);
@@ -137,32 +140,28 @@ export class Lobby extends Component {
 
     }
 
-    $connected(val: boolean) {
-        if (!val && this.exiting) {
-            this.client.disconnect();
-            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
+    sync() {
+        const peers = this.client.peers;
+        if (!peers && this.exiting) {
+            this.close();
         }
         else {
             this.unfreeze();
-            this.configToggles.get('online')?.assign(val);
+            this.configToggles.get('online')?.assign(peers ? true : false);
             for (const [name, toggle] of this.configToggles.entries()) {
                 const requires = this.configDynamicToggles.get(name)
                 if (requires === 'online') {
-                    toggle.node.style.display = val ? '' : 'none';
+                    toggle.node.style.display = peers ? '' : 'none';
                 }
                 else if (requires === '!online') {
-                    toggle.node.style.display = val ? 'none' : '';
+                    toggle.node.style.display = peers ? 'none' : '';
                 }
             }
-            if (!val && this.connecting) {
+            if (!peers && this.connecting) {
                 alert('连接失败');
             }
             this.connecting = false;
         }
-    }
-
-    $clients(val: Map<string, [string, string]>, oldVal: Map<string, [string, string]>) {
-        console.log(val, oldVal)
     }
 
     freeze() {
@@ -171,5 +170,10 @@ export class Lobby extends Component {
 
     unfreeze() {
         this.sidebar.pane.node.classList.remove('pending');
+    }
+
+    close() {
+        this.client.disconnect();
+        this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
     }
 }

@@ -36,7 +36,7 @@ export class Worker {
     connection: WebSocket | null = null;
 
     /** IDs of connected clients. */
-    clients: Map<string, [string, string]> | null = null;
+    peers: Map<string, [string, string]> | null = null;
 
     /** Clients updated since last UITick. */
     syncPending = false;
@@ -90,6 +90,7 @@ export class Worker {
             if (this.connection === ws) {
                 this.connection = null;
             }
+            this.peers = null;
             this.sync();
         };
         ws.onopen = () => {
@@ -101,14 +102,7 @@ export class Worker {
         };
         ws.onmessage = ({data}) => {
             if (data === 'ready') {
-                this.clients = new Map();
-                this.clients.set(this.uid, this.info);
-                ws.onclose = () => {
-                    if (this.connection === ws) {
-                        this.connection = null;
-                    }
-                    this.sync();
-                }
+                this.peers = new Map();
                 this.sync();
             }
             else {
@@ -116,10 +110,17 @@ export class Worker {
                 const method = data.slice(0, idx);
                 const arg = data.slice(idx + 1);
                 if (method === 'join') {
-                    const [uid, info] = JSON.parse(arg);
-                    this.clients!.set(uid, info);
-                    this.send(uid, this.game!.pack());
+                    const [uid, info] = <[string, [string, string]]>JSON.parse(arg);
+                    this.peers!.set(uid, info);
                     this.sync();
+                    this.send(uid, this.game!.pack());
+                    ////// stage === 3: send stage.calls
+                }
+                else if (method === 'leave') {
+                    if (this.peers?.has(arg)) {
+                        this.peers.delete(arg);
+                        this.sync();
+                    }
                 }
             }
         };
@@ -127,7 +128,6 @@ export class Worker {
 
     /** Disconnect from remote hub. */
     disconnect() {
-        this.clients = null;
         const ws = this.connection;
         if (ws) {
             ws.send('edit:close');
@@ -142,15 +142,9 @@ export class Worker {
     /** Tell registered components about client update. */
     sync() {
         if (this.game!.tickable) {
-            for (const link of this.game!.links.values()) {
-                if (link.syncing) {
-                    const ws = this.connection;
-                    link.update({
-                        clients: this.clients ? Object.fromEntries(this.clients) : null,
-                        connected: (ws && ws.readyState === ws.OPEN) ? true : false
-                    });
-                }
-            }
+            this.game!.arena.update({
+                peers: this.peers ? Object.fromEntries(this.peers) : null
+            });
             this.syncPending = false;
         }
         else {

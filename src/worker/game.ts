@@ -42,6 +42,9 @@ export class Game {
     /** Worker reference. */
     worker: Worker;
 
+    /** Arena link. */
+    arena!: Link;
+
     /** Game ruleset. */
     ruleset!: {[key: string]: any};
 
