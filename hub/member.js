@@ -82,6 +82,7 @@ class Member extends client_1.Client {
         const owner = this.owner;
         if (owner) {
             owner.send('leave', this.uid);
+            owner.bcastMembers.delete(this.uid);
         }
         else {
             this.remove();

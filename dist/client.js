@@ -476,9 +476,6 @@
         $config(config) {
             this.unfreeze();
             for (const key in config) {
-                if (key === 'online') {
-                    continue;
-                }
                 const toggle = this.configToggles.get(key);
                 toggle?.assign(config[key]);
                 const requires = this.configDynamicToggles.get(key);
@@ -492,6 +489,7 @@
                 }
             }
             if (this.owner === this.client.uid) {
+                delete config.online;
                 this.db.set(this.get('mode') + ':config', config);
             }
         }
@@ -518,19 +516,9 @@
             if (!peers && this.exiting) {
                 this.close();
             }
-            else {
-                this.unfreeze();
-                this.configToggles.get('online')?.assign(peers ? true : false);
-                for (const [name, toggle] of this.configToggles.entries()) {
-                    const requires = this.configDynamicToggles.get(name);
-                    if (requires === 'online') {
-                        toggle.node.style.display = peers ? '' : 'none';
-                    }
-                    else if (requires === '!online') {
-                        toggle.node.style.display = peers ? 'none' : '';
-                    }
-                }
-                if (!peers && this.connecting) {
+            else if (this.owner === this.client.uid) {
+                this.yield(['sync', null, peers ? true : false], false);
+                if (this.connecting && !peers) {
                     alert('连接失败');
                 }
                 this.connecting = false;
@@ -2509,7 +2497,6 @@
                         component.id = id;
                         this.components.set(id, component);
                     }
-                    console.log('>', id, items);
                     await this.components.get(id).ready;
                 }
                 for (const key in updates) {

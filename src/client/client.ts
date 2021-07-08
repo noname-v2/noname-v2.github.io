@@ -197,8 +197,6 @@ export class Client {
                     component.id = id;
                     this.components.set(id, component);
                 }
-                
-                console.log('>',id, items)
                 await this.components.get(id)!.ready;
             }
             

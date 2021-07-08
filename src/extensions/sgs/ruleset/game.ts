@@ -71,7 +71,11 @@ export const game = <CollectionSGS>{
                 lobby.monitor('updateLobby');
             },
             updateLobby(lobby, [type, key, val]: [string, string, any]) {
-                if (type === 'config') {
+                if (type === 'sync') {
+                    this.game.config.online = val;
+                    lobby.set('config', this.game.config);
+                }
+                else if (type === 'config') {
                     if (key === 'online') {
                         if (val) {
                             this.game.connect(val);
