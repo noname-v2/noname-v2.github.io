@@ -75,7 +75,7 @@ export class App extends Component {
 			this.playMusic();
 
 			// index and load assets
-			this.splash = <Splash>this.ui.create('splash');
+			this.splash = this.ui.create('splash');
 			this.loadTheme().then(() => {
 				this.splash.show();
 				this.loadAssets().then(() => {

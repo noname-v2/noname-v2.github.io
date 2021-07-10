@@ -1,7 +1,7 @@
 import type { Client } from './client';
 import type { App } from '../components';
 import type { ComponentClass } from './component';
-import { componentClasses } from '../classes';
+import { componentClasses, ComponentTagMap } from '../classes';
 
 // type for point location
 export type Point = {x: number, y: number};
@@ -230,9 +230,9 @@ export class UI {
     }
 
     /** Create new component. */
-    create(tag: string, parent: null | HTMLElement = null) {
-		const cls = componentClasses.get(tag)!;
-        const component = new cls(this.client, cls.tag || tag);
+    create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null): ComponentTagMap[T] {
+		const cls = componentClasses.get(tag as string)!;
+        const component = <ComponentTagMap[T]>new cls(this.client, cls.tag || tag as string);
 
 		if (cls.tag) {
 			component.node.classList.add(tag);

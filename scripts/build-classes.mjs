@@ -14,25 +14,33 @@ import walk from './walk.mjs';
  */
 export function buildClasses() {
     const imports = [
-        `import type { ComponentClass } from '../src/client/component'`
+        `import type { ComponentClass } from '../src/client/component';`
     ];
 
     const types = [];
 
-    const insertions = [
-        'export const componentClasses = new Map<string, ComponentClass>()'
+    const classes = [
+        'export const componentClasses = new Map<string, ComponentClass>();'
+    ];
+
+    const tags = [
+        'export type ComponentTagMap = {'
     ];
 
     for (const src of walk('src/components', '.ts')) {
         // CamelCase class name
         const tag = src.split('/').pop();
         const cls = tag.split('-').map(capatalize).join('');
-        imports.push(`import { ${cls} } from '../src/components/${src}'`)
-        types.push(`export type { ${cls} } from '../src/components/${src}'`)
-        insertions.push(`componentClasses.set('${tag}', ${cls})`);
+        imports.push(`import { ${cls} } from '../src/components/${src}';`)
+        types.push(`export type { ${cls} } from '../src/components/${src}';`)
+        classes.push(`componentClasses.set('${tag}', ${cls});`);
+        tags.push(`    '${tag}': ${cls};`);
     }
 
     // write to file
-    fs.writeFileSync('build/classes.ts', imports.join(';\n') + ';\n\n' + insertions.join(';\n') + ';');
-    fs.writeFileSync('build/components.ts', types.join(';\n') + ';');
+    fs.writeFileSync('build/classes.ts',
+        imports.join('\n') + '\n\n' +
+        classes.join('\n') + '\n\n' +
+        tags.join('\n') + '\n    [key: string]: any;\n};\n');
+    fs.writeFileSync('build/components.ts', types.join('\n'));
 }

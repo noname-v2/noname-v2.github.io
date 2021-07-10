@@ -1,4 +1,4 @@
-import { Component, Menu } from '../components';
+import { Component } from '../components';
 
 export class Toggle extends Component {
     // caption text
@@ -27,7 +27,7 @@ export class Toggle extends Component {
 			this.ui.bindClick(popup, () => {
 				// open context menu
 				const rect = popup.getBoundingClientRect();
-                const menu = <Menu>this.ui.create('menu');
+                const menu = this.ui.create('menu');
                 for (const [id, name] of choices) {
                     menu.pane.addOption(name, () => {
 						if (this.confirm?.includes(id)) {

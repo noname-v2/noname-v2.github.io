@@ -1,8 +1,8 @@
-import { Component, Pane, Point, TransitionDuration } from '../components';
+import { Component, TransitionDuration } from '../components';
 
 export class Popup extends Component {
     /** Main content. */
-    pane = <Pane>this.ui.create('pane', this.node);
+    pane = this.ui.create('pane', this.node);
 
     /** Trigger when dialog is opened. */
 	onopen: (() => void) | null = null;

@@ -9,19 +9,19 @@ export class SplashBar extends Component {
 
     buttons = {
         /** Clear cached files and reload. */
-        reset: <Button>this.ui.create('button'),
+        reset: this.ui.create('button'),
 
         /** Refresh page. */
-        refresh: <Button>this.ui.create('button'),
+        refresh: this.ui.create('button'),
 
         /** Workshop button. */
-        workshop: <Button>this.ui.create('button'),
+        workshop: this.ui.create('button'),
 
         /** Hub button. */
-        hub: <Button>this.ui.create('button'),
+        hub: this.ui.create('button'),
 
         /** Settings button. */
-        settings: <Button>this.ui.create('button')
+        settings: this.ui.create('button')
     }
 
     init() {

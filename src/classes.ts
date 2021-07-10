@@ -1,1 +1,1 @@
-export { componentClasses } from '../build/classes';
+export * from '../build/classes';

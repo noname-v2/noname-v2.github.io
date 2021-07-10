@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { Splash, SplashRoom, Input } from '../../components';
+import { Splash, SplashRoom } from '../../components';
 import { config } from '../../version';
 
 export class SplashHub extends Popup {
@@ -22,10 +22,10 @@ export class SplashHub extends Popup {
     caption = this.ui.createElement('caption.hidden');
 
     /** nickname input */
-    nickname = <Input>this.ui.create('input');
+    nickname = this.ui.create('input');
 
     /** address input */
-    address = <Input>this.ui.create('input');
+    address = this.ui.create('input');
 
     create(splash: Splash) {
         // nickname, avatar and this address
@@ -150,7 +150,7 @@ export class SplashHub extends Popup {
 
 		// nickname input
 		this.ui.createElement('span.nickname', group).innerHTML = '昵称';
-		const nickname = this.nickname = <Input>this.ui.create('input', group);
+		const nickname = this.nickname = this.ui.create('input', group);
 		nickname.node.classList.add('nickname');
 		nickname.ready.then(() => {
             nickname.input.value = this.db.get('nickname') || config.nickname;
@@ -166,7 +166,7 @@ export class SplashHub extends Popup {
 
         // address input
         this.ui.createElement('span.address', group).innerHTML = '地址';
-		const address = this.address = <Input>this.ui.create('input', group);
+		const address = this.address = this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
 			address.input.value = this.client.url;
@@ -201,7 +201,7 @@ export class SplashHub extends Popup {
             this.rooms.get(uid)?.node.remove();
             if (rooms[uid] !== 'close') {
                 try {
-                    const room = <SplashRoom>this.ui.create('splash-room');
+                    const room = this.ui.create('splash-room');
                     room.setup(rooms[uid]);
                     this.rooms.set(uid, room);
                     this.ui.bindClick(room.node, () => {

@@ -1,11 +1,11 @@
-import { Component, Pane } from '../../components';
+import { Component } from '../../components';
 
 export class Sidebar extends Component {
     // header text
 	header = this.ui.createElement('caption', this.node);;
 
 	// pane container
-	pane = <Pane>this.ui.create('pane', this.node);
+	pane = this.ui.create('pane', this.node);
 
 	// pane footer
 	footer = this.ui.createElement('caption.footer', this.node);

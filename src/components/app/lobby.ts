@@ -1,7 +1,7 @@
-import { Component, Sidebar, Toggle } from '../../components';
+import { Component, Toggle } from '../../components';
 
 export class Lobby extends Component {
-    sidebar = <Sidebar>this.ui.create('sidebar', this.node);
+    sidebar = this.ui.create('sidebar', this.node);
 
     /** Toggles for mode configuration. */
     configToggles = new Map<string, Toggle>();

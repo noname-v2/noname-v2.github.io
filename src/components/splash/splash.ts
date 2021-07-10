@@ -1,18 +1,18 @@
-import { Component, SplashHub, SplashSettings, SplashGallery, SplashBar } from '../../components';
+import { Component } from '../../components';
 
 
 export class Splash extends Component {
     // gallery of modes
-	gallery = <SplashGallery>this.ui.create('splash-gallery');
+	gallery = this.ui.create('splash-gallery');
 
 	// bottom toolbar
-	bar = <SplashBar>this.ui.create('splash-bar');
+	bar = this.ui.create('splash-bar');
 
 	// settings menu
-	settings = <SplashSettings>this.ui.create('splash-settings');
+	settings = this.ui.create('splash-settings');
 
 	// hub menu
-	hub = <SplashHub>this.ui.create('splash-hub');
+	hub = this.ui.create('splash-hub');
 
 	// currently hidden
 	hidden = true;

@@ -1,4 +1,4 @@
-import { Component, Gallery, Toggle } from '../components';
+import { Component } from '../components';
 
 export class Pane extends Component {
     /** Section title. */
@@ -10,7 +10,7 @@ export class Pane extends Component {
 
 	/** Gallery of selectable items. */
 	addGallery(nrows: number, ncols: number, width: number) {
-		const gallery = <Gallery>this.ui.create('gallery');
+		const gallery = this.ui.create('gallery');
 		gallery.nrows = nrows;
 		gallery.ncols = ncols;
 		gallery.width = width;
@@ -30,7 +30,7 @@ export class Pane extends Component {
 
 	/** Add a toggle. */
 	addToggle(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
-		const toggle = <Toggle>this.ui.create('toggle');
+		const toggle = this.ui.create('toggle');
 		toggle.setup(caption, onclick, choices);
 		this.node.appendChild(toggle.node);
 		return toggle;

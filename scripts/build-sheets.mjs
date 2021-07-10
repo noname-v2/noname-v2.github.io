@@ -7,7 +7,7 @@ export function buildSheets() {
     const imports = [];
 
     for (const file of walk('src/sheets')) {
-        const entry = `@import 'src/sheets/${file}'`
+        const entry = `@import 'src/sheets/${file}';`
 
         if (file === 'mixin') {
             imports.unshift(entry);
@@ -18,7 +18,7 @@ export function buildSheets() {
     }
 
     // compile to css
-    fs.writeFileSync('build/index.scss', imports.join(';\n'), 'utf-8');
+    fs.writeFileSync('build/index.scss', imports.join('\n'), 'utf-8');
     fs.writeFileSync('dist/index.css',
         sass.renderSync({file: 'build/index.scss'}).css.toString(),
     'utf-8');
