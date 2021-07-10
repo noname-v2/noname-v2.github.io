@@ -91,7 +91,7 @@ class Owner extends client_1.Client {
     uninit() {
         const timeout = 90000;
         for (const client of this.getAll()) {
-            client.send('down:' + (Date.now() + timeout));
+            client.send('down', (Date.now() + timeout).toString());
         }
         this.edit('down');
         // close room after 90s

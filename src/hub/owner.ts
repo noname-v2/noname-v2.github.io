@@ -1,5 +1,6 @@
 import { Member } from './member';
 import { Client, clients } from './client';
+import type { Hub2Owner } from './types';
 
 export class Owner extends Client {
     /** Room description. */
@@ -10,6 +11,9 @@ export class Owner extends Client {
 
     /** IDs of room members with at least 1 direct message. */
     bcastMembers = new Set<string>();
+
+    /** Overwrite type annotation for send. */
+    send: (tag: Hub2Owner, msg?: string) => void;
 
     /** Return client object if uid is a member. */
     private get(uid: string) {
@@ -101,7 +105,7 @@ export class Owner extends Client {
     uninit() {
         const timeout = 90000;
         for (const client of this.getAll()) {
-            client.send('down:' + (Date.now() + timeout));
+            client.send('down', (Date.now() + timeout).toString());
         }
         this.edit('down');
 
