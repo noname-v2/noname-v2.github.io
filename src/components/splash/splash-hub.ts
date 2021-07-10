@@ -234,8 +234,9 @@ export class SplashHub extends Popup {
         this.close();
     }
 
-    down() {
+    down(msg: string) {
         // room owner disconnected
+        console.log(parseInt(msg) - Date.now())
         this.app.alert('房主连接断开');
     }
 }

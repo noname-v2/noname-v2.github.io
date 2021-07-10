@@ -89,8 +89,9 @@ class Owner extends client_1.Client {
         }
     }
     uninit() {
+        const timeout = 90000;
         for (const client of this.getAll()) {
-            client.send('down');
+            client.send('down:' + (Date.now() + timeout));
         }
         this.edit('down');
         // close room after 90s
@@ -98,7 +99,7 @@ class Owner extends client_1.Client {
             if (client_1.clients.get(this.uid) === this) {
                 this.edit('close');
             }
-        }, 90000);
+        }, timeout);
     }
 }
 exports.Owner = Owner;

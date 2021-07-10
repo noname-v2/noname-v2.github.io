@@ -178,9 +178,6 @@
     /** HTMLElement tag  name */
     Component.tag = null;
 
-    class Alert extends Component {
-    }
-
     class App extends Component {
         constructor() {
             super(...arguments);
@@ -196,6 +193,8 @@
             this.bgmNode = document.createElement('audio');
             /** Audio context. */
             this.audio = new (window.AudioContext || window.webkitAudioContext)();
+            /** Popup components cleared when arena close. */
+            this.popups = new Map();
         }
         init() {
             document.head.appendChild(this.themeNode);
@@ -387,22 +386,100 @@
             return duration * 1000;
         }
         /** Display alert message. */
-        alert(caption, content = '', confirm = '确定') {
-            this.ui.create('alert');
+        alert(caption, content = '', button = '确定', id) {
+            return this.confirm(caption, content, { ok: button }, id);
+        }
+        /** Display confirm message. */
+        confirm(caption, content = '', buttons = { ok: '确定', cancel: '取消' }, id) {
+            const dialog = this.ui.create('dialog');
+            this.popups.set(id ?? this.popups.size, dialog);
             // const layer = this.ui.createElement('alert', this.node);
             // this.ui.createElement('caption', layer).innerHTML = msg;
             // this.ui.createElement('button', layer).innerHTML = '退出';
         }
-        /** Display confirm message. */
-        confirm(caption, content = '', confirm = '确定') {
-            this.ui.create('alert');
-            // const layer = this.ui.createElement('alert', this.node);
-            // this.ui.createElement('caption', layer).innerHTML = msg;
-            // this.ui.createElement('button', layer).innerHTML = '退出';
+        /** Clear alert and confirm dialogs. */
+        clearPopups() {
+            for (const popup of this.popups.values()) {
+                popup.close();
+            }
+            this.popups.clear();
         }
     }
 
     class Collection extends Component {
+    }
+
+    class Popup extends Component {
+        constructor() {
+            super(...arguments);
+            /** Main content. */
+            this.pane = this.ui.create('pane', this.node);
+            /** Trigger when dialog is opened. */
+            this.onopen = null;
+            /** Trigger when dialog is closed. */
+            this.onclose = null;
+            /** Whether popup is closed when clicking on background layer. */
+            this.temp = true;
+            /** Whether popup appears at the center. */
+            this.center = true;
+            /** Built-in sizes. */
+            this.size = null;
+            /** Animation speed of open and close. */
+            this.transition = null;
+            // currently hidden
+            this.hidden = true;
+        }
+        init() {
+            this.node.classList.add('noname-popup');
+            if (this.center) {
+                this.node.classList.add('center');
+            }
+            if (typeof this.size === 'string') {
+                this.node.classList.add(this.size);
+            }
+            // block DOM events behind the pane
+            this.ui.bindClick(this.pane.node, () => { });
+            // close when clicking on background layer
+            this.ui.bindClick(this.node, () => {
+                if (this.temp) {
+                    this.close();
+                }
+            });
+        }
+        close() {
+            if (this.hidden) {
+                return;
+            }
+            this.hidden = true;
+            if (this.onclose) {
+                this.onclose();
+            }
+            this.ui.animate(this.pane.node, {
+                opacity: [1, 0], scale: [1, 'var(--popup-transform)']
+            }, this.app.getTransition(this.transition)).onfinish = () => {
+                this.node.remove();
+            };
+        }
+        open() {
+            if (!this.hidden) {
+                return;
+            }
+            this.hidden = false;
+            if (this.onopen) {
+                this.onopen();
+            }
+            if (this.node.parentNode !== this.app.node) {
+                this.app.node.appendChild(this.node);
+            }
+            this.ui.animate(this.pane.node, {
+                opacity: [0, 1], scale: ['var(--popup-transform)', 1]
+            }, this.app.getTransition(this.transition));
+        }
+    }
+
+    class Dialog extends Popup {
+        close() {
+        }
     }
 
     class Lobby extends Component {
@@ -1016,74 +1093,6 @@
         }
     }
 
-    class Popup extends Component {
-        constructor() {
-            super(...arguments);
-            /** Main content. */
-            this.pane = this.ui.create('pane', this.node);
-            /** Trigger when dialog is opened. */
-            this.onopen = null;
-            /** Trigger when dialog is closed. */
-            this.onclose = null;
-            /** Whether popup is closed when clicking on background layer. */
-            this.temp = true;
-            /** Whether popup appears at the center. */
-            this.center = true;
-            /** Built-in sizes. */
-            this.size = null;
-            /** Animation speed of open and close. */
-            this.transition = null;
-            // currently hidden
-            this.hidden = true;
-        }
-        init() {
-            this.node.classList.add('noname-popup');
-            if (this.center) {
-                this.node.classList.add('center');
-            }
-            if (typeof this.size === 'string') {
-                this.node.classList.add(this.size);
-            }
-            // block DOM events behind the pane
-            this.ui.bindClick(this.pane.node, () => { });
-            // close when clicking on background layer
-            this.ui.bindClick(this.node, () => {
-                if (this.temp) {
-                    this.close();
-                }
-            });
-        }
-        close() {
-            if (this.hidden) {
-                return;
-            }
-            this.hidden = true;
-            if (this.onclose) {
-                this.onclose();
-            }
-            this.ui.animate(this.pane.node, {
-                opacity: [1, 0], scale: [1, 'var(--popup-transform)']
-            }, this.app.getTransition(this.transition)).onfinish = () => {
-                this.node.remove();
-            };
-        }
-        open() {
-            if (!this.hidden) {
-                return;
-            }
-            this.hidden = false;
-            if (this.onopen) {
-                this.onopen();
-            }
-            if (this.node.parentNode !== this.app.node) {
-                this.app.node.appendChild(this.node);
-            }
-            this.ui.animate(this.pane.node, {
-                opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-            }, this.app.getTransition(this.transition));
-        }
-    }
-
     class Menu extends Popup {
         constructor() {
             super(...arguments);
@@ -1557,8 +1566,9 @@
             this.app.splash.hide();
             this.close();
         }
-        down() {
+        down(msg) {
             // room owner disconnected
+            console.log(parseInt(msg) - Date.now());
             this.app.alert('房主连接断开');
         }
     }
@@ -1975,9 +1985,9 @@
     }
 
     const componentClasses = new Map();
-    componentClasses.set('alert', Alert);
     componentClasses.set('app', App);
     componentClasses.set('collection', Collection);
+    componentClasses.set('dialog', Dialog);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
@@ -2466,6 +2476,8 @@
         clear() {
             this.components.clear();
             this.yielding.clear();
+            this.syncListeners.clear();
+            this.ui.app.clearPopups();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
             this.ui.app.splash.show();

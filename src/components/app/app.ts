@@ -1,4 +1,4 @@
-import { Component, Arena, Splash, TransitionDuration } from '../../components';
+import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
 
 export class App extends Component {
 	/** Arena component. */
@@ -27,6 +27,9 @@ export class App extends Component {
 
 	/** Audio context. */
 	audio = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+	/** Popup components cleared when arena close. */
+	popups = new Map<string | number, Popup>();
 
     init() {
 		document.head.appendChild(this.themeNode);
@@ -258,18 +261,24 @@ export class App extends Component {
 	}
 
 	/** Display alert message. */
-	alert(caption: string, content='', confirm='确定') {
-		const cmp = this.ui.create('alert');
+	alert(caption: string, content='', button='确定', id?: string) {
+		return this.confirm(caption, content, {ok: button}, id);
+	}
+
+	/** Display confirm message. */
+	confirm(caption: string, content='', buttons: {[key: string]: string} = {ok: '确定', cancel: '取消'}, id?: string) {
+		const dialog = this.ui.create('dialog');
+		this.popups.set(id ?? this.popups.size, dialog);
 		// const layer = this.ui.createElement('alert', this.node);
 		// this.ui.createElement('caption', layer).innerHTML = msg;
 		// this.ui.createElement('button', layer).innerHTML = '退出';
 	}
 
-	/** Display confirm message. */
-	confirm(caption: string, content='', confirm='确定') {
-		const cmp = this.ui.create('alert');
-		// const layer = this.ui.createElement('alert', this.node);
-		// this.ui.createElement('caption', layer).innerHTML = msg;
-		// this.ui.createElement('button', layer).innerHTML = '退出';
+	/** Clear alert and confirm dialogs. */
+	clearPopups() {
+		for (const popup of this.popups.values()) {
+			popup.close();
+		}
+		this.popups.clear();
 	}
 }

@@ -145,6 +145,8 @@ export class Client {
     clear() {
         this.components.clear();
         this.yielding.clear();
+        this.syncListeners.clear();
+        this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
         this.ui.app.splash.show();
