@@ -1,4 +1,4 @@
-import { Component } from '../../components';
+import { Component, Popup } from '../../components';
 
 export class Arena extends Component {
     /** Layout mode. */

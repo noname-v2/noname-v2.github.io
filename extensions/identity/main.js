@@ -32,7 +32,7 @@ var main = {
         },
         stage: {}
     },
-    tags: ['guess-side']
+    tags: ['guess-side', 'leader']
 };
 
 export default main;

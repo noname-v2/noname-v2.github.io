@@ -17,5 +17,5 @@ export default <SGS>{
             }
         }
     },
-    tags: ['swap']
+    tags: ['swap', 'leader']
 }

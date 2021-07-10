@@ -49,7 +49,6 @@ export class Worker {
             this.uid = data[0];
             this.game = new Game(data[3], this);
         }
-
         (self as any).postMessage('ready');
     }
 
@@ -106,21 +105,29 @@ export class Worker {
                 this.sync();
             }
             else {
-                const idx = data.indexOf(':');
-                const method = data.slice(0, idx);
-                const arg = data.slice(idx + 1);
-                if (method === 'join') {
-                    const [uid, info] = <[string, [string, string]]>JSON.parse(arg);
-                    this.peers!.set(uid, info);
-                    this.sync();
-                    this.send(uid, this.game!.pack());
-                    ////// stage === 3: send stage.calls
-                }
-                else if (method === 'leave') {
-                    if (this.peers?.has(arg)) {
-                        this.peers.delete(arg);
+                try {
+                    const idx = data.indexOf(':');
+                    const method = data.slice(0, idx);
+                    const arg = data.slice(idx + 1);
+                    if (method === 'join') {
+                        const [uid, info] = <[string, [string, string]]>JSON.parse(arg);
+                        this.peers!.set(uid, info);
                         this.sync();
+                        this.send(uid, this.game!.pack());
+                        ////// stage === 3: send stage.calls
                     }
+                    else if (method === 'leave') {
+                        if (this.peers?.has(arg)) {
+                            this.peers.delete(arg);
+                            this.sync();
+                        }
+                    }
+                    else if (method === 'resp') {
+                        self.onmessage!(JSON.parse(arg));
+                    }
+                }
+                catch (e) {
+                    console.log(e, data);
                 }
             }
         };

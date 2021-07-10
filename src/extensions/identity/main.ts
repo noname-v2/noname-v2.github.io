@@ -36,5 +36,5 @@ export default <SGS>{
             
         }
     },
-    tags: ['guess-side']
+    tags: ['guess-side', 'leader']
 }

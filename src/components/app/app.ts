@@ -256,4 +256,20 @@ export class App extends Component {
 		const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
 		return duration * 1000;
 	}
+
+	/** Display alert message. */
+	alert(caption: string, content='', confirm='确定') {
+		const cmp = this.ui.create('alert');
+		// const layer = this.ui.createElement('alert', this.node);
+		// this.ui.createElement('caption', layer).innerHTML = msg;
+		// this.ui.createElement('button', layer).innerHTML = '退出';
+	}
+
+	/** Display confirm message. */
+	confirm(caption: string, content='', confirm='确定') {
+		const cmp = this.ui.create('alert');
+		// const layer = this.ui.createElement('alert', this.node);
+		// this.ui.createElement('caption', layer).innerHTML = msg;
+		// this.ui.createElement('button', layer).innerHTML = '退出';
+	}
 }

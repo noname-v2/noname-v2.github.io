@@ -229,17 +229,13 @@ export class SplashHub extends Popup {
     }
 
     msg(msg: string) {
-        try {
-            this.client.dispatch(JSON.parse(msg));
-            this.app.splash.hide();
-            this.close();
-        }
-        catch (e) {
-            console.log(e);
-        }
+        this.client.dispatch(JSON.parse(msg));
+        this.app.splash.hide();
+        this.close();
     }
 
     down() {
         // room owner disconnected
+        this.app.alert('房主连接断开');
     }
 }

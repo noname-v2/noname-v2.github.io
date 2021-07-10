@@ -15,7 +15,7 @@ var main = {
             }
         }
     },
-    tags: ['swap']
+    tags: ['swap', 'leader']
 };
 
 export default main;

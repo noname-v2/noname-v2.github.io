@@ -62,15 +62,23 @@ export class Game {
     }
 
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
-        self.onmessage = async ({data: [uid, sid, id, result, done]}: {data: ClientMessage}) => {
-            if (id < 0) {
-                //////
-            }
-            else if (sid === this.activeStage?.id) {
-                const link = this.links.get(id);
-                if (link?.owner === uid) {
-                    this.activeStage.onyield(id, result, done);
+        self.onmessage = async ({data}: {data: ClientMessage}) => {
+            try {
+                const [uid, sid, id, result, done] = data;
+                if (id < 0) {
+                    // reload UI upon error
+                    this.worker.send(uid, this.pack());
                 }
+                else if (sid === this.activeStage?.id) {
+                    // send result to listener
+                    const link = this.links.get(id);
+                    if (link?.owner === uid) {
+                        this.activeStage.onyield(id, result, done);
+                    }
+                }
+            }
+            catch (e) {
+                console.log(e);
             }
         };
 
@@ -210,6 +218,7 @@ export class Game {
         for (const [uid, link] of this.links.entries()) {
             ui[uid] = link.flatten();
         }
+        ////// function calls in step 3
         return [this.activeStage?.id || 0, ui, {}];
     }
 }

@@ -15,6 +15,7 @@ export default <SGS>{
             createPlayers() {
                 console.log(this.game.packs);
             }
-        }
+        },
+        tags: ['leader']
     }
 }

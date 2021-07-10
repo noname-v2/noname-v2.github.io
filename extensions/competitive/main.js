@@ -13,7 +13,8 @@ var main = {
             createPlayers() {
                 console.log(this.game.packs);
             }
-        }
+        },
+        tags: ['leader']
     }
 };
 

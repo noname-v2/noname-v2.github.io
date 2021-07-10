@@ -178,6 +178,9 @@
     /** HTMLElement tag  name */
     Component.tag = null;
 
+    class Alert extends Component {
+    }
+
     class App extends Component {
         constructor() {
             super(...arguments);
@@ -383,6 +386,23 @@
             const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
             return duration * 1000;
         }
+        /** Display alert message. */
+        alert(caption, content = '', confirm = '确定') {
+            this.ui.create('alert');
+            // const layer = this.ui.createElement('alert', this.node);
+            // this.ui.createElement('caption', layer).innerHTML = msg;
+            // this.ui.createElement('button', layer).innerHTML = '退出';
+        }
+        /** Display confirm message. */
+        confirm(caption, content = '', confirm = '确定') {
+            this.ui.create('alert');
+            // const layer = this.ui.createElement('alert', this.node);
+            // this.ui.createElement('caption', layer).innerHTML = msg;
+            // this.ui.createElement('button', layer).innerHTML = '退出';
+        }
+    }
+
+    class Collection extends Component {
     }
 
     class Lobby extends Component {
@@ -536,9 +556,6 @@
             this.client.disconnect();
             this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
         }
-    }
-
-    class PackGallery extends Component {
     }
 
     class Sidebar extends Component {
@@ -1536,17 +1553,13 @@
             this.numSection.firstChild.innerHTML = '在线：' + msg;
         }
         msg(msg) {
-            try {
-                this.client.dispatch(JSON.parse(msg));
-                this.app.splash.hide();
-                this.close();
-            }
-            catch (e) {
-                console.log(e);
-            }
+            this.client.dispatch(JSON.parse(msg));
+            this.app.splash.hide();
+            this.close();
         }
         down() {
             // room owner disconnected
+            this.app.alert('房主连接断开');
         }
     }
     /** Use tag <noname-popup>. */
@@ -1962,9 +1975,10 @@
     }
 
     const componentClasses = new Map();
+    componentClasses.set('alert', Alert);
     componentClasses.set('app', App);
+    componentClasses.set('collection', Collection);
     componentClasses.set('lobby', Lobby);
-    componentClasses.set('pack-gallery', PackGallery);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
     componentClasses.set('button', Button);

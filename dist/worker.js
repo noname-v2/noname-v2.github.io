@@ -473,13 +473,23 @@
             this.extensions = new Map();
             /** An accessor to avoid exposing unsafe properties to extensions. */
             this.accessor = new GameAccessor(this);
-            self.onmessage = async ({ data: [uid, sid, id, result, done] }) => {
-                if (id < 0) ;
-                else if (sid === this.activeStage?.id) {
-                    const link = this.links.get(id);
-                    if (link?.owner === uid) {
-                        this.activeStage.onyield(id, result, done);
+            self.onmessage = async ({ data }) => {
+                try {
+                    const [uid, sid, id, result, done] = data;
+                    if (id < 0) {
+                        // reload UI upon error
+                        this.worker.send(uid, this.pack());
                     }
+                    else if (sid === this.activeStage?.id) {
+                        // send result to listener
+                        const link = this.links.get(id);
+                        if (link?.owner === uid) {
+                            this.activeStage.onyield(id, result, done);
+                        }
+                    }
+                }
+                catch (e) {
+                    console.log(e);
                 }
             };
             this.mode = content[0];
@@ -608,6 +618,7 @@
             for (const [uid, link] of this.links.entries()) {
                 ui[uid] = link.flatten();
             }
+            ////// function calls in step 3
             return [this.activeStage?.id || 0, ui, {}];
         }
     }
@@ -686,21 +697,29 @@
                     this.sync();
                 }
                 else {
-                    const idx = data.indexOf(':');
-                    const method = data.slice(0, idx);
-                    const arg = data.slice(idx + 1);
-                    if (method === 'join') {
-                        const [uid, info] = JSON.parse(arg);
-                        this.peers.set(uid, info);
-                        this.sync();
-                        this.send(uid, this.game.pack());
-                        ////// stage === 3: send stage.calls
-                    }
-                    else if (method === 'leave') {
-                        if (this.peers?.has(arg)) {
-                            this.peers.delete(arg);
+                    try {
+                        const idx = data.indexOf(':');
+                        const method = data.slice(0, idx);
+                        const arg = data.slice(idx + 1);
+                        if (method === 'join') {
+                            const [uid, info] = JSON.parse(arg);
+                            this.peers.set(uid, info);
                             this.sync();
+                            this.send(uid, this.game.pack());
+                            ////// stage === 3: send stage.calls
                         }
+                        else if (method === 'leave') {
+                            if (this.peers?.has(arg)) {
+                                this.peers.delete(arg);
+                                this.sync();
+                            }
+                        }
+                        else if (method === 'resp') {
+                            self.onmessage(JSON.parse(arg));
+                        }
+                    }
+                    catch (e) {
+                        console.log(e, data);
                     }
                 }
             };

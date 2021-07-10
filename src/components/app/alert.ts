@@ -1,5 +1,5 @@
 import { Component } from '../../components';
 
-export class PackGallery extends Component {
-
+export class Alert extends Component {
+    
 }
