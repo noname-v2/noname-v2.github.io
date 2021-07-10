@@ -1,6 +1,6 @@
 import { version } from '../version';
 import { Game } from './game';
-
+import { hub2owner } from '../hub/types';
 
 /** An update to client side. */
 export type UITick = [
@@ -107,7 +107,7 @@ export class Worker {
             else {
                 try {
                     const idx = data.indexOf(':');
-                    const method = data.slice(0, idx);
+                    const method = data.slice(0, idx) as typeof hub2owner[number];
                     const arg = data.slice(idx + 1);
                     if (method === 'join') {
                         const [uid, info] = <[string, [string, string]]>JSON.parse(arg);

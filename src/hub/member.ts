@@ -1,13 +1,13 @@
 import { Owner } from './owner';
 import { Client, clients } from './client';
-import type { Hub2Member } from './types';
+import type { hub2member } from './types';
 
 export class Member extends Client {
     /** Owner ID of currently joined room. */
     joined: string | null = null;
 
     /** Overwrite type annotation for send. */
-    send: (tag: Hub2Member, msg?: string) => void;
+    send: (tag: typeof hub2member[number], msg?: string) => void;
 
     /** Getter of room owner. */
     get owner() {

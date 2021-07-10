@@ -1,6 +1,7 @@
 import { Popup } from '../popup';
 import { Splash, SplashRoom } from '../../components';
 import { config } from '../../version';
+import { hub2member } from '../../hub/types';
 
 export class SplashHub extends Popup {
     /** Use tag <noname-popup>. */
@@ -103,10 +104,10 @@ export class SplashHub extends Popup {
                 ws.onmessage = ({data}: {data: string}) => {
                     try {
                         const idx = data.indexOf(':');
-                        const method = data.slice(0, idx);
+                        const method = data.slice(0, idx) as typeof hub2member[number];
                         const arg = data.slice(idx + 1);
-                        if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
-                            (this as any)[method](arg);
+                        if (hub2member.includes(method)) {
+                            this[method](arg);
                         }
                     }
                     catch (e) {

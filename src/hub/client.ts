@@ -1,7 +1,7 @@
 import type WebSocket from 'ws';
 import type { Owner } from './owner';
 import type { Member } from './member';
-import type { Hub2Member, Hub2Owner } from './types';
+import type { hub2member, hub2owner } from './types';
 
 export const clients = new Map<string, Owner | Member>();
 
@@ -33,7 +33,7 @@ export abstract class Client {
         return this.ws.readyState === this.ws.CLOSED;
     }
 
-    send(tag: Hub2Member | Hub2Owner, msg?: string) {
+    send(tag: typeof hub2member[number] | typeof hub2owner[number], msg?: string) {
         this.ws.send(tag + (msg ? ':' + msg : ''));
     }
 

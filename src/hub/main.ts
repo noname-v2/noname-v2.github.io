@@ -4,6 +4,7 @@ import { createServer } from 'https';
 import { clients } from './client';
 import { Owner } from './owner';
 import { Member } from './member';
+import { owner2hub, member2hub } from './types';
 
 const server = createServer({
     cert: readFileSync('cert.pem'),
@@ -33,7 +34,10 @@ wss.on('connection', ws => {
                 // call owner of member methods
                 const client = clients.get(uid);
                 if (client?.ws === ws) {
-                    (client as any)[method](arg);
+                    if ((client instanceof Owner && owner2hub.includes(method as typeof owner2hub[number])) ||
+                        (client instanceof Member && member2hub.includes(method as typeof member2hub[number]))) {
+                        client[method](arg);
+                    }
                 }
             }
             else {

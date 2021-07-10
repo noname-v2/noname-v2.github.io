@@ -6,6 +6,7 @@ const https_1 = require("https");
 const client_1 = require("./client");
 const owner_1 = require("./owner");
 const member_1 = require("./member");
+const types_1 = require("./types");
 const server = https_1.createServer({
     cert: fs_1.readFileSync('cert.pem'),
     key: fs_1.readFileSync('key.pem'),
@@ -30,7 +31,10 @@ wss.on('connection', ws => {
                 // call owner of member methods
                 const client = client_1.clients.get(uid);
                 if (client?.ws === ws) {
-                    client[method](arg);
+                    if ((client instanceof owner_1.Owner && types_1.owner2hub.includes(method)) ||
+                        (client instanceof member_1.Member && types_1.member2hub.includes(method))) {
+                        client[method](arg);
+                    }
                 }
             }
             else {

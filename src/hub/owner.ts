@@ -1,6 +1,6 @@
 import { Member } from './member';
 import { Client, clients } from './client';
-import type { Hub2Owner } from './types';
+import type { hub2owner } from './types';
 
 export class Owner extends Client {
     /** Room description. */
@@ -13,7 +13,7 @@ export class Owner extends Client {
     bcastMembers = new Set<string>();
 
     /** Overwrite type annotation for send. */
-    send: (tag: Hub2Owner, msg?: string) => void;
+    send: (tag: typeof hub2owner[number], msg?: string) => void;
 
     /** Return client object if uid is a member. */
     private get(uid: string) {

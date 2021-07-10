@@ -4,7 +4,7 @@
  * to: Send a message to a client in the room.
  * bcast: Send a message to all clients in the room.
  */
-export type Owner2Hub = 'edit' | 'kick' | 'to' | 'bcast';
+export const owner2hub = ['edit', 'kick', 'to', 'bcast'] as const;
 
 /** Commands sent to Owner.
  * ready: Room is created.
@@ -12,14 +12,14 @@ export type Owner2Hub = 'edit' | 'kick' | 'to' | 'bcast';
  * leave: Member leaves the room.
  * join: Member joins the room.
 */
-export type Hub2Owner = 'ready' | 'resp' | 'leave' | 'join';
+export const hub2owner = ['ready', 'resp', 'leave', 'join'] as const;
 
 /** Commands received from Member.
  * join: Join a room.
  * leave: Leave current room.
  * resp: Send to result to owner.
  */
-export type Member2Hub = 'join' | 'leave' | 'resp';
+export const member2hub = ['join', 'leave', 'resp'] as const;
 
 /** Commands sent to Member.
  * down: Owner lost connection.
@@ -28,4 +28,4 @@ export type Member2Hub = 'join' | 'leave' | 'resp';
  * num: Number of connected clients (for idle clients).
  * reload: Full list of rooms.
 */
-export type Hub2Member = 'down' | 'msg' | 'edit' | 'reload' | 'num';
+export const hub2member = ['down', 'msg', 'edit', 'reload', 'num'] as const;
