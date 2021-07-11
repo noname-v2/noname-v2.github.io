@@ -1,6 +1,6 @@
-import type { CollectionSGS } from '../sgs';
+import type { Collection } from '../../extension';
 
-export const player = <CollectionSGS>{
+export const player = <Collection>{
     choose: {
         content() {
             console.log('choose')

@@ -3,9 +3,8 @@ import { player } from './ruleset/player';
 import { stage } from './ruleset/stage';
 import { game } from './ruleset/game';
 import { config } from './ruleset/config';
-import type { SGS } from './sgs';
+import type { Extension } from '../extension';
 
-export default <SGS>{
-    dependencies: ['standard', 'maneuver'],
+export default <Extension>{
     ruleset: { card, player, stage, game, config }
 }

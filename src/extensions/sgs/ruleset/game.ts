@@ -1,6 +1,6 @@
-import type { CollectionSGS } from '../sgs';
+import type { Collection } from '../../extension';
 
-export const game = <CollectionSGS>{
+export const game = <Collection>{
     init: {
         content() {
             this.add('createLobby');

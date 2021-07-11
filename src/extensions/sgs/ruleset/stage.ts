@@ -1,6 +1,6 @@
-import type { CollectionSGS } from '../sgs';
+import type { Collection } from '../../extension';
 
-export const stage = <CollectionSGS>{
+export const stage = <Collection>{
     before: {
         async content() {
 

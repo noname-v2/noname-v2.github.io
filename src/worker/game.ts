@@ -3,7 +3,7 @@ import { Link } from './link';
 import { GameAccessor } from './game-acc';
 import type { StageLocation } from './stage';
 import type { Worker, ClientMessage, UITick } from './worker';
-import type { Extension } from './extension';
+import type { Extension } from '../extensions/extension';
 
 export class Game {
     /** Root game stage. */

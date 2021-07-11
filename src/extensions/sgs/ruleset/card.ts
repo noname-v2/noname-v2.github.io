@@ -1,6 +1,6 @@
-import type { CollectionSGS } from '../sgs';
+import type { Collection } from '../../extension';
 
-export const card = <CollectionSGS>{
+export const card = <Collection>{
     moveTo: {
         content() {
 

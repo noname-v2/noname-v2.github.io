@@ -100,4 +100,6 @@ export class GameAccessor {
             this.#game.worker.updateRoom();
         }
     }
+
+    [key: string]: any;
 }

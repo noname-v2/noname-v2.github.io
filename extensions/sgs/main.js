@@ -204,7 +204,6 @@ const config = {
 };
 
 var main = {
-    dependencies: ['standard', 'maneuver'],
     ruleset: { card, player, stage, game, config }
 };
 

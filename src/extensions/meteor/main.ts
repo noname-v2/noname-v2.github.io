@@ -1,6 +1,6 @@
-import type { SGS } from '../sgs/sgs';
+import type { Extension } from '../extension';
 
-export default <SGS>{
+export default <Extension>{
     heropack: '星火燎原',
     hero: {
         

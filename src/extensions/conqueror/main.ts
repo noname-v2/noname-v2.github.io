@@ -1,6 +1,6 @@
-import type { SGS } from '../sgs/sgs';
+import type { Extension } from '../extension';
 
-export default <SGS>{
+export default <Extension>{
     cardpack: '君临天下',
     heropack: '君临天下',
     tags: ['double-hidden!']

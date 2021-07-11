@@ -141,4 +141,6 @@ export class StageAccessor {
     create(tag: string) {
         return this.#stage.game.create(tag);
     }
+
+    [key: string]: any;
 }
