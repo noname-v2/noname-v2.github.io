@@ -14,7 +14,6 @@
 		"url": "git+https://github.com/noname-v2/noname-v2.github.io.git"
 	},
 	"dependencies": {
-		"forever": "^4.0.1",
 		"ws": "^7.4.5"
 	}
 }

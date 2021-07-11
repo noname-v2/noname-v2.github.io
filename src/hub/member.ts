@@ -19,16 +19,13 @@ export class Member extends Client {
     }
 
     init(old: Owner | Member | null) {
-        if (old instanceof Member) {
+        if (old instanceof Member && old.owner) {
             // rejoin previous room
-            if (old.owner) {
-                this.join(old.joined);
-            }
+            this.join(old.joined);
         }
-        else if (old instanceof Owner && old.members.size) {
-            // disallow an active room owner to join another game
-            this.ws.close(1008, 'old');
-            return;
+        else if (old instanceof Owner) {
+            // close old room
+            old.edit('close');
         }
 
         if (!this.joined) {

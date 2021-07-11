@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hub2member = exports.member2hub = exports.hub2owner = exports.owner2hub = void 0;
+exports.split = exports.hub2member = exports.member2hub = exports.hub2owner = exports.owner2hub = void 0;
 /** Commands received from Owner.
  * edit: Create or edit room.
  * kick: Remove a client from room.
@@ -29,3 +29,9 @@ exports.member2hub = ['join', 'leave', 'resp'];
  * reload: Full list of rooms.
 */
 exports.hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
+/** Split message. */
+function split(msg) {
+    const idx = msg.indexOf(':');
+    return [msg.slice(0, idx), msg.slice(idx + 1)];
+}
+exports.split = split;

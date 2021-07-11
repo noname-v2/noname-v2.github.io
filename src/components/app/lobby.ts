@@ -27,8 +27,9 @@ export class Lobby extends Component {
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => {
                 const ws = this.client.connection;
-                if (this.client.peers || ws instanceof WebSocket) {
-                    if (confirm('确定退出联机模式？')) {
+                const peers = this.client.peers;
+                if (peers || ws instanceof WebSocket) {
+                    if (!peers || !Object.keys(peers).length || confirm('确定退出联机模式？')) {
                         if (ws instanceof WebSocket) {
                             this.client.clear();
                             ws.send('leave:init');
@@ -151,6 +152,10 @@ export class Lobby extends Component {
                 alert('连接失败');
             }
             this.connecting = false;
+            const toggle = this.configToggles.get('online');
+            if (toggle) {
+                toggle.confirm = (peers && Object.keys(peers).length) ? [false] : null;
+            }
         }
     }
 

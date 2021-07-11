@@ -14,7 +14,7 @@ export class Toggle extends Component {
 	disabledChoices = new Set<string | number>();
 
 	/** Requires confirmation when toggling to a value. */
-	confirm?: any[];
+	confirm: any[] | null = null;
 
 	setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
 		this.span.innerHTML = caption;

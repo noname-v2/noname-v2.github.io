@@ -159,8 +159,7 @@ const config = {
     online: {
         name: '联机模式',
         intro: '允许其他玩家通过主页的联机键加入游戏。',
-        init: false,
-        confirm: [false]
+        init: false
     },
     online_join: {
         name: '允许中途加入',

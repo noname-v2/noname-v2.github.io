@@ -25,9 +25,7 @@ wss.on('connection', ws => {
     ws.on('message', (msg) => {
         try {
             if (uid) {
-                const idx = msg.indexOf(':');
-                const method = msg.slice(0, idx);
-                const arg = msg.slice(idx + 1);
+                const [method, arg] = types_1.split(msg);
                 // call owner of member methods
                 const client = client_1.clients.get(uid);
                 if (client?.ws === ws) {
