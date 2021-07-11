@@ -9,6 +9,29 @@ export interface Section {
     [key: string]: any;
 }
 
+export interface RuleSet {
+    game: {
+        loop: Section;
+        [key: string]: any;
+    };
+    stage: {
+        before: Section;
+        main: Section;
+        after: Section;
+        [key: string]: any;
+    };
+    config: {
+        [key: string]: {
+            name: string;
+            intro?: string;
+            init: any;
+            options?: [string | number, any][];
+            confirm?: any[];
+        };
+    };
+    [key: string]: any;
+}
+
 export interface Extension {
     mode?: Section;
     skill?: {[key: string]: Section};

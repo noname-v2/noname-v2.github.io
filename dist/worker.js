@@ -430,12 +430,6 @@
         get activeStage() {
             return this.#game.activeStage?.accessor ?? null;
         }
-        get gameStage() {
-            return this.#game.gameStage?.accessor ?? null;
-        }
-        get started() {
-            return this.#game.started;
-        }
         get links() {
             return this.#game.links;
         }
@@ -457,6 +451,28 @@
         disconnect() {
             this.#game.worker.disconnect();
         }
+        /** Get game configuration. */
+        get(key) {
+            return this.#game.config[key];
+        }
+        /** Set game configuration. */
+        set(key, val) {
+            this.#game.config[key] = val;
+        }
+        /** Freeze config and tell hub about game start. */
+        start() {
+            if (this.#game.state === 0) {
+                this.#game.state = 1;
+                this.#game.worker.updateRoom();
+            }
+        }
+        /** Mark game as ended. */
+        over() {
+            if (this.#game.state === 1) {
+                this.#game.state = 2;
+                this.#game.worker.updateRoom();
+            }
+        }
     }
 
     class Game {
@@ -473,6 +489,12 @@
             this.extensions = new Map();
             /** An accessor to avoid exposing unsafe properties to extensions. */
             this.accessor = new GameAccessor(this);
+            /** Game state.
+             * 0: waiting
+             * 1: gaming
+             * 2: ended
+             */
+            this.state = 0;
             self.onmessage = async ({ data }) => {
                 try {
                     const [uid, sid, id, result, done] = data;
@@ -540,10 +562,6 @@
         get tickable() {
             return [2, 3].includes(this.activeStage?.step);
         }
-        /** Main game loop has started */
-        get started() {
-            return this.gameStage?.step ? true : false;
-        }
         async getExtension(name) {
             if (!this.extensions.has(name)) {
                 this.extensions.set(name, (await import(`../extensions/${name}/main.js`)).default);
@@ -560,9 +578,6 @@
             const id = this.stages.size + 1;
             const stage = new Stage(id, parent ?? null, name, this);
             this.stages.set(id, stage);
-            if (name === this.getRule('#gameStage')) {
-                this.gameStage = stage;
-            }
             return stage;
         }
         /** Get the function based on string. Format:
@@ -675,8 +690,8 @@
                 this.game.config.np,
                 // nickname and avatar of owner
                 this.info,
-                // game started
-                this.game.started
+                // game state
+                this.game.state
             ]);
         }
         /** Send a message to all clients. */
@@ -763,7 +778,7 @@
             const [uid, info] = JSON.parse(msg);
             this.peers.set(uid, info);
             this.sync();
-            this.connection?.send('edit:' + this.room);
+            this.updateRoom();
             this.send(uid, this.game.pack());
             ////// stage === 3: send stage.calls
         }
@@ -772,12 +787,16 @@
             if (this.peers?.has(uid)) {
                 this.peers.delete(uid);
                 this.sync();
-                this.connection?.send('edit:' + this.room);
+                this.updateRoom();
             }
         }
         /** A remote client sends a response message. */
         resp(msg) {
             self.onmessage(JSON.parse(msg));
+        }
+        /** Update room info for idle clients. */
+        updateRoom() {
+            this.connection?.send('edit:' + this.room);
         }
     }
 

@@ -205,7 +205,7 @@ const config = {
 
 var main = {
     dependencies: ['standard', 'maneuver'],
-    ruleset: { card, player, stage, game, config, gameStage: '#game.loop/' }
+    ruleset: { card, player, stage, game, config }
 };
 
 export default main;

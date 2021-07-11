@@ -49,14 +49,6 @@ export class GameAccessor {
         return this.#game.activeStage?.accessor ?? null;
     }
 
-    get gameStage() {
-        return this.#game.gameStage?.accessor ?? null;
-    }
-
-    get started() {
-        return this.#game.started;
-    }
-
     get links() {
         return this.#game.links;
     }
@@ -81,5 +73,31 @@ export class GameAccessor {
     /** Disconnect from remote hub. */
     disconnect() {
         this.#game.worker.disconnect();
+    }
+
+    /** Get game configuration. */
+    get(key: string) {
+        return this.#game.config[key];
+    }
+
+    /** Set game configuration. */
+    set(key: string, val: any) {
+        this.#game.config[key] = val;
+    }
+
+    /** Freeze config and tell hub about game start. */
+    start() {
+        if (this.#game.state === 0) {
+            this.#game.state = 1;
+            this.#game.worker.updateRoom();
+        }
+    }
+
+    /** Mark game as ended. */
+    over() {
+        if (this.#game.state === 1) {
+            this.#game.state = 2;
+            this.#game.worker.updateRoom();
+        }
     }
 }

@@ -51,14 +51,16 @@ export class Game {
     /** An accessor to avoid exposing unsafe properties to extensions. */
     accessor = new GameAccessor(this);
 
+    /** Game state.
+     * 0: waiting
+     * 1: gaming
+     * 2: ended
+     */
+    state = 0;
+
     /** Can apply UITick. */
     get tickable() {
         return [2, 3].includes(this.activeStage?.step!);
-    }
-
-    /** Main game loop has started */
-    get started() {
-        return this.gameStage?.step ? true : false;
     }
 
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
@@ -150,9 +152,6 @@ export class Game {
         const id = this.stages.size + 1;
         const stage = new Stage(id, parent ?? null, name, this);
         this.stages.set(id, stage);
-        if (name === this.getRule('#gameStage')) {
-            this.gameStage = stage;
-        }
         return stage;
     }
 

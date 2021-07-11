@@ -52,8 +52,8 @@ export class Worker {
             this.game!.config.np,
             // nickname and avatar of owner
             this.info,
-            // game started
-            this.game!.started
+            // game state
+            this.game!.state
         ]);
     }
 
