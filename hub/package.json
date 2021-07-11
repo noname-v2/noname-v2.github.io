@@ -3,9 +3,9 @@
 	"version": "2.0.0",
 	"homepage": "ws.noname.pub:8080",
 	"scripts": {
-		"start": "npx forever start main.js",
-		"stop": "npx forever stop main.js",
-		"ls": "npx forever list"
+		"start": "npx pm2 start main.js",
+		"stop": "npx pm2 stop main.js",
+		"ls": "npx pm2 list"
 	},
 	"license": "GPL-3.0",
 	"description": "Hub backend for noname-v2",
@@ -14,6 +14,7 @@
 		"url": "git+https://github.com/noname-v2/noname-v2.github.io.git"
 	},
 	"dependencies": {
+		"pm2": "^5.1.0",
 		"ws": "^7.4.5"
 	}
 }

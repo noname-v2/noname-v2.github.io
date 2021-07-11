@@ -33,5 +33,10 @@ export const hub2member = ['down', 'msg', 'edit', 'reload', 'num'] as const;
 /** Split message. */
 export function split<T extends string = string>(msg: string): [T, string] {
     const idx = msg.indexOf(':');
-    return [msg.slice(0, idx) as T, msg.slice(idx + 1)];
+    if (idx === -1) {
+        return [msg as T, ''];
+    }
+    else {
+        return [msg.slice(0, idx) as T, msg.slice(idx + 1)];
+    }
 }

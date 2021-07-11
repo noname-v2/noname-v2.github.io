@@ -1388,7 +1388,12 @@
     /** Split message. */
     function split(msg) {
         const idx = msg.indexOf(':');
-        return [msg.slice(0, idx), msg.slice(idx + 1)];
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
     }
 
     class SplashHub extends Popup {
@@ -1559,7 +1564,7 @@
                 if (rooms[uid] !== 'close') {
                     try {
                         const room = this.ui.create('splash-room');
-                        room.setup(rooms[uid]);
+                        room.setup(JSON.parse(rooms[uid]));
                         this.rooms.set(uid, room);
                         this.ui.bindClick(room.node, () => {
                             if (!this.roomGroup.classList.contains('entering')) {

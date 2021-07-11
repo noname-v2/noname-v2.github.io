@@ -632,7 +632,12 @@
     /** Split message. */
     function split(msg) {
         const idx = msg.indexOf(':');
-        return [msg.slice(0, idx), msg.slice(idx + 1)];
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
     }
 
     /**
@@ -658,6 +663,21 @@
                 this.game = new Game(data[3], this);
             };
             self.postMessage('ready');
+        }
+        /** Room info listed in the hub. */
+        get room() {
+            return JSON.stringify([
+                // mode name
+                this.game.getRule(this.game.mode + ':mode').name,
+                // joined clients
+                1 + this.peers.size,
+                // number of players in a game
+                this.game.config.np,
+                // nickname and avatar of owner
+                this.info,
+                // game started
+                this.game.started
+            ]);
         }
         /** Send a message to all clients. */
         broadcast(tick) {
@@ -697,40 +717,16 @@
                 this.sync();
             };
             ws.onopen = () => {
-                const room = [
-                    this.game?.getRule(this.game.mode + ':mode').name,
-                    1, this.game?.config.np, this.info, this.game?.started
-                ];
-                ws.send('init:' + JSON.stringify([this.uid, this.info, room]));
+                this.peers = new Map();
+                ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
             };
             ws.onmessage = ({ data }) => {
-                if (data === 'ready') {
-                    this.peers = new Map();
-                    this.sync();
+                try {
+                    const [method, arg] = split(data);
+                    this[method](arg);
                 }
-                else {
-                    try {
-                        const [method, arg] = split(data);
-                        if (method === 'join') {
-                            const [uid, info] = JSON.parse(arg);
-                            this.peers.set(uid, info);
-                            this.sync();
-                            this.send(uid, this.game.pack());
-                            ////// stage === 3: send stage.calls
-                        }
-                        else if (method === 'leave') {
-                            if (this.peers?.has(arg)) {
-                                this.peers.delete(arg);
-                                this.sync();
-                            }
-                        }
-                        else if (method === 'resp') {
-                            self.onmessage(JSON.parse(arg));
-                        }
-                    }
-                    catch (e) {
-                        console.log(e, data);
-                    }
+                catch (e) {
+                    console.log(e, data);
                 }
             };
         }
@@ -757,6 +753,31 @@
             else {
                 this.syncPending = true;
             }
+        }
+        /** The room is ready for clients to join. */
+        ready() {
+            this.sync();
+        }
+        /** A remote client joins the room. */
+        join(msg) {
+            const [uid, info] = JSON.parse(msg);
+            this.peers.set(uid, info);
+            this.sync();
+            this.connection?.send('edit:' + this.room);
+            this.send(uid, this.game.pack());
+            ////// stage === 3: send stage.calls
+        }
+        /** A remote client leaves the room. */
+        leave(uid) {
+            if (this.peers?.has(uid)) {
+                this.peers.delete(uid);
+                this.sync();
+                this.connection?.send('edit:' + this.room);
+            }
+        }
+        /** A remote client sends a response message. */
+        resp(msg) {
+            self.onmessage(JSON.parse(msg));
         }
     }
 

@@ -41,6 +41,22 @@ export class Worker {
     /** Clients updated since last UITick. */
     syncPending = false;
 
+    /** Room info listed in the hub. */
+    get room() {
+        return JSON.stringify([
+            // mode name
+            this.game!.getRule(this.game!.mode + ':mode').name,
+            // joined clients
+            1 + this.peers!.size,
+            // number of players in a game
+            this.game!.config.np,
+            // nickname and avatar of owner
+            this.info,
+            // game started
+            this.game!.started
+        ]);
+    }
+
     /**
      * Setup communication.
      */
@@ -93,41 +109,16 @@ export class Worker {
             this.sync();
         };
         ws.onopen = () => {
-            const room = [
-                this.game?.getRule(this.game!.mode + ':mode').name,
-                1, this.game?.config.np, this.info, this.game?.started
-            ]
-            ws.send('init:' + JSON.stringify([this.uid, this.info, room]));
+            this.peers = new Map();
+            ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
         };
         ws.onmessage = ({data}) => {
-            if (data === 'ready') {
-                this.peers = new Map();
-                this.sync();
+            try {
+                const [method, arg] = split<typeof hub2owner[number]>(data);
+                this[method](arg);
             }
-            else {
-                try {
-                    const [method, arg] = split<typeof hub2owner[number]>(data);
-                    
-                    if (method === 'join') {
-                        const [uid, info] = <[string, [string, string]]>JSON.parse(arg);
-                        this.peers!.set(uid, info);
-                        this.sync();
-                        this.send(uid, this.game!.pack());
-                        ////// stage === 3: send stage.calls
-                    }
-                    else if (method === 'leave') {
-                        if (this.peers?.has(arg)) {
-                            this.peers.delete(arg);
-                            this.sync();
-                        }
-                    }
-                    else if (method === 'resp') {
-                        self.onmessage!(JSON.parse(arg));
-                    }
-                }
-                catch (e) {
-                    console.log(e, data);
-                }
+            catch (e) {
+                console.log(e, data);
             }
         };
     }
@@ -156,5 +147,39 @@ export class Worker {
         else {
             this.syncPending = true;
         }
+    }
+
+    /** The room is ready for clients to join. */
+    ready() {
+        this.sync();
+    }
+
+    /** A remote client joins the room. */
+    join(msg: string) {
+        const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
+        this.peers!.set(uid, info);
+        this.sync();
+        this.updateRoom();
+        this.send(uid, this.game!.pack());
+        ////// stage === 3: send stage.calls
+    }
+
+    /** A remote client leaves the room. */
+    leave(uid: string) {
+        if (this.peers?.has(uid)) {
+            this.peers.delete(uid);
+            this.sync();
+            this.updateRoom();
+        }
+    }
+
+    /** A remote client sends a response message. */
+    resp(msg: string) {
+        self.onmessage!(JSON.parse(msg));
+    }
+
+    /** Update room info for idle clients. */
+    updateRoom() {
+        this.connection?.send('edit:' + this.room);
     }
 }

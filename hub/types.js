@@ -32,6 +32,11 @@ exports.hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
 /** Split message. */
 function split(msg) {
     const idx = msg.indexOf(':');
-    return [msg.slice(0, idx), msg.slice(idx + 1)];
+    if (idx === -1) {
+        return [msg, ''];
+    }
+    else {
+        return [msg.slice(0, idx), msg.slice(idx + 1)];
+    }
 }
 exports.split = split;

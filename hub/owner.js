@@ -32,6 +32,7 @@ class Owner extends client_1.Client {
     }
     init(old, room) {
         this.edit(room);
+        this.send('ready');
         if (old instanceof Owner) {
             // send previously joined clients
             for (const client of old.getAll()) {
@@ -57,10 +58,6 @@ class Owner extends client_1.Client {
         else if (room === 'down') {
             // hide from room list but keep room (owner offline)
             room = 'close';
-        }
-        else {
-            // confirm to owner
-            this.send('ready');
         }
         // send room update to idle clients
         const msg = JSON.stringify({ [this.uid]: room });

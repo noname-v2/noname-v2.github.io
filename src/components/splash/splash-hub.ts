@@ -200,7 +200,7 @@ export class SplashHub extends Popup {
             if (rooms[uid] !== 'close') {
                 try {
                     const room = this.ui.create('splash-room');
-                    room.setup(rooms[uid]);
+                    room.setup(JSON.parse(rooms[uid]));
                     this.rooms.set(uid, room);
                     this.ui.bindClick(room.node, () => {
                         if (!this.roomGroup.classList.contains('entering')) {

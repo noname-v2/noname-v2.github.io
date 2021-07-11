@@ -38,6 +38,7 @@ export class Owner extends Client {
 
     init(old: Owner | Member | null, room: any) {
         this.edit(room);
+        this.send('ready');
 
         if (old instanceof Owner) {
             // send previously joined clients
@@ -66,10 +67,6 @@ export class Owner extends Client {
         else if (room === 'down') {
             // hide from room list but keep room (owner offline)
             room = 'close';
-        }
-        else {
-            // confirm to owner
-            this.send('ready');
         }
 
         // send room update to idle clients
