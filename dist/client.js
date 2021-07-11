@@ -1366,6 +1366,26 @@
         "avatar": "standard:caocao"
     };
 
+    /** Commands received from Owner.
+     * edit: Create or edit room.
+     * kick: Remove a client from room.
+     * to: Send a message to a client in the room.
+     * bcast: Send a message to all clients in the room.
+     */
+    /** Commands sent to Member.
+     * down: Owner lost connection.
+     * msg: Owner sends a UITick.
+     * edit: Room info changes (for idle clients).
+     * num: Number of connected clients (for idle clients).
+     * reload: Full list of rooms.
+    */
+    const hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
+    /** Split message. */
+    function split(msg) {
+        const idx = msg.indexOf(':');
+        return [msg.slice(0, idx), msg.slice(idx + 1)];
+    }
+
     class SplashHub extends Popup {
         constructor() {
             super(...arguments);
@@ -1444,10 +1464,8 @@
                     };
                     ws.onmessage = ({ data }) => {
                         try {
-                            const idx = data.indexOf(':');
-                            const method = data.slice(0, idx);
-                            const arg = data.slice(idx + 1);
-                            if (['reload', 'num', 'edit', 'msg', 'down'].includes(method)) {
+                            const [method, arg] = split(data);
+                            if (hub2member.includes(method)) {
                                 this[method](arg);
                             }
                         }
@@ -1513,8 +1531,7 @@
         reload(msg) {
             this.app.splash.show();
             this.roomGroup.classList.remove('entering');
-            const idx = msg.indexOf(':');
-            const reason = msg.slice(0, idx);
+            const [reason, content] = split(msg);
             if (reason === 'kick') {
                 alert('你被请出了房间');
             }
@@ -1524,7 +1541,7 @@
             this.clearRooms();
             this.client.clear();
             this.roomGroup.classList.remove('hidden');
-            this.edit(msg.slice(idx + 1));
+            this.edit(content);
         }
         edit(msg) {
             const ws = this.client.connection;

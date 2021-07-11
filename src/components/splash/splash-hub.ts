@@ -1,7 +1,7 @@
 import { Popup } from '../popup';
 import { Splash, SplashRoom } from '../../components';
 import { config } from '../../version';
-import { hub2member } from '../../hub/types';
+import { hub2member, split } from '../../hub/types';
 
 export class SplashHub extends Popup {
     /** Use tag <noname-popup>. */
@@ -103,9 +103,7 @@ export class SplashHub extends Popup {
 
                 ws.onmessage = ({data}: {data: string}) => {
                     try {
-                        const idx = data.indexOf(':');
-                        const method = data.slice(0, idx) as typeof hub2member[number];
-                        const arg = data.slice(idx + 1);
+                        const [method, arg] = split<typeof hub2member[number]>(data);
                         if (hub2member.includes(method)) {
                             this[method](arg);
                         }
@@ -178,8 +176,7 @@ export class SplashHub extends Popup {
     reload(msg: string) {
         this.app.splash.show();
         this.roomGroup.classList.remove('entering');
-        const idx = msg.indexOf(':');
-        const reason = msg.slice(0, idx);
+        const [reason, content] = split(msg);
         if (reason === 'kick') {
             alert('你被请出了房间');
         }
@@ -189,7 +186,7 @@ export class SplashHub extends Popup {
         this.clearRooms();
         this.client.clear();
         this.roomGroup.classList.remove('hidden');
-        this.edit(msg.slice(idx + 1));
+        this.edit(content);
     }
 
     edit(msg: string) {

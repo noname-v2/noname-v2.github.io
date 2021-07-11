@@ -4,7 +4,7 @@ import { createServer } from 'https';
 import { clients } from './client';
 import { Owner } from './owner';
 import { Member } from './member';
-import { owner2hub, member2hub } from './types';
+import { owner2hub, member2hub, split } from './types';
 
 const server = createServer({
     cert: readFileSync('cert.pem'),
@@ -27,9 +27,7 @@ wss.on('connection', ws => {
     ws.on('message', (msg: string) => {
         try {
             if (uid) {
-                const idx = msg.indexOf(':');
-                const method = msg.slice(0, idx);
-                const arg = msg.slice(idx + 1);
+                const [method, arg] = split(msg);
 
                 // call owner of member methods
                 const client = clients.get(uid);

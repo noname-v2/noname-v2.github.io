@@ -623,6 +623,18 @@
         }
     }
 
+    /** Commands received from Owner.
+     * edit: Create or edit room.
+     * kick: Remove a client from room.
+     * to: Send a message to a client in the room.
+     * bcast: Send a message to all clients in the room.
+     */
+    /** Split message. */
+    function split(msg) {
+        const idx = msg.indexOf(':');
+        return [msg.slice(0, idx), msg.slice(idx + 1)];
+    }
+
     /**
      * Manager of component syncing between client and server.
      */
@@ -698,9 +710,7 @@
                 }
                 else {
                     try {
-                        const idx = data.indexOf(':');
-                        const method = data.slice(0, idx);
-                        const arg = data.slice(idx + 1);
+                        const [method, arg] = split(data);
                         if (method === 'join') {
                             const [uid, info] = JSON.parse(arg);
                             this.peers.set(uid, info);
