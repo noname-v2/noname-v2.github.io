@@ -32,14 +32,14 @@ export const game = <Collection>{
                     configs[name].requires = fullConfigs[name].requires;
                     configs[name].confirm = fullConfigs[name].confirm;
 
-                    if (!(name in this.game.config)) {
-                        this.game.config[name] = fullConfigs[name].init;
+                    if (this.game.get(name) === null) {
+                        this.game.set(name, fullConfigs[name].init);
                     }
                 }
                 const np = this.getRule(this.game.mode + ':mode').np;
                 let npmax: number;
                 if (typeof np === 'number') {
-                    this.game.config.np = np;
+                    this.game.set('np', np);
                     npmax = np;
                 }
                 else {
@@ -53,7 +53,9 @@ export const game = <Collection>{
                         options: nps,
                         init: npmax
                     };
-                    this.game.config.np = npmax;
+                    if (this.game.get('np') === null) {
+                        this.game.set('np', npmax);
+                    }
                 }
                 lobby.set('pane', {heropacks, cardpacks, configs});
                 lobby.set('npmax', npmax);
@@ -72,7 +74,7 @@ export const game = <Collection>{
             },
             updateLobby(lobby, [type, key, val]: [string, string, any]) {
                 if (type === 'sync') {
-                    this.game.config.online = val;
+                    this.game.set('online', val);
                     lobby.set('config', this.game.config);
                 }
                 else if (type === 'config') {
@@ -85,7 +87,7 @@ export const game = <Collection>{
                         }
                     }
                     else {
-                        this.game.config[key] = val;
+                        this.game.set(key, val);
                         lobby.set('config', this.game.config);
                     }
                 }

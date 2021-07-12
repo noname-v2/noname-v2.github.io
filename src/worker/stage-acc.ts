@@ -58,6 +58,9 @@ export class StageAccessor {
         return this.#stage.results;
     }
 
+    /** Game defined properties. */
+    [key: string]: any;
+
     constructor(stage: Stage) {
         this.#stage = stage;
     }
@@ -141,6 +144,4 @@ export class StageAccessor {
     create(tag: string) {
         return this.#stage.game.create(tag);
     }
-
-    [key: string]: any;
 }

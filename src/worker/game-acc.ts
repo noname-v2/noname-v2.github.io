@@ -13,6 +13,9 @@ export class GameAccessor {
     /** In-game players. */
     players = <Link[]>[];
 
+    /** Game defined properties. */
+    [key: string]: any;
+
     constructor(game: Game) {
         this.#game = game;
     }
@@ -100,6 +103,4 @@ export class GameAccessor {
             this.#game.worker.updateRoom();
         }
     }
-
-    [key: string]: any;
 }

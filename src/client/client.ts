@@ -142,15 +142,17 @@ export class Client {
     }
 
     /** Clear currently connection status without disconnecting. */
-    clear() {
+    clear(back: boolean = true) {
         this.components.clear();
         this.yielding.clear();
         this.syncListeners.clear();
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
-        this.ui.app.splash.show();
-        this.sid = 0;
+        if (back) {
+            this.ui.app.splash.show();
+            this.sid = 0;
+        }
     }
 
     /**
@@ -181,16 +183,15 @@ export class Client {
         try {
             const [sid, updates, calls] = data;
 
+            // check if this is a reload
+            if (updates['1'] && updates['1']['#tag'] === 'arena') {
+                this.clear(false);
+            }
+
             // progress to a new stage
             if (sid !== this.sid) {
                 this.yielding.clear();
                 this.sid = sid;
-            }
-
-            // check if this is a reload
-            if (updates['1'] && updates['1']['#tag'] === 'arena') {
-                this.ui.app.arena?.remove();
-                this.components.clear();
             }
 
             // update component properties
