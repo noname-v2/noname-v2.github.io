@@ -174,6 +174,10 @@
                 });
             }
         }
+        /** Remove element. */
+        remove() {
+            this.node.remove();
+        }
     }
     /** HTMLElement tag  name */
     Component.tag = null;
@@ -1441,7 +1445,7 @@
         }
         clearRooms() {
             for (const room of this.rooms.values()) {
-                room.node.remove();
+                room.remove();
             }
             this.rooms.clear();
         }
@@ -1560,7 +1564,7 @@
             }
             const rooms = JSON.parse(msg);
             for (const uid in rooms) {
-                this.rooms.get(uid)?.node.remove();
+                this.rooms.get(uid)?.remove();
                 if (rooms[uid] !== 'close') {
                     try {
                         const room = this.ui.create('splash-room');
@@ -2555,7 +2559,7 @@
                     const id = parseInt(key);
                     // create new component
                     if (typeof items['#tag'] === 'string') {
-                        this.components.get(id)?.node.remove();
+                        this.components.get(id)?.remove();
                         const component = this.ui.create(items['#tag']);
                         component.id = id;
                         this.components.set(id, component);

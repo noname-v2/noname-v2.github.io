@@ -413,7 +413,13 @@
             return this.#game.mode;
         }
         get config() {
-            return this.#game.config;
+            if (this.#game.state === 0) {
+                return this.#game.config;
+            }
+            else {
+                console.log('please use game.get after game started');
+                return null;
+            }
         }
         get packs() {
             return this.#game.packs;
@@ -457,7 +463,15 @@
         }
         /** Set game configuration. */
         set(key, val) {
-            this.#game.config[key] = val;
+            if (this.#game.state === 0) {
+                this.#game.config[key] = val;
+                if (key === 'np') {
+                    this.#game.worker.updateRoom();
+                }
+            }
+            else {
+                console.log('cannot change configuration during game');
+            }
         }
         /** Freeze config and tell hub about game start. */
         start() {
