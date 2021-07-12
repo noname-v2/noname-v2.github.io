@@ -63,7 +63,7 @@ export class SplashHub extends Popup {
 
     clearRooms() {
         for (const room of this.rooms.values()) {
-            room.node.remove();
+            room.remove();
         }
         this.rooms.clear();
     }
@@ -196,7 +196,7 @@ export class SplashHub extends Popup {
         }
         const rooms = JSON.parse(msg);
         for (const uid in rooms) {
-            this.rooms.get(uid)?.node.remove();
+            this.rooms.get(uid)?.remove();
             if (rooms[uid] !== 'close') {
                 try {
                     const room = this.ui.create('splash-room');

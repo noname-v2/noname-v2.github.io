@@ -97,4 +97,9 @@ export abstract class Component {
             });
         }
     }
+
+    /** Remove element. */
+    remove() {
+        this.node.remove();
+    }
 }

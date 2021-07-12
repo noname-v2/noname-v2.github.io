@@ -201,7 +201,7 @@ export class Client {
 
                 // create new component
                 if (typeof items['#tag'] === 'string') {
-                    this.components.get(id)?.node.remove();
+                    this.components.get(id)?.remove();
                     const component = this.ui.create(items['#tag']);
                     component.id = id;
                     this.components.set(id, component);
