@@ -21,6 +21,7 @@ export class Dialog extends Popup {
 
     init() {
         super.init();
+        this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
     }
 
     $caption(val: string) {
@@ -28,7 +29,8 @@ export class Dialog extends Popup {
     }
 
     $content(val: string) {
-        this.text.innerHTML = val;
+        (this.text.firstChild as HTMLElement).innerHTML = val;
+        this.node.classList[val ? 'add' : 'remove']('with-content');
     }
 
     $buttons(buttons: [string, string, string?][]) {
@@ -39,6 +41,10 @@ export class Dialog extends Popup {
                 button.dataset.fill = color;
             }
             button.innerHTML = text;
+            this.ui.bindClick(button, () => {
+                this.result = id;
+                this.close();
+            });
             this.buttons.appendChild(button);
         }
     }

@@ -397,11 +397,27 @@
         }
         /** Display confirm message. */
         confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id) {
-            const dialogID = id ?? ++this.dialogCount;
             const dialog = this.ui.create('dialog');
-            const blurred = [];
             dialog.update({ caption, content, buttons });
+            return new Promise(resolve => {
+                dialog.onopen = () => {
+                    setTimeout(() => dialog.pane.alignText());
+                };
+                dialog.onclose = () => {
+                    resolve(dialog.result);
+                };
+                this.popup(dialog);
+            });
+        }
+        /** Displa a popup. */
+        popup(dialog, id) {
+            const dialogID = id ?? ++this.dialogCount;
+            const onopen = dialog.onopen;
+            const onclose = dialog.onclose;
+            // other popups that are blurred by dialog.open()
+            const blurred = [];
             dialog.onopen = () => {
+                // blur arena, splash and other popups
                 this.node.classList.add('popped');
                 for (const [id, popup] of this.popups.entries()) {
                     if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
@@ -409,9 +425,12 @@
                         blurred.push(id);
                     }
                 }
+                if (typeof onopen === 'function') {
+                    onopen();
+                }
             };
             dialog.onclose = () => {
-                console.log(dialog.result);
+                // unblur
                 this.popups.delete(dialogID);
                 if (this.popups.size === 0) {
                     this.node.classList.remove('popped');
@@ -420,9 +439,12 @@
                     this.popups.get(id)?.node.classList.remove('blurred');
                 }
                 blurred.length = 0;
+                if (typeof onclose === 'function') {
+                    onclose();
+                }
             };
             this.popups.set(dialogID, dialog);
-            dialog.open();
+            dialog.ready.then(() => dialog.open());
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
@@ -520,12 +542,14 @@
         }
         init() {
             super.init();
+            this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
         }
         $caption(val) {
             this.caption.innerHTML = val;
         }
         $content(val) {
-            this.text.innerHTML = val;
+            this.text.firstChild.innerHTML = val;
+            this.node.classList[val ? 'add' : 'remove']('with-content');
         }
         $buttons(buttons) {
             this.buttons.innerHTML = '';
@@ -535,6 +559,10 @@
                     button.dataset.fill = color;
                 }
                 button.innerHTML = text;
+                this.ui.bindClick(button, () => {
+                    this.result = id;
+                    this.close();
+                });
                 this.buttons.appendChild(button);
             }
         }
@@ -1200,6 +1228,11 @@
     Menu.tag = 'popup';
 
     class Pane extends Component {
+        constructor() {
+            super(...arguments);
+            /** Pane width for text alignment. */
+            this.width = null;
+        }
         /** Section title. */
         addSection(content) {
             const node = this.ui.createElement('section', this.node);
@@ -1252,6 +1285,13 @@
         /** Enable vertical scrolling. */
         enableScroll() {
             this.ui.enableScroll(this.node);
+        }
+        /** Align text nodes to center. */
+        alignText() {
+            for (const span of this.node.querySelectorAll('noname-pane > noname-text > noname-span')) {
+                const dx = (this.width - span.offsetWidth) / 2;
+                span.parentNode.style.transform = `translateX(${dx}px)`;
+            }
         }
     }
 

@@ -21,6 +21,10 @@ noname-popup {
         height: auto;
     }
 
+    &.dialog:not(.with-content) > noname-pane > noname-bar {
+        margin: -8px 0 14px 0;
+    }
+
     > noname-pane {
         @include widget;
     }

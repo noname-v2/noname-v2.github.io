@@ -270,11 +270,30 @@ export class App extends Component {
 
 	/** Display confirm message. */
 	confirm(caption: string, content='', buttons: [string, string, string?][] = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id?: string) {
-		const dialogID = id ?? ++this.dialogCount;
 		const dialog = this.ui.create('dialog');
-		const blurred: (string | number)[] = [];
 		dialog.update({caption, content, buttons});
+		return new Promise(resolve => {
+			dialog.onopen = () => {
+				setTimeout(() => dialog.pane.alignText());
+			};
+			dialog.onclose = () => {
+				resolve(dialog.result);
+			};
+			this.popup(dialog);
+		});
+	}
+
+	/** Displa a popup. */
+	popup(dialog: Popup, id?: string) {
+		const dialogID = id ?? ++this.dialogCount;
+		const onopen = dialog.onopen;
+		const onclose = dialog.onclose;
+
+		// other popups that are blurred by dialog.open()
+		const blurred: (string | number)[] = [];
+
 		dialog.onopen = () => {
+			// blur arena, splash and other popups
 			this.node.classList.add('popped');
 			for (const [id, popup] of this.popups.entries()) {
 				if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
@@ -282,9 +301,14 @@ export class App extends Component {
 					blurred.push(id);
 				}
 			}
+
+			if (typeof onopen === 'function') {
+				onopen();
+			}
 		};
+
 		dialog.onclose = () => {
-			console.log(dialog.result);
+			// unblur
 			this.popups.delete(dialogID);
 			if (this.popups.size === 0) {
 				this.node.classList.remove('popped');
@@ -293,9 +317,14 @@ export class App extends Component {
 				this.popups.get(id)?.node.classList.remove('blurred');
 			}
 			blurred.length = 0;
+
+			if (typeof onclose === 'function') {
+				onclose();
+			}
 		};
+
 		this.popups.set(dialogID, dialog);
-		dialog.open();
+		dialog.ready.then(() => dialog.open());
 	}
 
 	/** Clear alert and confirm dialogs. */

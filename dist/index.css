@@ -973,6 +973,9 @@ noname-popup.dialog > noname-pane {
   width: var(--popup-dialog-width);
   height: auto;
 }
+noname-popup.dialog:not(.with-content) > noname-pane > noname-bar {
+  margin: -8px 0 14px 0;
+}
 noname-popup > noname-pane {
   background: var(--widget-background);
   border-radius: var(--widget-radius);
