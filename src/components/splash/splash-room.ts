@@ -1,6 +1,9 @@
 import { Component } from '../../components';
 
 export class SplashRoom extends Component {
+    /** Use <noname-widget> as tag */
+    static tag = 'widget';
+
     /** Avatar image. */
     avatar = this.ui.createElement('image', this.node);
 

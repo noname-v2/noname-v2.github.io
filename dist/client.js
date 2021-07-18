@@ -518,7 +518,7 @@
             if (this.node.parentNode !== this.app.node) {
                 this.app.node.appendChild(this.node);
             }
-            this.pane.alignText();
+            setTimeout(() => this.pane.alignText());
             this.ui.animate(this.pane.node, {
                 opacity: [0, 1], scale: ['var(--popup-transform)', 1]
             }, this.app.getTransition(this.transition));
@@ -1770,6 +1770,8 @@
             this.nickname.innerHTML = `<noname-image></noname-image>${nickname}`;
         }
     }
+    /** Use <noname-widget> as tag */
+    SplashRoom.tag = 'widget';
 
     class SplashSettings extends Popup {
         constructor() {

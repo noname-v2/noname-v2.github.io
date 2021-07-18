@@ -668,6 +668,68 @@ noname-popup.splash-hub > noname-pane > noname-rooms.entering {
   opacity: 0.8;
   pointer-events: none;
 }
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget {
+  height: 80px;
+  cursor: pointer;
+  position: relative;
+  width: 80%;
+  display: block;
+  left: 10%;
+  margin-bottom: 15px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget:first-child {
+  margin-top: 10px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-image {
+  width: 72px;
+  height: 72px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background-position: var(--widget-avatar-position) !important;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-caption {
+  position: absolute;
+  font-size: 35px;
+  left: 85px;
+  top: 6px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span {
+  position: absolute;
+  bottom: 6px;
+  right: 9px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status {
+  width: 12px;
+  height: 12px;
+  top: 1px;
+  margin-right: 1px;
+  position: relative;
+  display: inline-block;
+  border-radius: 100%;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.5);
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="1"] {
+  background: #51af06;
+  border: 1px solid #274f07;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="0"] {
+  background: #d6b408;
+  border: 1px solid #4f4007;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname {
+  right: auto;
+  left: 88px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname > noname-image {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  position: relative;
+  top: 1px;
+  margin-right: 4px;
+  background: var(--icon-user) center/cover;
+}
 noname-popup.splash-hub > noname-pane > noname-caption, noname-popup.splash-hub > noname-pane > noname-rooms {
   position: absolute;
   display: block;
@@ -866,81 +928,6 @@ noname-pane > noname-text.skill > noname-div:last-child {
 }
 noname-pane > noname-text:last-child {
   margin-bottom: 2px;
-}
-
-noname-splash-room {
-  height: 80px;
-  cursor: pointer;
-  background: var(--widget-background);
-  border-radius: var(--widget-radius);
-  box-shadow: var(--widget-shadow);
-  position: relative;
-  width: 80%;
-  display: block;
-  left: 10%;
-  margin-bottom: 15px;
-}
-noname-splash-room > noname-image {
-  position: absolute;
-  width: calc(100% - 2 * var(--widget-image-margin));
-  height: calc(100% - 2 * var(--widget-image-margin));
-  left: var(--widget-image-margin);
-  top: var(--widget-image-margin);
-  border-radius: var(--widget-image-radius);
-  box-shadow: var(--widget-image-shadow);
-}
-noname-splash-room:first-child {
-  margin-top: 10px;
-}
-noname-splash-room > noname-image {
-  width: 72px;
-  height: 72px;
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  background-position: var(--widget-avatar-position) !important;
-}
-noname-splash-room > noname-caption {
-  position: absolute;
-  font-size: 35px;
-  left: 85px;
-  top: 6px;
-}
-noname-splash-room > noname-span {
-  position: absolute;
-  bottom: 6px;
-  right: 9px;
-}
-noname-splash-room > noname-span > noname-status {
-  width: 12px;
-  height: 12px;
-  top: 1px;
-  margin-right: 1px;
-  position: relative;
-  display: inline-block;
-  border-radius: 100%;
-  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.5);
-}
-noname-splash-room > noname-span > noname-status[data-state="1"] {
-  background: #51af06;
-  border: 1px solid #274f07;
-}
-noname-splash-room > noname-span > noname-status[data-state="0"] {
-  background: #d6b408;
-  border: 1px solid #4f4007;
-}
-noname-splash-room > noname-span.nickname {
-  right: auto;
-  left: 88px;
-}
-noname-splash-room > noname-span.nickname > noname-image {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  position: relative;
-  top: 1px;
-  margin-right: 4px;
-  background: var(--icon-user) center/cover;
 }
 
 noname-popup {
