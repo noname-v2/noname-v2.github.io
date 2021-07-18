@@ -29,7 +29,8 @@ export class Lobby extends Component {
                 const ws = this.client.connection;
                 const peers = this.client.peers;
                 if (peers || ws instanceof WebSocket) {
-                    if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？')) {
+                    const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
+                    if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', {content})) {
                         if (ws instanceof WebSocket) {
                             this.client.clear();
                             ws.send('leave:init');
@@ -153,7 +154,7 @@ export class Lobby extends Component {
         else if (this.owner === this.client.uid) {
             this.yield(['sync', null, peers ? true : false], false);
             if (this.connecting && !peers) {
-                alert('连接失败');
+                this.app.alert('连接失败');
             }
             this.connecting = false;
             const toggle = this.configToggles.get('online');

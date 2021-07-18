@@ -172,16 +172,16 @@ export class SplashHub extends Popup {
         address.callback = () => this.connect();
     }
 
-    reload(msg: string) {
-        this.app.splash.show();
-        this.roomGroup.classList.remove('entering');
+    async reload(msg: string) {
         const [reason, content] = split(msg);
         if (reason === 'kick') {
-            alert('你被请出了房间');
+            await this.app.alert('你被请出了房间');
         }
         else if (reason === 'end') {
-            alert('房间已关闭');
+            await this.app.alert('房间已关闭');
         }
+        this.app.splash.show();
+        this.roomGroup.classList.remove('entering');
         this.clearRooms();
         this.client.clear();
         this.roomGroup.classList.remove('hidden');
@@ -233,13 +233,12 @@ export class SplashHub extends Popup {
 
     down(msg: string) {
         // room owner disconnected
-        console.log(parseInt(msg) - Date.now())
         const ws = this.client.connection;
-        const promise = this.app.alert('房主连接断开', '', '退出房间', 'down');
+        const promise = this.app.alert('房主连接断开', '退出房间', {id: 'down'});
         const dialog = <Dialog>this.app.popups.get('down');
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
-            dialog.set('content', `如果房主不在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+            dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
         };
         update();
         const interval = setInterval(update, 1000);

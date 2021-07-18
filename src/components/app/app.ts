@@ -1,5 +1,12 @@
 import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
 
+interface ConfirmOptions {
+	buttons?: [string, string, string?][];
+	content?: string;
+	id?: string;
+	timeout?: number;
+}
+
 export class App extends Component {
 	/** Arena component. */
 	arena: Arena | null = null;
@@ -264,20 +271,32 @@ export class App extends Component {
 	}
 
 	/** Display alert message. */
-	alert(caption: string, content='', button='确定', id?: string) {
-		return this.confirm(caption, content, [['ok', button, 'red']], id);
+	alert(caption: string, button: string | null = '确定', config: ConfirmOptions = {}) {
+		if (button) {
+			config.buttons = [['ok', button, 'red']];
+		}
+		return this.confirm(caption, config);
 	}
 
 	/** Display confirm message. */
-	confirm(caption: string, content='', buttons: [string, string, string?][] = [['ok', '确定', 'red'], ['cancel', '取消']], id?: string): Promise<boolean> {
+	confirm(caption: string, config: ConfirmOptions={}): Promise<boolean> {
+		const buttons = config.buttons ?? [['ok', '确定', 'red'], ['cancel', '取消']];
 		const dialog = this.ui.create('dialog');
-		dialog.update({caption, content, buttons});
-		return new Promise(resolve => {
+		dialog.update({caption, content: config.content, buttons});
+		const promise = new Promise<boolean>(resolve => {
 			dialog.onclose = () => {
 				resolve(dialog.result === 'ok' ? true : false);
 			};
-			this.popup(dialog, id);
+			this.popup(dialog, config.id);
 		});
+		if (config.timeout) {
+			return Promise.race([promise, new Promise<boolean>(resolve => {
+				setTimeout(() => resolve(false), config.timeout! * 1000);
+			})])
+		}
+		else {
+			return promise;
+		}
 	}
 
 	/** Displa a popup. */

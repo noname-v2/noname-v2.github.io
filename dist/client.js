@@ -392,19 +392,31 @@
             return duration * 1000;
         }
         /** Display alert message. */
-        alert(caption, content = '', button = '确定', id) {
-            return this.confirm(caption, content, [['ok', button, 'red']], id);
+        alert(caption, button = '确定', config = {}) {
+            if (button) {
+                config.buttons = [['ok', button, 'red']];
+            }
+            return this.confirm(caption, config);
         }
         /** Display confirm message. */
-        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消']], id) {
+        confirm(caption, config = {}) {
+            const buttons = config.buttons ?? [['ok', '确定', 'red'], ['cancel', '取消']];
             const dialog = this.ui.create('dialog');
-            dialog.update({ caption, content, buttons });
-            return new Promise(resolve => {
+            dialog.update({ caption, content: config.content, buttons });
+            const promise = new Promise(resolve => {
                 dialog.onclose = () => {
                     resolve(dialog.result === 'ok' ? true : false);
                 };
-                this.popup(dialog, id);
+                this.popup(dialog, config.id);
             });
+            if (config.timeout) {
+                return Promise.race([promise, new Promise(resolve => {
+                        setTimeout(() => resolve(false), config.timeout * 1000);
+                    })]);
+            }
+            else {
+                return promise;
+            }
         }
         /** Displa a popup. */
         popup(dialog, id) {
@@ -597,7 +609,8 @@
                     const ws = this.client.connection;
                     const peers = this.client.peers;
                     if (peers || ws instanceof WebSocket) {
-                        if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？')) {
+                        const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
+                        if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', { content })) {
                             if (ws instanceof WebSocket) {
                                 this.client.clear();
                                 ws.send('leave:init');
@@ -713,7 +726,7 @@
             else if (this.owner === this.client.uid) {
                 this.yield(['sync', null, peers ? true : false], false);
                 if (this.connecting && !peers) {
-                    alert('连接失败');
+                    this.app.alert('连接失败');
                 }
                 this.connecting = false;
                 const toggle = this.configToggles.get('online');
@@ -1666,16 +1679,16 @@
             });
             address.callback = () => this.connect();
         }
-        reload(msg) {
-            this.app.splash.show();
-            this.roomGroup.classList.remove('entering');
+        async reload(msg) {
             const [reason, content] = split(msg);
             if (reason === 'kick') {
-                alert('你被请出了房间');
+                await this.app.alert('你被请出了房间');
             }
             else if (reason === 'end') {
-                alert('房间已关闭');
+                await this.app.alert('房间已关闭');
             }
+            this.app.splash.show();
+            this.roomGroup.classList.remove('entering');
             this.clearRooms();
             this.client.clear();
             this.roomGroup.classList.remove('hidden');
@@ -1723,13 +1736,12 @@
         }
         down(msg) {
             // room owner disconnected
-            console.log(parseInt(msg) - Date.now());
             const ws = this.client.connection;
-            const promise = this.app.alert('房主连接断开', '', '退出房间', 'down');
+            const promise = this.app.alert('房主连接断开', '退出房间', { id: 'down' });
             const dialog = this.app.popups.get('down');
             const update = () => {
                 const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
-                dialog.set('content', `如果房主不在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+                dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
             };
             update();
             const interval = setInterval(update, 1000);
@@ -2114,7 +2126,7 @@
                         menu.pane.addOption(name, async () => {
                             if (this.confirm.has(id)) {
                                 const [title, content] = this.confirm.get(id);
-                                if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', content)) {
+                                if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', { content })) {
                                     return;
                                 }
                             }
@@ -2138,7 +2150,7 @@
                     const val = !this.node.classList.contains('on');
                     if (this.confirm.has(val)) {
                         const [title, content] = this.confirm.get(val);
-                        if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', content)) {
+                        if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', { content })) {
                             return;
                         }
                     }
