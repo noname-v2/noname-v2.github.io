@@ -7,6 +7,9 @@ export class Dialog extends Popup {
     /** Locate at center. */
     center = true;
 
+    /** Don't close when clicking blank area. */
+    temp = false;
+
     /** Dialog caption. */
     caption = this.pane.addCaption('', true);
 

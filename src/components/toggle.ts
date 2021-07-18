@@ -1,20 +1,20 @@
 import { Component } from '../components';
 
 export class Toggle extends Component {
-    // caption text
+    /** Caption text. */
 	span = this.ui.createElement('span', this.node);
 
-	// switcher text
+	/** Switcher text. */
 	text?: HTMLElement;
 
-	// choices
+	/** Choices. */
 	choices?: Map<string | number, string>;
 
-	// disabled choices
+	/** Disabled choices. */
 	disabledChoices = new Set<string | number>();
 
 	/** Requires confirmation when toggling to a value. */
-	confirm: any[] | null = null;
+	confirm = new Map<string | number | boolean, (string | null)[]>();
 
 	setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
 		this.span.innerHTML = caption;
@@ -29,9 +29,10 @@ export class Toggle extends Component {
 				const rect = popup.getBoundingClientRect();
                 const menu = this.ui.create('menu');
                 for (const [id, name] of choices) {
-                    menu.pane.addOption(name, () => {
-						if (this.confirm?.includes(id)) {
-							if (!confirm('确定将' + caption + '设为' + name + '？')) {
+                    menu.pane.addOption(name, async () => {
+						if (this.confirm.has(id)) {
+							const [title, content] = <[string?, string?]>this.confirm.get(id);
+							if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', content)) {
 								return;
 							}
 						}
@@ -52,10 +53,11 @@ export class Toggle extends Component {
 			const container = this.ui.createElement('switcher-container', switcher);
 			this.ui.createElement('switcher-background', container);
 			this.ui.createElement('switcher-button', switcher);
-			this.ui.bindClick(switcher, () => {
+			this.ui.bindClick(switcher, async () => {
 				const val = !this.node.classList.contains('on');
-				if (this.confirm?.includes(val)) {
-					if (!confirm('确定' + (val ? '开启' : '关闭') + caption + '？')) {
+				if (this.confirm.has(val)) {
+					const [title, content] = <[string?, string?]>this.confirm.get(val);
+					if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', content)) {
 						return;
 					}
 				}

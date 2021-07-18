@@ -16,13 +16,17 @@ noname-popup {
 		height: var(--popup-landscape-height);
     }
 
-    &.dialog > noname-pane {
-        width: var(--popup-dialog-width);
-        height: auto;
-    }
+    &.dialog {
+        transition: opacity var(--app-transition);
+        
+        > noname-pane {
+            width: var(--popup-dialog-width);
+            height: auto;
+        }
 
-    &.dialog:not(.with-content) > noname-pane > noname-bar {
-        margin: -8px 0 14px 0;
+        &:not(.with-content) > noname-pane > noname-bar {
+            margin: -8px 0 14px 0;
+        }
     }
 
     > noname-pane {

@@ -396,7 +396,7 @@
             return this.confirm(caption, content, [['ok', button, 'red']], id);
         }
         /** Display confirm message. */
-        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id) {
+        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消']], id) {
             const dialog = this.ui.create('dialog');
             dialog.update({ caption, content, buttons });
             return new Promise(resolve => {
@@ -404,9 +404,9 @@
                     setTimeout(() => dialog.pane.alignText());
                 };
                 dialog.onclose = () => {
-                    resolve(dialog.result);
+                    resolve(dialog.result === 'ok' ? true : false);
                 };
-                this.popup(dialog);
+                this.popup(dialog, id);
             });
         }
         /** Displa a popup. */
@@ -531,6 +531,8 @@
             super(...arguments);
             /** Locate at center. */
             this.center = true;
+            /** Don't close when clicking blank area. */
+            this.temp = false;
             /** Dialog caption. */
             this.caption = this.pane.addCaption('', true);
             /** Dialog text. */
@@ -591,11 +593,11 @@
             this.app.arena.node.appendChild(this.node);
             this.client.syncListeners.add(this);
             this.sidebar.ready.then(() => {
-                this.sidebar.setHeader('返回', () => {
+                this.sidebar.setHeader('返回', async () => {
                     const ws = this.client.connection;
                     const peers = this.client.peers;
                     if (peers || ws instanceof WebSocket) {
-                        if (!peers || !Object.keys(peers).length || confirm('确定退出联机模式？')) {
+                        if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？')) {
                             if (ws instanceof WebSocket) {
                                 this.client.clear();
                                 ws.send('leave:init');
@@ -632,7 +634,11 @@
                         this.yield(['config', name, result], false);
                     }
                 }, config.options);
-                toggle.confirm = config.confirm;
+                if (config.confirm) {
+                    for (const [key, val] of config.confirm) {
+                        toggle.confirm.set(key, val);
+                    }
+                }
                 if (config.requires) {
                     this.configDynamicToggles.set(name, config.requires);
                 }
@@ -712,7 +718,12 @@
                 this.connecting = false;
                 const toggle = this.configToggles.get('online');
                 if (toggle) {
-                    toggle.confirm = (peers && Object.keys(peers).length) ? [false] : null;
+                    if (peers && Object.keys(peers).length) {
+                        toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
+                    }
+                    else {
+                        toggle.confirm.delete(false);
+                    }
                 }
             }
         }
@@ -2065,12 +2076,12 @@
     class Toggle extends Component {
         constructor() {
             super(...arguments);
-            // caption text
+            /** Caption text. */
             this.span = this.ui.createElement('span', this.node);
-            // disabled choices
+            /** Disabled choices. */
             this.disabledChoices = new Set();
             /** Requires confirmation when toggling to a value. */
-            this.confirm = null;
+            this.confirm = new Map();
         }
         setup(caption, onclick, choices) {
             this.span.innerHTML = caption;
@@ -2084,9 +2095,10 @@
                     const rect = popup.getBoundingClientRect();
                     const menu = this.ui.create('menu');
                     for (const [id, name] of choices) {
-                        menu.pane.addOption(name, () => {
-                            if (this.confirm?.includes(id)) {
-                                if (!confirm('确定将' + caption + '设为' + name + '？')) {
+                        menu.pane.addOption(name, async () => {
+                            if (this.confirm.has(id)) {
+                                const [title, content] = this.confirm.get(id);
+                                if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', content)) {
                                     return;
                                 }
                             }
@@ -2106,10 +2118,11 @@
                 const container = this.ui.createElement('switcher-container', switcher);
                 this.ui.createElement('switcher-background', container);
                 this.ui.createElement('switcher-button', switcher);
-                this.ui.bindClick(switcher, () => {
+                this.ui.bindClick(switcher, async () => {
                     const val = !this.node.classList.contains('on');
-                    if (this.confirm?.includes(val)) {
-                        if (!confirm('确定' + (val ? '开启' : '关闭') + caption + '？')) {
+                    if (this.confirm.has(val)) {
+                        const [title, content] = this.confirm.get(val);
+                        if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', content)) {
                             return;
                         }
                     }

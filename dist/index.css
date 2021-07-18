@@ -969,6 +969,9 @@ noname-popup.landscape > noname-pane {
   width: var(--popup-landscape-width);
   height: var(--popup-landscape-height);
 }
+noname-popup.dialog {
+  transition: opacity var(--app-transition);
+}
 noname-popup.dialog > noname-pane {
   width: var(--popup-dialog-width);
   height: auto;

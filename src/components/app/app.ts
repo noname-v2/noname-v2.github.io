@@ -269,7 +269,7 @@ export class App extends Component {
 	}
 
 	/** Display confirm message. */
-	confirm(caption: string, content='', buttons: [string, string, string?][] = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id?: string) {
+	confirm(caption: string, content='', buttons: [string, string, string?][] = [['ok', '确定', 'red'], ['cancel', '取消']], id?: string): Promise<boolean> {
 		const dialog = this.ui.create('dialog');
 		dialog.update({caption, content, buttons});
 		return new Promise(resolve => {
@@ -277,9 +277,9 @@ export class App extends Component {
 				setTimeout(() => dialog.pane.alignText());
 			};
 			dialog.onclose = () => {
-				resolve(dialog.result);
+				resolve(dialog.result === 'ok' ? true : false);
 			};
-			this.popup(dialog);
+			this.popup(dialog, id);
 		});
 	}
 

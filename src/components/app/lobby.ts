@@ -25,11 +25,11 @@ export class Lobby extends Component {
         this.app.arena!.node.appendChild(this.node);
         this.client.syncListeners.add(this);
         this.sidebar.ready.then(() => {
-            this.sidebar.setHeader('返回', () => {
+            this.sidebar.setHeader('返回', async () => {
                 const ws = this.client.connection;
                 const peers = this.client.peers;
                 if (peers || ws instanceof WebSocket) {
-                    if (!peers || !Object.keys(peers).length || confirm('确定退出联机模式？')) {
+                    if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？')) {
                         if (ws instanceof WebSocket) {
                             this.client.clear();
                             ws.send('leave:init');
@@ -67,7 +67,11 @@ export class Lobby extends Component {
                     this.yield(['config', name, result], false);
                 }
             }, config.options);
-            toggle.confirm = config.confirm;
+            if (config.confirm) {
+                for (const [key, val] of config.confirm) {
+                    toggle.confirm.set(key, val);
+                }
+            }
             if (config.requires) {
                 this.configDynamicToggles.set(name, config.requires);
             }
@@ -154,7 +158,12 @@ export class Lobby extends Component {
             this.connecting = false;
             const toggle = this.configToggles.get('online');
             if (toggle) {
-                toggle.confirm = (peers && Object.keys(peers).length) ? [false] : null;
+                if (peers && Object.keys(peers).length) {
+                    toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
+                }
+                else {
+                    toggle.confirm.delete(false);
+                }
             }
         }
     }
