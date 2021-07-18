@@ -234,7 +234,7 @@ export class SplashHub extends Popup {
     down(msg: string) {
         // room owner disconnected
         const ws = this.client.connection;
-        const promise = this.app.alert('房主连接断开', '退出房间', {id: 'down'});
+        const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
         const dialog = <Dialog>this.app.popups.get('down');
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));

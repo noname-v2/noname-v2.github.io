@@ -1,10 +1,15 @@
 import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
 
-interface ConfirmOptions {
+interface DialogOptions {
 	buttons?: [string, string, string?][];
 	content?: string;
 	id?: string;
 	timeout?: number;
+}
+
+interface ConfirmOptions extends DialogOptions {
+	ok?: string;
+	cancel?: string;
 }
 
 export class App extends Component {
@@ -271,27 +276,37 @@ export class App extends Component {
 	}
 
 	/** Display alert message. */
-	alert(caption: string, button: string | null = '确定', config: ConfirmOptions = {}) {
-		if (button) {
-			config.buttons = [['ok', button, 'red']];
-		}
-		return this.confirm(caption, config);
+	async alert(caption: string, config: ConfirmOptions = {}): Promise<true | null> {
+		config.buttons = [['ok', config.ok ?? '确定', 'red']];
+		return await this.choose(caption, config) === 'ok' ? true : null;
 	}
 
 	/** Display confirm message. */
-	confirm(caption: string, config: ConfirmOptions={}): Promise<boolean> {
-		const buttons = config.buttons ?? [['ok', '确定', 'red'], ['cancel', '取消']];
+	async confirm(caption: string, config: ConfirmOptions = {}): Promise<boolean | null> {
+		config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
+		const result = await this.choose(caption, config);
+		if (result === 'ok') {
+			return true;
+		}
+		if (result === 'cancel') {
+			return false;
+		}
+		return null;
+	}
+
+	/** Display confirm message. */
+	choose(caption: string, config: DialogOptions={}): Promise<string | null> {
 		const dialog = this.ui.create('dialog');
-		dialog.update({caption, content: config.content, buttons});
-		const promise = new Promise<boolean>(resolve => {
+		dialog.update({caption, content: config.content, buttons: config.buttons});
+		const promise = new Promise<string | null>(resolve => {
 			dialog.onclose = () => {
-				resolve(dialog.result === 'ok' ? true : false);
+				resolve(dialog.result);
 			};
 			this.popup(dialog, config.id);
 		});
 		if (config.timeout) {
-			return Promise.race([promise, new Promise<boolean>(resolve => {
-				setTimeout(() => resolve(false), config.timeout! * 1000);
+			return Promise.race([promise, new Promise<null>(resolve => {
+				setTimeout(() => resolve(null), config.timeout! * 1000);
 			})])
 		}
 		else {

@@ -392,26 +392,35 @@
             return duration * 1000;
         }
         /** Display alert message. */
-        alert(caption, button = '确定', config = {}) {
-            if (button) {
-                config.buttons = [['ok', button, 'red']];
-            }
-            return this.confirm(caption, config);
+        async alert(caption, config = {}) {
+            config.buttons = [['ok', config.ok ?? '确定', 'red']];
+            return await this.choose(caption, config) === 'ok' ? true : null;
         }
         /** Display confirm message. */
-        confirm(caption, config = {}) {
-            const buttons = config.buttons ?? [['ok', '确定', 'red'], ['cancel', '取消']];
+        async confirm(caption, config = {}) {
+            config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
+            const result = await this.choose(caption, config);
+            if (result === 'ok') {
+                return true;
+            }
+            if (result === 'cancel') {
+                return false;
+            }
+            return null;
+        }
+        /** Display confirm message. */
+        choose(caption, config = {}) {
             const dialog = this.ui.create('dialog');
-            dialog.update({ caption, content: config.content, buttons });
+            dialog.update({ caption, content: config.content, buttons: config.buttons });
             const promise = new Promise(resolve => {
                 dialog.onclose = () => {
-                    resolve(dialog.result === 'ok' ? true : false);
+                    resolve(dialog.result);
                 };
                 this.popup(dialog, config.id);
             });
             if (config.timeout) {
                 return Promise.race([promise, new Promise(resolve => {
-                        setTimeout(() => resolve(false), config.timeout * 1000);
+                        setTimeout(() => resolve(null), config.timeout * 1000);
                     })]);
             }
             else {
@@ -1737,7 +1746,7 @@
         down(msg) {
             // room owner disconnected
             const ws = this.client.connection;
-            const promise = this.app.alert('房主连接断开', '退出房间', { id: 'down' });
+            const promise = this.app.alert('房主连接断开', { ok: '退出房间', id: 'down' });
             const dialog = this.app.popups.get('down');
             const update = () => {
                 const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
