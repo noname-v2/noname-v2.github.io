@@ -16,32 +16,6 @@ noname-caption {
 	font-family: var(--app-caption-font);
 }
 
-noname-widget {
-	@include widget;
-
-	&.sharp {
-		@include widget-sharp;
-	}
-
-	&.active {
-		background: var(--widget-background-active);
-	}
-
-	&.focus {
-		background: var(--widget-background-focus);
-	}
-
-	&.active.focus {
-		background: var(--widget-background-highlight);
-	}
-
-	&.active, &.focus {
-		> noname-image {
-			box-shadow: var(--widget-image-shadow-active);
-		}
-	}
-}
-
 .hidden {
 	opacity: 0 !important;
 }

@@ -9,8 +9,11 @@ export class Pane extends Component {
 	}
 
     /** Caption text. */
-	addCaption(content: string) {
+	addCaption(content: string, large: boolean = false) {
 		const node = this.ui.createElement('caption', this.node);
+		if (large) {
+			node.classList.add('large');
+		}
 		node.innerHTML = content;
 		return node;
 	}
@@ -23,8 +26,8 @@ export class Pane extends Component {
 	}
 
     /** Add a group of custom elements. */
-	addGroup() {
-		return this.ui.createElement('group', this.node);
+	add(tag: string) {
+		return this.ui.createElement(tag, this.node);
 	}
 
 	/** Gallery of selectable items. */

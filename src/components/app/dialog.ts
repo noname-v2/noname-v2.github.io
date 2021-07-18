@@ -8,13 +8,13 @@ export class Dialog extends Popup {
     center = true;
 
     /** Dialog caption. */
-    caption = this.pane.addCaption('');
+    caption = this.pane.addCaption('', true);
 
     /** Dialog text. */
     text = this.pane.addText('');
 
     /** Dialog buttons. */
-    buttons = this.pane.addGroup();
+    buttons = this.pane.add('bar');
 
     /** Name of the button clicked. */
     result: string | null = null;
@@ -31,7 +31,15 @@ export class Dialog extends Popup {
         this.text.innerHTML = val;
     }
 
-    $buttons(buttons: {[key: string]: string | [string, string]}) {
-
+    $buttons(buttons: [string, string, string?][]) {
+        this.buttons.innerHTML = '';
+        for (const [id, text, color] of buttons) {
+            const button = this.ui.createElement('widget.button');
+            if (color) {
+                button.dataset.fill = color;
+            }
+            button.innerHTML = text;
+            this.buttons.appendChild(button);
+        }
     }
 }

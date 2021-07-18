@@ -62,22 +62,7 @@ noname-pane {
 	// button container
 	> noname-bar {
 		text-align: center;
-
-		> noname-caption {
-			@include widget;
-			@include widget-sharp;
-
-			position: relative;
-			cursor: pointer;
-			display: inline-block;
-			margin: 7px;
-			padding: 5px 8px 4px 8px;
-			font-size: 22px;
-		}
-
-		&.full > noname-caption {
-			margin: 7px 5px 7px 5px;
-		}
+		margin: 16px 0 14px 0;
 	}
 
 	// caption
@@ -87,6 +72,13 @@ noname-pane {
 		font-size: 24px;
 		display: block;
 		margin-top: 8px;
+		margin-bottom: -8px;
+
+		&.large {
+			margin-top: 12px;
+			margin-bottom: -4px;
+			font-size: 30px;
+		}
 	}
 
 	// text

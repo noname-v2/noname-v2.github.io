@@ -269,7 +269,7 @@ export class App extends Component {
 	}
 
 	/** Display confirm message. */
-	confirm(caption: string, content='', buttons: string[][] = [['ok', '确定', 'red'], ['cancel', '取消']], id?: string) {
+	confirm(caption: string, content='', buttons: [string, string, string?][] = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id?: string) {
 		const dialogID = id ?? ++this.dialogCount;
 		const dialog = this.ui.create('dialog');
 		const blurred: (string | number)[] = [];

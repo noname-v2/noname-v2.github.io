@@ -396,7 +396,7 @@
             return this.confirm(caption, content, [['ok', button, 'red']], id);
         }
         /** Display confirm message. */
-        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消']], id) {
+        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消', 'gray']], id) {
             const dialogID = id ?? ++this.dialogCount;
             const dialog = this.ui.create('dialog');
             const blurred = [];
@@ -510,11 +510,11 @@
             /** Locate at center. */
             this.center = true;
             /** Dialog caption. */
-            this.caption = this.pane.addCaption('');
+            this.caption = this.pane.addCaption('', true);
             /** Dialog text. */
             this.text = this.pane.addText('');
             /** Dialog buttons. */
-            this.buttons = this.pane.addGroup();
+            this.buttons = this.pane.add('bar');
             /** Name of the button clicked. */
             this.result = null;
         }
@@ -528,6 +528,15 @@
             this.text.innerHTML = val;
         }
         $buttons(buttons) {
+            this.buttons.innerHTML = '';
+            for (const [id, text, color] of buttons) {
+                const button = this.ui.createElement('widget.button');
+                if (color) {
+                    button.dataset.fill = color;
+                }
+                button.innerHTML = text;
+                this.buttons.appendChild(button);
+            }
         }
     }
     /** Use <noname-popup> as tag. */
@@ -1198,8 +1207,11 @@
             return node;
         }
         /** Caption text. */
-        addCaption(content) {
+        addCaption(content, large = false) {
             const node = this.ui.createElement('caption', this.node);
+            if (large) {
+                node.classList.add('large');
+            }
             node.innerHTML = content;
             return node;
         }
@@ -1210,8 +1222,8 @@
             return node;
         }
         /** Add a group of custom elements. */
-        addGroup() {
-            return this.ui.createElement('group', this.node);
+        add(tag) {
+            return this.ui.createElement(tag, this.node);
         }
         /** Gallery of selectable items. */
         addGallery(nrows, ncols, width) {
@@ -1567,7 +1579,7 @@
             this.setCaption('已断开');
         }
         addInfo() {
-            const group = this.pane.addGroup();
+            const group = this.pane.add('group');
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.ui.createElement('image', avatarNode);

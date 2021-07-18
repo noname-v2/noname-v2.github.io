@@ -1,0 +1,43 @@
+noname-widget {
+	@include widget;
+
+	&.sharp {
+		@include widget-sharp;
+	}
+
+	&.active {
+		background: var(--fill-cyan);
+	}
+
+	&.focus {
+		background: var(--fill-yellow);
+	}
+
+	&.active.focus {
+		background: var(--fill-green);
+	}
+
+	&.active, &.focus {
+		> noname-image {
+			box-shadow: var(--widget-image-shadow-active);
+		}
+	}
+
+	&.button {
+		cursor: pointer;
+		position: relative;
+		display: inline-block;
+		font-size: 30px;
+		padding: 5px 8px 5px 8px;
+		margin-left: 8px;
+		margin-right: 8px;
+		box-shadow: var(--fill-button-shadow);
+		border-radius: var(--widget-radius-sharp);
+		transition: opacity var(--app-transition-slow);
+		font-family: var(--app-caption-font);
+
+		&.blurred {
+			pointer-events: none;
+		}
+	}
+}

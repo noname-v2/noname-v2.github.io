@@ -74,9 +74,6 @@
 		"background": "rgba(0, 0, 0, 0.4)",
 		"background-popup": "rgba(0, 0, 0, 0.4)",
 		"background-light": "rgba(0, 0, 0, 0.2)",
-		"background-active": "linear-gradient(rgb(45, 155, 255), rgb(0, 135, 255))",
-		"background-focus": "linear-gradient(rgb(255, 178, 0), rgb(255, 156, 0))",
-		"background-highlight": "linear-gradient(rgb(89, 161, 81), rgb(73, 136, 70))",
 		"radius": "8px",
 		"radius-sharp": "4px",
 		"shadow": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
@@ -124,7 +121,10 @@
 		"button-shadow": "rgba(0, 0, 0, 0.6) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
 		"red": "linear-gradient(rgba(150, 47, 47, 1), rgba(132, 43, 43, 1))",
 		"blue": "linear-gradient(rgba(47, 101, 150, 1), rgba(43, 90, 132, 1))",
-		"green": "linear-gradient(rgb(89, 161, 81), rgb(73, 136, 70))"
+		"green": "linear-gradient(rgb(89, 161, 81), rgb(73, 136, 70))",
+		"cyan": "linear-gradient(rgb(45, 155, 255), rgb(0, 135, 255))",
+		"yellow": "linear-gradient(rgb(255, 178, 0), rgb(255, 156, 0))",
+		"gray": "linear-gradient(#4b4b4b, #464646)"
 	},
 
 	"gallery": {
