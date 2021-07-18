@@ -16,28 +16,33 @@ noname-popup {
 		height: var(--popup-landscape-height);
     }
 
+    &.dialog > noname-pane {
+        width: var(--popup-dialog-width);
+        height: auto;
+    }
+
     > noname-pane {
         @include widget;
+    }
 
-        &.menu {
-            @include widget-sharp;
+    &.menu > noname-pane {
+        @include widget-sharp;
 
-            padding-top: 3px;
-			padding-bottom: 3px;
-			transform-origin: top left;
-			overflow: hidden;
-            width: auto;
-            height: auto;
+        padding-top: 3px;
+        padding-bottom: 3px;
+        transform-origin: top left;
+        overflow: hidden;
+        width: auto;
+        height: auto;
 
-            > noname-option {
-                display: block;
-                padding: 3px 10px 3px 10px;
-                position: relative;
-        
-                &:hover {
-                    background: var(--fill-blue);
-                    box-shadow: var(--widget-image-shadow);
-                }
+        > noname-option {
+            display: block;
+            padding: 3px 10px 3px 10px;
+            position: relative;
+    
+            &:hover {
+                background: var(--fill-blue);
+                box-shadow: var(--widget-image-shadow);
             }
         }
     }

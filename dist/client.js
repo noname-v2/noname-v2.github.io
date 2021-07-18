@@ -199,6 +199,8 @@
             this.audio = new (window.AudioContext || window.webkitAudioContext)();
             /** Popup components cleared when arena close. */
             this.popups = new Map();
+            /** Count dialog for dialog ID */
+            this.dialogCount = 0;
         }
         init() {
             document.head.appendChild(this.themeNode);
@@ -391,15 +393,36 @@
         }
         /** Display alert message. */
         alert(caption, content = '', button = '确定', id) {
-            return this.confirm(caption, content, { ok: button }, id);
+            return this.confirm(caption, content, [['ok', button, 'red']], id);
         }
         /** Display confirm message. */
-        confirm(caption, content = '', buttons = { ok: '确定', cancel: '取消' }, id) {
+        confirm(caption, content = '', buttons = [['ok', '确定', 'red'], ['cancel', '取消']], id) {
+            const dialogID = id ?? ++this.dialogCount;
             const dialog = this.ui.create('dialog');
-            this.popups.set(id ?? this.popups.size, dialog);
-            // const layer = this.ui.createElement('alert', this.node);
-            // this.ui.createElement('caption', layer).innerHTML = msg;
-            // this.ui.createElement('button', layer).innerHTML = '退出';
+            const blurred = [];
+            dialog.update({ caption, content, buttons });
+            dialog.onopen = () => {
+                this.node.classList.add('popped');
+                for (const [id, popup] of this.popups.entries()) {
+                    if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
+                        popup.node.classList.add('blurred');
+                        blurred.push(id);
+                    }
+                }
+            };
+            dialog.onclose = () => {
+                console.log(dialog.result);
+                this.popups.delete(dialogID);
+                if (this.popups.size === 0) {
+                    this.node.classList.remove('popped');
+                }
+                for (const id of blurred) {
+                    this.popups.get(id)?.node.classList.remove('blurred');
+                }
+                blurred.length = 0;
+            };
+            this.popups.set(dialogID, dialog);
+            dialog.open();
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
@@ -482,9 +505,33 @@
     }
 
     class Dialog extends Popup {
-        close() {
+        constructor() {
+            super(...arguments);
+            /** Locate at center. */
+            this.center = true;
+            /** Dialog caption. */
+            this.caption = this.pane.addCaption('');
+            /** Dialog text. */
+            this.text = this.pane.addText('');
+            /** Dialog buttons. */
+            this.buttons = this.pane.addGroup();
+            /** Name of the button clicked. */
+            this.result = null;
+        }
+        init() {
+            super.init();
+        }
+        $caption(val) {
+            this.caption.innerHTML = val;
+        }
+        $content(val) {
+            this.text.innerHTML = val;
+        }
+        $buttons(buttons) {
         }
     }
+    /** Use <noname-popup> as tag. */
+    Dialog.tag = 'popup';
 
     class Lobby extends Component {
         constructor() {
@@ -1145,10 +1192,26 @@
 
     class Pane extends Component {
         /** Section title. */
-        addSection(caption) {
-            const section = this.ui.createElement('section', this.node);
-            this.ui.createElement('span', section).innerHTML = caption;
-            return section;
+        addSection(content) {
+            const node = this.ui.createElement('section', this.node);
+            this.ui.createElement('span', node).innerHTML = content;
+            return node;
+        }
+        /** Caption text. */
+        addCaption(content) {
+            const node = this.ui.createElement('caption', this.node);
+            node.innerHTML = content;
+            return node;
+        }
+        /** Caption text. */
+        addText(content) {
+            const node = this.ui.createElement('text', this.node);
+            this.ui.createElement('span', node).innerHTML = content;
+            return node;
+        }
+        /** Add a group of custom elements. */
+        addGroup() {
+            return this.ui.createElement('group', this.node);
         }
         /** Gallery of selectable items. */
         addGallery(nrows, ncols, width) {
@@ -1161,7 +1224,6 @@
         }
         /** Add context menu item. */
         addOption(caption, onclick) {
-            this.node.classList.add('menu');
             const option = this.ui.createElement('option');
             option.innerHTML = caption;
             this.ui.bindClick(option, onclick);
@@ -1505,8 +1567,7 @@
             this.setCaption('已断开');
         }
         addInfo() {
-            const group = this.ui.createElement('group');
-            this.pane.node.appendChild(group);
+            const group = this.pane.addGroup();
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.ui.createElement('image', avatarNode);

@@ -132,8 +132,7 @@ export class SplashHub extends Popup {
     }
 
     addInfo() {
-        const group = this.ui.createElement('group');
-		this.pane.node.appendChild(group);
+        const group = this.pane.addGroup();
 
         // avatar
 		const avatarNode = this.ui.createElement('widget', group);

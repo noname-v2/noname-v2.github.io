@@ -31,6 +31,9 @@ export class App extends Component {
 	/** Popup components cleared when arena close. */
 	popups = new Map<string | number, Popup>();
 
+	/** Count dialog for dialog ID */
+	private dialogCount = 0;
+
     init() {
 		document.head.appendChild(this.themeNode);
 		
@@ -262,16 +265,37 @@ export class App extends Component {
 
 	/** Display alert message. */
 	alert(caption: string, content='', button='确定', id?: string) {
-		return this.confirm(caption, content, {ok: button}, id);
+		return this.confirm(caption, content, [['ok', button, 'red']], id);
 	}
 
 	/** Display confirm message. */
-	confirm(caption: string, content='', buttons: {[key: string]: string} = {ok: '确定', cancel: '取消'}, id?: string) {
+	confirm(caption: string, content='', buttons: string[][] = [['ok', '确定', 'red'], ['cancel', '取消']], id?: string) {
+		const dialogID = id ?? ++this.dialogCount;
 		const dialog = this.ui.create('dialog');
-		this.popups.set(id ?? this.popups.size, dialog);
-		// const layer = this.ui.createElement('alert', this.node);
-		// this.ui.createElement('caption', layer).innerHTML = msg;
-		// this.ui.createElement('button', layer).innerHTML = '退出';
+		const blurred: (string | number)[] = [];
+		dialog.update({caption, content, buttons});
+		dialog.onopen = () => {
+			this.node.classList.add('popped');
+			for (const [id, popup] of this.popups.entries()) {
+				if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
+					popup.node.classList.add('blurred');
+					blurred.push(id);
+				}
+			}
+		};
+		dialog.onclose = () => {
+			console.log(dialog.result);
+			this.popups.delete(dialogID);
+			if (this.popups.size === 0) {
+				this.node.classList.remove('popped');
+			}
+			for (const id of blurred) {
+				this.popups.get(id)?.node.classList.remove('blurred');
+			}
+			blurred.length = 0;
+		};
+		this.popups.set(dialogID, dialog);
+		dialog.open();
 	}
 
 	/** Clear alert and confirm dialogs. */

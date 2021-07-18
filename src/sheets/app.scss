@@ -15,4 +15,10 @@ noname-app {
 	> noname-background {
 		background: var(--app-background);
 	}
+
+	&.popped {
+		> noname-arena, > noname-splash {
+			opacity: var(--app-blurred-opacity);
+		}
+	}
 }

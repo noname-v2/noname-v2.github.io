@@ -27,7 +27,7 @@ export class Popup extends Component {
 
     init() {
 		this.node.classList.add('noname-popup');
-
+		
 		if (this.center) {
 			this.node.classList.add('center');
 		}

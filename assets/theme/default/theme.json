@@ -137,7 +137,8 @@
 		"portrait-width": "410px",
 		"portrait-height": "480px",
 		"landscape-width": "520px",
-		"landscape-height": "410px"
+		"landscape-height": "410px",
+		"dialog-width": "300px"
 	},
 
 	"icon": {

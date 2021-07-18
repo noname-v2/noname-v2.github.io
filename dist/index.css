@@ -11,6 +11,9 @@ noname-app {
 noname-app > noname-background {
   background: var(--app-background);
 }
+noname-app.popped > noname-arena, noname-app.popped > noname-splash {
+  opacity: var(--app-blurred-opacity);
+}
 
 noname-arena {
   width: 100%;
@@ -20,6 +23,8 @@ noname-arena {
   left: 0;
   top: 0;
   position: absolute;
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
 }
 
 noname-button {
@@ -784,7 +789,6 @@ noname-pane > noname-caption {
   font-size: 24px;
   display: block;
   margin-top: 8px;
-  margin-bottom: -8px;
 }
 noname-pane > noname-text {
   width: calc(100% - 20px);
@@ -910,6 +914,10 @@ noname-popup.landscape > noname-pane {
   width: var(--popup-landscape-width);
   height: var(--popup-landscape-height);
 }
+noname-popup.dialog > noname-pane {
+  width: var(--popup-dialog-width);
+  height: auto;
+}
 noname-popup > noname-pane {
   background: var(--widget-background);
   border-radius: var(--widget-radius);
@@ -924,7 +932,7 @@ noname-popup > noname-pane > noname-image {
   border-radius: var(--widget-image-radius);
   box-shadow: var(--widget-image-shadow);
 }
-noname-popup > noname-pane.menu {
+noname-popup.menu > noname-pane {
   border-radius: var(--widget-radius-sharp);
   padding-top: 3px;
   padding-bottom: 3px;
@@ -933,19 +941,19 @@ noname-popup > noname-pane.menu {
   width: auto;
   height: auto;
 }
-noname-popup > noname-pane.menu > noname-image {
+noname-popup.menu > noname-pane > noname-image {
   width: calc(100% - 2 * var(--widget-image-margin-sharp));
   height: calc(100% - 2 * var(--widget-image-margin-sharp));
   left: var(--widget-image-margin-sharp);
   top: var(--widget-image-margin-sharp);
   border-radius: var(--widget-image-radius-sharp);
 }
-noname-popup > noname-pane.menu > noname-option {
+noname-popup.menu > noname-pane > noname-option {
   display: block;
   padding: 3px 10px 3px 10px;
   position: relative;
 }
-noname-popup > noname-pane.menu > noname-option:hover {
+noname-popup.menu > noname-pane > noname-option:hover {
   background: var(--fill-blue);
   box-shadow: var(--widget-image-shadow);
 }

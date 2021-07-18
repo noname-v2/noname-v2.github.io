@@ -2,10 +2,29 @@ import { Component } from '../components';
 
 export class Pane extends Component {
     /** Section title. */
-	addSection(caption: string) {
-		const section = this.ui.createElement('section', this.node);
-		this.ui.createElement('span', section).innerHTML = caption;
-		return section;
+	addSection(content: string) {
+		const node = this.ui.createElement('section', this.node);
+		this.ui.createElement('span', node).innerHTML = content;
+		return node;
+	}
+
+    /** Caption text. */
+	addCaption(content: string) {
+		const node = this.ui.createElement('caption', this.node);
+		node.innerHTML = content;
+		return node;
+	}
+
+    /** Caption text. */
+	addText(content: string) {
+		const node = this.ui.createElement('text', this.node);
+		this.ui.createElement('span', node).innerHTML = content;
+		return node;
+	}
+
+    /** Add a group of custom elements. */
+	addGroup() {
+		return this.ui.createElement('group', this.node);
 	}
 
 	/** Gallery of selectable items. */
@@ -20,7 +39,6 @@ export class Pane extends Component {
 
 	/** Add context menu item. */
 	addOption(caption: string, onclick: () => void) {
-		this.node.classList.add('menu');
 		const option = this.ui.createElement('option');
 		option.innerHTML = caption;
 		this.ui.bindClick(option, onclick);
