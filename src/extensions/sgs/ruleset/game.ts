@@ -10,6 +10,8 @@ export const game = <Collection>{
             createLobby() {
                 const lobby = this.create('lobby');
                 this.lobbyID = lobby.id;
+
+                // get names of hero packs and card packs
                 const heropacks = {} as any;
                 const cardpacks = {} as any;
                 const configs = {} as any;
@@ -23,6 +25,8 @@ export const game = <Collection>{
                         cardpacks[name] = cardpack;
                     }
                 }
+
+                // get configurations in sidebar
                 const fullConfigs = this.getRule('#config');
                 for (const name in fullConfigs) {
                     configs[name] = {};
@@ -36,6 +40,8 @@ export const game = <Collection>{
                         this.game.set(name, fullConfigs[name].init);
                     }
                 }
+
+                // configuration for player number
                 const np = this.getRule(this.game.mode + ':mode').np;
                 let npmax: number;
                 if (typeof np === 'number') {
@@ -57,12 +63,15 @@ export const game = <Collection>{
                         this.game.set('np', npmax);
                     }
                 }
+
+                // create lobby
                 lobby.set('pane', {heropacks, cardpacks, configs});
                 lobby.set('npmax', npmax);
                 this.add('awaitStart');
                 this.add('cleanUp');
             },
             awaitStart() {
+                // monitor configuration change and await game start
                 const lobby = this.game.links.get(this.parent!.lobbyID)!;
                 lobby.owner = this.game.uid;
                 lobby.syncing = true;
@@ -74,11 +83,13 @@ export const game = <Collection>{
             },
             updateLobby(lobby, [type, key, val]: [string, string, any]) {
                 if (type === 'sync') {
+                    // game connected to or disconnected from hub
                     this.game.set('online', val);
                     lobby.set('config', this.game.config);
                 }
                 else if (type === 'config') {
                     if (key === 'online') {
+                        // enable or disable multiplayer mode
                         if (val) {
                             this.game.connect(val);
                         }
@@ -87,20 +98,24 @@ export const game = <Collection>{
                         }
                     }
                     else {
+                        // game configuration change
                         this.game.set(key, val);
                         lobby.set('config', this.game.config);
                     }
                 }
                 else if (type === 'hero') {
+                    // enable or disable a heropack
                     this.game.disabledHeropacks[val ? 'delete' : 'add'](key);
                     lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
                 }
                 else if (type === 'card') {
+                    // enable or disable a cardpack
                     this.game.disabledCardpacks[val ? 'delete' : 'add'](key);
                     lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
                 }
             },
             cleanUp() {
+                // remove lobby and disable further configuration change
                 const lobby = this.game.links.get(this.parent!.lobbyID)!;
                 lobby.unlink();
                 this.game.freeze();
