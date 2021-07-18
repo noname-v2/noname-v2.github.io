@@ -18,7 +18,7 @@ class Member extends client_1.Client {
         return null;
     }
     init(old) {
-        if (old instanceof Member && old.owner) {
+        if (old instanceof Member && old.owner && !old.owner.closed) {
             // rejoin previous room
             this.join(old.joined);
         }

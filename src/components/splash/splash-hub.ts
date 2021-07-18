@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { Splash, SplashRoom } from '../../components';
+import { Splash, SplashRoom, Dialog } from '../../components';
 import { config } from '../../version';
 import { hub2member, split } from '../../hub/types';
 
@@ -234,6 +234,20 @@ export class SplashHub extends Popup {
     down(msg: string) {
         // room owner disconnected
         console.log(parseInt(msg) - Date.now())
-        this.app.alert('房主连接断开');
+        const ws = this.client.connection;
+        const promise = this.app.alert('房主连接断开', '', '退出房间', 'down');
+        const dialog = <Dialog>this.app.popups.get('down');
+        const update = () => {
+            const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
+            dialog.set('content', `如果房主不在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+        };
+        update();
+        const interval = setInterval(update, 1000);
+        promise.then(val => {
+            clearInterval(interval);
+            if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
+                ws.send('leave:init');
+            }
+        });
     }
 }

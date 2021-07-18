@@ -400,9 +400,6 @@
             const dialog = this.ui.create('dialog');
             dialog.update({ caption, content, buttons });
             return new Promise(resolve => {
-                dialog.onopen = () => {
-                    setTimeout(() => dialog.pane.alignText());
-                };
                 dialog.onclose = () => {
                     resolve(dialog.result === 'ok' ? true : false);
                 };
@@ -412,6 +409,7 @@
         /** Displa a popup. */
         popup(dialog, id) {
             const dialogID = id ?? ++this.dialogCount;
+            this.popups.get(dialogID)?.close();
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
             // other popups that are blurred by dialog.open()
@@ -520,6 +518,7 @@
             if (this.node.parentNode !== this.app.node) {
                 this.app.node.appendChild(this.node);
             }
+            this.pane.alignText();
             this.ui.animate(this.pane.node, {
                 opacity: [0, 1], scale: ['var(--popup-transform)', 1]
             }, this.app.getTransition(this.transition));
@@ -552,6 +551,7 @@
         $content(val) {
             this.text.firstChild.innerHTML = val;
             this.node.classList[val ? 'add' : 'remove']('with-content');
+            this.pane.alignText();
         }
         $buttons(buttons) {
             this.buttons.innerHTML = '';
@@ -1724,7 +1724,21 @@
         down(msg) {
             // room owner disconnected
             console.log(parseInt(msg) - Date.now());
-            this.app.alert('房主连接断开');
+            const ws = this.client.connection;
+            const promise = this.app.alert('房主连接断开', '', '退出房间', 'down');
+            const dialog = this.app.popups.get('down');
+            const update = () => {
+                const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
+                dialog.set('content', `如果房主不在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+            };
+            update();
+            const interval = setInterval(update, 1000);
+            promise.then(val => {
+                clearInterval(interval);
+                if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
+                    ws.send('leave:init');
+                }
+            });
         }
     }
     /** Use tag <noname-popup>. */

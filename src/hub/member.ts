@@ -19,7 +19,7 @@ export class Member extends Client {
     }
 
     init(old: Owner | Member | null) {
-        if (old instanceof Member && old.owner) {
+        if (old instanceof Member && old.owner && !old.owner.closed) {
             // rejoin previous room
             this.join(old.joined);
         }

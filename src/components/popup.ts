@@ -76,6 +76,8 @@ export class Popup extends Component {
 			this.app.node.appendChild(this.node);
 		}
 
+		this.pane.alignText();
+
 		this.ui.animate(this.pane.node, {
 			opacity: [0, 1], scale: ['var(--popup-transform)', 1]
 		}, this.app.getTransition(this.transition));

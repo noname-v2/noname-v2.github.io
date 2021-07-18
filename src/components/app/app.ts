@@ -273,9 +273,6 @@ export class App extends Component {
 		const dialog = this.ui.create('dialog');
 		dialog.update({caption, content, buttons});
 		return new Promise(resolve => {
-			dialog.onopen = () => {
-				setTimeout(() => dialog.pane.alignText());
-			};
 			dialog.onclose = () => {
 				resolve(dialog.result === 'ok' ? true : false);
 			};
@@ -286,6 +283,7 @@ export class App extends Component {
 	/** Displa a popup. */
 	popup(dialog: Popup, id?: string) {
 		const dialogID = id ?? ++this.dialogCount;
+		this.popups.get(dialogID)?.close();
 		const onopen = dialog.onopen;
 		const onclose = dialog.onclose;
 

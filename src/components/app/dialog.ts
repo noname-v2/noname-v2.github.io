@@ -34,6 +34,7 @@ export class Dialog extends Popup {
     $content(val: string) {
         (this.text.firstChild as HTMLElement).innerHTML = val;
         this.node.classList[val ? 'add' : 'remove']('with-content');
+        this.pane.alignText();
     }
 
     $buttons(buttons: [string, string, string?][]) {
