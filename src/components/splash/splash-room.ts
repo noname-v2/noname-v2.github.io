@@ -16,7 +16,7 @@ export class SplashRoom extends Component {
     /** Nickname text. */
     nickname = this.ui.createElement('span.nickname', this.node);
 
-    setup([name, np, npmax, [nickname, avatar], started]:
+    setup([name, np, npmax, [nickname, avatar], state]:
         [string, number, number, [string, string], boolean]) {
         if (avatar.includes(':')) {
             const [ext, name] = avatar.split(':');
@@ -27,8 +27,8 @@ export class SplashRoom extends Component {
         }
 
         this.caption.innerHTML = name;
-        const state = started ? '游戏中' : '等待中';
-        this.status.innerHTML = `<noname-status data-state="${started?1:0}"></noname-status> ${state} ${Math.min(np, npmax)} / ${npmax}`;
+        const stateText = state ? '游戏中' : '等待中';
+        this.status.innerHTML = `<noname-status data-state="${state}"></noname-status> ${stateText} ${Math.min(np, npmax)} / ${npmax}`;
         this.nickname.innerHTML = `<noname-image></noname-image>${nickname}`;
     }
 }

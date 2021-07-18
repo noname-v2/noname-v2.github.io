@@ -1,4 +1,4 @@
-import { Component, Popup } from '../../components';
+import { Component } from '../../components';
 
 export class Arena extends Component {
     /** Layout mode. */
@@ -50,7 +50,7 @@ export class Arena extends Component {
 		this.ui.animate(this.node, {
 			opacity: [1, 0]
 		}).onfinish = () => {
-			this.node.remove();
+			super.remove();
 		};
 	}
 

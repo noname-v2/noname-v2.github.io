@@ -483,7 +483,7 @@
         /** Mark game as ended. */
         over() {
             if (this.#game.state === 1) {
-                this.#game.state = 2;
+                this.#game.state = 0;
                 this.#game.worker.updateRoom();
             }
         }

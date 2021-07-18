@@ -221,7 +221,11 @@ export class Client {
                 const id = parseInt(key);
                 for (const [method, arg] of calls[key]) {
                     if (method === '#unlink') {
-                        this.components.delete(id);
+                        const cmp = this.components.get(id);
+                        if (cmp) {
+                            this.syncListeners.delete(cmp as any);
+                            this.components.delete(id);
+                        }
                     }
                     else if (method === '#yield') {
                         this.yielding.get(id)!(arg);
