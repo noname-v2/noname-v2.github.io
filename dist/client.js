@@ -937,7 +937,7 @@
                 return;
             }
             this.rendered.add(i);
-            const n = this.size;
+            const n = this.currentSize;
             const layer = this.ui.createElement('layer');
             for (let j = 0; j < n; j++) {
                 const item = this.items[i * n + j];
@@ -971,7 +971,7 @@
         }
         /** Update page count and create page(s) if necessary. */
         updatePages() {
-            const pageCount = Math.ceil(this.items.length / this.size);
+            const pageCount = Math.ceil(this.items.length / this.currentSize);
             // add more pages
             while (pageCount > this.pageCount) {
                 this.pages.appendChild(this.ui.createElement('page'));
@@ -993,20 +993,28 @@
             this.node.classList[this.pageCount > 1 ? 'add' : 'remove']('with-indicator');
         }
         init() {
+            // enable horizontal scroll
             this.pages.classList.add('scrollx');
+            this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
+            // render and update page indicator while scrolling
             this.pages.addEventListener('scroll', () => {
                 const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
                 if (page !== this.currentPage) {
                     this.turnPage(page);
                 }
             }, { passive: true });
-            this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
+            // add callbacks for dynamic item number
             if (Array.isArray(this.nrows)) {
                 this.node.classList.add('centery');
+                this.client.resizeListeners.add(this);
             }
             if (Array.isArray(this.ncols)) {
                 this.node.classList.add('centerx');
+                this.client.resizeListeners.add(this);
             }
+            // get number of items in a page
+            this.currentSize = this.size;
+            console.log(this.currentSize);
         }
         /** Enable horizontal scroll with mouse wheel. */
         wheel(e) {
@@ -1052,6 +1060,19 @@
             // update page indicator
             this.indicator.querySelector('.current')?.classList.remove('current');
             this.indicator.childNodes[page].classList.add('current');
+        }
+        /** Callback when window resize. */
+        resize() {
+            const size = this.size;
+            if (size !== this.currentSize) {
+                this.currentSize = size;
+                this.rendered.clear();
+                this.updatePages();
+                if (this.currentPage >= this.pageCount) {
+                    this.currentPage = this.pageCount - 1;
+                }
+                this.turnPage(this.currentPage);
+            }
         }
     }
 

@@ -238,8 +238,6 @@ noname-gallery > noname-pages > noname-page {
   display: inline-block;
 }
 noname-gallery > noname-pages > noname-page > noname-layer {
-  position: relative;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-evenly;
@@ -1238,9 +1236,6 @@ noname-splash > noname-gallery {
   left: 0;
   top: calc(37.5% - 105px);
   position: absolute;
-}
-noname-splash > noname-gallery noname-page > noname-layer {
-  width: auto;
 }
 noname-splash > noname-gallery noname-item {
   margin-left: var(--app-splash-margin);
