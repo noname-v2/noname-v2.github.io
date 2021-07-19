@@ -39,6 +39,7 @@
 	},
 
 	"player": {
+		"width": "150px",
 		"background": "rgba(0, 0, 0, 0.4)",
 		"back-background": "rgba(0, 0, 0, 0.4)",
 		"radius": "8px",

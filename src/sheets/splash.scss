@@ -18,8 +18,8 @@ noname-splash {
 
 		// mode entries
 		noname-item {
-			width: 150px;
-			height: 210px;
+			width: var(--player-width);
+			aspect-ratio: 1 / 1.4;
 			
 			> noname-widget {
 				cursor: pointer;

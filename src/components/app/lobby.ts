@@ -1,7 +1,11 @@
-import { Component, Toggle } from '../../components';
+import { Component, Toggle, Player } from '../../components';
 
 export class Lobby extends Component {
+    /** Sidebar for configurations. */
     sidebar = this.ui.create('sidebar', this.node);
+
+    /** Player seats. */
+    seats = this.ui.createElement('seats', this.node);
 
     /** Toggles for mode configuration. */
     configToggles = new Map<string, Toggle>();
@@ -20,6 +24,9 @@ export class Lobby extends Component {
 
     /** Trying to exit. */
     exiting = false;
+
+    /** Players in this seats. */
+    players = new Set<Player>();
 
     init() {
         this.app.arena!.node.appendChild(this.node);
@@ -52,6 +59,7 @@ export class Lobby extends Component {
         });
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
+        this.ui.animate(this.seats, {scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]});
     }
 
     $pane(configs: any) {
@@ -142,8 +150,16 @@ export class Lobby extends Component {
         }
     }
 
-    $np() {
-
+    $npmax(npmax: number) {
+        this.seats.innerHTML = '';
+        for (let i = 0; i < npmax; i++) {
+            if (npmax > 4 && i === Math.ceil(npmax / 2)) {
+                this.seats.appendChild(document.createElement('div'));
+            }
+            const player = this.ui.create('player');
+            this.players.add(player);
+            this.seats.appendChild(player.node);
+        }
     }
 
     sync() {

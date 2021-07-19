@@ -1,0 +1,170 @@
+noname-player {
+	width: var(--player-width);
+	aspect-ratio: 1 / 1.4;
+
+	// absolute positioning
+	> noname-background, > noname-content {
+		> * {
+			position: absolute;
+		}
+	}
+
+	// hero image and main content
+	> noname-background > noname-image, > noname-content {
+		position: absolute;
+		width: calc(100% - 2 * var(--player-image-margin));
+		height: calc(100% - 2 * var(--player-image-margin));
+		left: var(--player-image-margin);
+		top: var(--player-image-margin);
+	}
+
+	// background pattern
+	> noname-background {
+		background: var(--player-background);
+		border-radius: var(--player-radius);
+		box-shadow: var(--player-shadow);
+		
+		> noname-image {
+			border-radius: var(--player-image-radius);
+			box-shadow: var(--player-image-shadow);
+			// transition: opacity var(--app-transition);
+		}
+	}
+
+	&.hero-hidden.deputy-hidden > noname-background {
+		background: var(--player-back-background);
+		box-shadow: var(--player-back-shadow);
+	}
+
+	&.hero-hidden > noname-background > noname-image {
+		opacity: 0;
+	}
+
+	> noname-content {
+		overflow: hidden;
+		
+		// nickname
+		> noname-span {
+			font-size: 12px;
+			width: 140px;
+			height: 12px;
+			left: calc(50% - 70px);
+			top: 2px;
+			white-space: nowrap;
+			text-align: center;
+		}
+
+		// hero name
+		> noname-caption {
+			left: 8px;
+			top: 12px;
+			font-size: 22px;
+			writing-mode: vertical-rl;
+		}
+
+		// upper right label
+		> noname-label {
+			top: 5px;
+			right: 5px;
+			text-align: center;
+			font-size: 24px;
+			font-family: var(--app-label-font);
+		}
+
+		// hp node container
+		> noname-hp {
+			right: 8px;
+			bottom: 12px;
+			> noname-image {
+				display: block;
+				position: relative;
+				width: 16px;
+				height: 16px;
+				background-size: cover;
+				&.lost {
+					background-image: var(--player-hp-lost);
+				}
+			}
+			
+			&[data-condition="high"] > noname-image:not(.lost) {
+				background-image: var(--player-hp-high);
+			}
+			&[data-condition="mid"] > noname-image:not(.lost) {
+				background-image: var(--player-hp-mid);
+			}
+			&[data-condition="low"] > noname-image:not(.lost) {
+				background-image: var(--player-hp-low);
+			}
+		}
+
+		// timer
+		> noname-timer {
+			width: 100px;
+			height: 5px;
+			bottom: calc(var(--player-image-margin) + 2px);
+			left: calc(50% - 50px);
+			border-radius: 5px;
+			background: var(--player-timer-background);
+			overflow: hidden;
+			transition: opacity var(--app-transition);
+
+			// workaround for safari transition bug
+			mask-image: -webkit-radial-gradient(white, black);
+			-webkit-mask-image: -webkit-radial-gradient(white, black);
+
+			> noname-div {
+				@include layer;
+				background: var(--player-timer-bar-background);
+				transition-timing-function: linear;
+				border-radius: 5px;
+				box-shadow: var(--player-timer-shadow);
+				&.translate {
+					transform: translateX(-100px);
+				}
+			}
+		}
+
+		// hand card count
+		noname-hand-count {
+			z-index: 1;
+			border-radius: 0 2px 2px 0;
+			text-align: center;
+			left: -1px;
+			bottom: 20px;
+			width: 8px;
+			height: auto;
+			line-height: 16px;
+			font-size: 14px;
+			padding: 4px 2px 4px 2px;
+			opacity: 0;
+			// transition: opacity var(--app-transition);
+
+			// continue here: move to theme
+			&[data-condition="none"] {
+				background: rgba(100, 100, 100, 0.8);
+				border: 1px solid rgba(60, 60, 60, 1);
+			}
+
+			&[data-condition="mid"]{
+				background: rgba(85, 134, 57,1);
+				border: 1px solid rgba(39, 79, 7, 1);
+			}
+
+			&[data-condition="high"]{
+				background: rgba(63, 119, 173,1);
+				border: 1px solid rgba(31, 82, 131, 1);
+			}
+
+			&[data-condition="low"]{
+				background: rgba(194, 167, 30,1);
+				border: 1px solid rgba(87, 71, 8, 1);
+			}
+		}
+	}
+}
+
+noname-arena.started > noname-players > noname-player {
+	> noname-content > noname-hand-count {
+		opacity: 1;
+	}
+}

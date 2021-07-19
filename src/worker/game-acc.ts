@@ -86,7 +86,7 @@ export class GameAccessor {
 
     /** Get game configuration. */
     get(key: string) {
-        return this.#game.config[key];
+        return this.#game.config[key] ?? null;
     }
 
     /** Set game configuration. */

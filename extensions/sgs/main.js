@@ -47,6 +47,7 @@ const game = {
             createLobby() {
                 const lobby = this.create('lobby');
                 this.lobbyID = lobby.id;
+                // get names of hero packs and card packs
                 const heropacks = {};
                 const cardpacks = {};
                 const configs = {};
@@ -60,6 +61,7 @@ const game = {
                         cardpacks[name] = cardpack;
                     }
                 }
+                // get configurations in sidebar
                 const fullConfigs = this.getRule('#config');
                 for (const name in fullConfigs) {
                     configs[name] = {};
@@ -72,6 +74,7 @@ const game = {
                         this.game.set(name, fullConfigs[name].init);
                     }
                 }
+                // configuration for player number
                 const np = this.getRule(this.game.mode + ':mode').np;
                 let npmax;
                 if (typeof np === 'number') {
@@ -89,16 +92,17 @@ const game = {
                         options: nps,
                         init: npmax
                     };
-                    if (this.game.get('np') === null) {
+                    if (!this.game.get('np')) {
                         this.game.set('np', npmax);
                     }
                 }
-                lobby.set('pane', { heropacks, cardpacks, configs });
-                lobby.set('npmax', npmax);
+                // create lobby
+                lobby.update({ npmax, pane: { heropacks, cardpacks, configs } });
                 this.add('awaitStart');
                 this.add('cleanUp');
             },
             awaitStart() {
+                // monitor configuration change and await game start
                 const lobby = this.game.links.get(this.parent.lobbyID);
                 lobby.owner = this.game.uid;
                 lobby.syncing = true;
@@ -110,11 +114,13 @@ const game = {
             },
             updateLobby(lobby, [type, key, val]) {
                 if (type === 'sync') {
+                    // game connected to or disconnected from hub
                     this.game.set('online', val);
                     lobby.set('config', this.game.config);
                 }
                 else if (type === 'config') {
                     if (key === 'online') {
+                        // enable or disable multiplayer mode
                         if (val) {
                             this.game.connect(val);
                         }
@@ -123,20 +129,24 @@ const game = {
                         }
                     }
                     else {
+                        // game configuration change
                         this.game.set(key, val);
                         lobby.set('config', this.game.config);
                     }
                 }
                 else if (type === 'hero') {
+                    // enable or disable a heropack
                     this.game.disabledHeropacks[val ? 'delete' : 'add'](key);
                     lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
                 }
                 else if (type === 'card') {
+                    // enable or disable a cardpack
                     this.game.disabledCardpacks[val ? 'delete' : 'add'](key);
                     lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
                 }
             },
             cleanUp() {
+                // remove lobby and disable further configuration change
                 const lobby = this.game.links.get(this.parent.lobbyID);
                 lobby.unlink();
                 this.game.freeze();

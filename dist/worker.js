@@ -459,7 +459,7 @@
         }
         /** Get game configuration. */
         get(key) {
-            return this.#game.config[key];
+            return this.#game.config[key] ?? null;
         }
         /** Set game configuration. */
         set(key, val) {

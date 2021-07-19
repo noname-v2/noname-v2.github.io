@@ -596,7 +596,10 @@
     class Lobby extends Component {
         constructor() {
             super(...arguments);
+            /** Sidebar for configurations. */
             this.sidebar = this.ui.create('sidebar', this.node);
+            /** Player seats. */
+            this.seats = this.ui.createElement('seats', this.node);
             /** Toggles for mode configuration. */
             this.configToggles = new Map();
             /** Toggles that show or hide based on other toggles. */
@@ -609,6 +612,8 @@
             this.connecting = false;
             /** Trying to exit. */
             this.exiting = false;
+            /** Players in this seats. */
+            this.players = new Set();
         }
         init() {
             this.app.arena.node.appendChild(this.node);
@@ -641,6 +646,7 @@
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
+            this.ui.animate(this.seats, { scale: ['var(--app-splash-transform)', 1], opacity: [0, 1] });
         }
         $pane(configs) {
             this.sidebar.pane.addSection('选项');
@@ -725,7 +731,16 @@
                 this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
             }
         }
-        $np() {
+        $npmax(npmax) {
+            this.seats.innerHTML = '';
+            for (let i = 0; i < npmax; i++) {
+                if (npmax > 4 && i === Math.ceil(npmax / 2)) {
+                    this.seats.appendChild(document.createElement('div'));
+                }
+                const player = this.ui.create('player');
+                this.players.add(player);
+                this.seats.appendChild(player.node);
+            }
         }
         sync() {
             const peers = this.client.peers;
@@ -840,7 +855,7 @@
             this.ui.animate(this.node, {
                 opacity: [1, 0]
             }).onfinish = () => {
-                this.node.remove();
+                super.remove();
             };
         }
         /** Connection status change. */
@@ -1152,6 +1167,13 @@
         }
     }
     Gallery.smoothScroll = false;
+
+    class Player extends Component {
+        constructor() {
+            super(...arguments);
+            this.background = this.ui.createElement('background', this.node);
+        }
+    }
 
     class Input extends Component {
         constructor() {
@@ -2189,6 +2211,7 @@
     componentClasses.set('arena', Arena);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
+    componentClasses.set('player', Player);
     componentClasses.set('input', Input);
     componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
@@ -2740,7 +2763,11 @@
                     const id = parseInt(key);
                     for (const [method, arg] of calls[key]) {
                         if (method === '#unlink') {
-                            this.components.delete(id);
+                            const cmp = this.components.get(id);
+                            if (cmp) {
+                                this.syncListeners.delete(cmp);
+                                this.components.delete(id);
+                            }
                         }
                         else if (method === '#yield') {
                             this.yielding.get(id)(arg);

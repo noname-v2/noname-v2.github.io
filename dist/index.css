@@ -414,39 +414,20 @@ noname-lobby {
 noname-lobby > noname-seats {
   position: absolute;
   width: 700px;
-  height: 250px;
-  left: calc(50% - 240px);
-  top: calc(50% - 125px);
-  transition: transform var(--app-transition);
-}
-noname-lobby > noname-seats[data-rows="2"] {
   height: 480px;
+  left: calc(50% - 240px);
   top: calc(50% - 240px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly;
+  align-content: center;
 }
-noname-lobby > noname-seats > noname-gallery {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  left: 0;
-  top: 0;
-  position: absolute;
-  height: 250px;
-  text-align: center;
-}
-noname-lobby > noname-seats > noname-gallery > noname-player {
+noname-lobby > noname-seats > noname-player {
   position: relative;
-  display: inline-block;
-  margin: 20px 10px 0 10px;
-  transition: opacity var(--app-transition);
 }
-noname-lobby > noname-seats > noname-gallery > noname-player > noname-content > noname-caption {
-  left: 10px;
-  top: 16px;
-}
-noname-lobby > noname-seats > noname-gallery:last-child {
-  top: auto;
-  bottom: 0;
+noname-lobby > noname-seats > div {
+  flex-basis: 100%;
+  height: 30px;
 }
 noname-lobby > noname-bar {
   z-index: 1;
@@ -930,6 +911,146 @@ noname-pane > noname-text:last-child {
   margin-bottom: 2px;
 }
 
+noname-player {
+  width: var(--player-width);
+  aspect-ratio: 1/1.4;
+}
+noname-player > noname-background > *, noname-player > noname-content > * {
+  position: absolute;
+}
+noname-player > noname-background > noname-image, noname-player > noname-content {
+  position: absolute;
+  width: calc(100% - 2 * var(--player-image-margin));
+  height: calc(100% - 2 * var(--player-image-margin));
+  left: var(--player-image-margin);
+  top: var(--player-image-margin);
+}
+noname-player > noname-background {
+  background: var(--player-background);
+  border-radius: var(--player-radius);
+  box-shadow: var(--player-shadow);
+}
+noname-player > noname-background > noname-image {
+  border-radius: var(--player-image-radius);
+  box-shadow: var(--player-image-shadow);
+}
+noname-player.hero-hidden.deputy-hidden > noname-background {
+  background: var(--player-back-background);
+  box-shadow: var(--player-back-shadow);
+}
+noname-player.hero-hidden > noname-background > noname-image {
+  opacity: 0;
+}
+noname-player > noname-content {
+  overflow: hidden;
+}
+noname-player > noname-content > noname-span {
+  font-size: 12px;
+  width: 140px;
+  height: 12px;
+  left: calc(50% - 70px);
+  top: 2px;
+  white-space: nowrap;
+  text-align: center;
+}
+noname-player > noname-content > noname-caption {
+  left: 8px;
+  top: 12px;
+  font-size: 22px;
+  writing-mode: vertical-rl;
+}
+noname-player > noname-content > noname-label {
+  top: 5px;
+  right: 5px;
+  text-align: center;
+  font-size: 24px;
+  font-family: var(--app-label-font);
+}
+noname-player > noname-content > noname-hp {
+  right: 8px;
+  bottom: 12px;
+}
+noname-player > noname-content > noname-hp > noname-image {
+  display: block;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  background-size: cover;
+}
+noname-player > noname-content > noname-hp > noname-image.lost {
+  background-image: var(--player-hp-lost);
+}
+noname-player > noname-content > noname-hp[data-condition=high] > noname-image:not(.lost) {
+  background-image: var(--player-hp-high);
+}
+noname-player > noname-content > noname-hp[data-condition=mid] > noname-image:not(.lost) {
+  background-image: var(--player-hp-mid);
+}
+noname-player > noname-content > noname-hp[data-condition=low] > noname-image:not(.lost) {
+  background-image: var(--player-hp-low);
+}
+noname-player > noname-content > noname-timer {
+  width: 100px;
+  height: 5px;
+  bottom: calc(var(--player-image-margin) + 2px);
+  left: calc(50% - 50px);
+  border-radius: 5px;
+  background: var(--player-timer-background);
+  overflow: hidden;
+  transition: opacity var(--app-transition);
+  mask-image: -webkit-radial-gradient(white, black);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+noname-player > noname-content > noname-timer > noname-div {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  background: var(--player-timer-bar-background);
+  transition-timing-function: linear;
+  border-radius: 5px;
+  box-shadow: var(--player-timer-shadow);
+}
+noname-player > noname-content > noname-timer > noname-div.translate {
+  transform: translateX(-100px);
+}
+noname-player > noname-content noname-hand-count {
+  z-index: 1;
+  border-radius: 0 2px 2px 0;
+  text-align: center;
+  left: -1px;
+  bottom: 20px;
+  width: 8px;
+  height: auto;
+  line-height: 16px;
+  font-size: 14px;
+  padding: 4px 2px 4px 2px;
+  opacity: 0;
+}
+noname-player > noname-content noname-hand-count[data-condition=none] {
+  background: rgba(100, 100, 100, 0.8);
+  border: 1px solid #3c3c3c;
+}
+noname-player > noname-content noname-hand-count[data-condition=mid] {
+  background: #558639;
+  border: 1px solid #274f07;
+}
+noname-player > noname-content noname-hand-count[data-condition=high] {
+  background: #3f77ad;
+  border: 1px solid #1f5283;
+}
+noname-player > noname-content noname-hand-count[data-condition=low] {
+  background: #c2a71e;
+  border: 1px solid #574708;
+}
+
+noname-arena.started > noname-players > noname-player > noname-content > noname-hand-count {
+  opacity: 1;
+}
+
 noname-popup {
   width: 100%;
   height: 100%;
@@ -1111,8 +1232,8 @@ noname-splash > noname-gallery {
   position: absolute;
 }
 noname-splash > noname-gallery noname-item {
-  width: 150px;
-  height: 210px;
+  width: var(--player-width);
+  aspect-ratio: 1/1.4;
 }
 noname-splash > noname-gallery noname-item > noname-widget {
   cursor: pointer;

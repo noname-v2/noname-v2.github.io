@@ -2,7 +2,7 @@ var main = {
     mode: {
         ruleset: 'sgs',
         name: '欢乐',
-        np: 2,
+        np: 4,
         content() {
             this.add('#game.init/');
             this.add('createPlayers');

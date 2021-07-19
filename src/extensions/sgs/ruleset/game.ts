@@ -59,14 +59,13 @@ export const game = <Collection>{
                         options: nps,
                         init: npmax
                     };
-                    if (this.game.get('np') === null) {
+                    if (!this.game.get('np')) {
                         this.game.set('np', npmax);
                     }
                 }
 
                 // create lobby
-                lobby.set('pane', {heropacks, cardpacks, configs});
-                lobby.set('npmax', npmax);
+                lobby.update({npmax, pane: {heropacks, cardpacks, configs}});
                 this.add('awaitStart');
                 this.add('cleanUp');
             },
