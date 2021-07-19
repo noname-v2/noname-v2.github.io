@@ -12,7 +12,7 @@ export class Sidebar extends Component {
 
     init() {
         // header with text and back button
-        this.pane.enableScroll();
+        this.pane.node.classList.add('scrolly');
 		this.ui.createElement('span', this.header);
 		this.ui.createElement('image', this.header);
 		this.ui.createElement('span', this.footer);

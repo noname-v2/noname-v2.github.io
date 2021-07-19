@@ -397,16 +397,6 @@ export class UI {
 		this.resetMove(node);
 	}
 
-	/** Enable vertical scrolling. */
-	enableScroll(node: HTMLElement) {
-		node.classList.add('scroll');
-        node.addEventListener('wheel', e => {
-            if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
-                e.stopPropagation();
-            }
-        }, {passive: false});
-	}
-
 	/** Wrapper of HTMLElement.animate(). */
 	animate(node: HTMLElement, animation: {
 			x?: (number | string)[],

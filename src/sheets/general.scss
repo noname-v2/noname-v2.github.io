@@ -1,9 +1,9 @@
 html, body {
 	@include layer;
 	overflow: hidden;
-	overscroll-behavior-x: none; // disable two finger back gesture in chrome
-	user-select: none;
+	overscroll-behavior: none; // disable two finger back gesture in chrome
 	background-color: #3c3c3c;
+	user-select: none;
 	-webkit-user-select: none;
 	-webkit-tap-highlight-color: transparent; // no highlight when tappin on element
 }
@@ -28,10 +28,17 @@ noname-caption {
 	opacity: var(--app-blurred-opacity) !important;
 }
 
-.scroll {
+.scrollx {
+	overflow-x: scroll;
+	overflow-y: hidden;
+
+	// hide scrollbar in firefox
+	scrollbar-width: thin;
+}
+
+.scrolly {
 	overflow-x: hidden;
 	overflow-y: scroll;
-	-webkit-overflow-scrolling: touch;
 
 	// hide scrollbar in firefox
 	scrollbar-width: thin;

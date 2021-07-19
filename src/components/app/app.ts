@@ -52,7 +52,7 @@ export class App extends Component {
 		// setup triggers
 		this.resize();
 		window.addEventListener('resize', this.resize.bind(this));
-		this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
+		// this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
 		document.oncontextmenu = () => false;
 		document.body.appendChild(this.node);
 

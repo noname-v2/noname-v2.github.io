@@ -207,7 +207,7 @@
             // setup triggers
             this.resize();
             window.addEventListener('resize', this.resize.bind(this));
-            this.node.addEventListener('wheel', e => e.preventDefault(), { passive: false }); // prevent two finger swipe gesture in safari
+            // this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
             document.oncontextmenu = () => false;
             document.body.appendChild(this.node);
             // wait for indexedDB
@@ -789,7 +789,7 @@
         ;
         init() {
             // header with text and back button
-            this.pane.enableScroll();
+            this.pane.node.classList.add('scrolly');
             this.ui.createElement('span', this.header);
             this.ui.createElement('image', this.header);
             this.ui.createElement('span', this.footer);
@@ -897,24 +897,16 @@
             this.pages = this.ui.createElement('pages', this.node);
             /** Page indicator */
             this.indicator = this.ui.createElement('indicator', this.node);
-            /** Whether other pages are visible. */
-            this.overflow = false;
+            /** Number of pages. */
+            this.pageCount = 0;
             /** Rendered pages. */
             this.rendered = new Set();
             /** Gallery items. */
             this.items = [];
             /** Index of current page. */
             this.currentPage = 0;
-            /** Currently being blocked. */
-            this.moving = false;
-            /** Block accelerated scrolling with mac trackpad. */
-            this.acceleration = [];
-            this.accelerationTimeout = 0;
-            this.scrollTimeout = 0;
-        }
-        /** Current number of pages. */
-        get pageCount() {
-            return this.pages.childNodes.length;
+            /** Device can scroll horizontally. */
+            this.horizontal = false;
         }
         /** Create page when needed. */
         renderPage(i) {
@@ -943,101 +935,24 @@
                 page.firstChild.appendChild(containers);
             }
         }
-        /** Turn page with mousewheel (with support for mac trackpad). */
-        wheel(e) {
-            if (this.moving) {
-                return;
-            }
-            // save acceleration history
-            const direction = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-            if (Math.abs(direction) > 5) {
-                Gallery.smoothScroll = true;
-            }
-            else if (Gallery.smoothScroll) {
-                return;
-            }
-            // mark wheel event as finished after 80ms without update
-            clearTimeout(this.accelerationTimeout);
-            this.accelerationTimeout = window.setTimeout(() => {
-                this.acceleration.length = 0;
-                this.accelerationTimeout = 0;
-                clearTimeout(this.scrollTimeout);
-                this.scrollTimeout = 0;
-            }, 80);
-            // detect continous scroll
-            const idx = this.acceleration.indexOf(null);
-            if (idx !== -1) {
-                if (direction * this.acceleration[0] < 0) {
-                    const a1 = this.acceleration[this.acceleration.length - 1];
-                    const a2 = this.acceleration[this.acceleration.length - 2];
-                    if (direction * a1 > 0 && direction * a2 > 0) {
-                        this.acceleration.length = 0;
-                    }
-                }
-                else {
-                    const acceleration = this.acceleration.slice(idx + 1);
-                    acceleration.push(direction);
-                    let decreased = 0;
-                    let increased = 0;
-                    for (let i = acceleration.length - 1; i >= 1; i--) {
-                        const a1 = Math.abs(acceleration[i]);
-                        const a2 = Math.abs(acceleration[i - 1]);
-                        if (a1 > a2) {
-                            if (!increased) {
-                                decreased++;
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                        else if (a1 < a2) {
-                            if (decreased < 2) {
-                                break;
-                            }
-                            else {
-                                increased += 1;
-                                if (increased >= 2) {
-                                    this.acceleration.length = 0;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (acceleration.length >= 3) {
-                        let same = true;
-                        for (let i = 0; i < acceleration.length; i++) {
-                            if (acceleration[i] !== direction) {
-                                same = false;
-                                break;
-                            }
-                        }
-                        if (same) {
-                            this.acceleration.length = 0;
-                        }
-                    }
-                }
-            }
-            this.acceleration.push(direction);
-            if (this.acceleration.length === 1) {
-                if (direction > 0) {
-                    this.turnPage(this.currentPage + 1);
-                }
-                else if (direction < 0) {
-                    this.turnPage(this.currentPage - 1);
-                }
-                clearTimeout(this.scrollTimeout);
-                const timeout = this.scrollTimeout = window.setTimeout(() => {
-                    if (timeout === this.scrollTimeout) {
-                        this.acceleration.push(null);
-                    }
-                }, 100);
-            }
-        }
         init() {
+            this.pages.classList.add('scrollx');
+            this.pages.addEventListener('scroll', () => {
+                const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
+                if (page !== this.currentPage) {
+                    this.turnPage(page);
+                }
+            }, { passive: true });
             this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
-            if (this.overflow) {
-                this.node.classList.add('overflow');
+        }
+        wheel(e) {
+            if (e.deltaX !== 0) {
+                this.horizontal = true;
             }
+            if (this.horizontal) {
+                return;
+            }
+            this.pages.scrollLeft += this.pages.offsetWidth * e.deltaY / Math.abs(e.deltaY);
         }
         add(item) {
             // page index
@@ -1045,16 +960,15 @@
             this.items.push(item);
             if (idx >= this.pageCount) {
                 const page = this.ui.createElement('page');
-                page.style.width = this.width + 'px';
                 this.ui.createElement('layer', page);
                 this.pages.appendChild(page);
                 const dot = this.ui.createElement('dot', this.indicator);
                 this.ui.createElement('layer', dot);
                 this.ui.createElement('layer', dot);
-                if (this.pageCount > 1) {
+                if (++this.pageCount > 1) {
                     this.node.classList.add('with-indicator');
                 }
-                this.turnPage(0, false);
+                this.turnPage(0);
             }
             else {
                 this.rendered.delete(idx);
@@ -1063,110 +977,20 @@
                 this.renderPage(idx);
             }
         }
-        turnPage(page, animate = true) {
+        turnPage(page) {
             if (page >= this.pageCount || page < 0) {
                 return;
             }
-            if (animate) {
-                this.ui.animate(this.pages, {
-                    x: [-page * this.width], auto: true, forward: true
-                });
-            }
             this.currentPage = page;
-            // update the move range of page container
-            const offset = -this.currentPage * this.width;
-            this.ui.bindMove(this.pages, {
-                movable: { x: [-this.width * (this.pageCount - 1), 0], y: [0, 0] },
-                offset: { x: offset, y: 0 },
-                onoff: (e1, e2) => {
-                    if (this.pageCount > 1) {
-                        const dx = e2.x - e1.x;
-                        const ref = this.width / 10 * (dx > 0 ? 1 : -1);
-                        return { x: e1.x + ref * (1 - 1 / Math.exp(dx / ref / 2)), y: e1.y };
-                    }
-                    else {
-                        return e1;
-                    }
-                },
-                onmove: ({ x }) => {
-                    if (x < offset - this.width) {
-                        const n = Math.ceil((offset - this.width - x) / this.width);
-                        for (let i = 0; i < n; i++) {
-                            this.renderPage(this.currentPage + 2 + i);
-                        }
-                    }
-                    if (this.overflow) {
-                        const dx = x + this.currentPage * this.width;
-                        const current = this.pages.querySelector('.current');
-                        this.pages.classList.add('moving');
-                        if (current && dx) {
-                            const n = Math.abs(dx / this.width);
-                            const nodes = [current];
-                            const p = n - Math.floor(n);
-                            let node = current;
-                            for (let i = 0; i < n; i++) {
-                                if (dx < 0) {
-                                    node = node?.nextSibling;
-                                }
-                                else {
-                                    node = node?.previousSibling;
-                                }
-                                nodes.push(node);
-                            }
-                            for (let i = 0; i < nodes.length; i++) {
-                                node = nodes[i];
-                                if (!node) {
-                                    continue;
-                                }
-                                if (i === nodes.length - 1) {
-                                    node.style.opacity = Math.min(1, 1 - Math.cos(p * Math.PI));
-                                }
-                                else if (i === nodes.length - 2) {
-                                    node.style.opacity = 1 + Math.cos((p + 1) * Math.PI / 2);
-                                }
-                                else {
-                                    node.style.opacity = 0;
-                                }
-                            }
-                        }
-                    }
-                    return x;
-                },
-                onmoveend: x => {
-                    if (typeof x === 'number') {
-                        if (x > offset + 5) {
-                            this.turnPage(Math.max(0, this.currentPage - Math.ceil((x - offset - 5) / this.width)));
-                        }
-                        else if (x < offset - 5) {
-                            this.turnPage(Math.min(this.pageCount - 1, this.currentPage + Math.ceil((offset - 5 - x) / this.width)));
-                        }
-                        else if (x !== offset) {
-                            this.turnPage(this.currentPage);
-                        }
-                    }
-                    this.moving = false;
-                },
-                ondown: () => this.moving = true
-            });
             // create current and next page
             this.renderPage(page);
             this.renderPage(page + 1);
             this.renderPage(page - 1);
-            // highlight current page
-            if (this.overflow) {
-                this.pages.classList.remove('moving');
-                for (const node of this.pages.childNodes) {
-                    node.style.opacity = '';
-                }
-                this.pages.querySelector('noname-page.current')?.classList.remove('current');
-                this.pages.childNodes[page].classList.add('current');
-            }
             // show indicator
             this.indicator.querySelector('.current')?.classList.remove('current');
             this.indicator.childNodes[page].classList.add('current');
         }
     }
-    Gallery.smoothScroll = false;
 
     class Player extends Component {
         constructor() {
@@ -1314,11 +1138,10 @@
             return this.ui.createElement(tag, this.node);
         }
         /** Gallery of selectable items. */
-        addGallery(nrows, ncols, width) {
+        addGallery(nrows, ncols) {
             const gallery = this.ui.create('gallery');
             gallery.nrows = nrows;
             gallery.ncols = ncols;
-            gallery.width = width;
             this.node.appendChild(gallery.node);
             return gallery;
         }
@@ -1336,10 +1159,6 @@
             toggle.setup(caption, onclick, choices);
             this.node.appendChild(toggle.node);
             return toggle;
-        }
-        /** Enable vertical scrolling. */
-        enableScroll() {
-            this.ui.enableScroll(this.node);
         }
         /** Align text nodes to center. */
         alignText() {
@@ -1592,7 +1411,7 @@
             this.numSection = this.pane.addSection('');
             this.numSection.classList.add('hidden');
             this.pane.node.appendChild(this.roomGroup);
-            this.ui.enableScroll(this.roomGroup);
+            this.roomGroup.classList.add('scrolly');
             // caption message in this menu
             this.pane.node.appendChild(this.caption);
             // popup open and close
@@ -1828,9 +1647,6 @@
             /** Gallery column number. */
             this.ncols = 3;
         }
-        get width() {
-            return parseInt(this.app.css.popup['portrait-width']);
-        }
         create(splash) {
             this.onopen = () => {
                 splash.node.classList.add('blurred');
@@ -1870,7 +1686,7 @@
         addThemes() {
             this.pane.addSection('主题');
             const themes = Array.from(Object.keys(this.app.assets.theme));
-            const themeGallery = this.pane.addGallery(1, this.ncols, this.width);
+            const themeGallery = this.pane.addGallery(1, this.ncols);
             for (const theme of themes) {
                 themeGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
@@ -1899,7 +1715,7 @@
         addBackgrounds() {
             this.pane.addSection('背景');
             const bgs = Array.from(Object.keys(this.app.assets.bg));
-            const bgGallery = this.pane.addGallery(1, this.ncols, this.width);
+            const bgGallery = this.pane.addGallery(1, this.ncols);
             for (const bg of bgs) {
                 bgGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
@@ -1932,12 +1748,12 @@
         }
         addMusic() {
             this.pane.addSection('音乐');
-            const volGallery = this.pane.addGallery(1, 2, this.width);
+            const volGallery = this.pane.addGallery(1, 2);
             volGallery.node.classList.add('volume');
             volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
             volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
             const bgms = Array.from(Object.keys(this.app.assets.bgm));
-            const bgmGallery = this.pane.addGallery(1, this.ncols * 2, this.width);
+            const bgmGallery = this.pane.addGallery(1, this.ncols * 2);
             bgmGallery.node.classList.add('music');
             for (const bgm of bgms) {
                 bgmGallery.add(() => {
@@ -2515,15 +2331,6 @@
             // avoid duplicate trigger
             this.resetClick(node);
             this.resetMove(node);
-        }
-        /** Enable vertical scrolling. */
-        enableScroll(node) {
-            node.classList.add('scroll');
-            node.addEventListener('wheel', e => {
-                if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
-                    e.stopPropagation();
-                }
-            }, { passive: false });
         }
         /** Wrapper of HTMLElement.animate(). */
         animate(node, animation, config) {

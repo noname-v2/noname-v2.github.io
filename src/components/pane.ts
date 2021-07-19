@@ -34,11 +34,10 @@ export class Pane extends Component {
 	}
 
 	/** Gallery of selectable items. */
-	addGallery(nrows: number, ncols: number, width: number) {
+	addGallery(nrows: number, ncols: number) {
 		const gallery = this.ui.create('gallery');
 		gallery.nrows = nrows;
 		gallery.ncols = ncols;
-		gallery.width = width;
 		this.node.appendChild(gallery.node);
 		return gallery;
 	}
@@ -58,11 +57,6 @@ export class Pane extends Component {
 		toggle.setup(caption, onclick, choices);
 		this.node.appendChild(toggle.node);
 		return toggle;
-	}
-
-	/** Enable vertical scrolling. */
-	enableScroll() {
-		this.ui.enableScroll(this.node);
 	}
 
 	/** Align text nodes to center. */

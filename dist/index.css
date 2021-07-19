@@ -216,22 +216,17 @@ noname-button > noname-content > noname-caption:last-child {
 noname-gallery {
   width: 100%;
 }
-noname-gallery:not(.overflow) {
-  overflow: hidden;
-}
-noname-gallery.overflow > noname-pages > noname-page:not(.current) {
-  opacity: 0;
-  pointer-events: none;
-}
-noname-gallery.overflow > noname-pages:not(.moving) > noname-page {
-  transition: opacity var(--app-transition);
-}
 noname-gallery > noname-pages {
   height: 100%;
+  width: 100%;
   white-space: nowrap;
   position: absolute;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
 }
 noname-gallery > noname-pages > noname-page {
+  scroll-snap-align: center;
+  width: 100%;
   height: 100%;
   position: relative;
   display: inline-block;
@@ -306,9 +301,9 @@ html, body {
   top: 0;
   position: absolute;
   overflow: hidden;
-  overscroll-behavior-x: none;
-  user-select: none;
+  overscroll-behavior: none;
   background-color: #3c3c3c;
+  user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -339,10 +334,15 @@ noname-caption {
   opacity: var(--app-blurred-opacity) !important;
 }
 
-.scroll {
+.scrollx {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.scrolly {
   overflow-x: hidden;
   overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 

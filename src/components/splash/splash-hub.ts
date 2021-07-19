@@ -36,7 +36,7 @@ export class SplashHub extends Popup {
         this.numSection = this.pane.addSection('');
         this.numSection.classList.add('hidden');
 		this.pane.node.appendChild(this.roomGroup);
-		this.ui.enableScroll(this.roomGroup);
+        this.roomGroup.classList.add('scrolly');
 		
 		// caption message in this menu
 		this.pane.node.appendChild(this.caption);

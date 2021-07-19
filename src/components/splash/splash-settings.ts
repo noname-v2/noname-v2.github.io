@@ -17,10 +17,6 @@ export class SplashSettings extends Popup {
     /** Gallery column number. */
     ncols = 3;
 
-    get width() {
-        return parseInt(this.app.css.popup['portrait-width']);
-    }
-
     create(splash: Splash) {
         this.onopen = () => {
 			splash.node.classList.add('blurred');
@@ -68,7 +64,7 @@ export class SplashSettings extends Popup {
         this.pane.addSection('主题');
 
 		const themes = Array.from(Object.keys(this.app.assets.theme));
-		const themeGallery = this.pane.addGallery(1, this.ncols, this.width);
+		const themeGallery = this.pane.addGallery(1, this.ncols);
 
         for (const theme of themes) {
             themeGallery.add(() => {
@@ -104,7 +100,7 @@ export class SplashSettings extends Popup {
         this.pane.addSection('背景');
 
 		const bgs = Array.from(Object.keys(this.app.assets.bg));
-		const bgGallery = this.pane.addGallery(1, this.ncols, this.width);
+		const bgGallery = this.pane.addGallery(1, this.ncols);
 
         for (const bg of bgs) {
             bgGallery.add(() => {
@@ -144,13 +140,13 @@ export class SplashSettings extends Popup {
     addMusic() {
         this.pane.addSection('音乐');
 
-		const volGallery = this.pane.addGallery(1, 2, this.width);
+		const volGallery = this.pane.addGallery(1, 2);
 		volGallery.node.classList.add('volume');
         volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
         volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
 
 		const bgms = Array.from(Object.keys(this.app.assets.bgm));
-		const bgmGallery = this.pane.addGallery(1, this.ncols * 2, this.width);
+		const bgmGallery = this.pane.addGallery(1, this.ncols * 2);
 		bgmGallery.node.classList.add('music');
 
         for (const bgm of bgms) {
