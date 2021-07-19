@@ -202,57 +202,37 @@
             /** Count dialog for dialog ID */
             this.dialogCount = 0;
         }
-        init() {
-            document.head.appendChild(this.themeNode);
-            // setup triggers
-            this.resize();
-            window.addEventListener('resize', this.resize.bind(this));
-            // this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
-            document.oncontextmenu = () => false;
-            document.body.appendChild(this.node);
-            // wait for indexedDB
-            this.db.ready.then(() => {
-                this.loadBackground();
-                // add default settings
-                if (this.db.get('game-music') === null) {
-                    this.db.set('game-music', 'default-game');
-                }
-                if (this.db.get('splash-music') === null) {
-                    this.db.set('splash-music', 'default-splash');
-                }
-                if (this.db.get('music-volume') === null) {
-                    this.db.set('music-volume', 50);
-                }
-                if (this.db.get('audio-volume') === null) {
-                    this.db.set('audio-volume', 50);
-                }
-                if (this.db.get('theme') === null) {
-                    this.db.set('theme', 'default');
-                }
-                // play background music
-                const vol = this.db.get('music-volume');
-                this.bgmNode.loop = true;
-                this.node.appendChild(this.bgmNode);
-                const track = this.audio.createMediaElementSource(this.bgmNode);
-                const gainNode = this.audio.createGain();
-                track.connect(gainNode).connect(this.audio.destination);
-                gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-                this.bgmGain = gainNode.gain;
-                this.playMusic();
-                // index and load assets
-                this.splash = this.ui.create('splash');
-                this.loadTheme().then(() => {
-                    this.splash.show();
-                    this.loadAssets().then(() => {
-                        this.splash.node.classList.add('font-loaded');
-                        this.splash.hub.create(this.splash);
-                        this.splash.settings.create(this.splash);
-                    });
-                });
-            });
+        /** Initialize volume settings. */
+        initAudio() {
+            // add default settings
+            if (this.db.get('game-music') === null) {
+                this.db.set('game-music', 'default-game');
+            }
+            if (this.db.get('splash-music') === null) {
+                this.db.set('splash-music', 'default-splash');
+            }
+            if (this.db.get('music-volume') === null) {
+                this.db.set('music-volume', 50);
+            }
+            if (this.db.get('audio-volume') === null) {
+                this.db.set('audio-volume', 50);
+            }
+            if (this.db.get('theme') === null) {
+                this.db.set('theme', 'default');
+            }
+            // play background music
+            const vol = this.db.get('music-volume');
+            this.bgmNode.loop = true;
+            this.node.appendChild(this.bgmNode);
+            const track = this.audio.createMediaElementSource(this.bgmNode);
+            const gainNode = this.audio.createGain();
+            track.connect(gainNode).connect(this.audio.destination);
+            gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
+            this.bgmGain = gainNode.gain;
+            this.playMusic();
         }
         /** Index assets and load fonts. */
-        async loadAssets() {
+        async initAssets() {
             this.assets = await this.client.readJSON('assets/index.json');
             // add fonts
             const fonts = document.fonts;
@@ -262,6 +242,32 @@
                 fonts.add(fontFace);
             }
             await document.fonts.ready;
+        }
+        async init() {
+            document.head.appendChild(this.themeNode);
+            // setup triggers
+            this.resize();
+            window.addEventListener('resize', this.resize.bind(this));
+            // this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
+            document.oncontextmenu = () => false;
+            document.body.appendChild(this.node);
+            // wait for indexedDB
+            await this.db.ready;
+            this.loadBackground();
+            this.initAudio();
+            // load styles
+            await this.loadTheme();
+            this.splash = this.ui.create('splash');
+            await this.splash.gallery.ready;
+            this.splash.show().then(() => {
+                fontReady.then(() => {
+                    // load splash menus
+                    this.splash.node.classList.add('font-loaded');
+                    this.splash.hub.create(this.splash);
+                    this.splash.settings.create(this.splash);
+                });
+            });
+            const fontReady = this.initAssets();
         }
         /** Add styles for theme. */
         async loadTheme() {
@@ -381,10 +387,12 @@
             this.node.style.width = w + 'px';
             this.node.style.height = h + 'px';
             this.node.style.transform = scale(z);
+            this.ui.width = w;
+            this.ui.height = h;
             this.ui.zoom = z;
             // call listeners
             for (const cmp of this.client.resizeListeners) {
-                cmp.resize(w, h);
+                cmp.resize();
             }
         }
         /** Get the duration of transition.
@@ -953,7 +961,13 @@
         }
         /** Get number of items per page. */
         get size() {
-            return this.nrows * this.ncols;
+            const calc = (n, full) => {
+                const [ratio, margin, spacing, length] = n;
+                return Math.floor((ratio * full - 2 * margin) / (length + spacing * 2));
+            };
+            const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
+            const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
+            return nrows * ncols;
         }
         /** Update page count and create page(s) if necessary. */
         updatePages() {
@@ -987,6 +1001,12 @@
                 }
             }, { passive: true });
             this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
+            if (Array.isArray(this.nrows)) {
+                this.node.classList.add('centery');
+            }
+            if (Array.isArray(this.ncols)) {
+                this.node.classList.add('centerx');
+            }
         }
         /** Enable horizontal scroll with mouse wheel. */
         wheel(e) {
@@ -1287,15 +1307,16 @@
             this.overflow = true;
             /** Single row. */
             this.nrows = 1;
-            /** 5 Columns in a page. */
-            this.ncols = 2;
             /** Default window width. */
             this.width = 900;
             /** Extension index. */
             this.index = {};
         }
         async init() {
+            const margin = parseInt(this.app.css.app['splash-margin']);
+            this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
             super.init();
+            // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
             const extensions = await this.client.readJSON('extensions/extensions.json');
             const modes = [];
@@ -1978,8 +1999,10 @@
             }
             this.hidden = false;
             this.app.node.appendChild(this.node);
-            this.ui.animate(this.node, {
-                scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]
+            return new Promise(resolve => {
+                this.ui.animate(this.node, {
+                    scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]
+                }).onfinish = resolve;
             });
         }
     }

@@ -42,7 +42,7 @@ export class Client {
 	syncListeners = new Set<{sync: () => void}>();
 
 	/** Components that have callback on resize. */
-	resizeListeners = new Set<{resize: (ax: number, ay: number) => void, id: number | null}>();
+	resizeListeners = new Set<{resize: () => void, id: number | null}>();
 
     constructor() {
         // get user ID

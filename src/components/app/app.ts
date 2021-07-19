@@ -46,67 +46,43 @@ export class App extends Component {
 	/** Count dialog for dialog ID */
 	private dialogCount = 0;
 
-    init() {
-		document.head.appendChild(this.themeNode);
-		
-		// setup triggers
-		this.resize();
-		window.addEventListener('resize', this.resize.bind(this));
-		// this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
-		document.oncontextmenu = () => false;
-		document.body.appendChild(this.node);
+	/** Initialize volume settings. */
+	private initAudio() {
+		// add default settings
+		if (this.db.get('game-music') === null) {
+			this.db.set('game-music', 'default-game');
+		}
 
-		// wait for indexedDB
-		this.db.ready.then(() => {
-			this.loadBackground();
+		if (this.db.get('splash-music') === null) {
+			this.db.set('splash-music', 'default-splash');
+		}
 
-			// add default settings
-			if (this.db.get('game-music') === null) {
-				this.db.set('game-music', 'default-game');
-			}
+		if (this.db.get('music-volume') === null) {
+			this.db.set('music-volume', 50);
+		}
 
-			if (this.db.get('splash-music') === null) {
-				this.db.set('splash-music', 'default-splash');
-			}
+		if (this.db.get('audio-volume') === null) {
+			this.db.set('audio-volume', 50);
+		}
 
-			if (this.db.get('music-volume') === null) {
-				this.db.set('music-volume', 50);
-			}
+		if (this.db.get('theme') === null) {
+			this.db.set('theme', 'default');
+		}
 
-			if (this.db.get('audio-volume') === null) {
-				this.db.set('audio-volume', 50);
-			}
-
-			if (this.db.get('theme') === null) {
-				this.db.set('theme', 'default');
-			}
-
-			// play background music
-			const vol = this.db.get('music-volume');
-			this.bgmNode.loop = true;
-			this.node.appendChild(this.bgmNode);
-			const track = this.audio.createMediaElementSource(this.bgmNode);
-			const gainNode = this.audio.createGain();
-			track.connect(gainNode).connect(this.audio.destination);
-			gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-			this.bgmGain = gainNode.gain;
-			this.playMusic();
-
-			// index and load assets
-			this.splash = this.ui.create('splash');
-			this.loadTheme().then(() => {
-				this.splash.show();
-				this.loadAssets().then(() => {
-					this.splash.node.classList.add('font-loaded');
-					this.splash.hub.create(this.splash);
-					this.splash.settings.create(this.splash);
-				});
-			});
-		});
-    }
+		// play background music
+		const vol = this.db.get('music-volume');
+		this.bgmNode.loop = true;
+		this.node.appendChild(this.bgmNode);
+		const track = this.audio.createMediaElementSource(this.bgmNode);
+		const gainNode = this.audio.createGain();
+		track.connect(gainNode).connect(this.audio.destination);
+		gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
+		this.bgmGain = gainNode.gain;
+		this.playMusic();
+	}
 
 	/** Index assets and load fonts. */
-	async loadAssets() {
+	private async initAssets() {
 		this.assets = await this.client.readJSON('assets/index.json');
 
 		// add fonts
@@ -120,6 +96,36 @@ export class App extends Component {
 
 		await (document as any).fonts.ready;
 	}
+
+    async init() {
+		document.head.appendChild(this.themeNode);
+		
+		// setup triggers
+		this.resize();
+		window.addEventListener('resize', this.resize.bind(this));
+		// this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
+		document.oncontextmenu = () => false;
+		document.body.appendChild(this.node);
+
+		// wait for indexedDB
+		await this.db.ready;
+		this.loadBackground();
+		this.initAudio();
+
+		// load styles
+		await this.loadTheme();
+		this.splash = this.ui.create('splash');
+		await this.splash.gallery.ready;
+		this.splash.show()!.then(() => {
+			fontReady.then(() => {
+				// load splash menus
+				this.splash.node.classList.add('font-loaded');
+				this.splash.hub.create(this.splash);
+				this.splash.settings.create(this.splash);
+			})
+		});
+		const fontReady = this.initAssets();
+    }
 
     /** Add styles for theme. */
 	async loadTheme() {
@@ -264,11 +270,13 @@ export class App extends Component {
 		this.node.style.width = w + 'px';
 		this.node.style.height = h + 'px';
 		this.node.style.transform = scale(z);
+		this.ui.width = w;
+		this.ui.height = h;
 		this.ui.zoom = z;
 
 		// call listeners
 		for (const cmp of this.client.resizeListeners) {
-			cmp.resize(w, h);
+			cmp.resize();
 		}
 	}
 

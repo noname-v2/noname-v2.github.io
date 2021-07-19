@@ -10,10 +10,10 @@ export class Gallery extends Component {
 	indicator: HTMLElement = this.ui.createElement('indicator', this.node);
 
     /** Number of rows. */
-    nrows!: number;
+    nrows!: number | [number, number, number, number];
 
 	/** Number of nodes in a row. */
-    ncols!: number;
+    ncols!: number | [number, number, number, number];
 
 	/** Number of pages. */
 	pageCount = 0;
@@ -66,7 +66,13 @@ export class Gallery extends Component {
 
 	/** Get number of items per page. */
 	get size() {
-		return this.nrows * this.ncols;
+		const calc = (n: [number, number, number, number], full: number) => {
+			const [ratio, margin, spacing, length] = n;
+			return Math.floor((ratio * full - 2 * margin) / (length + spacing * 2));
+		};
+		const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
+		const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
+		return nrows * ncols;
 	}
 
 	/** Update page count and create page(s) if necessary. */
@@ -105,6 +111,12 @@ export class Gallery extends Component {
 			}
 		}, {passive: true})
 		this.node.addEventListener('wheel', e => this.wheel(e), {passive: true});
+		if (Array.isArray(this.nrows)) {
+			this.node.classList.add('centery');
+		}
+		if (Array.isArray(this.ncols)) {
+			this.node.classList.add('centerx');
+		}
 	}
 
 	/** Enable horizontal scroll with mouse wheel. */

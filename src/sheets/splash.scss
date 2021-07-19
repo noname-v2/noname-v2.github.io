@@ -16,11 +16,13 @@ noname-splash {
 		position: absolute;
 		
 		noname-page > noname-layer {
-			width: 900px;
+			width: auto;
 		}
 
 		// mode entries
 		noname-item {
+			margin-left: var(--app-splash-margin);
+			margin-right: var(--app-splash-margin);
 			width: var(--player-width);
 			aspect-ratio: 1 / 1.4;
 			
@@ -44,7 +46,6 @@ noname-splash {
 
 				> noname-caption {
 					opacity: 0;
-					transition: opacity var(--app-transition);
 					position: absolute;
 					bottom: 16px;
 					right: 12px;
@@ -70,7 +71,6 @@ noname-splash {
 			margin-right: 15px;
 			> noname-content > noname-caption {
 				opacity: 0;
-				transition: opacity var(--app-transition);
 			}
 		}
 	}
@@ -79,6 +79,16 @@ noname-splash {
 		> noname-bar.splash-bar > noname-button > noname-content > noname-caption,
 		> noname-gallery noname-item > noname-widget > noname-caption {
 			opacity: 1;
+			animation: fade 0.5s;
 		}
+	}
+}
+
+@keyframes fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
 	}
 }

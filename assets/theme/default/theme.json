@@ -13,7 +13,8 @@
 		"transition-slower": "0.7s",
 		"blurred-opacity": "0.2",
 		"select-opacity": "0.5",
-		"splash-transform": "0.8"
+		"splash-transform": "0.8",
+		"splash-margin": "13px"
 	},
 
 	"arena": {

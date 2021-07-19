@@ -1,6 +1,14 @@
 noname-gallery {
     width: 100%;
 
+    &.centerx > noname-pages > noname-page > noname-layer {
+        justify-content: center;
+    }
+
+    &.centery > noname-pages > noname-page > noname-layer {
+        align-content: center;
+    }
+
     > noname-pages {
         height: 100%;
         width: 100%;
@@ -22,6 +30,7 @@ noname-gallery {
                 display: flex;
                 align-items: center;
                 justify-content: space-evenly;
+                align-content: space-evenly;
 
                 > noname-item {
                     position: relative;

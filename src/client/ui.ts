@@ -44,6 +44,12 @@ class Binding {
 }
 
 export class UI {
+	/** App width. */
+	width!: number;
+
+	/** App height. */
+	height!: number;
+
     /** Current zoom level. */
 	zoom = 1;
 

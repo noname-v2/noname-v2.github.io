@@ -25,9 +25,6 @@ export class SplashGallery extends Gallery {
     /** Single row. */
     nrows = 1;
 
-    /** 5 Columns in a page. */
-    ncols = 5;
-
     /** Default window width. */
     width = 900;
 
@@ -35,8 +32,11 @@ export class SplashGallery extends Gallery {
 	index: ExtensionIndex = {};
 
     async init() {
+		const margin = parseInt(this.app.css.app['splash-margin']);
+		this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
         super.init();
 
+		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
 		const extensions = await this.client.readJSON<string[]>('extensions/extensions.json');
 		const modeNames = <{[key: string]: string}>{};
