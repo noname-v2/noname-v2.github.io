@@ -27,8 +27,8 @@ export class Gallery extends Component {
     /** Index of current page. */
     private currentPage: number = 0;
 
-	/** Cache of size before document resize. */
-	private currentSize!: number;
+	/** Cache of item number per page. */
+	private currentSize: number | null = null;
 
 	/** Device can scroll horizontally. */
 	private horizontal = false;
@@ -42,7 +42,7 @@ export class Gallery extends Component {
 		}
 		this.rendered.add(i);
 
-		const n = this.currentSize;
+		const n = this.getSize();
 		const layer = this.ui.createElement('layer');
 
 		for (let j = 0; j < n; j++) {
@@ -67,20 +67,31 @@ export class Gallery extends Component {
 		(page as any).replaceChildren(layer);
 	}
 
-	/** Get number of items per page. */
-	get size() {
+	/** Get number of items per page.
+	 * @param {boolean} recalc - calculate size without refering to this.currentSize.
+	 */
+	getSize(recalc: boolean = false) {
+		if (!recalc && this.currentSize !== null) {
+			return this.currentSize;
+		}
+
 		const calc = (n: [number, number, number, number], full: number) => {
 			const [ratio, margin, spacing, length] = n;
 			return Math.floor((ratio * full - 2 * margin) / (length + spacing * 2));
 		};
 		const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
 		const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
-		return nrows * ncols;
+		const size = nrows * ncols;
+
+		if (!recalc) {
+			this.currentSize = size;
+		}
+		return size;
 	}
 
 	/** Update page count and create page(s) if necessary. */
 	updatePages() {
-		const pageCount = Math.ceil(this.items.length / this.currentSize);
+		const pageCount = Math.ceil(this.items.length / this.getSize());
 
 		// add more pages
 		while (pageCount > this.pageCount) {
@@ -127,9 +138,6 @@ export class Gallery extends Component {
 			this.node.classList.add('centerx');
 			this.client.resizeListeners.add(this);
 		}
-
-		// get number of items in a page
-		this.currentSize = this.size;
 	}
 
 	/** Enable horizontal scroll with mouse wheel. */
@@ -152,7 +160,7 @@ export class Gallery extends Component {
 			this.items.push(item);
 		}
 		else {
-			const container = this.ui.createElement('container');
+			const container = this.ui.createElement('item');
 			container.appendChild(item);
 			this.items.push(container);
 		}
@@ -186,7 +194,7 @@ export class Gallery extends Component {
 
 	/** Callback when window resize. */
 	resize() {
-		const size = this.size;
+		const size = this.getSize(true);
 		if (size !== this.currentSize) {
 			this.currentSize = size;
 			this.rendered.clear();
