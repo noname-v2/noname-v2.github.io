@@ -39,7 +39,7 @@ export class Gallery extends Component {
 		}
 		this.rendered.add(i);
 
-		const n = this.nrows * this.ncols;
+		const n = this.size;
 		const layer = this.ui.createElement('layer');
 
 		for (let j = 0; j < n; j++) {
@@ -62,6 +62,38 @@ export class Gallery extends Component {
 		}
 
 		(page as any).replaceChildren(layer);
+	}
+
+	/** Get number of items per page. */
+	get size() {
+		return this.nrows * this.ncols;
+	}
+
+	/** Update page count and create page(s) if necessary. */
+	updatePages() {
+		const pageCount = Math.ceil(this.items.length / this.size);
+
+		// add more pages
+		while (pageCount > this.pageCount) {
+			this.pages.appendChild(this.ui.createElement('page'));
+			const dot = this.ui.createElement('dot', this.indicator);
+			if (pageCount === 1) {
+				dot.classList.add('current');
+			}
+			this.ui.createElement('layer', dot);
+			this.ui.createElement('layer', dot);
+			this.pageCount++;
+		}
+
+		// remove extra pages
+		while (pageCount < this.pageCount) {
+			this.pages.lastChild!.remove();
+			this.indicator.lastChild!.remove();
+			this.pageCount--;
+		}
+
+		// show or hide page indicator
+		this.node.classList[this.pageCount > 1 ? 'add' : 'remove']('with-indicator');
 	}
 
 	init() {
@@ -90,9 +122,6 @@ export class Gallery extends Component {
 
 	/** Add an item or an item constructor. */
 	add(item: GalleryItem) {
-		// page index to be inserted to
-		const idx = Math.floor(this.items.length / (this.nrows * this.ncols));
-
 		// wrap item with container
 		if (typeof item === 'function') {
 			this.items.push(item);
@@ -103,26 +132,13 @@ export class Gallery extends Component {
 			this.items.push(container);
 		}
 
-		if (idx >= this.pageCount) {
-			// create a new page
-			const page = this.ui.createElement('page');
-			this.pages.appendChild(page);
-			const dot = this.ui.createElement('dot', this.indicator);
-			this.ui.createElement('layer', dot);
-			this.ui.createElement('layer', dot);
-			if (++this.pageCount > 1 && !this.node.classList.contains('with-indicator')) {
-				this.node.classList.add('with-indicator');
-				(this.indicator.firstChild as HTMLElement).classList.add('current');
-			}
-		}
-		else {
-			// re-render current page
-			this.rendered.delete(idx);
-		}
+		// re-render current page
+		this.updatePages();
+		this.rendered.delete(this.pageCount - 1);
 
 		// render first 2 pages
-		if (idx < 2) {
-			this.renderPage(idx);
+		if (this.pageCount <= 2) {
+			this.renderPage(this.pageCount - 1);
 		}
 	}
 
