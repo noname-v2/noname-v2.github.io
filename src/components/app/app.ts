@@ -90,8 +90,14 @@ export class App extends Component {
 			const fontPath = 'assets/font/' + font + '.woff2';
 			const fontFace = new (window as any).FontFace(font, `url(${fontPath})`);
 			(document as any).fonts.add(fontFace);
+
+			if (font === this.css.app['caption-font']) {
+				fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
+			}
+			else if (font === this.css.app['label-font']) {
+				fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
+			}
 		}
-		await (document as any).fonts.ready;
 	}
 
     async init() {
@@ -109,19 +115,17 @@ export class App extends Component {
 		this.loadBackground();
 		this.initAudio();
 
-		// load styles
+		// load styles and fonts
 		await this.loadTheme();
 		this.splash = this.ui.create('splash');
 		await this.splash.gallery.ready;
-		this.splash.show()!.then(() => {
-			fontReady.then(() => {
-				// load splash menus
-				this.splash.node.classList.add('font-loaded');
-				this.splash.hub.create(this.splash);
-				this.splash.settings.create(this.splash);
-			})
+		this.initAssets();
+
+		// load splash menus
+		Promise.all([this.splash.show(), (document as any).fonts.ready]).then(() => {
+			this.splash.hub.create(this.splash);
+			this.splash.settings.create(this.splash);
 		});
-		const fontReady = this.initAssets();
     }
 
     /** Add styles for theme. */

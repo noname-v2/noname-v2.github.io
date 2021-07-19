@@ -1285,8 +1285,7 @@ noname-splash > noname-bar.splash-bar > noname-button > noname-content > noname-
   opacity: 0;
   transition: opacity var(--app-transition);
 }
-noname-splash.font-loaded > noname-bar.splash-bar > noname-button > noname-content > noname-caption,
-noname-splash.font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
+noname-splash.label-font-loaded > noname-bar.splash-bar > noname-button > noname-content > noname-caption, noname-splash.caption-font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
   opacity: 1;
 }
 

@@ -73,10 +73,8 @@ noname-splash {
 		}
 	}
 
-	&.font-loaded {
-		> noname-bar.splash-bar > noname-button > noname-content > noname-caption,
-		> noname-gallery noname-item > noname-widget > noname-caption {
-			opacity: 1;
-		}
+	&.label-font-loaded > noname-bar.splash-bar > noname-button > noname-content > noname-caption,
+	&.caption-font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
+		opacity: 1;
 	}
 }
