@@ -367,17 +367,24 @@
             }
             // zoom to fit ideal size
             const zx = width / ax, zy = height / ay;
+            let w, h, z;
             if (zx < zy) {
-                this.node.style.width = ax + 'px';
-                this.node.style.height = ax / width * height + 'px';
-                this.node.style.transform = scale(zx);
-                this.ui.zoom = zx;
+                w = ax;
+                h = ax / width * height;
+                z = zx;
             }
             else {
-                this.node.style.width = ay / height * width + 'px';
-                this.node.style.height = ay + 'px';
-                this.node.style.transform = scale(zy);
-                this.ui.zoom = zy;
+                w = ay / height * width;
+                h = ay;
+                z = zy;
+            }
+            this.node.style.width = w + 'px';
+            this.node.style.height = h + 'px';
+            this.node.style.transform = scale(z);
+            this.ui.zoom = z;
+            // call listeners
+            for (const cmp of this.client.resizeListeners) {
+                cmp.resize(w, h);
             }
         }
         /** Get the duration of transition.
@@ -1259,6 +1266,7 @@
         }
         async init() {
             super.init();
+            this.client.resizeListeners.add(this);
             this.index = await this.db.readFile('extensions/index.json') || {};
             const extensions = await this.client.readJSON('extensions/extensions.json');
             const modes = [];
@@ -1350,6 +1358,9 @@
                 this.splash.hide();
             });
             return entry;
+        }
+        resize(ax, ay) {
+            console.log(ax, ay);
         }
     }
     /** Use tag <noname-gallery>. */
@@ -2411,6 +2422,8 @@
             this.yielding = new Map();
             /** Components that have callback on sync. */
             this.syncListeners = new Set();
+            /** Components that have callback on resize. */
+            this.resizeListeners = new Set();
             // get user ID
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
@@ -2502,6 +2515,11 @@
             this.components.clear();
             this.yielding.clear();
             this.syncListeners.clear();
+            for (const cmp of Array.from(this.resizeListeners)) {
+                if (cmp.id !== null) {
+                    this.resizeListeners.delete(cmp);
+                }
+            }
             this.ui.app.clearPopups();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
@@ -2572,6 +2590,7 @@
                             const cmp = this.components.get(id);
                             if (cmp) {
                                 this.syncListeners.delete(cmp);
+                                this.resizeListeners.delete(cmp);
                                 this.components.delete(id);
                             }
                         }

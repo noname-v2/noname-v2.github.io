@@ -248,18 +248,27 @@ export class App extends Component {
 
 		// zoom to fit ideal size
 		const zx = width / ax, zy = height / ay;
+		let w, h, z;
 
 		if (zx < zy) {
-			this.node.style.width = ax + 'px';
-			this.node.style.height = ax / width * height + 'px';
-			this.node.style.transform = scale(zx);
-			this.ui.zoom = zx;
+			w = ax;
+			h = ax / width * height;
+			z = zx;
 		}
 		else {
-			this.node.style.width = ay / height * width + 'px';
-			this.node.style.height = ay + 'px';
-			this.node.style.transform = scale(zy);
-			this.ui.zoom = zy;
+			w = ay / height * width;
+			h = ay;
+			z = zy;
+		}
+
+		this.node.style.width = w + 'px';
+		this.node.style.height = h + 'px';
+		this.node.style.transform = scale(z);
+		this.ui.zoom = z;
+
+		// call listeners
+		for (const cmp of this.client.resizeListeners) {
+			cmp.resize(w, h);
 		}
 	}
 

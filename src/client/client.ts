@@ -41,6 +41,9 @@ export class Client {
 	/** Components that have callback on sync. */
 	syncListeners = new Set<{sync: () => void}>();
 
+	/** Components that have callback on resize. */
+	resizeListeners = new Set<{resize: (ax: number, ay: number) => void, id: number | null}>();
+
     constructor() {
         // get user ID
         this.db.ready.then(() => {
@@ -146,6 +149,11 @@ export class Client {
         this.components.clear();
         this.yielding.clear();
         this.syncListeners.clear();
+        for (const cmp of Array.from(this.resizeListeners)) {
+            if (cmp.id !== null) {
+                this.resizeListeners.delete(cmp);
+            }
+        }
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
@@ -224,6 +232,7 @@ export class Client {
                         const cmp = this.components.get(id);
                         if (cmp) {
                             this.syncListeners.delete(cmp as any);
+                            this.resizeListeners.delete(cmp as any);
                             this.components.delete(id);
                         }
                     }
