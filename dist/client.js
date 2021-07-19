@@ -866,6 +866,13 @@
         }
     }
 
+    class Player extends Component {
+        constructor() {
+            super(...arguments);
+            this.background = this.ui.createElement('background', this.node);
+        }
+    }
+
     class Button extends Component {
         constructor() {
             super(...arguments);
@@ -988,13 +995,6 @@
             // show indicator
             this.indicator.querySelector('.current')?.classList.remove('current');
             this.indicator.childNodes[page].classList.add('current');
-        }
-    }
-
-    class Player extends Component {
-        constructor() {
-            super(...arguments);
-            this.background = this.ui.createElement('background', this.node);
         }
     }
 
@@ -2024,9 +2024,9 @@
     componentClasses.set('lobby', Lobby);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
+    componentClasses.set('player', Player);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
-    componentClasses.set('player', Player);
     componentClasses.set('input', Input);
     componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
