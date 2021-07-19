@@ -1,6 +1,6 @@
 import { Component } from '../components';
 
-type GalleryItem = HTMLElement | (() => HTMLElement | null) | null;
+type GalleryItem = HTMLElement | (() => HTMLElement | null);
 
 export class Gallery extends Component {
 	/** Page container. */
@@ -30,7 +30,7 @@ export class Gallery extends Component {
 	/** Device can scroll horizontally. */
 	private horizontal = false;
 
-	/** Create page when needed. */
+	/** Render page when needed. */
 	private renderPage(i: number) {
 		const page = <HTMLElement>this.pages.childNodes[i];
 
@@ -39,30 +39,29 @@ export class Gallery extends Component {
 		}
 		this.rendered.add(i);
 
-		const start = this.nrows * this.ncols * i;
-		const containers = document.createDocumentFragment();
+		const n = this.nrows * this.ncols;
+		const layer = this.ui.createElement('layer');
 
-		for (let i = 0; i < this.nrows * this.ncols; i++) {
-			let item = this.items[start + i];
+		for (let j = 0; j < n; j++) {
+			const item = this.items[i * n + j];
 			if (typeof item === 'function') {
-				item = this.items[start + i] = item();
+				const container = this.ui.createElement('item');
+				const rendered = item();
+				if (rendered) {
+					container.appendChild(rendered);
+				}
+				this.items[i * n + j] = container;
+				layer.appendChild(container);
 			}
-
-			let container = page.firstChild!.childNodes[i];
-
-			if (!container) {
-				container = this.ui.createElement('item');
-				containers.appendChild(container);
+			else if (item) {
+				layer.appendChild(item);
 			}
-
-			if (item && !container.contains(item)) {
-				container.appendChild(item);
+			else {
+				layer.appendChild(this.ui.createElement('item'));
 			}
 		}
 
-		if (containers.childNodes.length) {
-			page.firstChild!.appendChild(containers);
-		}
+		(page as any).replaceChildren(layer);
 	}
 
 	init() {
@@ -76,54 +75,70 @@ export class Gallery extends Component {
 		this.node.addEventListener('wheel', e => this.wheel(e), {passive: true});
 	}
 
+	/** Enable horizontal scroll with mouse wheel. */
 	wheel(e: WheelEvent) {
+		// disable this function if device can scroll horizontally
 		if (e.deltaX !== 0) {
 			this.horizontal = true;
 		}
 		if (this.horizontal) {
 			return;
 		}
+		// turn page (used with scroll-snapping and scroll-behavior: smooth)
 		this.pages.scrollLeft += this.pages.offsetWidth * e.deltaY / Math.abs(e.deltaY);
 	}
 
+	/** Add an item or an item constructor. */
 	add(item: GalleryItem) {
-		const idx = Math.floor(this.items.length / (this.nrows * this.ncols))
-		this.items.push(item);
+		// page index to be inserted to
+		const idx = Math.floor(this.items.length / (this.nrows * this.ncols));
+
+		// wrap item with container
+		if (typeof item === 'function') {
+			this.items.push(item);
+		}
+		else {
+			const container = this.ui.createElement('container');
+			container.appendChild(item);
+			this.items.push(container);
+		}
 
 		if (idx >= this.pageCount) {
+			// create a new page
 			const page = this.ui.createElement('page');
-			this.ui.createElement('layer', page);
 			this.pages.appendChild(page);
 			const dot = this.ui.createElement('dot', this.indicator);
 			this.ui.createElement('layer', dot);
 			this.ui.createElement('layer', dot);
-			if (++this.pageCount > 1) {
+			if (++this.pageCount > 1 && !this.node.classList.contains('with-indicator')) {
 				this.node.classList.add('with-indicator');
+				(this.indicator.firstChild as HTMLElement).classList.add('current');
 			}
-			this.turnPage(0);
 		}
 		else {
+			// re-render current page
 			this.rendered.delete(idx);
 		}
 
+		// render first 2 pages
 		if (idx < 2) {
 			this.renderPage(idx);
 		}
 	}
 
+	/** Update indicator and render nearby pages. */
 	turnPage(page: number) {
 		if (page >= this.pageCount || page < 0) {
 			return
 		}
-
 		this.currentPage = page;
 
-		// create current and next page
+		// create current and sibling pages
 		this.renderPage(page);
 		this.renderPage(page + 1);
 		this.renderPage(page - 1);
 
-		// show indicator
+		// update page indicator
 		this.indicator.querySelector('.current')?.classList.remove('current');
 		(<HTMLElement>this.indicator.childNodes[page]).classList.add('current');
 	}
