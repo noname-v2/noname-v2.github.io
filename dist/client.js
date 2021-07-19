@@ -235,11 +235,10 @@
         async initAssets() {
             this.assets = await this.client.readJSON('assets/index.json');
             // add fonts
-            const fonts = document.fonts;
             for (const font in this.assets['font']) {
                 const fontPath = 'assets/font/' + font + '.woff2';
                 const fontFace = new window.FontFace(font, `url(${fontPath})`);
-                fonts.add(fontFace);
+                document.fonts.add(fontFace);
             }
             await document.fonts.ready;
         }

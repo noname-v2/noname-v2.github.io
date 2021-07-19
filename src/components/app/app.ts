@@ -86,14 +86,11 @@ export class App extends Component {
 		this.assets = await this.client.readJSON('assets/index.json');
 
 		// add fonts
-		const fonts = (document as any).fonts;
-		
 		for (const font in this.assets['font']) {
 			const fontPath = 'assets/font/' + font + '.woff2';
 			const fontFace = new (window as any).FontFace(font, `url(${fontPath})`);
-			fonts.add(fontFace);
+			(document as any).fonts.add(fontFace);
 		}
-
 		await (document as any).fonts.ready;
 	}
 

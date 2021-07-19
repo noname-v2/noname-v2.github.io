@@ -1,7 +1,7 @@
 noname-pane {
 	@include layer;
 	
-    &:not(.scroll) {
+    &:not(.scrolly) {
         overflow: hidden;
     }
 

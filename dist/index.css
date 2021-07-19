@@ -835,7 +835,7 @@ noname-pane {
   top: 0;
   position: absolute;
 }
-noname-pane:not(.scroll) {
+noname-pane:not(.scrolly) {
   overflow: hidden;
 }
 noname-pane > noname-section, noname-pane > noname-gallery, noname-pane > noname-bar, noname-pane > noname-group, noname-pane > noname-text {
