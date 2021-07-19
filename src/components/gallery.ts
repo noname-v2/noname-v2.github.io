@@ -87,7 +87,6 @@ export class Gallery extends Component {
 	}
 
 	add(item: GalleryItem) {
-		// page index
 		const idx = Math.floor(this.items.length / (this.nrows * this.ncols))
 		this.items.push(item);
 

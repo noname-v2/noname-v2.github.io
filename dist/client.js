@@ -955,7 +955,6 @@
             this.pages.scrollLeft += this.pages.offsetWidth * e.deltaY / Math.abs(e.deltaY);
         }
         add(item) {
-            // page index
             const idx = Math.floor(this.items.length / (this.nrows * this.ncols));
             this.items.push(item);
             if (idx >= this.pageCount) {

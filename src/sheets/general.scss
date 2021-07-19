@@ -33,7 +33,7 @@ noname-caption {
 	overflow-y: hidden;
 
 	// hide scrollbar in firefox
-	scrollbar-width: thin;
+	scrollbar-width: none;
 }
 
 .scrolly {
@@ -41,7 +41,7 @@ noname-caption {
 	overflow-y: scroll;
 
 	// hide scrollbar in firefox
-	scrollbar-width: thin;
+	scrollbar-width: none;
 }
 
 .mono {

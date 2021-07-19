@@ -10,11 +10,15 @@ noname-splash {
 
 	// mode gallery
 	> noname-gallery {
-		width: 900px;
 		height: 270px;
+		left: 0;
 		top: calc(37.5% - 105px);
-		left: calc(50% - 450px);
 		position: absolute;
+		
+		noname-page > noname-layer {
+			width: 900px;
+			left: calc(50% - 450px);
+		}
 
 		// mode entries
 		noname-item {

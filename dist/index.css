@@ -337,13 +337,13 @@ noname-caption {
 .scrollx {
   overflow-x: scroll;
   overflow-y: hidden;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
 .scrolly {
   overflow-x: hidden;
   overflow-y: scroll;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
 .mono {
@@ -1225,11 +1225,14 @@ noname-splash.blurred {
   pointer-events: none;
 }
 noname-splash > noname-gallery {
-  width: 900px;
   height: 270px;
+  left: 0;
   top: calc(37.5% - 105px);
-  left: calc(50% - 450px);
   position: absolute;
+}
+noname-splash > noname-gallery noname-page > noname-layer {
+  width: 900px;
+  left: calc(50% - 450px);
 }
 noname-splash > noname-gallery noname-item {
   width: var(--player-width);
