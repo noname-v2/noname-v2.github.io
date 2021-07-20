@@ -607,222 +607,6 @@ noname-lobby.hidden > noname-seats, noname-lobby.hidden > noname-bar {
   transform: scale(0.8);
 }
 
-noname-popup.splash-hub > noname-pane > noname-group {
-  margin-top: 30px;
-  height: 80px;
-}
-noname-popup.splash-hub > noname-pane > noname-group > noname-widget {
-  width: 80px;
-  height: 80px;
-  left: 40px;
-  border-radius: 100%;
-  position: absolute;
-}
-noname-popup.splash-hub > noname-pane > noname-group > noname-widget > noname-image {
-  border-radius: 100%;
-  background-position: var(--widget-avatar-position) !important;
-}
-noname-popup.splash-hub > noname-pane > noname-group > noname-span {
-  position: absolute;
-  left: 140px;
-  height: 27px;
-  line-height: 28px;
-  font-size: 22px;
-  font-family: var(--app-caption-font);
-}
-noname-popup.splash-hub > noname-pane > noname-group > noname-input {
-  position: absolute;
-  left: 197px;
-  width: 40%;
-}
-noname-popup.splash-hub > noname-pane > noname-group > .nickname {
-  top: 7px;
-}
-noname-popup.splash-hub > noname-pane > noname-group > .address {
-  top: 47px;
-}
-noname-popup.splash-hub > noname-pane > noname-caption {
-  top: 120px;
-  text-align: center;
-  height: 240px;
-  line-height: 240px;
-  font-size: 40px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms {
-  top: 160px;
-  height: calc(100% - 160px);
-}
-noname-popup.splash-hub > noname-pane > noname-rooms.entering {
-  opacity: 0.8;
-  pointer-events: none;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget {
-  height: 80px;
-  cursor: pointer;
-  position: relative;
-  width: 80%;
-  display: block;
-  left: 10%;
-  margin-bottom: 15px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget:first-child {
-  margin-top: 10px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-image {
-  width: 72px;
-  height: 72px;
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  background-position: var(--widget-avatar-position) !important;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-caption {
-  position: absolute;
-  font-size: 35px;
-  left: 85px;
-  top: 6px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span {
-  position: absolute;
-  bottom: 6px;
-  right: 9px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status {
-  width: 12px;
-  height: 12px;
-  top: 1px;
-  margin-right: 1px;
-  position: relative;
-  display: inline-block;
-  border-radius: 100%;
-  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.5);
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="1"] {
-  background: #51af06;
-  border: 1px solid #274f07;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="0"] {
-  background: #d6b408;
-  border: 1px solid #4f4007;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname {
-  right: auto;
-  left: 88px;
-}
-noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname > noname-image {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  position: relative;
-  top: 1px;
-  margin-right: 4px;
-  background: var(--icon-user) center/cover;
-}
-noname-popup.splash-hub > noname-pane > noname-caption, noname-popup.splash-hub > noname-pane > noname-rooms {
-  position: absolute;
-  display: block;
-  width: 100%;
-  transition: opacity var(--app-transition);
-}
-noname-popup.splash-hub > noname-pane > noname-section {
-  margin-top: 20px;
-  margin-bottom: 0;
-  transition: opacity var(--app-transition);
-}
-
-noname-popup.splash-settings > noname-pane > noname-gallery {
-  height: 80px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.with-indicator {
-  height: 100px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery noname-item {
-  width: 120px;
-  height: 70px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > * {
-  position: relative;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
-  font-size: 18px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
-  font-size: 36px;
-  margin-bottom: 1px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music {
-  height: 62px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music.with-indicator {
-  height: 82px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item {
-  width: 50px;
-  height: 50px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp {
-  border-radius: 50px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
-  border-radius: 50px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.music noname-page > noname-layer {
-  width: calc(100% - 20px);
-  left: 10px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume {
-  height: 62px;
-  margin-bottom: -8px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item {
-  width: 180px;
-  height: 40px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget {
-  border-radius: 20px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image {
-  overflow: hidden;
-  border-radius: 25px;
-  background: var(--toggle-button-background);
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
-  width: 200%;
-  height: 100%;
-  position: absolute;
-  white-space: nowrap;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
-  width: 50%;
-  height: 100%;
-  display: inline-block;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
-  background: var(--toggle-background-on);
-  box-shadow: var(--toggle-shadow);
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
-  transition: transform var(--app-transition);
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
-  transform: translateX(-180px);
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content {
-  pointer-events: none;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
-  margin-bottom: 1px;
-}
-noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
-  display: inline-block;
-  width: 20px;
-}
-
 noname-pane {
   width: 100%;
   height: 100%;
@@ -1082,9 +866,6 @@ noname-popup.landscape > noname-pane {
   width: var(--popup-landscape-width);
   height: var(--popup-landscape-height);
 }
-noname-popup.dialog {
-  transition: opacity var(--app-transition);
-}
 noname-popup.dialog > noname-pane {
   width: var(--popup-dialog-width);
   height: auto;
@@ -1213,6 +994,227 @@ noname-sidebar.with-footer > noname-caption.footer {
 noname-sidebar > noname-pane {
   height: calc(100% - 46px);
   top: 46px;
+}
+
+noname-popup.splash-avatar > noname-pane {
+  width: var(--popup-portrait-width);
+  height: var(--popup-landscape-height);
+}
+
+noname-popup.splash-hub > noname-pane > noname-group {
+  margin-top: 30px;
+  height: 80px;
+}
+noname-popup.splash-hub > noname-pane > noname-group > noname-widget {
+  width: 80px;
+  height: 80px;
+  left: 40px;
+  border-radius: 100%;
+  position: absolute;
+}
+noname-popup.splash-hub > noname-pane > noname-group > noname-widget > noname-image {
+  border-radius: 100%;
+  background-position: var(--widget-avatar-position) !important;
+}
+noname-popup.splash-hub > noname-pane > noname-group > noname-span {
+  position: absolute;
+  left: 140px;
+  height: 27px;
+  line-height: 28px;
+  font-size: 22px;
+  font-family: var(--app-caption-font);
+}
+noname-popup.splash-hub > noname-pane > noname-group > noname-input {
+  position: absolute;
+  left: 197px;
+  width: 40%;
+}
+noname-popup.splash-hub > noname-pane > noname-group > .nickname {
+  top: 7px;
+}
+noname-popup.splash-hub > noname-pane > noname-group > .address {
+  top: 47px;
+}
+noname-popup.splash-hub > noname-pane > noname-caption {
+  top: 120px;
+  text-align: center;
+  height: 240px;
+  line-height: 240px;
+  font-size: 40px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms {
+  top: 160px;
+  height: calc(100% - 160px);
+}
+noname-popup.splash-hub > noname-pane > noname-rooms.entering {
+  opacity: 0.8;
+  pointer-events: none;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget {
+  height: 80px;
+  cursor: pointer;
+  position: relative;
+  width: 80%;
+  display: block;
+  left: 10%;
+  margin-bottom: 15px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget:first-child {
+  margin-top: 10px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-image {
+  width: 72px;
+  height: 72px;
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background-position: var(--widget-avatar-position) !important;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-caption {
+  position: absolute;
+  font-size: 35px;
+  left: 85px;
+  top: 6px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span {
+  position: absolute;
+  bottom: 6px;
+  right: 9px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status {
+  width: 12px;
+  height: 12px;
+  top: 1px;
+  margin-right: 1px;
+  position: relative;
+  display: inline-block;
+  border-radius: 100%;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.5);
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="1"] {
+  background: #51af06;
+  border: 1px solid #274f07;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="0"] {
+  background: #d6b408;
+  border: 1px solid #4f4007;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname {
+  right: auto;
+  left: 88px;
+}
+noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname > noname-image {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  position: relative;
+  top: 1px;
+  margin-right: 4px;
+  background: var(--icon-user) center/cover;
+}
+noname-popup.splash-hub > noname-pane > noname-caption, noname-popup.splash-hub > noname-pane > noname-rooms {
+  position: absolute;
+  display: block;
+  width: 100%;
+  transition: opacity var(--app-transition);
+}
+noname-popup.splash-hub > noname-pane > noname-section {
+  margin-top: 20px;
+  margin-bottom: 0;
+  transition: opacity var(--app-transition);
+}
+
+noname-popup.splash-settings > noname-pane > noname-gallery {
+  height: 80px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.with-indicator {
+  height: 100px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery noname-item {
+  width: 120px;
+  height: 70px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > * {
+  position: relative;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content > noname-caption {
+  font-size: 18px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery noname-item > noname-widget > noname-content.plus > noname-caption {
+  font-size: 36px;
+  margin-bottom: 1px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music {
+  height: 62px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music.with-indicator {
+  height: 82px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item {
+  width: 50px;
+  height: 50px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp {
+  border-radius: 50px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
+  border-radius: 50px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.music noname-page > noname-layer {
+  width: calc(100% - 20px);
+  left: 10px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume {
+  height: 62px;
+  margin-bottom: -8px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item {
+  width: 180px;
+  height: 40px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget {
+  border-radius: 20px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image {
+  overflow: hidden;
+  border-radius: 25px;
+  background: var(--toggle-button-background);
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
+  width: 200%;
+  height: 100%;
+  position: absolute;
+  white-space: nowrap;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div {
+  width: 50%;
+  height: 100%;
+  display: inline-block;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider > noname-div:first-child {
+  background: var(--toggle-background-on);
+  box-shadow: var(--toggle-shadow);
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios {
+  transition: transform var(--app-transition);
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider.ios.off {
+  transform: translateX(-180px);
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content {
+  pointer-events: none;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text {
+  margin-bottom: 1px;
+}
+noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-content > noname-text > div {
+  display: inline-block;
+  width: 20px;
 }
 
 noname-splash {

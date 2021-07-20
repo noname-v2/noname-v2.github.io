@@ -17,8 +17,6 @@ noname-popup {
     }
 
     &.dialog {
-        transition: opacity var(--app-transition);
-        
         > noname-pane {
             width: var(--popup-dialog-width);
             height: auto;

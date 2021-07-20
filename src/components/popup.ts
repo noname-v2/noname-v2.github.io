@@ -25,6 +25,9 @@ export class Popup extends Component {
 	/** Currently hidden. */
 	hidden = true;
 
+	/** Currently blurred. */
+	blurred = false;
+
     init() {
 		this.node.classList.add('noname-popup');
 		
@@ -116,5 +119,25 @@ export class Popup extends Component {
 				opacity: [0, 1], scale: ['var(--popup-transform)', 1]
 			}, this.app.getTransition(this.transition));
         });
+	}
+
+	blur() {
+		if (this.blurred) {
+			return;
+		}
+		this.blurred = true;
+		this.ui.animate(this.pane.node, {
+			opacity: [1, 'var(--app-blurred-opacity)'], scale: [1, 'var(--popup-transform)']
+		}, {fill: 'forwards', duration: this.app.getTransition(this.transition)});
+	}
+
+	focus() {
+		if (!this.blurred) {
+			return;
+		}
+		this.blurred = false;
+		this.ui.animate(this.pane.node, {
+			opacity: ['var(--app-blurred-opacity)', 1], scale: ['var(--popup-transform)', 1]
+		}, {fill: 'forwards', duration: this.app.getTransition(this.transition)});
 	}
 }

@@ -522,6 +522,8 @@
             this.transition = null;
             /** Currently hidden. */
             this.hidden = true;
+            /** Currently blurred. */
+            this.blurred = false;
         }
         init() {
             this.node.classList.add('noname-popup');
@@ -597,6 +599,24 @@
                     opacity: [0, 1], scale: ['var(--popup-transform)', 1]
                 }, this.app.getTransition(this.transition));
             });
+        }
+        blur() {
+            if (this.blurred) {
+                return;
+            }
+            this.blurred = true;
+            this.ui.animate(this.pane.node, {
+                opacity: [1, 'var(--app-blurred-opacity)'], scale: [1, 'var(--popup-transform)']
+            }, { fill: 'forwards', duration: this.app.getTransition(this.transition) });
+        }
+        focus() {
+            if (!this.blurred) {
+                return;
+            }
+            this.blurred = false;
+            this.ui.animate(this.pane.node, {
+                opacity: ['var(--app-blurred-opacity)', 1], scale: ['var(--popup-transform)', 1]
+            }, { fill: 'forwards', duration: this.app.getTransition(this.transition) });
         }
     }
 
@@ -1329,6 +1349,11 @@
         }
     }
 
+    class SplashAvatar extends Popup {
+    }
+    /** Use tag <noname-popup>. */
+    SplashAvatar.tag = 'popup';
+
     class SplashBar extends Component {
         constructor() {
             super(...arguments);
@@ -1670,6 +1695,15 @@
             const img = this.ui.createElement('image', avatarNode);
             const url = this.db.get('avatar') ?? config.avatar;
             this.ui.setImage(img, url);
+            this.ui.bindClick(avatarNode, e => {
+                const popup = this.ui.create('splash-avatar');
+                popup.location = e;
+                popup.open();
+                popup.onclose = () => {
+                    this.focus();
+                };
+                this.blur();
+            });
             // nickname input
             this.ui.createElement('span.nickname', group).innerHTML = '昵称';
             const nickname = this.nickname = this.ui.create('input', group);
@@ -2192,6 +2226,7 @@
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
+    componentClasses.set('splash-avatar', SplashAvatar);
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);
     componentClasses.set('splash-hub', SplashHub);
