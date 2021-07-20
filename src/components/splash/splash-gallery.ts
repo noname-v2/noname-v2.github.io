@@ -6,6 +6,7 @@ interface ExtensionMeta {
 	mode: string;
 	pack: boolean;
 	tags: string[];
+	images: string[];
 }
 
 interface ExtensionIndex {
@@ -80,6 +81,9 @@ export class SplashGallery extends Gallery {
 				}
 				if (ext.tags) {
 					idx.tags = ext.tags;
+				}
+				if (ext.hero) {
+					idx.images = Object.keys(ext.hero);
 				}
 				this.index[name] = idx;
 			}

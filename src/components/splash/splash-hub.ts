@@ -79,6 +79,10 @@ export class SplashHub extends Popup {
 
     connect() {
         try {
+            if (!this.address.input.value) {
+                this.client.db.set('ws', null);
+                return;
+            }
             this.client.connect('wss://' + this.address.input.value);
             this.address.set('icon', 'clear');
 
@@ -99,6 +103,9 @@ export class SplashHub extends Popup {
                     this.address.set('icon', 'ok');
                     this.setCaption('');
                     ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
+                    if (this.address.input.value !== config.ws) {
+                        this.client.db.set('ws', this.address.input.value);
+                    }
                 };
 
                 ws.onmessage = ({data}: {data: string}) => {

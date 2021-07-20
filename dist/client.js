@@ -1459,6 +1459,9 @@
                     if (ext.tags) {
                         idx.tags = ext.tags;
                     }
+                    if (ext.hero) {
+                        idx.images = Object.keys(ext.hero);
+                    }
                     this.index[name] = idx;
                 }
                 catch (e) {
@@ -1608,6 +1611,10 @@
         }
         connect() {
             try {
+                if (!this.address.input.value) {
+                    this.client.db.set('ws', null);
+                    return;
+                }
                 this.client.connect('wss://' + this.address.input.value);
                 this.address.set('icon', 'clear');
                 const ws = this.client.connection;
@@ -1624,6 +1631,9 @@
                         this.address.set('icon', 'ok');
                         this.setCaption('');
                         ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
+                        if (this.address.input.value !== config.ws) {
+                            this.client.db.set('ws', this.address.input.value);
+                        }
                     };
                     ws.onmessage = ({ data }) => {
                         try {
