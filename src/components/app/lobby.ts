@@ -26,7 +26,7 @@ export class Lobby extends Component {
     exiting = false;
 
     /** Players in this seats. */
-    players = new Set<Player>();
+    players = <Player[]>[];
 
     init() {
         this.app.arena!.node.appendChild(this.node);
@@ -176,12 +176,13 @@ export class Lobby extends Component {
 
     $npmax(npmax: number) {
         this.seats.innerHTML = '';
+        this.players.length = 0;
         for (let i = 0; i < npmax; i++) {
             if (npmax > 4 && i === Math.ceil(npmax / 2)) {
                 this.seats.appendChild(document.createElement('div'));
             }
             const player = this.ui.create('player');
-            this.players.add(player);
+            this.players.push(player);
             this.seats.appendChild(player.node);
         }
     }
@@ -189,9 +190,11 @@ export class Lobby extends Component {
     sync() {
         const peers = this.client.peers;
         if (!peers && this.exiting) {
+            // room closed successfully
             this.close();
         }
         else if (this.owner === this.client.uid) {
+            // callback for online mode toggle
             this.yield(['sync', null, peers ? true : false], false);
             if (this.connecting && !peers) {
                 this.app.alert('连接失败');
@@ -206,6 +209,25 @@ export class Lobby extends Component {
                     toggle.confirm.delete(false);
                 }
             }
+        }
+
+        // update seats
+        if (peers) {
+            setTimeout(() => {
+                // wait until this.players have been set
+                const ids = Object.keys(peers);
+                for (let i = 0; i < this.players.length; i++) {
+                    if (i < ids.length) {
+                        const [nickname, avatar] = peers[ids[i]];
+                        this.players[i].set('heroImage', avatar);
+                        this.players[i].set('heroName', nickname);
+                    }
+                    else {
+                        this.players[i].set('heroImage', null);
+                        this.players[i].set('heroName', null);
+                    }
+                }
+            });
         }
     }
 

@@ -639,7 +639,7 @@
             /** Trying to exit. */
             this.exiting = false;
             /** Players in this seats. */
-            this.players = new Set();
+            this.players = [];
         }
         init() {
             this.app.arena.node.appendChild(this.node);
@@ -778,21 +778,24 @@
         }
         $npmax(npmax) {
             this.seats.innerHTML = '';
+            this.players.length = 0;
             for (let i = 0; i < npmax; i++) {
                 if (npmax > 4 && i === Math.ceil(npmax / 2)) {
                     this.seats.appendChild(document.createElement('div'));
                 }
                 const player = this.ui.create('player');
-                this.players.add(player);
+                this.players.push(player);
                 this.seats.appendChild(player.node);
             }
         }
         sync() {
             const peers = this.client.peers;
             if (!peers && this.exiting) {
+                // room closed successfully
                 this.close();
             }
             else if (this.owner === this.client.uid) {
+                // callback for online mode toggle
                 this.yield(['sync', null, peers ? true : false], false);
                 if (this.connecting && !peers) {
                     this.app.alert('连接失败');
@@ -807,6 +810,24 @@
                         toggle.confirm.delete(false);
                     }
                 }
+            }
+            // update seats
+            if (peers) {
+                setTimeout(() => {
+                    // wait until this.players have been set
+                    const ids = Object.keys(peers);
+                    for (let i = 0; i < this.players.length; i++) {
+                        if (i < ids.length) {
+                            const [nickname, avatar] = peers[ids[i]];
+                            this.players[i].set('heroImage', avatar);
+                            this.players[i].set('heroName', nickname);
+                        }
+                        else {
+                            this.players[i].set('heroImage', null);
+                            this.players[i].set('heroName', null);
+                        }
+                    }
+                });
             }
         }
         freeze() {
@@ -929,16 +950,18 @@
             this.heroImage = this.ui.createElement('image', this.background);
             /** Vice hero image. */
             this.viceImage = this.ui.createElement('image.vice', this.background);
+            /** Container of name content. */
+            this.content = this.ui.createElement('content', this.node);
             /** Main hero name. */
-            this.heroName = this.ui.createElement('caption', this.node);
+            this.heroName = this.ui.createElement('caption', this.content);
             /** Vice hero name. */
-            this.viceName = this.ui.createElement('caption', this.node);
+            this.viceName = this.ui.createElement('caption.vice', this.content);
         }
         init() {
             this.node.classList.add('hero-hidden');
             this.node.classList.add('vice-hidden');
         }
-        $hero(name) {
+        $heroImage(name) {
             if (name) {
                 this.node.classList.remove('hero-hidden');
                 this.ui.setImage(this.heroImage, name);
@@ -947,6 +970,9 @@
                 this.node.classList.add('hero-hidden');
                 this.heroImage.style.backgroundImage = '';
             }
+        }
+        $heroName(name) {
+            this.heroName.innerHTML = name ?? '';
         }
     }
 
