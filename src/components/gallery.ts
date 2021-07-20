@@ -132,11 +132,11 @@ export class Gallery extends Component {
 		// add callbacks for dynamic item number
 		if (Array.isArray(this.nrows)) {
 			this.node.classList.add('centery');
-			this.client.resizeListeners.add(this);
+			this.client.addListener('resize', this);
 		}
 		if (Array.isArray(this.ncols)) {
 			this.node.classList.add('centerx');
-			this.client.resizeListeners.add(this);
+			this.client.addListener('resize', this);
 		}
 	}
 

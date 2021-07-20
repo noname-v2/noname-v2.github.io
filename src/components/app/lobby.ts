@@ -30,7 +30,7 @@ export class Lobby extends Component {
 
     init() {
         this.app.arena!.node.appendChild(this.node);
-        this.client.syncListeners.add(this);
+        this.client.addListener('sync', this);
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', async () => {
                 const ws = this.client.connection;

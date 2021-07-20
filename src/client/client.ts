@@ -4,6 +4,13 @@ import { version, config } from '../version';
 import { Component } from './component';
 import type { UITick, ClientMessage } from '../worker/worker';
 
+interface ClientListener {
+    sync: {sync: () => void};
+    resize: {resize: () => void, id: number | null};
+    history: {history: () => void};
+    key: {key: (e: KeyboardEvent) => void};
+}
+
 /**
  * Executor of worker commands.
  */
@@ -38,11 +45,13 @@ export class Client {
     /** Components awaiting response from worker. */
     yielding = new Map<number, (result: any) => any>();
 
-	/** Components that have callback on sync. */
-	syncListeners = new Set<{sync: () => void}>();
-
-	/** Components that have callback on resize. */
-	resizeListeners = new Set<{resize: () => void, id: number | null}>();
+    /** Event listeners. */
+    listeners = {
+        sync: new Set<{sync: () => void}>(),
+        resize: new Set<{resize: () => void, id: number | null}>(),
+        history: new Set<{history: (state: string) => void}>(),
+        key: new Set<{key: (e: KeyboardEvent) => void}>()
+    };
 
     constructor() {
         // get user ID
@@ -146,14 +155,11 @@ export class Client {
 
     /** Clear currently connection status without disconnecting. */
     clear(back: boolean = true) {
+        for (const cmp of this.components.values()) {
+            this.removeListeners(cmp);
+        }
         this.components.clear();
         this.yielding.clear();
-        this.syncListeners.clear();
-        for (const cmp of Array.from(this.resizeListeners)) {
-            if (cmp.id !== null) {
-                this.resizeListeners.delete(cmp);
-            }
-        }
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
@@ -231,8 +237,7 @@ export class Client {
                     if (method === '#unlink') {
                         const cmp = this.components.get(id);
                         if (cmp) {
-                            this.syncListeners.delete(cmp as any);
-                            this.resizeListeners.delete(cmp as any);
+                            this.removeListeners(cmp);
                             this.components.delete(id);
                         }
                     }
@@ -250,6 +255,25 @@ export class Client {
         catch (e) {
             console.log(e);
             this.send(-1, null, false);
+        }
+    }
+
+    /** Add a listener. */
+    addListener<T extends keyof ClientListener>(event: T, cmp: ClientListener[T]) {
+        this.listeners[event].add(cmp as any);
+    }
+
+
+    /** Trigger a listener. */
+    triggerListener(event: keyof ClientListener, arg?: any) {
+        for (const cmp of this.listeners[event]) {
+            (cmp as any)[event](arg);
+        }
+    }
+    /** Remove all listeners. */
+    removeListeners(cmp: Component) {
+        for (const key in this.listeners) {
+            (this.listeners as any)[key].delete(cmp);
         }
     }
 }

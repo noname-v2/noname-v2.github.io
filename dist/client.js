@@ -269,6 +269,21 @@
                 this.splash.hub.create(this.splash);
                 this.splash.settings.create(this.splash);
             });
+            // add history
+            history.pushState('exit', '');
+            history.pushState('main', '');
+            window.addEventListener('popstate', e => {
+                if (e.state === 'exit') {
+                    this.ui.app.confirm('是否重新载入游戏？').then(exit => {
+                        if (exit) {
+                            window.location.reload();
+                        }
+                        else {
+                            history.forward();
+                        }
+                    });
+                }
+            });
         }
         /** Add styles for theme. */
         async loadTheme() {
@@ -392,9 +407,7 @@
             this.ui.height = h;
             this.ui.zoom = z;
             // call listeners
-            for (const cmp of this.client.resizeListeners) {
-                cmp.resize();
-            }
+            this.client.triggerListener('resize');
         }
         /** Get the duration of transition.
          * @param {TransitionDuration} type - transition type
@@ -633,7 +646,7 @@
         }
         init() {
             this.app.arena.node.appendChild(this.node);
-            this.client.syncListeners.add(this);
+            this.client.addListener('sync', this);
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', async () => {
                     const ws = this.client.connection;
@@ -876,9 +889,7 @@
         }
         /** Connection status change. */
         $peers() {
-            for (const cmp of this.client.syncListeners) {
-                cmp.sync();
-            }
+            this.client.triggerListener('sync');
         }
     }
 
@@ -1018,11 +1029,11 @@
             // add callbacks for dynamic item number
             if (Array.isArray(this.nrows)) {
                 this.node.classList.add('centery');
-                this.client.resizeListeners.add(this);
+                this.client.addListener('resize', this);
             }
             if (Array.isArray(this.ncols)) {
                 this.node.classList.add('centerx');
-                this.client.resizeListeners.add(this);
+                this.client.addListener('resize', this);
             }
         }
         /** Enable horizontal scroll with mouse wheel. */
@@ -2499,10 +2510,13 @@
             this.components = new Map();
             /** Components awaiting response from worker. */
             this.yielding = new Map();
-            /** Components that have callback on sync. */
-            this.syncListeners = new Set();
-            /** Components that have callback on resize. */
-            this.resizeListeners = new Set();
+            /** Event listeners. */
+            this.listeners = {
+                sync: new Set(),
+                resize: new Set(),
+                history: new Set(),
+                key: new Set()
+            };
             // get user ID
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
@@ -2591,14 +2605,11 @@
         }
         /** Clear currently connection status without disconnecting. */
         clear(back = true) {
+            for (const cmp of this.components.values()) {
+                this.removeListeners(cmp);
+            }
             this.components.clear();
             this.yielding.clear();
-            this.syncListeners.clear();
-            for (const cmp of Array.from(this.resizeListeners)) {
-                if (cmp.id !== null) {
-                    this.resizeListeners.delete(cmp);
-                }
-            }
             this.ui.app.clearPopups();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
@@ -2668,8 +2679,7 @@
                         if (method === '#unlink') {
                             const cmp = this.components.get(id);
                             if (cmp) {
-                                this.syncListeners.delete(cmp);
-                                this.resizeListeners.delete(cmp);
+                                this.removeListeners(cmp);
                                 this.components.delete(id);
                             }
                         }
@@ -2687,6 +2697,22 @@
             catch (e) {
                 console.log(e);
                 this.send(-1, null, false);
+            }
+        }
+        /** Add a listener. */
+        addListener(event, cmp) {
+            this.listeners[event].add(cmp);
+        }
+        /** Trigger a listener. */
+        triggerListener(event, arg) {
+            for (const cmp of this.listeners[event]) {
+                cmp[event](arg);
+            }
+        }
+        /** Remove all listeners. */
+        removeListeners(cmp) {
+            for (const key in this.listeners) {
+                this.listeners[key].delete(cmp);
             }
         }
     }

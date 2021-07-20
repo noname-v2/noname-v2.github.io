@@ -56,8 +56,6 @@ export class Arena extends Component {
 
 	/** Connection status change. */
     $peers() {
-		for (const cmp of this.client.syncListeners) {
-			cmp.sync();
-		}
+		this.client.triggerListener('sync');
     }
 }
