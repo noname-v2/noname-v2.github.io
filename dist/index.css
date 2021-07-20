@@ -1098,6 +1098,7 @@ noname-popup > noname-pane {
   background: var(--widget-background);
   border-radius: var(--widget-radius);
   box-shadow: var(--widget-shadow);
+  background: var(--popup-background);
 }
 noname-popup > noname-pane > noname-image {
   position: absolute;

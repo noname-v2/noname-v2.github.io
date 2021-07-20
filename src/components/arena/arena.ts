@@ -56,6 +56,7 @@ export class Arena extends Component {
 
 	/** Connection status change. */
     $peers() {
-		this.client.triggerListener('sync');
+		// wait until other properties have been updated
+		setTimeout(() => this.client.triggerListener('sync'));
     }
 }

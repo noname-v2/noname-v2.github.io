@@ -29,6 +29,10 @@
 		"image-margin": "4px",
 		"image-margin-sharp": "3px"
 	},
+
+	"popup": {
+		"background": "linear-gradient(#4b4b4b, #464646)"
+	},
 	
 	"section": {
 		"shadow": "rgba(40, 40, 40, 1) 0 0 0 1px, rgba(0, 0, 0, 0.08) 0 0 5px inset"

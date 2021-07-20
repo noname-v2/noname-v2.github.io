@@ -813,21 +813,19 @@
             }
             // update seats
             if (peers) {
-                setTimeout(() => {
-                    // wait until this.players have been set
-                    const ids = Object.keys(peers);
-                    for (let i = 0; i < this.players.length; i++) {
-                        if (i < ids.length) {
-                            const [nickname, avatar] = peers[ids[i]];
-                            this.players[i].set('heroImage', avatar);
-                            this.players[i].set('heroName', nickname);
-                        }
-                        else {
-                            this.players[i].set('heroImage', null);
-                            this.players[i].set('heroName', null);
-                        }
+                // wait until this.players have been set
+                const ids = Object.keys(peers);
+                for (let i = 0; i < this.players.length; i++) {
+                    if (i < ids.length) {
+                        const [nickname, avatar] = peers[ids[i]];
+                        this.players[i].set('heroImage', avatar);
+                        this.players[i].set('heroName', nickname);
                     }
-                });
+                    else {
+                        this.players[i].set('heroImage', null);
+                        this.players[i].set('heroName', null);
+                    }
+                }
             }
         }
         freeze() {
@@ -937,7 +935,8 @@
         }
         /** Connection status change. */
         $peers() {
-            this.client.triggerListener('sync');
+            // wait until other properties have been updated
+            setTimeout(() => this.client.triggerListener('sync'));
         }
     }
 
