@@ -47,7 +47,7 @@ export class Worker {
             // mode name
             this.game!.getRule(this.game!.mode + ':mode').name,
             // joined clients
-            1 + this.peers!.size,
+            this.peers!.size,
             // number of players in a game
             this.game!.config.np,
             // nickname and avatar of owner
@@ -110,6 +110,7 @@ export class Worker {
         };
         ws.onopen = () => {
             this.peers = new Map();
+            this.peers.set(this.uid, this.info);
             ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
         };
         ws.onmessage = ({data}) => {

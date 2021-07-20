@@ -64,7 +64,7 @@ export class Lobby extends Component {
             }
 
             const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-            if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', {content, id: 'exitLobby'})) {
+            if (!peers || Object.keys(peers).length <= 1 || await this.app.confirm('联机模式', {content, id: 'exitLobby'})) {
                 if (ws instanceof WebSocket) {
                     this.client.clear();
                     ws.send('leave:init');
@@ -199,7 +199,7 @@ export class Lobby extends Component {
             this.connecting = false;
             const toggle = this.configToggles.get('online');
             if (toggle) {
-                if (peers && Object.keys(peers).length) {
+                if (peers && Object.keys(peers).length > 1) {
                     toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
                 }
                 else {
