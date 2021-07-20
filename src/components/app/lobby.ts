@@ -34,7 +34,7 @@ export class Lobby extends Component {
         this.client.addListener('history', this);
 
         // make android back button function as returning to previous page
-        if (history.state === 'main') {
+        if (this.client.platform === 'Android') {
             history.pushState('lobby', '');
         }
         this.sidebar.ready.then(() => {
@@ -59,7 +59,7 @@ export class Lobby extends Component {
         const peers = this.client.peers;
         if (peers || ws instanceof WebSocket) {
             // history back posponded
-            if (history.state === 'main') {
+            if (this.client.platform === 'Android') {
                 history.forward();
             }
 
@@ -223,7 +223,7 @@ export class Lobby extends Component {
     }
 
     async history(state: string) {
-        if (state === 'main') {
+        if (this.client.platform === 'Android' && state !== 'lobby') {
             if (this.app.popups.has('exitLobby')) {
                 this.app.removePopup('exitLobby');
                 history.forward();

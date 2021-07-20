@@ -271,7 +271,6 @@
             });
             // add history
             if (this.client.platform === 'Android') {
-                history.pushState('main', '');
                 window.addEventListener('popstate', e => {
                     this.client.triggerListener('history', e.state);
                 });
@@ -647,7 +646,7 @@
             this.client.addListener('sync', this);
             this.client.addListener('history', this);
             // make android back button function as returning to previous page
-            if (history.state === 'main') {
+            if (this.client.platform === 'Android') {
                 history.pushState('lobby', '');
             }
             this.sidebar.ready.then(() => {
@@ -670,7 +669,7 @@
             const peers = this.client.peers;
             if (peers || ws instanceof WebSocket) {
                 // history back posponded
-                if (history.state === 'main') {
+                if (this.client.platform === 'Android') {
                     history.forward();
                 }
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
@@ -821,7 +820,7 @@
             this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
         }
         async history(state) {
-            if (state === 'main') {
+            if (this.client.platform === 'Android' && state !== 'lobby') {
                 if (this.app.popups.has('exitLobby')) {
                     this.app.removePopup('exitLobby');
                     history.forward();
