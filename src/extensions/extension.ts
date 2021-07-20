@@ -13,6 +13,12 @@ export interface Collection {
     [key: string]: Section | ((stage: StageAccessor) => any);
 }
 
+export interface Pile {
+    [key: string]: {
+        [key: string]: (number | [number, ...string[]])[];
+    }
+}
+
 export interface Extension {
     mode?: Section;
     skill?: Collection;
@@ -22,5 +28,6 @@ export interface Extension {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
+    pile?: Pile;
     components?: (c: typeof Component, cs: Map<string, ComponentClass>) => void;
 }

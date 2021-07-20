@@ -1,4 +1,7 @@
 import type { Extension } from '../extension';
+import { hero } from './hero';
+import { card } from './card';
+import { skill } from './skill';
 
 export default <Extension>{
     mode: {
@@ -27,5 +30,6 @@ export default <Extension>{
     },
     heropack: '国战标准',
     cardpack: '国战标准',
-    tags: ['guess-side', 'double-hidden!']
+    tags: ['guess-side', 'double-hidden!'],
+    hero, card, skill
 }

@@ -1,19 +1,11 @@
 import type { Extension } from '../extension';
+import { hero } from './hero';
+import { card } from './card';
+import { skill } from './skill';
+import { pile } from './pile';
 
 export default <Extension>{
     cardpack: '标准',
     heropack: '标准',
-    card: {
-        sha: {
-            name: '杀',
-            content() {
-
-            }
-        }
-    },
-    hero: {
-        caocao: {
-            name: '曹操'
-        }
-    }
+    hero, card, skill, pile
 }
