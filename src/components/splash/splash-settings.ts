@@ -236,7 +236,7 @@ export class SplashSettings extends Popup {
         const rotating_bak: [HTMLElement | null, Animation | null] = [this.rotating, this.rotatingAnimation];
         this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
         this.app.bgmNode.play();
-        const menu = this.ui.create('menu');
+        const menu = this.ui.create('popup');
         this.rotate(node);
 
         const restore = () => {
@@ -273,7 +273,7 @@ export class SplashSettings extends Popup {
             this.rotateMusic(node, bgm, false, false);
             restore();
         };
-        menu.position = e;
+        menu.location = e;
         menu.open();
     }
 

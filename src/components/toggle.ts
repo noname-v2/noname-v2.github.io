@@ -27,7 +27,7 @@ export class Toggle extends Component {
 			this.ui.bindClick(popup, () => {
 				// open context menu
 				const rect = popup.getBoundingClientRect();
-                const menu = this.ui.create('menu');
+                const menu = this.ui.create('popup');
                 for (const [id, name] of choices) {
                     menu.pane.addOption(name, async () => {
 						if (this.confirm.has(id)) {
@@ -40,7 +40,7 @@ export class Toggle extends Component {
 						menu.close();
                     })
                 }
-				menu.position = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
+				menu.location = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
                 menu.open();
 			});
 

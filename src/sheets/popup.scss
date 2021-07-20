@@ -32,26 +32,26 @@ noname-popup {
     > noname-pane {
         @include widget;
         background: var(--popup-background);
-    }
 
-    &.menu > noname-pane {
-        @include widget-sharp;
-
-        padding-top: 3px;
-        padding-bottom: 3px;
-        transform-origin: top left;
-        overflow: hidden;
-        width: auto;
-        height: auto;
-
-        > noname-option {
-            display: block;
-            padding: 3px 10px 3px 10px;
-            position: relative;
+        &.menu {
+            @include widget-sharp;
     
-            &:hover {
-                background: var(--fill-blue);
-                box-shadow: var(--widget-image-shadow);
+            padding-top: 3px;
+            padding-bottom: 3px;
+            transform-origin: top left;
+            overflow: hidden;
+            width: auto;
+            height: auto;
+    
+            > noname-option {
+                display: block;
+                padding: 3px 10px 3px 10px;
+                position: relative;
+        
+                &:hover {
+                    background: var(--fill-blue);
+                    box-shadow: var(--widget-image-shadow);
+                }
             }
         }
     }

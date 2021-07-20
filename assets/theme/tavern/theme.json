@@ -26,6 +26,10 @@
 		"slider-shadow": "rgba(0, 0, 0, 0.8) 0 0 0 1px"
 	},
 
+	"popup": {
+		"background": "rgba(0, 0, 0, 0.6)"
+	},
+
 	"sidebar": {
 		"background": "@(bg.webp)",
 		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"

@@ -515,22 +515,16 @@
             /** Whether popup is closed when clicking on background layer. */
             this.temp = true;
             /** Whether popup appears at the center. */
-            this.center = true;
+            this.location = null;
             /** Built-in sizes. */
             this.size = null;
             /** Animation speed of open and close. */
             this.transition = null;
-            // currently hidden
+            /** Currently hidden. */
             this.hidden = true;
         }
         init() {
             this.node.classList.add('noname-popup');
-            if (this.center) {
-                this.node.classList.add('center');
-            }
-            if (typeof this.size === 'string') {
-                this.node.classList.add(this.size);
-            }
             // block DOM events behind the pane
             this.ui.bindClick(this.pane.node, () => { });
             // close when clicking on background layer
@@ -559,16 +553,50 @@
                 return;
             }
             this.hidden = false;
-            if (this.onopen) {
-                this.onopen();
+            if (this.location === null) {
+                this.node.classList.add('center');
             }
-            if (this.node.parentNode !== this.app.node) {
-                this.app.node.appendChild(this.node);
+            if (typeof this.size === 'string') {
+                this.node.classList.add(this.size);
             }
-            setTimeout(() => this.pane.alignText());
-            this.ui.animate(this.pane.node, {
-                opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-            }, this.app.getTransition(this.transition));
+            this.node.classList.add('hidden');
+            this.app.node.appendChild(this.node);
+            requestAnimationFrame(() => {
+                if (this.location) {
+                    // determine location of the menu
+                    if (this.transition === null) {
+                        this.transition = 'fast';
+                    }
+                    let { x, y } = this.location;
+                    const rect1 = this.pane.node.getBoundingClientRect();
+                    const rect2 = this.app.node.getBoundingClientRect();
+                    const zoom = this.ui.zoom;
+                    x += 2;
+                    y -= 2;
+                    if (x < 10) {
+                        x = 10;
+                    }
+                    else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
+                        x = rect2.width / zoom - 10 - rect1.width / zoom;
+                    }
+                    if (y < 10) {
+                        y = 10;
+                    }
+                    else if (y + rect1.height / zoom + 10 > rect2.height / zoom) {
+                        y = rect2.height / zoom - 10 - rect1.height / zoom;
+                    }
+                    this.pane.node.style.left = x + 'px';
+                    this.pane.node.style.top = y + 'px';
+                }
+                if (this.onopen) {
+                    this.onopen();
+                }
+                this.node.classList.remove('hidden');
+                this.pane.alignText();
+                this.ui.animate(this.pane.node, {
+                    opacity: [0, 1], scale: ['var(--popup-transform)', 1]
+                }, this.app.getTransition(this.transition));
+            });
         }
     }
 
@@ -1237,47 +1265,6 @@
         }
     }
 
-    class Menu extends Popup {
-        constructor() {
-            super(...arguments);
-            /** Use mouse click location. */
-            this.center = false;
-            /** Use faster transition for context menu. */
-            this.transition = 'fast';
-        }
-        open() {
-            this.node.classList.add('hidden');
-            this.app.node.appendChild(this.node);
-            requestAnimationFrame(() => {
-                // determine location of the menu
-                let { x, y } = this.position;
-                const rect1 = this.pane.node.getBoundingClientRect();
-                const rect2 = this.app.node.getBoundingClientRect();
-                const zoom = this.ui.zoom;
-                this.node.classList.remove('hidden');
-                x += 2;
-                y -= 2;
-                if (x < 10) {
-                    x = 10;
-                }
-                else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
-                    x = rect2.width / zoom - 10 - rect1.width / zoom;
-                }
-                if (y < 10) {
-                    y = 10;
-                }
-                else if (y + rect1.height / zoom + 10 > rect2.height / zoom) {
-                    y = rect2.height / zoom - 10 - rect1.height / zoom;
-                }
-                this.pane.node.style.left = x + 'px';
-                this.pane.node.style.top = y + 'px';
-                super.open();
-            });
-        }
-    }
-    /** Use <noname-popup> as tag. */
-    Menu.tag = 'popup';
-
     class Pane extends Component {
         constructor() {
             super(...arguments);
@@ -1319,6 +1306,7 @@
         }
         /** Add context menu item. */
         addOption(caption, onclick) {
+            this.node.classList.add('menu');
             const option = this.ui.createElement('option');
             option.innerHTML = caption;
             this.ui.bindClick(option, onclick);
@@ -1988,7 +1976,7 @@
             const rotating_bak = [this.rotating, this.rotatingAnimation];
             this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
             this.app.bgmNode.play();
-            const menu = this.ui.create('menu');
+            const menu = this.ui.create('popup');
             this.rotate(node);
             const restore = () => {
                 if (rotating_bak[0] && rotating_bak[0] !== node) {
@@ -2023,7 +2011,7 @@
                 this.rotateMusic(node, bgm, false, false);
                 restore();
             };
-            menu.position = e;
+            menu.location = e;
             menu.open();
         }
         rotateMusic(node, bgm, splash, game) {
@@ -2131,7 +2119,7 @@
                 this.ui.bindClick(popup, () => {
                     // open context menu
                     const rect = popup.getBoundingClientRect();
-                    const menu = this.ui.create('menu');
+                    const menu = this.ui.create('popup');
                     for (const [id, name] of choices) {
                         menu.pane.addOption(name, async () => {
                             if (this.confirm.has(id)) {
@@ -2144,7 +2132,7 @@
                             menu.close();
                         });
                     }
-                    menu.position = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
+                    menu.location = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
                     menu.open();
                 });
                 // save captions corresponding to option values
@@ -2192,7 +2180,6 @@
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);
-    componentClasses.set('menu', Menu);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
     componentClasses.set('splash-bar', SplashBar);

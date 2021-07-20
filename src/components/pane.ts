@@ -44,6 +44,7 @@ export class Pane extends Component {
 
 	/** Add context menu item. */
 	addOption(caption: string, onclick: () => void) {
+		this.node.classList.add('menu');
 		const option = this.ui.createElement('option');
 		option.innerHTML = caption;
 		this.ui.bindClick(option, onclick);

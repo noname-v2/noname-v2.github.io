@@ -1107,7 +1107,7 @@ noname-popup > noname-pane > noname-image {
   border-radius: var(--widget-image-radius);
   box-shadow: var(--widget-image-shadow);
 }
-noname-popup.menu > noname-pane {
+noname-popup > noname-pane.menu {
   border-radius: var(--widget-radius-sharp);
   padding-top: 3px;
   padding-bottom: 3px;
@@ -1116,19 +1116,19 @@ noname-popup.menu > noname-pane {
   width: auto;
   height: auto;
 }
-noname-popup.menu > noname-pane > noname-image {
+noname-popup > noname-pane.menu > noname-image {
   width: calc(100% - 2 * var(--widget-image-margin-sharp));
   height: calc(100% - 2 * var(--widget-image-margin-sharp));
   left: var(--widget-image-margin-sharp);
   top: var(--widget-image-margin-sharp);
   border-radius: var(--widget-image-radius-sharp);
 }
-noname-popup.menu > noname-pane > noname-option {
+noname-popup > noname-pane.menu > noname-option {
   display: block;
   padding: 3px 10px 3px 10px;
   position: relative;
 }
-noname-popup.menu > noname-pane > noname-option:hover {
+noname-popup > noname-pane.menu > noname-option:hover {
   background: var(--fill-blue);
   box-shadow: var(--widget-image-shadow);
 }

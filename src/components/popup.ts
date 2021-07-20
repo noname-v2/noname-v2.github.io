@@ -1,4 +1,4 @@
-import { Component, TransitionDuration } from '../components';
+import { Component, TransitionDuration, Point } from '../components';
 
 export class Popup extends Component {
     /** Main content. */
@@ -14,7 +14,7 @@ export class Popup extends Component {
     temp: boolean = true;
 
 	/** Whether popup appears at the center. */
-	center: boolean = true;
+	location: Point | null = null;
 
 	/** Built-in sizes. */
 	size: 'portrait' | 'landscape' | null = null;
@@ -22,19 +22,11 @@ export class Popup extends Component {
 	/** Animation speed of open and close. */
 	transition: TransitionDuration = null;
 
-	// currently hidden
+	/** Currently hidden. */
 	hidden = true;
 
     init() {
 		this.node.classList.add('noname-popup');
-		
-		if (this.center) {
-			this.node.classList.add('center');
-		}
-
-		if (typeof this.size === 'string') {
-			this.node.classList.add(this.size);
-		}
 		
 		// block DOM events behind the pane
         this.ui.bindClick(this.pane.node, () => {});
@@ -68,18 +60,61 @@ export class Popup extends Component {
 		}
 		this.hidden = false;
 
-        if (this.onopen) {
-            this.onopen();
-        }
-
-		if (this.node.parentNode !== this.app.node) {
-			this.app.node.appendChild(this.node);
+		
+		if (this.location === null) {
+			this.node.classList.add('center');
 		}
 
-		setTimeout(() => this.pane.alignText());
+		if (typeof this.size === 'string') {
+			this.node.classList.add(this.size);
+		}
 
-		this.ui.animate(this.pane.node, {
-			opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-		}, this.app.getTransition(this.transition));
+		this.node.classList.add('hidden');
+        this.app.node.appendChild(this.node);
+
+        requestAnimationFrame(() => {
+			if (this.location) {
+				// determine location of the menu
+				if (this.transition === null) {
+					this.transition = 'fast';
+				}
+
+				let {x, y} = this.location;
+				const rect1 = this.pane.node.getBoundingClientRect();
+				const rect2 = this.app.node.getBoundingClientRect();
+				const zoom = this.ui.zoom;
+
+				x += 2;
+				y -= 2;
+			
+				if (x < 10) {
+					x = 10
+				}
+				else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
+					x = rect2.width / zoom - 10 - rect1.width / zoom;
+				}
+
+				if (y < 10) {
+					y = 10;
+				}
+				else if (y + rect1.height / zoom+ 10 > rect2.height / zoom) {
+					y = rect2.height / zoom - 10 - rect1.height / zoom;
+				}
+
+				this.pane.node.style.left = x + 'px';
+				this.pane.node.style.top = y + 'px';
+			}
+            
+
+            if (this.onopen) {
+				this.onopen();
+			}
+	
+			this.node.classList.remove('hidden');
+			this.pane.alignText();
+			this.ui.animate(this.pane.node, {
+				opacity: [0, 1], scale: ['var(--popup-transform)', 1]
+			}, this.app.getTransition(this.transition));
+        });
 	}
 }
