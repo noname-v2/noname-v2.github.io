@@ -275,12 +275,23 @@ export class UI {
 		return node;
 	}
 	
-	// set background image and set background position/size to center/cover
+	/** Set background image and set background position/size to center/cover. */
 	setBackground(node: HTMLElement, ...args: string[]) {
 		if (!args[args.length - 1].includes('.')) {
 			args[args.length - 1] += '.webp';
 		}
 		node.style.background = `url(${args.join('/')}) center/cover`;
+	}
+
+	/** Set background image from an extension. */
+	setImage(node: HTMLElement, url: string) {
+		if (url.includes(':')) {
+			const [ext, name] = url.split(':');
+			this.setBackground(node, 'extensions', ext, 'images', name);
+		}
+		else {
+			this.setBackground(node, url);
+		}
 	}
 
     /** Register component constructor. */

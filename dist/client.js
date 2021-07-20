@@ -808,6 +808,7 @@
                     }
                 }
             }
+            console.log(peers);
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
@@ -923,7 +924,30 @@
     class Player extends Component {
         constructor() {
             super(...arguments);
+            /** Player background. */
             this.background = this.ui.createElement('background', this.node);
+            /** Main hero image. */
+            this.heroImage = this.ui.createElement('image', this.background);
+            /** Vice hero image. */
+            this.viceImage = this.ui.createElement('image.vice', this.background);
+            /** Main hero name. */
+            this.heroName = this.ui.createElement('caption', this.node);
+            /** Vice hero name. */
+            this.viceName = this.ui.createElement('caption', this.node);
+        }
+        init() {
+            this.node.classList.add('hero-hidden');
+            this.node.classList.add('vice-hidden');
+        }
+        $hero(name) {
+            if (name) {
+                this.node.classList.remove('hero-hidden');
+                this.ui.setImage(this.heroImage, name);
+            }
+            else {
+                this.node.classList.add('hero-hidden');
+                this.heroImage.style.backgroundImage = '';
+            }
         }
     }
 
@@ -1623,13 +1647,7 @@
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.ui.createElement('image', avatarNode);
             const url = this.db.get('avatar') ?? config.avatar;
-            if (url.includes(':')) {
-                const [ext, name] = url.split(':');
-                this.ui.setBackground(img, 'extensions', ext, 'images', name);
-            }
-            else {
-                this.ui.setBackground(img, url);
-            }
+            this.ui.setImage(img, url);
             // nickname input
             this.ui.createElement('span.nickname', group).innerHTML = '昵称';
             const nickname = this.nickname = this.ui.create('input', group);
@@ -1744,13 +1762,7 @@
             this.nickname = this.ui.createElement('span.nickname', this.node);
         }
         setup([name, np, npmax, [nickname, avatar], state]) {
-            if (avatar.includes(':')) {
-                const [ext, name] = avatar.split(':');
-                this.ui.setBackground(this.avatar, 'extensions', ext, 'images', name);
-            }
-            else {
-                this.ui.setBackground(this.avatar, avatar);
-            }
+            this.ui.setImage(this.avatar, avatar);
             this.caption.innerHTML = name;
             const stateText = state ? '游戏中' : '等待中';
             this.status.innerHTML = `<noname-status data-state="${state}"></noname-status> ${stateText} ${Math.min(np, npmax)} / ${npmax}`;
@@ -2361,12 +2373,22 @@
             }
             return node;
         }
-        // set background image and set background position/size to center/cover
+        /** Set background image and set background position/size to center/cover. */
         setBackground(node, ...args) {
             if (!args[args.length - 1].includes('.')) {
                 args[args.length - 1] += '.webp';
             }
             node.style.background = `url(${args.join('/')}) center/cover`;
+        }
+        /** Set background image from an extension. */
+        setImage(node, url) {
+            if (url.includes(':')) {
+                const [ext, name] = url.split(':');
+                this.setBackground(node, 'extensions', ext, 'images', name);
+            }
+            else {
+                this.setBackground(node, url);
+            }
         }
         /** Register component constructor. */
         registerComponent(key, cls) {

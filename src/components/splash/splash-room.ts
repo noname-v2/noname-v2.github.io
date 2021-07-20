@@ -18,14 +18,7 @@ export class SplashRoom extends Component {
 
     setup([name, np, npmax, [nickname, avatar], state]:
         [string, number, number, [string, string], boolean]) {
-        if (avatar.includes(':')) {
-            const [ext, name] = avatar.split(':');
-            this.ui.setBackground(this.avatar, 'extensions', ext, 'images', name);
-        }
-        else {
-            this.ui.setBackground(this.avatar, avatar);
-        }
-
+        this.ui.setImage(this.avatar, avatar);
         this.caption.innerHTML = name;
         const stateText = state ? '游戏中' : '等待中';
         this.status.innerHTML = `<noname-status data-state="${state}"></noname-status> ${stateText} ${Math.min(np, npmax)} / ${npmax}`;

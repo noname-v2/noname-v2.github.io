@@ -31,7 +31,7 @@ noname-player {
 		}
 	}
 
-	&.hero-hidden.deputy-hidden > noname-background {
+	&.hero-hidden.vice-hidden > noname-background {
 		background: var(--player-back-background);
 		box-shadow: var(--player-back-shadow);
 	}

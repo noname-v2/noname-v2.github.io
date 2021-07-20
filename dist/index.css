@@ -941,7 +941,7 @@ noname-player > noname-background > noname-image {
   border-radius: var(--player-image-radius);
   box-shadow: var(--player-image-shadow);
 }
-noname-player.hero-hidden.deputy-hidden > noname-background {
+noname-player.hero-hidden.vice-hidden > noname-background {
   background: var(--player-back-background);
   box-shadow: var(--player-back-shadow);
 }

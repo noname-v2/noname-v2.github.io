@@ -138,13 +138,7 @@ export class SplashHub extends Popup {
 		const avatarNode = this.ui.createElement('widget', group);
 		const img = this.ui.createElement('image', avatarNode);
 		const url = this.db.get('avatar') ?? config.avatar;
-		if (url.includes(':')) {
-			const [ext, name] = url.split(':');
-			this.ui.setBackground(img, 'extensions', ext, 'images', name);
-		}
-		else {
-			this.ui.setBackground(img, url);
-		}
+        this.ui.setImage(img, url);
 
 		// nickname input
 		this.ui.createElement('span.nickname', group).innerHTML = '昵称';
