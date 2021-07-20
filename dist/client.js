@@ -270,20 +270,12 @@
                 this.splash.settings.create(this.splash);
             });
             // add history
-            history.pushState('exit', '');
-            history.pushState('main', '');
-            window.addEventListener('popstate', e => {
-                if (e.state === 'exit') {
-                    this.ui.app.confirm('是否重新载入游戏？').then(exit => {
-                        if (exit) {
-                            window.location.reload();
-                        }
-                        else {
-                            history.forward();
-                        }
-                    });
-                }
-            });
+            if (this.client.platform === 'Android') {
+                history.pushState('main', '');
+                window.addEventListener('popstate', e => {
+                    this.client.triggerListener('history', e.state);
+                });
+            }
         }
         /** Add styles for theme. */
         async loadTheme() {
@@ -494,6 +486,12 @@
             this.popups.set(dialogID, dialog);
             dialog.ready.then(() => dialog.open());
         }
+        /** Remove a popup. */
+        removePopup(id) {
+            const popup = this.popups.get(id);
+            popup?.close();
+            this.popups.delete(id);
+        }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
             for (const popup of this.popups.values()) {
@@ -647,35 +645,54 @@
         init() {
             this.app.arena.node.appendChild(this.node);
             this.client.addListener('sync', this);
+            this.client.addListener('history', this);
+            // make android back button function as returning to previous page
+            if (history.state === 'main') {
+                history.pushState('lobby', '');
+            }
             this.sidebar.ready.then(() => {
-                this.sidebar.setHeader('返回', async () => {
-                    const ws = this.client.connection;
-                    const peers = this.client.peers;
-                    if (peers || ws instanceof WebSocket) {
-                        const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-                        if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', { content })) {
-                            if (ws instanceof WebSocket) {
-                                this.client.clear();
-                                ws.send('leave:init');
-                            }
-                            else {
-                                this.freeze();
-                                this.yield(['config', 'online', false], false);
-                                this.exiting = true;
-                            }
-                        }
+                this.sidebar.setHeader('返回', () => {
+                    if (history.state === 'lobby') {
+                        history.back();
                     }
                     else {
-                        this.close();
+                        this.back();
                     }
                 });
-                this.sidebar.setFooter('开始游戏', () => {
-                    this.yield(null);
-                });
+                this.sidebar.setFooter('开始游戏', () => this.yield(null));
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
             this.ui.animate(this.seats, { scale: ['var(--app-splash-transform)', 1], opacity: [0, 1] });
+        }
+        async back() {
+            const ws = this.client.connection;
+            const peers = this.client.peers;
+            if (peers || ws instanceof WebSocket) {
+                // history back posponded
+                if (history.state === 'main') {
+                    history.forward();
+                }
+                const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
+                if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
+                    if (ws instanceof WebSocket) {
+                        this.client.clear();
+                        ws.send('leave:init');
+                    }
+                    else {
+                        this.freeze();
+                        this.yield(['config', 'online', false], false);
+                        this.exiting = true;
+                    }
+                    if (history.state === 'lobby') {
+                        this.client.listeners.history.delete(this);
+                        history.back();
+                    }
+                }
+            }
+            else {
+                this.close();
+            }
         }
         $pane(configs) {
             this.sidebar.pane.addSection('选项');
@@ -802,6 +819,17 @@
         close() {
             this.client.disconnect();
             this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
+        }
+        async history(state) {
+            if (state === 'main') {
+                if (this.app.popups.has('exitLobby')) {
+                    this.app.removePopup('exitLobby');
+                    history.forward();
+                }
+                else {
+                    this.back();
+                }
+            }
         }
     }
 

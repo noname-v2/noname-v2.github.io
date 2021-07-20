@@ -308,6 +308,7 @@ html, body {
   top: 0;
   position: absolute;
   overflow: hidden;
+  overscroll-behavior: none;
   background-color: #3c3c3c;
   user-select: none;
   -webkit-user-select: none;

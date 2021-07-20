@@ -128,20 +128,11 @@ export class App extends Component {
         });
 
         // add history
-        history.pushState('exit', '');
-        history.pushState('main', '');
-        window.addEventListener('popstate', e => {
-            if (e.state === 'exit') {
-                this.ui.app.confirm('是否重新载入游戏？').then(exit => {
-                    if (exit) {
-                        window.location.reload();
-                    }
-                    else {
-                        history.forward();
-                    }
-                });
-            }
-        });
+        if (this.client.platform === 'Android') {
+            window.addEventListener('popstate', e => {
+                this.client.triggerListener('history', e.state);
+            });
+        }
     }
 
     /** Add styles for theme. */
@@ -389,6 +380,13 @@ export class App extends Component {
 
         this.popups.set(dialogID, dialog);
         dialog.ready.then(() => dialog.open());
+    }
+
+    /** Remove a popup. */
+    removePopup(id: string) {
+        const popup = this.popups.get(id);
+        popup?.close();
+        this.popups.delete(id);
     }
 
     /** Clear alert and confirm dialogs. */

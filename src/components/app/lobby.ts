@@ -31,35 +31,59 @@ export class Lobby extends Component {
     init() {
         this.app.arena!.node.appendChild(this.node);
         this.client.addListener('sync', this);
+        this.client.addListener('history', this);
+
+        // make android back button function as returning to previous page
+        if (history.state === 'main') {
+            history.pushState('lobby', '');
+        }
         this.sidebar.ready.then(() => {
-            this.sidebar.setHeader('返回', async () => {
-                const ws = this.client.connection;
-                const peers = this.client.peers;
-                if (peers || ws instanceof WebSocket) {
-                    const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-                    if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', {content})) {
-                        if (ws instanceof WebSocket) {
-                            this.client.clear();
-                            ws.send('leave:init');
-                        }
-                        else {
-                            this.freeze();
-                            this.yield(['config', 'online', false], false);
-                            this.exiting = true;
-                        }
-                    }
+            this.sidebar.setHeader('返回', () => {
+                if (history.state === 'lobby') {
+                    history.back();
                 }
                 else {
-                    this.close();
+                    this.back();
                 }
             });
-            this.sidebar.setFooter('开始游戏', () => {
-                this.yield(null);
-            });
+            this.sidebar.setFooter('开始游戏', () => this.yield(null));
         });
+
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
         this.ui.animate(this.seats, {scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]});
+    }
+
+    async back() {
+        const ws = this.client.connection;
+        const peers = this.client.peers;
+        if (peers || ws instanceof WebSocket) {
+            // history back posponded
+            if (history.state === 'main') {
+                history.forward();
+            }
+
+            const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
+            if (!peers || !Object.keys(peers).length || await this.app.confirm('联机模式', {content, id: 'exitLobby'})) {
+                if (ws instanceof WebSocket) {
+                    this.client.clear();
+                    ws.send('leave:init');
+                }
+                else {
+                    this.freeze();
+                    this.yield(['config', 'online', false], false);
+                    this.exiting = true;
+                }
+
+                if (history.state === 'lobby') {
+                    this.client.listeners.history.delete(this);
+                    history.back();
+                }
+            }
+        }
+        else {
+            this.close();
+        }
     }
 
     $pane(configs: any) {
@@ -196,5 +220,17 @@ export class Lobby extends Component {
     close() {
         this.client.disconnect();
         this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
+    }
+
+    async history(state: string) {
+        if (state === 'main') {
+            if (this.app.popups.has('exitLobby')) {
+                this.app.removePopup('exitLobby');
+                history.forward();
+            }
+            else {
+                this.back();
+            }
+        }
     }
 }

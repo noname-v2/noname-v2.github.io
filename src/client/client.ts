@@ -7,7 +7,7 @@ import type { UITick, ClientMessage } from '../worker/worker';
 interface ClientListener {
     sync: {sync: () => void};
     resize: {resize: () => void, id: number | null};
-    history: {history: () => void};
+    history: {history: (state: string) => void};
     key: {key: (e: KeyboardEvent) => void};
 }
 

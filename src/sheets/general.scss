@@ -1,7 +1,7 @@
 html, body {
 	@include layer;
 	overflow: hidden;
-	// overscroll-behavior: none; // disable two finger back gesture in chrome
+	overscroll-behavior: none; // disable two finger back gesture in chrome
 	background-color: #3c3c3c;
 	user-select: none;
 	-webkit-user-select: none;
