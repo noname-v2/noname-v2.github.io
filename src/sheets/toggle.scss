@@ -54,8 +54,7 @@ noname-toggle {
 			overflow: hidden;
 
 			// workaround for safari transition bug
-			mask-image: -webkit-radial-gradient(white, black);
-			-webkit-mask-image: -webkit-radial-gradient(white, black);
+			@include mask;
 
 			// blue background
 			> noname-switcher-background {

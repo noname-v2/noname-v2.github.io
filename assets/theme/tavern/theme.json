@@ -27,6 +27,7 @@
 	},
 
 	"sidebar": {
+		"background": "@(bg.webp)",
 		"shadow": "rgba(20, 20, 20, 1) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
 	}
 }

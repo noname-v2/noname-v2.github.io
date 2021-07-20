@@ -64,7 +64,7 @@ noname-popup.splash-settings > noname-pane {
                         overflow: hidden;
                         border-radius: 25px;
 		                background: var(--toggle-button-background);
-                        @include mask;
+                        // @include mask;
 
                         > noname-slider {
                             width: 200%;

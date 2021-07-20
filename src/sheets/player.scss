@@ -109,8 +109,7 @@ noname-player {
 			transition: opacity var(--app-transition);
 
 			// workaround for safari transition bug
-			mask-image: -webkit-radial-gradient(white, black);
-			-webkit-mask-image: -webkit-radial-gradient(white, black);
+			@include mask;
 
 			> noname-div {
 				@include layer;

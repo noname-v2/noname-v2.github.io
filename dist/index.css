@@ -790,9 +790,6 @@ noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item >
   overflow: hidden;
   border-radius: 25px;
   background: var(--toggle-button-background);
-  overflow: hidden;
-  mask-image: -webkit-radial-gradient(white, black);
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 noname-popup.splash-settings > noname-pane > noname-gallery.volume noname-item > noname-widget > noname-image > noname-slider {
   width: 200%;
@@ -1005,6 +1002,7 @@ noname-player > noname-content > noname-timer {
   background: var(--player-timer-background);
   overflow: hidden;
   transition: opacity var(--app-transition);
+  overflow: hidden;
   mask-image: -webkit-radial-gradient(white, black);
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
@@ -1339,6 +1337,7 @@ noname-toggle > noname-switcher > noname-switcher-container {
   top: 0;
   position: absolute;
   border-radius: var(--toggle-radius);
+  overflow: hidden;
   overflow: hidden;
   mask-image: -webkit-radial-gradient(white, black);
   -webkit-mask-image: -webkit-radial-gradient(white, black);
