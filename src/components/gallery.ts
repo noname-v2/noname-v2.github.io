@@ -28,7 +28,7 @@ export class Gallery extends Component {
     private currentPage: number = 0;
 
 	/** Cache of item number per page. */
-	private currentSize: number | null = null;
+	private currentSize: [number, number] | null = null;
 
 	/** Device can scroll horizontally. */
 	private horizontal = false;
@@ -47,6 +47,9 @@ export class Gallery extends Component {
 
 		for (let j = 0; j < n; j++) {
 			const item = this.items[i * n + j];
+			if (j && j % this.currentSize![1] === 0) {
+				layer.appendChild(document.createElement('div'));
+			}
 			if (typeof item === 'function') {
 				const container = this.ui.createElement('item');
 				const rendered = item();
@@ -67,12 +70,10 @@ export class Gallery extends Component {
 		(page as any).replaceChildren(layer);
 	}
 
-	/** Get number of items per page.
-	 * @param {boolean} recalc - calculate size without refering to this.currentSize.
-	 */
+	/** Get number of items per page. */
 	getSize(recalc: boolean = false) {
 		if (!recalc && this.currentSize !== null) {
-			return this.currentSize;
+			return this.currentSize[0] * this.currentSize[1];
 		}
 
 		const calc = (n: [number, number, number, number], full: number) => {
@@ -81,12 +82,9 @@ export class Gallery extends Component {
 		};
 		const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
 		const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
-		const size = nrows * ncols;
+		this.currentSize = [nrows, ncols];
 
-		if (!recalc) {
-			this.currentSize = size;
-		}
-		return size;
+		return nrows * ncols;
 	}
 
 	/** Update page count and create page(s) if necessary. */
@@ -194,9 +192,12 @@ export class Gallery extends Component {
 
 	/** Callback when window resize. */
 	resize() {
-		const size = this.getSize(true);
-		if (size !== this.currentSize) {
-			this.currentSize = size;
+		if (!this.currentSize) {
+			this.getSize();
+		}
+		const [nrows, ncols] = this.currentSize!;
+		this.getSize(true);
+		if (nrows !== this.currentSize![0] || ncols !== this.currentSize![1]) {
 			this.rendered.clear();
 			this.updatePages();
 			if (this.currentPage >= this.pageCount) {

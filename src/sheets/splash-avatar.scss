@@ -1,4 +1,24 @@
 noname-popup.splash-avatar > noname-pane {
-    width: var(--popup-portrait-width);
-    height: var(--popup-landscape-height);
+    width: 600px;
+    height: 360px;
+    padding: 10px;
+
+    > noname-gallery {
+        @include layer;
+        top: 4px;
+        height: calc(100% - 12px);
+
+        > noname-indicator {
+            bottom: -2px;
+        }
+
+        noname-item {
+            width: 60px;
+            height: 60px;
+            > noname-image {
+                @include widget;
+                border-radius: 100%;
+            }
+        }
+    }
 }

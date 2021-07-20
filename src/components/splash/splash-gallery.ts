@@ -30,7 +30,7 @@ export class SplashGallery extends Gallery {
     width = 900;
 
 	/** Extension index. */
-	index: ExtensionIndex = {};
+	index!: ExtensionIndex;
 
     async init() {
 		const margin = parseInt(this.app.css.app['splash-margin']);

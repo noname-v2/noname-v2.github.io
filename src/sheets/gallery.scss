@@ -29,6 +29,7 @@ noname-gallery {
                 align-items: center;
                 justify-content: space-evenly;
                 align-content: space-evenly;
+                flex-wrap: wrap;
 
                 > noname-item {
                     position: relative;
@@ -36,6 +37,10 @@ noname-gallery {
                     > * {
                         @include layer;
                     }
+                }
+
+                > div {
+                    flex-basis: 100%;
                 }
             }
         }

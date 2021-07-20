@@ -242,6 +242,7 @@ noname-gallery > noname-pages > noname-page > noname-layer {
   align-items: center;
   justify-content: space-evenly;
   align-content: space-evenly;
+  flex-wrap: wrap;
 }
 noname-gallery > noname-pages > noname-page > noname-layer > noname-item {
   position: relative;
@@ -254,6 +255,9 @@ noname-gallery > noname-pages > noname-page > noname-layer > noname-item > * {
   left: 0;
   top: 0;
   position: absolute;
+}
+noname-gallery > noname-pages > noname-page > noname-layer > div {
+  flex-basis: 100%;
 }
 noname-gallery > noname-indicator {
   display: none;
@@ -849,6 +853,7 @@ noname-popup {
   top: 0;
   position: absolute;
   z-index: 20;
+  transition: opacity var(--app-transition);
 }
 noname-popup.center {
   display: flex;
@@ -997,8 +1002,42 @@ noname-sidebar > noname-pane {
 }
 
 noname-popup.splash-avatar > noname-pane {
-  width: var(--popup-portrait-width);
-  height: var(--popup-landscape-height);
+  width: 600px;
+  height: 360px;
+  padding: 10px;
+}
+noname-popup.splash-avatar > noname-pane > noname-gallery {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  top: 4px;
+  height: calc(100% - 12px);
+}
+noname-popup.splash-avatar > noname-pane > noname-gallery > noname-indicator {
+  bottom: -2px;
+}
+noname-popup.splash-avatar > noname-pane > noname-gallery noname-item {
+  width: 60px;
+  height: 60px;
+}
+noname-popup.splash-avatar > noname-pane > noname-gallery noname-item > noname-image {
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+  border-radius: 100%;
+}
+noname-popup.splash-avatar > noname-pane > noname-gallery noname-item > noname-image > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
 }
 
 noname-popup.splash-hub > noname-pane > noname-group {

@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { Splash, SplashRoom, Dialog } from '../../components';
+import { Splash, Dialog, SplashRoom, SplashGallery } from '../../components';
 import { config } from '../../version';
 import { hub2member, split } from '../../hub/types';
 
@@ -22,11 +22,20 @@ export class SplashHub extends Popup {
     /** Caption container. */
     caption = this.ui.createElement('caption.hidden');
 
+    /** Avatar image. */
+    avatarImage!: HTMLElement; 
+
     /** nickname input */
     nickname = this.ui.create('input');
 
     /** address input */
     address = this.ui.create('input');
+
+	/** Mode gallery for reference to extension index. */
+    gallery!: SplashGallery;
+
+    /** Popup for avatar selection. */
+    avatarSelector: Popup | null = null;
 
     create(splash: Splash) {
         // nickname, avatar and this address
@@ -59,6 +68,7 @@ export class SplashHub extends Popup {
 
 		// enable button click after creation finish
 		splash.bar.buttons.hub.node.classList.remove('disabled');
+        this.gallery = splash.gallery;
     }
 
     clearRooms() {
@@ -143,17 +153,15 @@ export class SplashHub extends Popup {
 
         // avatar
 		const avatarNode = this.ui.createElement('widget', group);
-		const img = this.ui.createElement('image', avatarNode);
+		const img = this.avatarImage = this.ui.createElement('image', avatarNode);
 		const url = this.db.get('avatar') ?? config.avatar;
         this.ui.setImage(img, url);
         this.ui.bindClick(avatarNode, e => {
-            const popup = this.ui.create('splash-avatar');
-            popup.location = e;
-            popup.open();
-            popup.onclose = () => {
-                this.focus();
+            if (!this.avatarSelector) {
+                this.createSelector();
             }
-            this.blur();
+            this.avatarSelector!.location = e;
+            this.avatarSelector!.open();
         });
 
 		// nickname input
@@ -258,5 +266,38 @@ export class SplashHub extends Popup {
                 ws.send('leave:init');
             }
         });
+    }
+
+    createSelector() {
+        const popup = this.avatarSelector = this.ui.create('popup');
+        popup.node.classList.add('splash-avatar');
+        popup.onopen = () => {
+            this.node.classList.add('blurred');
+        };
+        popup.onclose = () => {
+            this.node.classList.remove('blurred');
+        };
+        const images = [];
+        for (const name in this.gallery.index) {
+            const ext = this.gallery.index[name];
+            if (ext.images) {
+                for (const img of ext.images) {
+                    images.push(name + ':' + img);
+                }
+            }
+        }
+        const gallery = popup.pane.addGallery(5, 9);
+        for (const img of images) {
+            gallery.add(() => {
+                const node = this.ui.createElement('image');
+                this.ui.setImage(node, img);
+                this.ui.bindClick(node, () => {
+                    this.ui.setImage(this.avatarImage, img);
+                    this.db.set('avatar', img);
+                    popup.close();
+                });
+                return node;
+            });
+        }
     }
 }

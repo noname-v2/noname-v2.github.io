@@ -522,8 +522,6 @@
             this.transition = null;
             /** Currently hidden. */
             this.hidden = true;
-            /** Currently blurred. */
-            this.blurred = false;
         }
         init() {
             this.node.classList.add('noname-popup');
@@ -599,24 +597,6 @@
                     opacity: [0, 1], scale: ['var(--popup-transform)', 1]
                 }, this.app.getTransition(this.transition));
             });
-        }
-        blur() {
-            if (this.blurred) {
-                return;
-            }
-            this.blurred = true;
-            this.ui.animate(this.pane.node, {
-                opacity: [1, 'var(--app-blurred-opacity)'], scale: [1, 'var(--popup-transform)']
-            }, { fill: 'forwards', duration: this.app.getTransition(this.transition) });
-        }
-        focus() {
-            if (!this.blurred) {
-                return;
-            }
-            this.blurred = false;
-            this.ui.animate(this.pane.node, {
-                opacity: ['var(--app-blurred-opacity)', 1], scale: ['var(--popup-transform)', 1]
-            }, { fill: 'forwards', duration: this.app.getTransition(this.transition) });
         }
     }
 
@@ -1078,6 +1058,9 @@
             const layer = this.ui.createElement('layer');
             for (let j = 0; j < n; j++) {
                 const item = this.items[i * n + j];
+                if (j && j % this.currentSize[1] === 0) {
+                    layer.appendChild(document.createElement('div'));
+                }
                 if (typeof item === 'function') {
                     const container = this.ui.createElement('item');
                     const rendered = item();
@@ -1096,12 +1079,10 @@
             }
             page.replaceChildren(layer);
         }
-        /** Get number of items per page.
-         * @param {boolean} recalc - calculate size without refering to this.currentSize.
-         */
+        /** Get number of items per page. */
         getSize(recalc = false) {
             if (!recalc && this.currentSize !== null) {
-                return this.currentSize;
+                return this.currentSize[0] * this.currentSize[1];
             }
             const calc = (n, full) => {
                 const [ratio, margin, spacing, length] = n;
@@ -1109,11 +1090,8 @@
             };
             const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
             const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
-            const size = nrows * ncols;
-            if (!recalc) {
-                this.currentSize = size;
-            }
-            return size;
+            this.currentSize = [nrows, ncols];
+            return nrows * ncols;
         }
         /** Update page count and create page(s) if necessary. */
         updatePages() {
@@ -1206,9 +1184,12 @@
         }
         /** Callback when window resize. */
         resize() {
-            const size = this.getSize(true);
-            if (size !== this.currentSize) {
-                this.currentSize = size;
+            if (!this.currentSize) {
+                this.getSize();
+            }
+            const [nrows, ncols] = this.currentSize;
+            this.getSize(true);
+            if (nrows !== this.currentSize[0] || ncols !== this.currentSize[1]) {
                 this.rendered.clear();
                 this.updatePages();
                 if (this.currentPage >= this.pageCount) {
@@ -1349,11 +1330,6 @@
         }
     }
 
-    class SplashAvatar extends Popup {
-    }
-    /** Use tag <noname-popup>. */
-    SplashAvatar.tag = 'popup';
-
     class SplashBar extends Component {
         constructor() {
             super(...arguments);
@@ -1438,8 +1414,6 @@
             this.nrows = 1;
             /** Default window width. */
             this.width = 900;
-            /** Extension index. */
-            this.index = {};
         }
         async init() {
             const margin = parseInt(this.app.css.app['splash-margin']);
@@ -1592,6 +1566,8 @@
             this.nickname = this.ui.create('input');
             /** address input */
             this.address = this.ui.create('input');
+            /** Popup for avatar selection. */
+            this.avatarSelector = null;
         }
         create(splash) {
             // nickname, avatar and this address
@@ -1619,6 +1595,7 @@
             };
             // enable button click after creation finish
             splash.bar.buttons.hub.node.classList.remove('disabled');
+            this.gallery = splash.gallery;
         }
         clearRooms() {
             for (const room of this.rooms.values()) {
@@ -1692,17 +1669,15 @@
             const group = this.pane.add('group');
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
-            const img = this.ui.createElement('image', avatarNode);
+            const img = this.avatarImage = this.ui.createElement('image', avatarNode);
             const url = this.db.get('avatar') ?? config.avatar;
             this.ui.setImage(img, url);
             this.ui.bindClick(avatarNode, e => {
-                const popup = this.ui.create('splash-avatar');
-                popup.location = e;
-                popup.open();
-                popup.onclose = () => {
-                    this.focus();
-                };
-                this.blur();
+                if (!this.avatarSelector) {
+                    this.createSelector();
+                }
+                this.avatarSelector.location = e;
+                this.avatarSelector.open();
             });
             // nickname input
             this.ui.createElement('span.nickname', group).innerHTML = '昵称';
@@ -1800,6 +1775,38 @@
                     ws.send('leave:init');
                 }
             });
+        }
+        createSelector() {
+            const popup = this.avatarSelector = this.ui.create('popup');
+            popup.node.classList.add('splash-avatar');
+            popup.onopen = () => {
+                this.node.classList.add('blurred');
+            };
+            popup.onclose = () => {
+                this.node.classList.remove('blurred');
+            };
+            const images = [];
+            for (const name in this.gallery.index) {
+                const ext = this.gallery.index[name];
+                if (ext.images) {
+                    for (const img of ext.images) {
+                        images.push(name + ':' + img);
+                    }
+                }
+            }
+            const gallery = popup.pane.addGallery(5, 9);
+            for (const img of images) {
+                gallery.add(() => {
+                    const node = this.ui.createElement('image');
+                    this.ui.setImage(node, img);
+                    this.ui.bindClick(node, () => {
+                        this.ui.setImage(this.avatarImage, img);
+                        this.db.set('avatar', img);
+                        popup.close();
+                    });
+                    return node;
+                });
+            }
         }
     }
     /** Use tag <noname-popup>. */
@@ -2226,7 +2233,6 @@
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
     componentClasses.set('popup', Popup);
-    componentClasses.set('splash-avatar', SplashAvatar);
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);
     componentClasses.set('splash-hub', SplashHub);
