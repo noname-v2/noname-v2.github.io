@@ -1,4 +1,4 @@
-import type { Pile } from '../extension';
+import type { Pile } from '../sgs/sgs';
 
 export const pile = <Pile>{
     sha: {

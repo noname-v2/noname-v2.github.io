@@ -1,13 +1,8 @@
-import type { Extension } from '../extension';
+import type { SGS } from '../sgs/sgs';
+import { card } from './card';
+import { skill } from './skill';
 
-export default <Extension>{
+export default <SGS>{
     cardpack: '军争',
-    card: {
-        hanbin: {
-            name: '寒冰剑',
-            content() {
-
-            }
-        }
-    }
+    card, skill
 }

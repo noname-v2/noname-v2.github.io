@@ -1,6 +1,6 @@
-import type { Extension } from '../extension';
+import type { SGS } from '../sgs/sgs';
 
-export default <Extension>{
+export default <SGS>{
     mode: {
         ruleset: 'sgs',
         name: '战棋',

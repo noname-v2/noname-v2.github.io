@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <Collection>{
+export const skill = <SkillCollection>{
     kangkai: {
         name: '慷忾',
         intro: '当一名角色成为@(standard.sha)的目标后，若你与其距离1以内，则你可以摸一张牌，然后交给其一张牌并展示之。若此牌为装备牌，该角色可以使用此牌。'

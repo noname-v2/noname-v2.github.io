@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { HeroCollection } from '../sgs/sgs';
 
-export const hero = <Collection>{
+export const hero = <HeroCollection>{
     caozhi: {
         name: '曹植',
         intro: '字子建，沛国谯人，三国曹魏著名文学家，建安文学代表人物。魏武帝曹操之子，魏文帝曹丕之弟，生前曾为陈王，去世后谥号“思”，因此又称陈思王。南朝宋文学家谢灵运更有“天下才有一石，曹子建独占八斗”的评价。王士祯尝论汉魏以来二千年间诗家堪称“仙才”者，曹植、李白、苏轼三人耳。',

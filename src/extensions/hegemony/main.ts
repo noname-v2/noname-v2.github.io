@@ -1,9 +1,9 @@
-import type { Extension } from '../extension';
+import type { SGS } from '../sgs/sgs';
 import { hero } from './hero';
 import { card } from './card';
 import { skill } from './skill';
 
-export default <Extension>{
+export default <SGS>{
     mode: {
         ruleset: 'sgs',
         name: '国战',

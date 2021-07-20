@@ -3,8 +3,8 @@ import { player } from './ruleset/player';
 import { stage } from './ruleset/stage';
 import { game } from './ruleset/game';
 import { config } from './ruleset/config';
-import type { Extension } from '../extension';
+import type { SGS } from './sgs';
 
-export default <Extension>{
+export default <SGS>{
     ruleset: { card, player, stage, game, config }
 }

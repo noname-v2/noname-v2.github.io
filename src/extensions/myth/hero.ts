@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { HeroCollection } from '../sgs/sgs';
 
-export const hero = <Collection>{
+export const hero = <HeroCollection>{
     caoren: {
         name: '曹仁',
         intro: '字子孝，沛国谯人，曹操的从弟。三国时期曹魏名将，官至大司马。谥曰忠侯。',

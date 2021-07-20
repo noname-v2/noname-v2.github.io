@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <Collection>{
+export const skill = <SkillCollection>{
     jianxiong: {
         name: '奸雄',
         intro: '当你受到伤害后，你可以获得造成此伤害的牌。'

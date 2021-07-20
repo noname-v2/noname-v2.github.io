@@ -1,4 +1,4 @@
-import type { Collection } from '../../extension';
+import type { Collection } from '../sgs';
 
 export const card = <Collection>{
     moveTo: {

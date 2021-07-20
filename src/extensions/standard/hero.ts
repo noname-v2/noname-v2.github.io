@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { HeroCollection } from '../sgs/sgs';
 
-export const hero = <Collection>{
+export const hero = <HeroCollection>{
     caocao: {
         name: '曹操',
         intro: '魏武帝曹操，字孟德，小名阿瞒、吉利，沛国谯人。精兵法，善诗歌，乃治世之能臣，乱世之奸雄也。',

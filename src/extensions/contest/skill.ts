@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <Collection>{
+export const skill = <SkillCollection>{
     luoying: {
         name: '落英',
         intro: '你可以获得其他角色弃置或判定的梅花牌。'

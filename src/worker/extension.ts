@@ -9,14 +9,8 @@ export interface Section {
     [key: string]: any;
 }
 
-export interface Collection {
-    [key: string]: Section | ((stage: StageAccessor) => any);
-}
-
-export interface Pile {
-    [key: string]: {
-        [key: string]: (number | [number, ...string[]])[];
-    }
+export interface Collection<T=Section> {
+    [key: string]: T | ((stage: StageAccessor) => any);
 }
 
 export interface Extension {
@@ -28,6 +22,5 @@ export interface Extension {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
-    pile?: Pile;
     components?: (c: typeof Component, cs: Map<string, ComponentClass>) => void;
 }

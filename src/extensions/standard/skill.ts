@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <Collection>{
+export const skill = <SkillCollection>{
     hujia: {
         name: '护驾',
         intro: '@(主公技) 魏势力角色可以替你打出@(standard.shan)'

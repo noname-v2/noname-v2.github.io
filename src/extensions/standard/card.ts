@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { CardCollection } from '../sgs/sgs';
 
-export const card = <Collection>{
+export const card = <CardCollection>{
     sha: {
         name: '杀',
         caption: '殺',

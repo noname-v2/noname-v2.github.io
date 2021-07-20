@@ -1,12 +1,10 @@
+const card = {};
+
+const skill = {};
+
 var main = {
     cardpack: '军争',
-    card: {
-        hanbin: {
-            name: '寒冰剑',
-            content() {
-            }
-        }
-    }
+    card, skill
 };
 
 export default main;

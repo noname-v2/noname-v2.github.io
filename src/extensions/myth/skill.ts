@@ -1,6 +1,6 @@
-import type { Collection } from '../extension';
+import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <Collection>{
+export const skill = <SkillCollection>{
     jushou: {
         name: '据守',
         intro: '结束阶段开始时，你可以翻面，若如此做，你摸四张牌，然后选择一项：1.弃置一张不为装备牌的牌；2.使用一张装备牌。'
