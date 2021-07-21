@@ -164,7 +164,14 @@ export class Gallery extends Component {
 
         // reset timeout
         clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = window.setTimeout(() => this.targetPage = null, 500);
+        this.scrollTimeout = window.setTimeout(() => {
+            if (this.targetPage) {
+                if (this.currentPage !== this.targetPage[1]) {
+                    this.pages.scrollTo({left: this.targetPage[1] * this.pages.offsetWidth, behavior: 'smooth'});
+                }
+                this.targetPage = null;
+            }
+        }, 500);
 
         // turn page (used with scroll-snapping and scroll-behavior: smooth)
         const width = this.pages.offsetWidth;
