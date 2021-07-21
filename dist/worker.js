@@ -206,20 +206,17 @@
             this.monitors.set(id, content);
         }
         /** Handle value returned from client. */
-        async onyield(id, result, done) {
+        dispatch(id, result, done) {
             const link = this.game.links.get(id);
             const monitor = this.monitors.get(id);
-            if (monitor && !done) {
-                const update = await this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
-                if (link.owner && update !== undefined) {
-                    this.game.worker.send(link.owner, [this.id, {}, { [id]: [['#yield', update]] }]);
-                }
-            }
             if (done) {
                 this.results.set(id, result);
                 if (this.resolve && this.resolved) {
                     this.resolve();
                 }
+            }
+            else if (monitor) {
+                this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
             }
         }
         /** Get child stages based on current step. */
@@ -376,7 +373,6 @@
         }
         /** Call a component method from its owner. Special methods:
          * #unlink: Remove reference to this.
-         * #yield: Send return value of component.yield().
         */
         call(method, arg) {
             this.#game.activeStage.call(this.#id, [method, arg]);
@@ -520,7 +516,7 @@
                         // send result to listener
                         const link = this.links.get(id);
                         if (link?.owner === uid) {
-                            this.activeStage.onyield(id, result, done);
+                            this.activeStage.dispatch(id, result, done);
                         }
                     }
                 }

@@ -88,14 +88,7 @@ export abstract class Component {
         if (this.id === null) {
             throw('element is has no ID');
         }
-
         this.client.send(this.id, result, done);
-
-        if (!done) {
-            return new Promise(resolve => {
-                this.client.yielding.set(this.id!, resolve);
-            });
-        }
     }
 
     /** Remove element. */

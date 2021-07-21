@@ -59,7 +59,6 @@ export class Link {
 
     /** Call a component method from its owner. Special methods:
      * #unlink: Remove reference to this.
-     * #yield: Send return value of component.yield().
     */
     call(method: string, arg?: any) {
         this.#game.activeStage!.call(this.#id, [method, arg]);

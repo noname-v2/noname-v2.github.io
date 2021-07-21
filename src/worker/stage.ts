@@ -117,20 +117,17 @@ export class Stage {
     }
 
     /** Handle value returned from client. */
-    async onyield(id: number, result: any, done: boolean) {
+    dispatch(id: number, result: any, done: boolean) {
         const link = this.game.links.get(id)!;
         const monitor = this.monitors.get(id);
-        if (monitor && !done) {
-            const update = await this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
-            if (link.owner && update !== undefined) {
-                this.game.worker.send(link.owner, [this.id, {}, {[id]: [['#yield', update]]}]);
-            }
-        }
         if (done) {
             this.results.set(id, result);
             if (this.resolve && this.resolved) {
                 this.resolve();
             }
+        }
+        else if (monitor) {
+            this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
         }
     }
 

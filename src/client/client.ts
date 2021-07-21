@@ -43,9 +43,6 @@ export class Client {
         key: new Set<{key: (e: KeyboardEvent) => void}>()
     };
 
-    /** Components awaiting response from worker. */
-    yielding = new Map<number, (result: any) => any>();
-
     /**  UITicks waiting for dispatch. */
     private ticks = <UITick[]>[];
 
@@ -158,7 +155,6 @@ export class Client {
             this.removeListeners(cmp);
         }
         this.components.clear();
-        this.yielding.clear();
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
@@ -196,27 +192,20 @@ export class Client {
         try {
             const [sid, updates, calls] = this.ticks[0];
 
-            // expect a full UI reload if this.loaded == 0
-            if (this.loaded === 0) {
-                for (const id in updates) {
-                    if (updates[id]['#tag'] === 'arena') {
-                        this.clear(false);
-                        this.loaded = Date.now();
-                        break;
-                    }
-                }
-                if (!this.loaded) {
-                    throw('UI not loaded')
+            // check if tick is a full UI reload
+            for (const id in updates) {
+                if (updates[id]['#tag'] === 'arena') {
+                    this.clear(false);
+                    this.loaded = Date.now();
+                    break;
                 }
             }
-
-            // progress to a new stage
-            if (sid !== this.sid) {
-                this.yielding.clear();
-                this.sid = sid;
+            if (!this.loaded) {
+                throw('UI not loaded')
             }
 
             // update component properties
+            this.sid = sid;
             for (const key in updates) {
                 const items = updates[key];
                 const id = parseInt(key);
@@ -248,9 +237,6 @@ export class Client {
                             this.removeListeners(cmp);
                             this.components.delete(id);
                         }
-                    }
-                    else if (method === '#yield') {
-                        this.yielding.get(id)!(arg);
                     }
                     else {
                         const component = this.components.get(id)!;

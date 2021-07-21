@@ -75,7 +75,7 @@ export class Game {
                     // send result to listener
                     const link = this.links.get(id);
                     if (link?.owner === uid) {
-                        this.activeStage.onyield(id, result, done);
+                        this.activeStage.dispatch(id, result, done);
                     }
                 }
             }
