@@ -153,19 +153,16 @@ export class Gallery extends Component {
         }
         // turn page (used with scroll-snapping and scroll-behavior: smooth)
         const width = this.pages.offsetWidth;
-        if (this.targetPage === null) {
-            this.targetPage = Math.round(this.pages.scrollLeft / width) + e.deltaY / Math.abs(e.deltaY)
+        let targetPage = this.targetPage ?? Math.round(this.pages.scrollLeft / width);
+        targetPage += e.deltaY / Math.abs(e.deltaY);;
+        if (targetPage < 0) {
+            targetPage = 0;
         }
-        else {
-            this.targetPage += e.deltaY / Math.abs(e.deltaY);
-            if (this.targetPage < 0) {
-                this.targetPage = 0;
-            }
-            else if (this.targetPage >= this.pageCount) {
-                this.targetPage = this.pageCount - 1;
-            }
+        else if (targetPage >= this.pageCount) {
+            targetPage = this.pageCount - 1;
         }
-        this.pages.scrollTo({left: this.targetPage * width, behavior: 'smooth'});
+        this.targetPage = targetPage;
+        this.pages.scrollTo({left: targetPage * width, behavior: 'smooth'});
     }
 
     /** Add an item or an item constructor. */

@@ -1041,8 +1041,6 @@
             this.horizontal = false;
             /** Target page after multiple wheel input. */
             this.targetPage = null;
-            /** The page currently scrolling to. */
-            this.scrollingTo = null;
         }
         /** Render page when needed. */
         renderPage(i) {
@@ -1075,14 +1073,6 @@
                 }
             }
             page.replaceChildren(layer);
-        }
-        get snapRatio() {
-            const ratio = this.pages.scrollLeft / this.pages.offsetWidth;
-            return Math.abs(ratio - Math.round(ratio));
-        }
-        startScroll() {
-            this.scrollingTo = this.targetPage;
-            this.pages.scrollTo({ left: this.targetPage * this.pages.offsetWidth, behavior: 'smooth' });
         }
         /** Get number of items per page. */
         getSize(recalc = false) {
@@ -1131,10 +1121,6 @@
                 if (page !== this.currentPage) {
                     this.turnPage(page);
                 }
-                if (typeof this.scrollingTo === 'number' && typeof this.targetPage === 'number' &&
-                    this.scrollingTo !== this.targetPage && this.snapRatio < 0.2) {
-                    this.startScroll();
-                }
             }, { passive: true });
             // add callbacks for dynamic item number
             if (Array.isArray(this.nrows)) {
@@ -1152,29 +1138,22 @@
             if (e.deltaX !== 0) {
                 this.horizontal = true;
                 this.targetPage = null;
-                this.scrollingTo = null;
             }
             if (this.horizontal) {
                 return;
             }
             // turn page (used with scroll-snapping and scroll-behavior: smooth)
             const width = this.pages.offsetWidth;
-            const currentPage = Math.round(this.pages.scrollLeft / width);
-            if (this.targetPage === null) {
-                this.targetPage = currentPage + e.deltaY / Math.abs(e.deltaY);
+            let targetPage = this.targetPage ?? Math.round(this.pages.scrollLeft / width);
+            targetPage += e.deltaY / Math.abs(e.deltaY);
+            if (targetPage < 0) {
+                targetPage = 0;
             }
-            else {
-                this.targetPage += e.deltaY / Math.abs(e.deltaY);
-                if (this.targetPage < 0) {
-                    this.targetPage = 0;
-                }
-                else if (this.targetPage >= this.pageCount) {
-                    this.targetPage = this.pageCount - 1;
-                }
+            else if (targetPage >= this.pageCount) {
+                targetPage = this.pageCount - 1;
             }
-            if (this.snapRatio < 0.2) {
-                this.startScroll();
-            }
+            this.targetPage = targetPage;
+            this.pages.scrollTo({ left: targetPage * width, behavior: 'smooth' });
         }
         /** Add an item or an item constructor. */
         add(item) {
@@ -1204,7 +1183,6 @@
             this.currentPage = page;
             if (page === this.targetPage) {
                 this.targetPage = null;
-                this.scrollingTo = null;
             }
             // create current and sibling pages
             this.renderPage(page);
