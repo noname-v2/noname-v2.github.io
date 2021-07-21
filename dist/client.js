@@ -272,7 +272,7 @@
             // add history
             if (this.client.platform === 'Android') {
                 window.addEventListener('popstate', e => {
-                    this.client.triggerListener('history', e.state);
+                    this.client.triggerListeners('history', e.state);
                 });
             }
         }
@@ -396,7 +396,7 @@
             this.ui.height = h;
             this.ui.zoom = z;
             // call listeners
-            this.client.triggerListener('resize');
+            this.client.triggerListeners('resize');
         }
         /** Get the duration of transition.
          * @param {TransitionDuration} type - transition type
@@ -667,8 +667,8 @@
         }
         init() {
             this.app.arena.node.appendChild(this.node);
-            this.client.addListener('sync', this);
-            this.client.addListener('history', this);
+            this.client.listeners.sync.add(this);
+            this.client.listeners.history.add(this);
             // make android back button function as returning to previous page
             if (this.client.platform === 'Android') {
                 history.pushState('lobby', '');
@@ -957,7 +957,7 @@
         /** Connection status change. */
         $peers() {
             // wait until other properties have been updated
-            setTimeout(() => this.client.triggerListener('sync'));
+            setTimeout(() => this.client.triggerListeners('sync'));
         }
     }
 
@@ -1125,6 +1125,8 @@
                     const width = this.pages.offsetWidth;
                     const vel1 = this.targetPage[0] * width - left;
                     const vel2 = this.targetPage[1] * width - left;
+                    // change scrollTo target only if direction changed or scroll speed increased by 1.5x
+                    // (in order to avoid unsmooth speed variation)
                     if (vel1 * vel2 < 0 || Math.abs(vel2 / vel1) > 1.5) {
                         this.targetPage[0] = this.targetPage[1];
                         this.pages.scrollTo({ left: this.targetPage[1] * width, behavior: 'smooth' });
@@ -1134,11 +1136,11 @@
             // add callbacks for dynamic item number
             if (Array.isArray(this.nrows)) {
                 this.node.classList.add('centery');
-                this.client.addListener('resize', this);
+                this.client.listeners.resize.add(this);
             }
             if (Array.isArray(this.ncols)) {
                 this.node.classList.add('centerx');
-                this.client.addListener('resize', this);
+                this.client.listeners.resize.add(this);
             }
         }
         /** Enable horizontal scroll with mouse wheel. */
@@ -2679,12 +2681,6 @@
             this.debug = false;
             /** Components synced with the worker. */
             this.components = new Map();
-            /** Components awaiting response from worker. */
-            this.yielding = new Map();
-            /**  UITicks waiting for dispatch. */
-            this.ticks = [];
-            /** Timestamp of the last full UI load. */
-            this.loaded = 0;
             /** Event listeners. */
             this.listeners = {
                 sync: new Set(),
@@ -2692,6 +2688,12 @@
                 history: new Set(),
                 key: new Set()
             };
+            /** Components awaiting response from worker. */
+            this.yielding = new Map();
+            /**  UITicks waiting for dispatch. */
+            this.ticks = [];
+            /** Timestamp of the last full UI load. */
+            this.loaded = 0;
             // get user ID
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
@@ -2893,6 +2895,7 @@
                     });
                 }
                 else if (this.loaded) {
+                    // tell worker to reload UI
                     this.loaded = 0;
                     this.send(-1, null, false);
                 }
@@ -2909,12 +2912,8 @@
                 this.dispatch();
             }
         }
-        /** Add a listener. */
-        addListener(event, cmp) {
-            this.listeners[event].add(cmp);
-        }
         /** Trigger a listener. */
-        triggerListener(event, arg) {
+        triggerListeners(event, arg) {
             for (const cmp of this.listeners[event]) {
                 cmp[event](arg);
             }

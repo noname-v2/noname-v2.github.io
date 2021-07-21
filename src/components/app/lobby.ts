@@ -30,8 +30,8 @@ export class Lobby extends Component {
 
     init() {
         this.app.arena!.node.appendChild(this.node);
-        this.client.addListener('sync', this);
-        this.client.addListener('history', this);
+        this.client.listeners.sync.add(this);
+        this.client.listeners.history.add(this);
 
         // make android back button function as returning to previous page
         if (this.client.platform === 'Android') {

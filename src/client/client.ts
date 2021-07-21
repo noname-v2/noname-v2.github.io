@@ -4,13 +4,6 @@ import { version, config } from '../version';
 import { Component } from './component';
 import type { UITick, ClientMessage } from '../worker/worker';
 
-interface ClientListener {
-    sync: {sync: () => void};
-    resize: {resize: () => void, id: number | null};
-    history: {history: (state: string) => void};
-    key: {key: (e: KeyboardEvent) => void};
-}
-
 /**
  * Executor of worker commands.
  */
@@ -42,15 +35,6 @@ export class Client {
     /** Components synced with the worker. */
     components = new Map<number, Component>();
 
-    /** Components awaiting response from worker. */
-    yielding = new Map<number, (result: any) => any>();
-
-    /**  UITicks waiting for dispatch. */
-    ticks = <UITick[]>[];
-
-    /** Timestamp of the last full UI load. */
-    loaded = 0;
-
     /** Event listeners. */
     listeners = {
         sync: new Set<{sync: () => void}>(),
@@ -58,6 +42,15 @@ export class Client {
         history: new Set<{history: (state: string) => void}>(),
         key: new Set<{key: (e: KeyboardEvent) => void}>()
     };
+
+    /** Components awaiting response from worker. */
+    yielding = new Map<number, (result: any) => any>();
+
+    /**  UITicks waiting for dispatch. */
+    private ticks = <UITick[]>[];
+
+    /** Timestamp of the last full UI load. */
+    private loaded = 0;
 
     constructor() {
         // get user ID
@@ -302,14 +295,8 @@ export class Client {
         }
     }
 
-    /** Add a listener. */
-    addListener<T extends keyof ClientListener>(event: T, cmp: ClientListener[T]) {
-        this.listeners[event].add(cmp as any);
-    }
-
-
     /** Trigger a listener. */
-    triggerListener(event: keyof ClientListener, arg?: any) {
+    triggerListeners(event: 'sync' | 'resize' | 'history' | 'key', arg?: any) {
         for (const cmp of this.listeners[event]) {
             (cmp as any)[event](arg);
         }

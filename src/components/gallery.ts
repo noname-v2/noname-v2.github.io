@@ -133,6 +133,9 @@ export class Gallery extends Component {
                 const width = this.pages.offsetWidth;
                 const vel1 = this.targetPage[0] * width - left;
                 const vel2 = this.targetPage[1] * width - left;
+
+                // change scrollTo target only if direction changed or scroll speed increased by 1.5x
+                // (in order to avoid unsmooth speed variation)
                 if (vel1 * vel2 < 0 || Math.abs(vel2 / vel1) > 1.5) {
                     this.targetPage[0] = this.targetPage[1];
                     this.pages.scrollTo({left: this.targetPage[1] * width, behavior: 'smooth'});
@@ -143,11 +146,11 @@ export class Gallery extends Component {
         // add callbacks for dynamic item number
         if (Array.isArray(this.nrows)) {
             this.node.classList.add('centery');
-            this.client.addListener('resize', this);
+            this.client.listeners.resize.add(this);
         }
         if (Array.isArray(this.ncols)) {
             this.node.classList.add('centerx');
-            this.client.addListener('resize', this);
+            this.client.listeners.resize.add(this);
         }
     }
 
