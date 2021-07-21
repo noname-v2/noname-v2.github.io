@@ -45,6 +45,12 @@ export class Client {
     /** Components awaiting response from worker. */
     yielding = new Map<number, (result: any) => any>();
 
+    /**  UITicks waiting for dispatch. */
+    ticks = <UITick[]>[];
+
+    /** Timestamp of the last full UI load. */
+    loaded = 0;
+
     /** Event listeners. */
     listeners = {
         sync: new Set<{sync: () => void}>(),
@@ -127,7 +133,7 @@ export class Client {
             const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
             connection.onmessage = ({data}) => {
                 if (data === 'ready') {
-                    connection.onmessage = ({data}) => this.dispatch(data);
+                    connection.onmessage = ({data}) => this.tick(data);
                     config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                     config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(this.db.get(config[0] + ':config') || {});
@@ -193,13 +199,22 @@ export class Client {
      * @param {any[]} [args] - If args is array, call method with args as arguments,
      * if args is undefined, check the existence of the method instead.
      */
-    async dispatch(data: UITick) {
+    async dispatch() {
         try {
-            const [sid, updates, calls] = data;
+            const [sid, updates, calls] = this.ticks[0];
 
-            // check if this is a reload
-            if (updates['1'] && updates['1']['#tag'] === 'arena') {
-                this.clear(false);
+            // expect a full UI reload if this.loaded == 0
+            if (this.loaded === 0) {
+                for (const id in updates) {
+                    if (updates[id]['#tag'] === 'arena') {
+                        this.clear(false);
+                        this.loaded = Date.now();
+                        break;
+                    }
+                }
+                if (!this.loaded) {
+                    throw('UI not loaded')
+                }
             }
 
             // progress to a new stage
@@ -223,8 +238,8 @@ export class Client {
                 await this.components.get(id)!.ready;
             }
             
+            // update properties after component initialization
             for (const key in updates) {
-                // update properties after component initialization
                 const items = updates[key];
                 const id = parseInt(key);
                 this.components.get(id)!.update(items);
@@ -254,7 +269,36 @@ export class Client {
         }
         catch (e) {
             console.log(e);
-            this.send(-1, null, false);
+            if (Date.now() - this.loaded < 500) {
+                // prompt reload if error occus within 0.5s after reload
+                this.loaded = 0;
+                this.ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
+                    if (reload === true) {
+                        window.location.reload();
+                    }
+                    else if (reload === false) {
+                        this.send(-1, null, false);
+                    }
+                });
+            }
+            else if (this.loaded) {
+                // tell worker to reload UI
+                this.loaded = 0;
+                this.send(-1, null, false);
+            }
+        }
+
+        this.ticks.shift();
+        if (this.ticks.length) {
+            this.dispatch();
+        }
+    }
+
+    /** Add a UITick to dispatch. */
+    tick(data: UITick) {
+        this.ticks.push(data);
+        if (this.ticks.length === 1) {
+            this.dispatch();
         }
     }
 

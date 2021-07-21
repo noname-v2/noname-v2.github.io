@@ -244,7 +244,7 @@ export class SplashHub extends Popup {
     }
 
     msg(msg: string) {
-        this.client.dispatch(JSON.parse(msg));
+        this.client.tick(JSON.parse(msg));
         this.app.splash.hide();
         this.close();
     }
