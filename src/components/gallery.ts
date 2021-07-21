@@ -33,6 +33,9 @@ export class Gallery extends Component {
 	/** Device can scroll horizontally. */
 	private horizontal = false;
 
+	/** Target page after multiple wheel input. */
+	private targetPage: number | null = null;
+
 	/** Render page when needed. */
 	private renderPage(i: number) {
 		const page = <HTMLElement>this.pages.childNodes[i];
@@ -143,12 +146,26 @@ export class Gallery extends Component {
 		// disable this function if device can scroll horizontally
 		if (e.deltaX !== 0) {
 			this.horizontal = true;
+			this.targetPage = null;
 		}
 		if (this.horizontal) {
 			return;
 		}
 		// turn page (used with scroll-snapping and scroll-behavior: smooth)
-		this.pages.scrollLeft += this.pages.offsetWidth * e.deltaY / Math.abs(e.deltaY);
+		const width = this.pages.offsetWidth;
+		if (this.targetPage === null) {
+			this.targetPage = Math.round(this.pages.scrollLeft / width) + e.deltaY / Math.abs(e.deltaY)
+		}
+		else {
+			this.targetPage += e.deltaY / Math.abs(e.deltaY);
+			if (this.targetPage < 0) {
+				this.targetPage = 0;
+			}
+			else if (this.targetPage >= this.pageCount) {
+				this.targetPage = this.pageCount - 1;
+			}
+		}
+		this.pages.scrollTo({left: this.targetPage * width, behavior: 'smooth'});
 	}
 
 	/** Add an item or an item constructor. */
@@ -178,7 +195,12 @@ export class Gallery extends Component {
 		if (page >= this.pageCount || page < 0) {
 			return
 		}
+
+		// update current page
 		this.currentPage = page;
+		if (page === this.targetPage) {
+			this.targetPage = null;
+		}
 
 		// create current and sibling pages
 		this.renderPage(page);
