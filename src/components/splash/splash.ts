@@ -53,6 +53,7 @@ export class Splash extends Component {
 		}
 		this.hidden = false;
 		this.app.node.appendChild(this.node);
+		this.gallery.checkPage();
 		return new Promise(resolve => {
 			this.ui.animate(this.node, {
 				scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]

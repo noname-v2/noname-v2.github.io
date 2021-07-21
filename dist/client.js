@@ -1034,7 +1034,7 @@
             /** Gallery items. */
             this.items = [];
             /** Index of current page. */
-            this.currentPage = 0;
+            this.currentPage = -1;
             /** Cache of item number per page. */
             this.currentSize = null;
             /** Device can scroll horizontally. */
@@ -1192,10 +1192,6 @@
             // re-render current page
             this.updatePages();
             this.rendered.delete(this.pageCount - 1);
-            // render first 2 pages
-            if (this.pageCount <= 2) {
-                this.renderPage(this.pageCount - 1);
-            }
         }
         /** Update current page after reopening. */
         checkPage() {
@@ -1893,9 +1889,14 @@
             this.rotatingAnimation = null;
             /** Gallery column number. */
             this.ncols = 3;
+            /** All galleries. */
+            this.galleries = new Set();
         }
         create(splash) {
             this.onopen = () => {
+                for (const gallery of this.galleries) {
+                    gallery.checkPage();
+                }
                 splash.node.classList.add('blurred');
                 if (this.rotating) {
                     this.rotate(this.rotating);
@@ -1934,6 +1935,7 @@
             this.pane.addSection('主题');
             const themes = Array.from(Object.keys(this.app.assets.theme));
             const themeGallery = this.pane.addGallery(1, this.ncols);
+            this.galleries.add(themeGallery);
             for (const theme of themes) {
                 themeGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
@@ -1963,6 +1965,7 @@
             this.pane.addSection('背景');
             const bgs = Array.from(Object.keys(this.app.assets.bg));
             const bgGallery = this.pane.addGallery(1, this.ncols);
+            this.galleries.add(bgGallery);
             for (const bg of bgs) {
                 bgGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
@@ -1999,9 +2002,11 @@
             volGallery.node.classList.add('volume');
             volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
             volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
+            this.galleries.add(volGallery);
             const bgms = Array.from(Object.keys(this.app.assets.bgm));
             const bgmGallery = this.pane.addGallery(1, this.ncols * 2);
             bgmGallery.node.classList.add('music');
+            this.galleries.add(bgmGallery);
             for (const bgm of bgms) {
                 bgmGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
@@ -2189,6 +2194,7 @@
             }
             this.hidden = false;
             this.app.node.appendChild(this.node);
+            this.gallery.checkPage();
             return new Promise(resolve => {
                 this.ui.animate(this.node, {
                     scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]

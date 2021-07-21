@@ -25,7 +25,7 @@ export class Gallery extends Component {
     private items = <GalleryItem[]>[];
 
     /** Index of current page. */
-    private currentPage: number = 0;
+    private currentPage: number = -1;
 
     /** Cache of item number per page. */
     private currentSize: [number, number] | null = null;
@@ -206,11 +206,6 @@ export class Gallery extends Component {
         // re-render current page
         this.updatePages();
         this.rendered.delete(this.pageCount - 1);
-
-        // render first 2 pages
-        if (this.pageCount <= 2) {
-            this.renderPage(this.pageCount - 1);
-        }
     }
 
     /** Update current page after reopening. */
