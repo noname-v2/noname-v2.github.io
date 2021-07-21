@@ -1041,6 +1041,8 @@
             this.horizontal = false;
             /** Target page after multiple wheel input. */
             this.targetPage = null;
+            /** Clear target page after 0.5s without input. */
+            this.scrollTimeout = 0;
         }
         /** Render page when needed. */
         renderPage(i) {
@@ -1117,10 +1119,7 @@
             this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
             // render and update page indicator while scrolling
             this.pages.addEventListener('scroll', () => {
-                const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
-                if (page !== this.currentPage) {
-                    this.turnPage(page);
-                }
+                this.checkPage();
                 if (this.targetPage && this.targetPage[0] !== this.targetPage[1]) {
                     const left = this.pages.scrollLeft;
                     const width = this.pages.offsetWidth;
@@ -1152,6 +1151,9 @@
             if (this.horizontal) {
                 return;
             }
+            // reset timeout
+            clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = window.setTimeout(() => this.targetPage = null, 500);
             // turn page (used with scroll-snapping and scroll-behavior: smooth)
             const width = this.pages.offsetWidth;
             let targetPage = this.targetPage ? this.targetPage[1] : Math.round(this.pages.scrollLeft / width);
@@ -1193,6 +1195,13 @@
             // render first 2 pages
             if (this.pageCount <= 2) {
                 this.renderPage(this.pageCount - 1);
+            }
+        }
+        /** Update current page after reopening. */
+        checkPage() {
+            const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
+            if (page !== this.currentPage) {
+                this.turnPage(page);
             }
         }
         /** Update indicator and render nearby pages. */
@@ -1817,6 +1826,7 @@
             popup.node.classList.add('splash-avatar');
             popup.onopen = () => {
                 this.node.classList.add('blurred');
+                gallery.checkPage();
             };
             popup.onclose = () => {
                 this.node.classList.remove('blurred');

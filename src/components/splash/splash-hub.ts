@@ -279,6 +279,7 @@ export class SplashHub extends Popup {
         popup.node.classList.add('splash-avatar');
         popup.onopen = () => {
             this.node.classList.add('blurred');
+            gallery.checkPage();
         };
         popup.onclose = () => {
             this.node.classList.remove('blurred');

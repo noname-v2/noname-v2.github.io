@@ -36,6 +36,9 @@ export class Gallery extends Component {
     /** Target page after multiple wheel input. */
     private targetPage: [number, number] | null = null;
 
+    /** Clear target page after 0.5s without input. */
+    private scrollTimeout = 0;
+
     /** Render page when needed. */
     private renderPage(i: number) {
         const page = <HTMLElement>this.pages.childNodes[i];
@@ -124,10 +127,7 @@ export class Gallery extends Component {
 
         // render and update page indicator while scrolling
         this.pages.addEventListener('scroll', () => {
-            const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
-            if (page !== this.currentPage) {
-                this.turnPage(page);
-            }
+            this.checkPage();
             if (this.targetPage && this.targetPage[0] !== this.targetPage[1]) {
                 const left = this.pages.scrollLeft;
                 const width = this.pages.offsetWidth;
@@ -161,6 +161,11 @@ export class Gallery extends Component {
         if (this.horizontal) {
             return;
         }
+
+        // reset timeout
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = window.setTimeout(() => this.targetPage = null, 500);
+
         // turn page (used with scroll-snapping and scroll-behavior: smooth)
         const width = this.pages.offsetWidth;
         let targetPage = this.targetPage ? this.targetPage[1] : Math.round(this.pages.scrollLeft / width);
@@ -205,6 +210,14 @@ export class Gallery extends Component {
         // render first 2 pages
         if (this.pageCount <= 2) {
             this.renderPage(this.pageCount - 1);
+        }
+    }
+
+    /** Update current page after reopening. */
+    checkPage() {
+        const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
+        if (page !== this.currentPage) {
+            this.turnPage(page);
         }
     }
 
