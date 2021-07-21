@@ -61,6 +61,10 @@ class Member extends client_1.Client {
             }
         }
     }
+    /** Update info. */
+    set(msg) {
+        this.info = JSON.parse(msg);
+    }
     /** Send full room list to client. */
     reload(reason) {
         const rooms = {};

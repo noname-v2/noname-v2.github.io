@@ -153,3 +153,7 @@ noname-popup.splash-hub > noname-pane {
         transition: opacity var(--app-transition);
     }
 }
+
+noname-popup.splash-hub.blurred {
+    transform: scale(0.95);
+}

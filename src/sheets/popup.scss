@@ -1,7 +1,7 @@
 noname-popup {
     @include layer;
+    @include transit;
     z-index: 20;
-    transition: opacity var(--app-transition);
 
     &.center {
         @include flex-center;

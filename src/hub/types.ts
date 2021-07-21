@@ -19,7 +19,7 @@ export const hub2owner = ['ready', 'resp', 'leave', 'join'] as const;
  * leave: Leave current room.
  * resp: Send to result to owner.
  */
-export const member2hub = ['join', 'leave', 'resp'] as const;
+export const member2hub = ['join', 'leave', 'resp', 'set'] as const;
 
 /** Commands sent to Member.
  * down: Owner lost connection.

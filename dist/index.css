@@ -852,8 +852,9 @@ noname-popup {
   left: 0;
   top: 0;
   position: absolute;
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
   z-index: 20;
-  transition: opacity var(--app-transition);
 }
 noname-popup.center {
   display: flex;
@@ -1161,6 +1162,10 @@ noname-popup.splash-hub > noname-pane > noname-section {
   margin-top: 20px;
   margin-bottom: 0;
   transition: opacity var(--app-transition);
+}
+
+noname-popup.splash-hub.blurred {
+  transform: scale(0.95);
 }
 
 noname-popup.splash-settings > noname-pane > noname-gallery {

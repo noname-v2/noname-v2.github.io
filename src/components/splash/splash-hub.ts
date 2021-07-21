@@ -160,7 +160,6 @@ export class SplashHub extends Popup {
             if (!this.avatarSelector) {
                 this.createSelector();
             }
-            this.avatarSelector!.location = e;
             this.avatarSelector!.open();
         });
 
@@ -177,6 +176,7 @@ export class SplashHub extends Popup {
 				nickname.set('icon', 'emote');
 				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
 				nickname.set('icon', null);
+                this.sendInfo();
 			}
 		};
 
@@ -268,6 +268,12 @@ export class SplashHub extends Popup {
         });
     }
 
+    sendInfo() {
+        if (this.client.connection instanceof WebSocket) {
+            this.client.connection.send('set:' + JSON.stringify(this.client.info));
+        }
+    }
+
     createSelector() {
         const popup = this.avatarSelector = this.ui.create('popup');
         popup.node.classList.add('splash-avatar');
@@ -294,6 +300,7 @@ export class SplashHub extends Popup {
                 this.ui.bindClick(node, () => {
                     this.ui.setImage(this.avatarImage, img);
                     this.db.set('avatar', img);
+                    this.sendInfo();
                     popup.close();
                 });
                 return node;

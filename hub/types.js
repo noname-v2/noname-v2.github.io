@@ -20,7 +20,7 @@ exports.hub2owner = ['ready', 'resp', 'leave', 'join'];
  * leave: Leave current room.
  * resp: Send to result to owner.
  */
-exports.member2hub = ['join', 'leave', 'resp'];
+exports.member2hub = ['join', 'leave', 'resp', 'set'];
 /** Commands sent to Member.
  * down: Owner lost connection.
  * msg: Owner sends a UITick.

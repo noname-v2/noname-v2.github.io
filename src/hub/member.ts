@@ -68,6 +68,11 @@ export class Member extends Client {
         }
     }
 
+    /** Update info. */
+    set(msg: string) {
+        this.info = JSON.parse(msg);
+    }
+
     /** Send full room list to client. */
     reload(reason: 'end' | 'kick' | 'init') {
         const rooms = {};
