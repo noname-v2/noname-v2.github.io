@@ -37,10 +37,16 @@ export class Client {
 
     /** Event listeners. */
     listeners = {
+        // connection status change
         sync: new Set<{sync: () => void}>(),
+        // document resize
         resize: new Set<{resize: () => void, id: number | null}>(),
+        // back button pressed (Android)
         history: new Set<{history: (state: string) => void}>(),
-        key: new Set<{key: (e: KeyboardEvent) => void}>()
+        // keyboard event
+        key: new Set<{key: (e: KeyboardEvent) => void}>(),
+        // stage change
+        stage: new Set<{key: () => void}>()
     };
 
     /**  UITicks waiting for dispatch. */
@@ -203,9 +209,14 @@ export class Client {
             if (!this.loaded) {
                 throw('UI not loaded')
             }
+            
+            // clear unfinished function calls (e.g. selectCard / selectTarget)
+            if (sid !== this.sid) {
+                this.triggerListeners('stage');
+                this.sid = sid;
+            }
 
             // update component properties
-            this.sid = sid;
             for (const key in updates) {
                 const items = updates[key];
                 const id = parseInt(key);
@@ -282,7 +293,7 @@ export class Client {
     }
 
     /** Trigger a listener. */
-    triggerListeners(event: 'sync' | 'resize' | 'history' | 'key', arg?: any) {
+    triggerListeners(event: 'sync' | 'resize' | 'history' | 'key' | 'stage', arg?: any) {
         for (const cmp of this.listeners[event]) {
             (cmp as any)[event](arg);
         }
