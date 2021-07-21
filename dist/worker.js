@@ -695,11 +695,18 @@
         }
         /** Room info listed in the hub. */
         get room() {
+            // count number of players (excluding spectators)
+            let np = 0;
+            for (const [, , spec] of this.peers.values()) {
+                if (spec === 0) {
+                    np++;
+                }
+            }
             return JSON.stringify([
                 // mode name
                 this.game.getRule(this.game.mode + ':mode').name,
-                // joined clients
-                this.peers.size,
+                // joined players
+                np,
                 // number of players in a game
                 this.game.config.np,
                 // nickname and avatar of owner
@@ -747,7 +754,7 @@
             };
             ws.onopen = () => {
                 this.peers = new Map();
-                this.peers.set(this.uid, this.info);
+                this.peers.set(this.uid, [...this.info, 0]);
                 ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
             };
             ws.onmessage = ({ data }) => {
@@ -790,8 +797,10 @@
         }
         /** A remote client joins the room. */
         join(msg) {
+            // join as player or spectator
             const [uid, info] = JSON.parse(msg);
-            this.peers.set(uid, info);
+            const spec = this.peers.size < this.game.config.np ? 0 : 1;
+            this.peers.set(uid, [...info, spec]);
             this.sync();
             this.updateRoom();
             this.send(uid, this.game.pack());

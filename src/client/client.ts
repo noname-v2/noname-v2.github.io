@@ -106,7 +106,7 @@ export class Client {
     }
 
     /** Connected remote clients. */
-    get peers(): {[key: string]: [string, string]} | null {
+    get peers(): {[key: string]: [string, string, number]} | null {
         return this.ui.app?.arena?.get('peers') ?? null;
     }
 
