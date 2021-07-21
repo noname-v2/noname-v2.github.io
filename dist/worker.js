@@ -191,15 +191,22 @@
                 this.game.worker.broadcast([this.id, { [id]: items }, {}]);
             }
         }
-        /** Add component function call (called by links when this.step == 2). */
+        /** Add component function call (called by links when this.step == 2 or 3). */
         call(id, content) {
-            if (this.step !== 2) {
+            if (this.step === 2) {
+                // save function to pending function calls
+                if (!this.calls.has(id)) {
+                    this.calls.set(id, []);
+                }
+                this.calls.get(id).push(content);
+            }
+            else if (this.step === 3) {
+                // call function immediately without saving
+                this.game.worker.broadcast([this.id, {}, { [id]: [content] }]);
+            }
+            else {
                 throw ('cannot call call a component method outside a stage');
             }
-            if (!this.calls.has(id)) {
-                this.calls.set(id, []);
-            }
-            this.calls.get(id).push(content);
         }
         /** Add a callback for component function call. */
         monitor(id, content) {

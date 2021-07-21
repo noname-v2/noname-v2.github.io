@@ -30,14 +30,6 @@ export class Link {
         this.set('owner', uid);
     }
 
-    get syncing() {
-        return this.get('#sync');
-    }
-
-    set syncing(sync: boolean) {
-        this.set('#sync', sync);
-    }
-
     /** Property getter. */
     get(key: string): any {
         return this.#props.get(key) ?? null;

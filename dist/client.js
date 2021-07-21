@@ -2678,10 +2678,16 @@
             this.components = new Map();
             /** Event listeners. */
             this.listeners = {
+                // connection status change
                 sync: new Set(),
+                // document resize
                 resize: new Set(),
+                // back button pressed (Android)
                 history: new Set(),
-                key: new Set()
+                // keyboard event
+                key: new Set(),
+                // stage change
+                stage: new Set()
             };
             /**  UITicks waiting for dispatch. */
             this.ticks = [];
@@ -2824,8 +2830,12 @@
                 if (!this.loaded) {
                     throw ('UI not loaded');
                 }
+                // clear unfinished function calls (e.g. selectCard / selectTarget)
+                if (sid !== this.sid) {
+                    this.triggerListeners('stage');
+                    this.sid = sid;
+                }
                 // update component properties
-                this.sid = sid;
                 for (const key in updates) {
                     const items = updates[key];
                     const id = parseInt(key);
