@@ -109,14 +109,11 @@
 
     class Component {
         /** Create node. */
-        constructor(client, tag) {
+        constructor(client, tag, id) {
             /** Properties synced with worker. */
             this.props = new Map();
-            /** Component ID (for worker-managed components). */
-            this.id = null;
-            /** Monitor ID. */
-            this.monitor = null;
             this.client = client;
+            this.id = id;
             this.node = client.ui.createElement(tag);
             this.ready = Promise.resolve().then(() => this.init());
         }
@@ -143,11 +140,10 @@
         set(key, val) {
             this.update({ [key]: val });
         }
-        /** Update properties. Special key:
-         * #tag: tag name (no operation).
+        /** Update properties. Reserved key:
          * owner: uid of client that controlls the component
         */
-        update(items) {
+        update(items, hook = true) {
             const hooks = [];
             for (const key in items) {
                 const oldVal = this.get(key);
@@ -155,12 +151,15 @@
                 newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
                 const hook = this['$' + key];
                 if (typeof hook === 'function') {
-                    hooks.push([hook, newVal, oldVal]);
+                    hooks.push([hook, this, newVal, oldVal]);
                 }
             }
-            for (const [hook, newVal, oldVal] of hooks) {
-                hook.apply(this, [newVal, oldVal]);
+            if (hook) {
+                for (const [hook, cmp, newVal, oldVal] of hooks) {
+                    hook.apply(cmp, [newVal, oldVal]);
+                }
             }
+            return hooks;
         }
         /** Send result to worker (component must be monitored). */
         yield(result, done = true) {
@@ -2462,16 +2461,17 @@
             this.moving = null;
         }
         /** Create new component. */
-        create(tag, parent = null) {
+        create(tag, parent = null, id = null) {
             const cls = componentClasses.get(tag);
-            const component = new cls(this.client, cls.tag || tag);
+            const cmp = new cls(this.client, cls.tag || tag, id);
+            // add className for a Component subclass with a static tag
             if (cls.tag) {
-                component.node.classList.add(tag);
+                cmp.node.classList.add(tag);
             }
             if (parent) {
-                parent.appendChild(component.node);
+                parent.appendChild(cmp.node);
             }
-            return component;
+            return cmp;
         }
         // create HTMLElement
         createElement(tag, parent = null) {
@@ -2818,10 +2818,10 @@
          */
         async dispatch() {
             try {
-                const [sid, updates, calls] = this.ticks[0];
+                const [sid, tags, props, calls] = this.ticks[0];
                 // check if tick is a full UI reload
-                for (const id in updates) {
-                    if (updates[id]['#tag'] === 'arena') {
+                for (const key in tags) {
+                    if (tags[key] === 'arena') {
                         this.clear(false);
                         this.loaded = Date.now();
                         break;
@@ -2833,42 +2833,45 @@
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
                 if (sid !== this.sid) {
                     this.triggerListeners('stage');
+                    this.listeners.stage.clear();
                     this.sid = sid;
                 }
-                // update component properties
-                for (const key in updates) {
-                    const items = updates[key];
+                // create new components
+                const newComponents = [];
+                for (const key in tags) {
                     const id = parseInt(key);
-                    // create new component
-                    if (typeof items['#tag'] === 'string') {
+                    const tag = tags[key];
+                    if (typeof tag === 'string') {
                         this.components.get(id)?.remove();
-                        const component = this.ui.create(items['#tag']);
-                        component.id = id;
-                        this.components.set(id, component);
+                        const cmp = this.ui.create(tag, null, id);
+                        this.components.set(id, cmp);
+                        newComponents.push(cmp.ready);
                     }
-                    await this.components.get(id).ready;
                 }
-                // update properties after component initialization
-                for (const key in updates) {
-                    const items = updates[key];
-                    const id = parseInt(key);
-                    this.components.get(id).update(items);
+                await Promise.all(newComponents);
+                // update component properties
+                let hooks = [];
+                for (const key in props) {
+                    hooks = hooks.concat(this.components.get(parseInt(key)).update(props[key], false));
+                }
+                for (const [hook, cmp, newVal, oldVal] of hooks) {
+                    hook.apply(cmp, [newVal, oldVal]);
                 }
                 // call component methods
                 for (const key in calls) {
                     const id = parseInt(key);
                     for (const [method, arg] of calls[key]) {
-                        if (method === '#unlink') {
-                            const cmp = this.components.get(id);
-                            if (cmp) {
-                                this.removeListeners(cmp);
-                                this.components.delete(id);
-                            }
-                        }
-                        else {
-                            const component = this.components.get(id);
-                            await component.ready;
-                            component[method](arg);
+                        this.components.get(id)[method](arg);
+                    }
+                }
+                // delete components
+                for (const key in tags) {
+                    const id = parseInt(key);
+                    if (tags[key] === null) {
+                        const cmp = this.components.get(id);
+                        if (cmp) {
+                            this.removeListeners(cmp);
+                            this.components.delete(id);
                         }
                     }
                 }

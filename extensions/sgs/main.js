@@ -105,7 +105,6 @@ const game = {
                 // monitor configuration change and await game start
                 const lobby = this.game.links.get(this.parent.lobbyID);
                 lobby.owner = this.game.uid;
-                lobby.syncing = true;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
                 lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));

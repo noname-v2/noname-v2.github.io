@@ -40,7 +40,7 @@ export class Client {
         // connection status change
         sync: new Set<{sync: () => void}>(),
         // document resize
-        resize: new Set<{resize: () => void, id: number | null}>(),
+        resize: new Set<{resize: () => void}>(),
         // back button pressed (Android)
         history: new Set<{history: (state: string) => void}>(),
         // keyboard event
@@ -196,11 +196,11 @@ export class Client {
      */
     async dispatch() {
         try {
-            const [sid, updates, calls] = this.ticks[0];
+            const [sid, tags, props, calls] = this.ticks[0];
 
             // check if tick is a full UI reload
-            for (const id in updates) {
-                if (updates[id]['#tag'] === 'arena') {
+            for (const key in tags) {
+                if (tags[key] === 'arena') {
                     this.clear(false);
                     this.loaded = Date.now();
                     break;
@@ -213,46 +213,49 @@ export class Client {
             // clear unfinished function calls (e.g. selectCard / selectTarget)
             if (sid !== this.sid) {
                 this.triggerListeners('stage');
+                this.listeners.stage.clear();
                 this.sid = sid;
             }
 
-            // update component properties
-            for (const key in updates) {
-                const items = updates[key];
+            // create new components
+            const newComponents = <Promise<unknown>[]>[];
+            for (const key in tags) {
                 const id = parseInt(key);
-
-                // create new component
-                if (typeof items['#tag'] === 'string') {
+                const tag = tags[key]
+                if (typeof tag === 'string') {
                     this.components.get(id)?.remove();
-                    const component = this.ui.create(items['#tag']);
-                    component.id = id;
-                    this.components.set(id, component);
+                    const cmp = this.ui.create(tag, null, id);
+                    this.components.set(id, cmp);
+                    newComponents.push(cmp.ready);
                 }
-                await this.components.get(id)!.ready;
             }
-            
-            // update properties after component initialization
-            for (const key in updates) {
-                const items = updates[key];
-                const id = parseInt(key);
-                this.components.get(id)!.update(items);
+            await Promise.all(newComponents);
+
+            // update component properties
+            let hooks = <any[]>[];
+            for (const key in props) {
+                hooks = hooks.concat(this.components.get(parseInt(key))!.update(props[key], false));
+            }
+            for (const [hook, cmp, newVal, oldVal] of hooks) {
+                hook.apply(cmp, [newVal, oldVal]);
             }
 
             // call component methods
             for (const key in calls) {
                 const id = parseInt(key);
                 for (const [method, arg] of calls[key]) {
-                    if (method === '#unlink') {
-                        const cmp = this.components.get(id);
-                        if (cmp) {
-                            this.removeListeners(cmp);
-                            this.components.delete(id);
-                        }
-                    }
-                    else {
-                        const component = this.components.get(id)!;
-                        await component.ready;
-                        component[method as keyof Component](arg);
+                    this.components.get(id)![method as keyof Component](arg);
+                }
+            }
+
+            // delete components
+            for (const key in tags) {
+                const id = parseInt(key);
+                if (tags[key] === null) {
+                    const cmp = this.components.get(id);
+                    if (cmp) {
+                        this.removeListeners(cmp);
+                        this.components.delete(id);
                     }
                 }
             }

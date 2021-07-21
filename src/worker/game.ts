@@ -213,11 +213,12 @@ export class Game {
 
     /** Get a UITick of all links. */
     pack(): UITick {
-        const ui = <{[key: string]: {[key: string]: any}}>{};
+        const tags = <{[key: string]: string}>{};
+        const props = <{[key: string]: {[key: string]: any}}>{};
         for (const [uid, link] of this.links.entries()) {
-            ui[uid] = link.flatten();
+            [tags[uid], props[uid]] = link.flatten();
         }
         ////// function calls in step 3
-        return [this.activeStage?.id || 0, ui, {}];
+        return [this.activeStage?.id || 0, tags, props, {}];
     }
 }

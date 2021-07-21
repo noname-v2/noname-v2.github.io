@@ -6,6 +6,9 @@ export class Link {
     /** Component ID. */
     #id: number;
 
+    /** Component tag. */
+    #tag: string;
+
     /** Properties synced with worker. */
     #props = new Map<string, any>();
 
@@ -14,8 +17,9 @@ export class Link {
 
     constructor(id: number, tag: string, game: Game) {
         this.#id = id;
+        this.#tag = tag;
         this.#game = game;
-        this.set('#tag', tag);
+        this.#game.activeStage!.update(this.#id, tag);
     }
 
     get id() {
@@ -49,9 +53,7 @@ export class Link {
         this.#game.activeStage!.update(this.#id, items);
     }
 
-    /** Call a component method from its owner. Special methods:
-     * #unlink: Remove reference to this.
-    */
+    /** Call a component method from its owner. */
     call(method: string, arg?: any) {
         this.#game.activeStage!.call(this.#id, [method, arg]);
     }
@@ -63,11 +65,11 @@ export class Link {
 
     /** Remove reference to a component. */
     unlink() {
-        this.call('#unlink');
+        this.#game.activeStage!.update(this.#id, null);
     }
 
-    /** Get an object of all properties. */
-    flatten() {
-        return Object.fromEntries(this.#props);
+    /** Get tag and object of all properties. */
+    flatten(): [string, {[key: string]: any}] {
+        return [this.#tag, Object.fromEntries(this.#props)];
     }
 }

@@ -1,20 +1,17 @@
 import type { Client } from './client';
 
 // type for component constructor
-export type ComponentClass = {tag: string | null, new(client: Client, tag: string): Component};
+export type ComponentClass = {tag: string | null, new(client: Client, tag: string, id: number | null): Component};
 
 export abstract class Component {
     /** Properties synced with worker. */
     private props = new Map<string, any>();
 
+    /** Component ID (for worker-managed components). */
+    private id: number | null;
+
     /** HTMLElement tag  name */
     static tag: string | null = null;
-
-    /** Component ID (for worker-managed components). */
-    id: number | null = null;
-
-    /** Monitor ID. */
-    monitor: number | null = null;
 
     /** Root element. */
 	node: HTMLElement;
@@ -42,8 +39,9 @@ export abstract class Component {
     }
 
     /** Create node. */
-    constructor(client: Client, tag: string) {
+    constructor(client: Client, tag: string, id: number | null) {
         this.client = client;
+        this.id = id;
         this.node = client.ui.createElement(tag);
         this.ready = Promise.resolve().then(() => this.init());
     }
@@ -61,26 +59,28 @@ export abstract class Component {
         this.update({[key]: val});
     }
 
-    /** Update properties. Special key:
-     * #tag: tag name (no operation).
+    /** Update properties. Reserved key:
      * owner: uid of client that controlls the component
     */
-    update(items: {[key: string]: any}) {
+    update(items: {[key: string]: any}, hook: boolean = true) {
         const hooks = [];
-
         for (const key in items) {
             const oldVal = this.get(key);
             const newVal = items[key] ?? null;
             newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
             const hook = this['$' + key as keyof Component];
             if (typeof hook === 'function') {
-                hooks.push([hook, newVal, oldVal]);
+                hooks.push([hook, this, newVal, oldVal]);
             }
         }
 
-        for (const [hook, newVal, oldVal] of hooks) {
-            hook.apply(this, [newVal, oldVal]);
+        if (hook) {
+            for (const [hook, cmp, newVal, oldVal] of hooks) {
+                hook.apply(cmp, [newVal, oldVal]);
+            }
         }
+        
+        return hooks;
     }
 
     /** Send result to worker (component must be monitored). */

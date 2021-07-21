@@ -53,8 +53,11 @@ export class Stage {
     /** Child stages added by after event. */
     after = <Stage[]>[];
 
+    /** Component added or removed by main function. */
+    tagChanges = new Map<number, string | null>();
+
     /** Component updates added by main function. */
-    updates = new Map<number, {[key: string]: any}>();
+    propChanges = new Map<number, {[key: string]: any}>();
 
     /** Component function calls added by main function. */
     calls = new Map<number, [string, any][]>();
@@ -85,18 +88,37 @@ export class Stage {
     }
 
     /** Add component update (called by links when this.step == 2 or 3). */
-    update(id: number, items: {[key: string]: any}) {
+    update(id: number, item: string | null | {[key: string]: any}) {
         if (this.step !== 2 && this.step !== 3) {
             throw('cannot call update a component outside a stage');
         }
-        if (!this.updates.has(id)) {
-            this.updates.set(id, {});
-        }
-        Object.assign(this.updates.get(id), items);
 
-        if (this.step === 3) {
-            // directly push updates after main UITick in stage 2
-            this.game.worker.broadcast([this.id, {[id]: items}, {}]);
+        if (item !== null && typeof item === 'object') {
+            // update properties
+            if (!this.propChanges.has(id)) {
+                this.propChanges.set(id, {});
+            }
+            Object.assign(this.propChanges.get(id), item);
+
+            if (this.step === 3) {
+                // directly push updates after main UITick in stage 2
+                this.game.worker.broadcast([this.id, {}, {[id]: item}, {}]);
+            }
+        }
+        else {
+            // add or remove component
+            if (this.tagChanges.has(id)) {
+                throw('cannot perform multiple component operations in the same stage');
+            }
+            if (item && this.game.links.has(id)) {
+                throw('cannot change component tag');
+            }
+            this.tagChanges.set(id, item);
+
+            if (this.step === 3) {
+                // directly push updates after main UITick in stage 2
+                this.game.worker.broadcast([this.id, {[id]: item}, {}, {}]);
+            }
         }
     }
 
@@ -111,7 +133,7 @@ export class Stage {
         }
         else if (this.step === 3) {
             // call function immediately without saving
-            this.game.worker.broadcast([this.id, {}, {[id]: [content]}]);
+            this.game.worker.broadcast([this.id, {}, {}, {[id]: [content]}]);
         }
         else {
             throw('cannot call call a component method outside a stage');
@@ -125,16 +147,18 @@ export class Stage {
 
     /** Handle value returned from client. */
     dispatch(id: number, result: any, done: boolean) {
-        const link = this.game.links.get(id)!;
-        const monitor = this.monitors.get(id);
         if (done) {
             this.results.set(id, result);
             if (this.resolve && this.resolved) {
                 this.resolve();
             }
         }
-        else if (monitor) {
-            this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
+        else {
+            const monitor = this.monitors.get(id);
+            if (monitor) {
+                const link = this.game.links.get(id)!;
+                this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
+            }
         }
     }
 
@@ -173,17 +197,21 @@ export class Stage {
                 this.game.worker.sync();
             }
             await this.game.getRule('#stage.main/').apply(this.accessor);
-            this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
+            this.game.worker.broadcast([this.id, Object.fromEntries(this.tagChanges), Object.fromEntries(this.propChanges), {}]);
         }
         else if (this.step === 3) {
             // call component methods
             this.results.clear();
-            this.game.worker.broadcast([this.id, {}, Object.fromEntries(this.calls)]);
+            this.game.worker.broadcast([this.id, {}, {}, Object.fromEntries(this.calls)]);
             
-            // fill components without owners
+            // set the result of components without owners as '#auto'
             for (const id of this.monitors.keys()) {
-                if (!this.game.links.get(id)!.owner && !this.results.has(id)) {
-                    this.results.set(id, '#auto');
+                if (!this.results.has(id)) {
+                    const owner = this.game.links.get(id)!.owner;
+                    const peers = this.game.worker.peers;
+                    if (!owner || (peers && !peers.has(owner))) {
+                        this.results.set(id, '#auto');
+                    }
                 }
             }
             
@@ -195,11 +223,9 @@ export class Stage {
             this.game.activeStage = null;
 
             // clear unlinked components
-            for (const [id, calls] of this.calls.entries()) {
-                for (const [method] of calls) {
-                    if (method === '#unlink') {
-                        this.game.links.delete(id);
-                    }
+            for (const [id, tag] of this.tagChanges.entries()) {
+                if (tag === null) {
+                    this.game.links.delete(id);
                 }
             }
         }

@@ -6,6 +6,8 @@ import { hub2owner, split } from '../hub/types';
 export type UITick = [
     // stage ID
     number,
+    // add or delete components
+    {[key: string]: string | null},
     // component property updates
     {[key: string]: {[key: string]: any}},
     // component function calls

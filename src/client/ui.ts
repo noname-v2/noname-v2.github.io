@@ -236,19 +236,20 @@ export class UI {
     }
 
     /** Create new component. */
-    create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null): ComponentTagMap[T] {
+    create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
 		const cls = componentClasses.get(tag as string)!;
-        const component = <ComponentTagMap[T]>new cls(this.client, cls.tag || tag as string);
+        const cmp = <ComponentTagMap[T]>new cls(this.client, cls.tag || tag as string, id);
 
+		// add className for a Component subclass with a static tag
 		if (cls.tag) {
-			component.node.classList.add(tag);
+			cmp.node.classList.add(tag as string);
 		}
 		
 		if (parent) {
-			parent.appendChild(component.node);
+			parent.appendChild(cmp.node);
 		}
 
-        return component;
+        return cmp;
     }
 
 	// create HTMLElement

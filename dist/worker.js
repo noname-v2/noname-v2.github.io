@@ -154,8 +154,10 @@
             this.main = [];
             /** Child stages added by after event. */
             this.after = [];
+            /** Component added or removed by main function. */
+            this.tagChanges = new Map();
             /** Component updates added by main function. */
-            this.updates = new Map();
+            this.propChanges = new Map();
             /** Component function calls added by main function. */
             this.calls = new Map();
             /** Pending return values from clients. */
@@ -178,17 +180,34 @@
             return true;
         }
         /** Add component update (called by links when this.step == 2 or 3). */
-        update(id, items) {
+        update(id, item) {
             if (this.step !== 2 && this.step !== 3) {
                 throw ('cannot call update a component outside a stage');
             }
-            if (!this.updates.has(id)) {
-                this.updates.set(id, {});
+            if (item !== null && typeof item === 'object') {
+                // update properties
+                if (!this.propChanges.has(id)) {
+                    this.propChanges.set(id, {});
+                }
+                Object.assign(this.propChanges.get(id), item);
+                if (this.step === 3) {
+                    // directly push updates after main UITick in stage 2
+                    this.game.worker.broadcast([this.id, {}, { [id]: item }, {}]);
+                }
             }
-            Object.assign(this.updates.get(id), items);
-            if (this.step === 3) {
-                // directly push updates after main UITick in stage 2
-                this.game.worker.broadcast([this.id, { [id]: items }, {}]);
+            else {
+                // add or remove component
+                if (this.tagChanges.has(id)) {
+                    throw ('cannot perform multiple component operations in the same stage');
+                }
+                if (item && this.game.links.has(id)) {
+                    throw ('cannot change component tag');
+                }
+                this.tagChanges.set(id, item);
+                if (this.step === 3) {
+                    // directly push updates after main UITick in stage 2
+                    this.game.worker.broadcast([this.id, { [id]: item }, {}, {}]);
+                }
             }
         }
         /** Add component function call (called by links when this.step == 2 or 3). */
@@ -202,7 +221,7 @@
             }
             else if (this.step === 3) {
                 // call function immediately without saving
-                this.game.worker.broadcast([this.id, {}, { [id]: [content] }]);
+                this.game.worker.broadcast([this.id, {}, {}, { [id]: [content] }]);
             }
             else {
                 throw ('cannot call call a component method outside a stage');
@@ -214,16 +233,18 @@
         }
         /** Handle value returned from client. */
         dispatch(id, result, done) {
-            const link = this.game.links.get(id);
-            const monitor = this.monitors.get(id);
             if (done) {
                 this.results.set(id, result);
                 if (this.resolve && this.resolved) {
                     this.resolve();
                 }
             }
-            else if (monitor) {
-                this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
+            else {
+                const monitor = this.monitors.get(id);
+                if (monitor) {
+                    const link = this.game.links.get(id);
+                    this.accessor.getRule(monitor).apply(this.accessor, [link, result]);
+                }
             }
         }
         /** Get child stages based on current step. */
@@ -259,16 +280,20 @@
                     this.game.worker.sync();
                 }
                 await this.game.getRule('#stage.main/').apply(this.accessor);
-                this.game.worker.broadcast([this.id, Object.fromEntries(this.updates), {}]);
+                this.game.worker.broadcast([this.id, Object.fromEntries(this.tagChanges), Object.fromEntries(this.propChanges), {}]);
             }
             else if (this.step === 3) {
                 // call component methods
                 this.results.clear();
-                this.game.worker.broadcast([this.id, {}, Object.fromEntries(this.calls)]);
-                // fill components without owners
+                this.game.worker.broadcast([this.id, {}, {}, Object.fromEntries(this.calls)]);
+                // set the result of components without owners as '#auto'
                 for (const id of this.monitors.keys()) {
-                    if (!this.game.links.get(id).owner && !this.results.has(id)) {
-                        this.results.set(id, '#auto');
+                    if (!this.results.has(id)) {
+                        const owner = this.game.links.get(id).owner;
+                        const peers = this.game.worker.peers;
+                        if (!owner || (peers && !peers.has(owner))) {
+                            this.results.set(id, '#auto');
+                        }
                     }
                 }
                 // await return value from client
@@ -278,11 +303,9 @@
                 }
                 this.game.activeStage = null;
                 // clear unlinked components
-                for (const [id, calls] of this.calls.entries()) {
-                    for (const [method] of calls) {
-                        if (method === '#unlink') {
-                            this.game.links.delete(id);
-                        }
+                for (const [id, tag] of this.tagChanges.entries()) {
+                    if (tag === null) {
+                        this.game.links.delete(id);
                     }
                 }
             }
@@ -338,11 +361,14 @@
             /** Properties synced with worker. */
             this.#props = new Map();
             this.#id = id;
+            this.#tag = tag;
             this.#game = game;
-            this.set('#tag', tag);
+            this.#game.activeStage.update(this.#id, tag);
         }
         /** Component ID. */
         #id;
+        /** Component tag. */
+        #tag;
         /** Properties synced with worker. */
         #props;
         /** Reference to Game. */
@@ -355,12 +381,6 @@
         }
         set owner(uid) {
             this.set('owner', uid);
-        }
-        get syncing() {
-            return this.get('#sync');
-        }
-        set syncing(sync) {
-            this.set('#sync', sync);
         }
         /** Property getter. */
         get(key) {
@@ -378,9 +398,7 @@
             }
             this.#game.activeStage.update(this.#id, items);
         }
-        /** Call a component method from its owner. Special methods:
-         * #unlink: Remove reference to this.
-        */
+        /** Call a component method from its owner. */
         call(method, arg) {
             this.#game.activeStage.call(this.#id, [method, arg]);
         }
@@ -390,11 +408,11 @@
         }
         /** Remove reference to a component. */
         unlink() {
-            this.call('#unlink');
+            this.#game.activeStage.update(this.#id, null);
         }
-        /** Get an object of all properties. */
+        /** Get tag and object of all properties. */
         flatten() {
-            return Object.fromEntries(this.#props);
+            return [this.#tag, Object.fromEntries(this.#props)];
         }
     }
 
@@ -646,12 +664,13 @@
         }
         /** Get a UITick of all links. */
         pack() {
-            const ui = {};
+            const tags = {};
+            const props = {};
             for (const [uid, link] of this.links.entries()) {
-                ui[uid] = link.flatten();
+                [tags[uid], props[uid]] = link.flatten();
             }
             ////// function calls in step 3
-            return [this.activeStage?.id || 0, ui, {}];
+            return [this.activeStage?.id || 0, tags, props, {}];
         }
     }
 

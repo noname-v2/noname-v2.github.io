@@ -14,7 +14,7 @@ import walk from './walk.mjs';
  */
 export function buildClasses() {
     const imports = [
-        `import type { ComponentClass } from '../src/client/component';`
+        `import type { Component, ComponentClass } from '../src/client/component';`
     ];
 
     const types = [];
@@ -41,6 +41,6 @@ export function buildClasses() {
     fs.writeFileSync('build/classes.ts',
         imports.join('\n') + '\n\n' +
         classes.join('\n') + '\n\n' +
-        tags.join('\n') + '\n    [key: string]: any;\n};\n');
+        tags.join('\n') + '\n    [key: string]: Component;\n};\n');
     fs.writeFileSync('build/components.ts', types.join('\n'));
 }
