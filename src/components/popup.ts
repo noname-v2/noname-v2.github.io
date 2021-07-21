@@ -72,49 +72,47 @@ export class Popup extends Component {
 		this.node.classList.add('hidden');
         this.app.node.appendChild(this.node);
 
-        requestAnimationFrame(() => {
-			if (this.location) {
-				// determine location of the menu
-				if (this.transition === null) {
-					this.transition = 'fast';
-				}
-
-				let {x, y} = this.location;
-				const rect1 = this.pane.node.getBoundingClientRect();
-				const rect2 = this.app.node.getBoundingClientRect();
-				const zoom = this.ui.zoom;
-
-				x += 2;
-				y -= 2;
-			
-				if (x < 10) {
-					x = 10
-				}
-				else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
-					x = rect2.width / zoom - 10 - rect1.width / zoom;
-				}
-
-				if (y < 10) {
-					y = 10;
-				}
-				else if (y + rect1.height / zoom+ 10 > rect2.height / zoom) {
-					y = rect2.height / zoom - 10 - rect1.height / zoom;
-				}
-
-				this.pane.node.style.left = x + 'px';
-				this.pane.node.style.top = y + 'px';
+		if (this.location) {
+			// determine location of the menu
+			if (this.transition === null) {
+				this.transition = 'fast';
 			}
-            
 
-            if (this.onopen) {
-				this.onopen();
+			let {x, y} = this.location;
+			const rect1 = this.pane.node.getBoundingClientRect();
+			const rect2 = this.app.node.getBoundingClientRect();
+			const zoom = this.ui.zoom;
+
+			x += 2;
+			y -= 2;
+		
+			if (x < 10) {
+				x = 10
 			}
-	
-			this.node.classList.remove('hidden');
-			this.pane.alignText();
-			this.ui.animate(this.pane.node, {
-				opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-			}, this.app.getTransition(this.transition));
-        });
+			else if (x + rect1.width / zoom + 10 > rect2.width / zoom) {
+				x = rect2.width / zoom - 10 - rect1.width / zoom;
+			}
+
+			if (y < 10) {
+				y = 10;
+			}
+			else if (y + rect1.height / zoom+ 10 > rect2.height / zoom) {
+				y = rect2.height / zoom - 10 - rect1.height / zoom;
+			}
+
+			this.pane.node.style.left = x + 'px';
+			this.pane.node.style.top = y + 'px';
+		}
+		
+
+		if (this.onopen) {
+			this.onopen();
+		}
+
+		this.pane.alignText();
+		this.node.classList.remove('hidden');
+		this.ui.animate(this.pane.node, {
+			opacity: [0, 1], scale: ['var(--popup-transform)', 1]
+		}, this.app.getTransition(this.transition));
 	}
 }
