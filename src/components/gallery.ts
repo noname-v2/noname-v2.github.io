@@ -34,7 +34,7 @@ export class Gallery extends Component {
     private horizontal = false;
 
     /** Target page after multiple wheel input. */
-    private targetPage: number | null = null;
+    private targetPage: [number, number] | null = null;
 
     /** Render page when needed. */
     private renderPage(i: number) {
@@ -128,6 +128,16 @@ export class Gallery extends Component {
             if (page !== this.currentPage) {
                 this.turnPage(page);
             }
+            if (this.targetPage && this.targetPage[0] !== this.targetPage[1]) {
+                const left = this.pages.scrollLeft;
+                const width = this.pages.offsetWidth;
+                const vel1 = this.targetPage[0] * width - left;
+                const vel2 = this.targetPage[1] * width - left;
+                if (vel1 * vel2 < 0 || Math.abs(vel2 / vel1) > 1.5) {
+                    this.targetPage[0] = this.targetPage[1];
+                    this.pages.scrollTo({left: this.targetPage[1] * width, behavior: 'smooth'});
+                }
+            }
         }, {passive: true});
 
         // add callbacks for dynamic item number
@@ -153,16 +163,27 @@ export class Gallery extends Component {
         }
         // turn page (used with scroll-snapping and scroll-behavior: smooth)
         const width = this.pages.offsetWidth;
-        let targetPage = this.targetPage ?? Math.round(this.pages.scrollLeft / width);
+        let targetPage = this.targetPage ? this.targetPage[1] : Math.round(this.pages.scrollLeft / width);
         targetPage += e.deltaY / Math.abs(e.deltaY);;
         if (targetPage < 0) {
             targetPage = 0;
+            if (targetPage === this.currentPage) {
+                return;
+            }
         }
         else if (targetPage >= this.pageCount) {
             targetPage = this.pageCount - 1;
+            if (targetPage === this.currentPage) {
+                return;
+            }
         }
-        this.targetPage = targetPage;
-        this.pages.scrollTo({left: targetPage * width, behavior: 'smooth'});
+        if (!this.targetPage) {
+            this.targetPage = [targetPage, targetPage];
+            this.pages.scrollTo({left: targetPage * width, behavior: 'smooth'});
+        }
+        else {
+            this.targetPage[1] = targetPage;
+        }
     }
 
     /** Add an item or an item constructor. */
@@ -195,7 +216,7 @@ export class Gallery extends Component {
 
         // update current page
         this.currentPage = page;
-        if (page === this.targetPage) {
+        if (this.targetPage && page === this.targetPage[1]) {
             this.targetPage = null;
         }
 
