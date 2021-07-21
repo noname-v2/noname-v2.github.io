@@ -370,8 +370,6 @@
             // actual window size
             const width = window.innerWidth;
             const height = window.innerHeight;
-            // reduce the number of digits of floating point number
-            const scale = (z) => `scale(${Math.ceil(z * 500) / 500})`;
             // ideal window size
             let [ax, ay] = [960, 540];
             // determine ideal size based on player number
@@ -391,9 +389,9 @@
                 h = ay;
                 z = zy;
             }
-            this.node.style.width = w + 'px';
-            this.node.style.height = h + 'px';
-            this.node.style.transform = scale(z);
+            this.node.style.setProperty('--app-width', w + 'px');
+            this.node.style.setProperty('--app-height', h + 'px');
+            this.node.style.setProperty('--app-scale', z.toString());
             this.ui.width = w;
             this.ui.height = h;
             this.ui.zoom = z;

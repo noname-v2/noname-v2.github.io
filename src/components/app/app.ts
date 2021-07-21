@@ -275,9 +275,9 @@ export class App extends Component {
             z = zy;
         }
 
-        this.node.style.width = w + 'px';
-        this.node.style.height = h + 'px';
-        this.node.style.transform = scale(z);
+        this.node.style.setProperty('--app-width', w + 'px');
+        this.node.style.setProperty('--app-height', h + 'px');
+        this.node.style.setProperty('--app-scale', z.toString());
         this.ui.width = w;
         this.ui.height = h;
         this.ui.zoom = z;

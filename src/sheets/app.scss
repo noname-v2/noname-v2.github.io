@@ -4,6 +4,9 @@ noname-app {
 	left: 0;
 	top: 0;
 	transform-origin: top left;
+	width: var(--app-width);
+	height: var(--app-height);
+	transform: scale(var(--app-scale));
 
 	// text and cursor styles
 	text-shadow: var(--app-text-shadow);

@@ -3,6 +3,9 @@ noname-app {
   left: 0;
   top: 0;
   transform-origin: top left;
+  width: var(--app-width);
+  height: var(--app-height);
+  transform: scale(var(--app-scale));
   text-shadow: var(--app-text-shadow);
   color: var(--app-color);
   font-family: var(--app-font), sans-serif;
