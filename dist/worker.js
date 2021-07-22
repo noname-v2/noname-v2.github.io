@@ -135,7 +135,7 @@
              * 0: generate this.before
              * 1: execute this.before
              * 2: generate this.calls and this.main and update components (main content)
-             * 3: execute this.calls
+             * 3: execute this.calls (user interaction)
              * 4: execute this.main
              * 5: generate this.after
              * 6: execute this.after
@@ -158,8 +158,6 @@
             this.tagChanges = new Map();
             /** Component updates added by main function. */
             this.propChanges = new Map();
-            /** Component function calls added by main function. */
-            this.calls = new Map();
             /** Pending return values from clients. */
             this.monitors = new Map();
             /** Return value of this.calls. */
@@ -178,54 +176,6 @@
                 }
             }
             return true;
-        }
-        /** Add component update (called by links when this.step == 2 or 3). */
-        update(id, item) {
-            if (this.step !== 2 && this.step !== 3) {
-                throw ('cannot call update a component outside a stage');
-            }
-            if (item !== null && typeof item === 'object') {
-                // update properties
-                if (!this.propChanges.has(id)) {
-                    this.propChanges.set(id, {});
-                }
-                Object.assign(this.propChanges.get(id), item);
-                if (this.step === 3) {
-                    // directly push updates after main UITick in stage 2
-                    this.game.worker.broadcast([this.id, {}, { [id]: item }, {}]);
-                }
-            }
-            else {
-                // add or remove component
-                if (this.tagChanges.has(id)) {
-                    throw ('cannot perform multiple component operations in the same stage');
-                }
-                if (item && this.game.links.has(id)) {
-                    throw ('cannot change component tag');
-                }
-                this.tagChanges.set(id, item);
-                if (this.step === 3) {
-                    // directly push updates after main UITick in stage 2
-                    this.game.worker.broadcast([this.id, { [id]: item }, {}, {}]);
-                }
-            }
-        }
-        /** Add component function call (called by links when this.step == 2 or 3). */
-        call(id, content) {
-            if (this.step === 2) {
-                // save function to pending function calls
-                if (!this.calls.has(id)) {
-                    this.calls.set(id, []);
-                }
-                this.calls.get(id).push(content);
-            }
-            else if (this.step === 3) {
-                // call function immediately without saving
-                this.game.worker.broadcast([this.id, {}, {}, { [id]: [content] }]);
-            }
-            else {
-                throw ('cannot call call a component method outside a stage');
-            }
         }
         /** Add a callback for component function call. */
         monitor(id, content) {
@@ -276,16 +226,17 @@
                 if (!this.game.arena) {
                     this.game.arena = this.game.create('arena');
                 }
-                if (this.game.worker.syncPending) {
-                    this.game.worker.sync();
+                // apply postponded UI updates from previous stages
+                for (const [id, item] of this.game.pendingUpdates) {
+                    this.game.update(id, item);
                 }
+                // execute main stage function
                 await this.game.getRule('#stage.main/').apply(this.accessor);
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.tagChanges), Object.fromEntries(this.propChanges), {}]);
             }
             else if (this.step === 3) {
                 // call component methods
                 this.results.clear();
-                this.game.worker.broadcast([this.id, {}, {}, Object.fromEntries(this.calls)]);
                 // set the result of components without owners as '#auto'
                 for (const id of this.monitors.keys()) {
                     if (!this.results.has(id)) {
@@ -363,7 +314,7 @@
             this.#id = id;
             this.#tag = tag;
             this.#game = game;
-            this.#game.activeStage.update(this.#id, tag);
+            this.#game.update(this.#id, tag);
         }
         /** Component ID. */
         #id;
@@ -396,11 +347,11 @@
                 const val = items[key] ?? null;
                 val === null ? this.#props.delete(key) : this.#props.set(key, val);
             }
-            this.#game.activeStage.update(this.#id, items);
+            this.#game.update(this.#id, items);
         }
-        /** Call a component method from its owner. */
+        /** Call a component method. */
         call(method, arg) {
-            this.#game.activeStage.call(this.#id, [method, arg]);
+            this.#game.worker.broadcast([null, {}, {}, { [this.id]: [[method, arg]] }]);
         }
         /** Monitor the return value of a component call. */
         monitor(monitor = null) {
@@ -408,7 +359,7 @@
         }
         /** Remove reference to a component. */
         unlink() {
-            this.#game.activeStage.update(this.#id, null);
+            this.#game.update(this.#id, null);
         }
         /** Get tag and object of all properties. */
         flatten() {
@@ -524,6 +475,8 @@
             this.extensions = new Map();
             /** An accessor to avoid exposing unsafe properties to extensions. */
             this.accessor = new GameAccessor(this);
+            /** UI updates postponded to next stage. */
+            this.pendingUpdates = [];
             /** Game state.
              * 0: waiting
              * 1: gaming
@@ -671,6 +624,39 @@
             }
             ////// function calls in step 3
             return [this.activeStage?.id || 0, tags, props, {}];
+        }
+        /** Add component update (called by links when this.activeStage.step == 2 or 3). */
+        update(id, item) {
+            const stage = this.activeStage;
+            if (!stage || (stage.step !== 2 && stage.step !== 3)) {
+                // postpond update to the next stage
+                this.pendingUpdates.push([id, item]);
+            }
+            else if (item !== null && typeof item === 'object') {
+                // update properties
+                if (!stage.propChanges.has(id)) {
+                    stage.propChanges.set(id, {});
+                }
+                Object.assign(stage.propChanges.get(id), item);
+                // directly push updates in step 3 (user interaction)
+                if (stage.step === 3) {
+                    this.worker.broadcast([stage.id, {}, { [id]: item }, {}]);
+                }
+            }
+            else {
+                // add or remove component
+                if (stage.tagChanges.has(id)) {
+                    throw ('cannot perform multiple component operations in the same stage');
+                }
+                if (item && this.links.has(id)) {
+                    throw ('cannot change component tag');
+                }
+                stage.tagChanges.set(id, item);
+                // directly push updates in step 3 (user interaction)
+                if (stage.step === 3) {
+                    this.worker.broadcast([stage.id, { [id]: item }, {}, {}]);
+                }
+            }
         }
     }
 

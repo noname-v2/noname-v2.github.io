@@ -19,7 +19,7 @@ export class Link {
         this.#id = id;
         this.#tag = tag;
         this.#game = game;
-        this.#game.activeStage!.update(this.#id, tag);
+        this.#game.update(this.#id, tag);
     }
 
     get id() {
@@ -50,12 +50,12 @@ export class Link {
             const val = items[key] ?? null;
             val === null ? this.#props.delete(key) : this.#props.set(key, val);
         }
-        this.#game.activeStage!.update(this.#id, items);
+        this.#game.update(this.#id, items);
     }
 
-    /** Call a component method from its owner. */
+    /** Call a component method. */
     call(method: string, arg?: any) {
-        this.#game.activeStage!.call(this.#id, [method, arg]);
+        this.#game.worker.broadcast([null, {}, {}, {[this.id]: [[method, arg]]}]);
     }
 
     /** Monitor the return value of a component call. */
@@ -65,7 +65,7 @@ export class Link {
 
     /** Remove reference to a component. */
     unlink() {
-        this.#game.activeStage!.update(this.#id, null);
+        this.#game.update(this.#id, null);
     }
 
     /** Get tag and object of all properties. */

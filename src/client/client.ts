@@ -211,7 +211,7 @@ export class Client {
             }
             
             // clear unfinished function calls (e.g. selectCard / selectTarget)
-            if (sid !== this.sid) {
+            if (sid !== null && sid !== this.sid) {
                 this.triggerListeners('stage');
                 this.listeners.stage.clear();
                 this.sid = sid;

@@ -51,6 +51,9 @@ export class Game {
     /** An accessor to avoid exposing unsafe properties to extensions. */
     accessor = new GameAccessor(this);
 
+    /** UI updates postponded to next stage. */
+    pendingUpdates = <[number, string | null | {[key: string]: any}][]>[];
+
     /** Game state.
      * 0: waiting
      * 1: gaming
@@ -220,5 +223,41 @@ export class Game {
         }
         ////// function calls in step 3
         return [this.activeStage?.id || 0, tags, props, {}];
+    }
+
+    /** Add component update (called by links when this.activeStage.step == 2 or 3). */
+    update(id: number, item: string | null | {[key: string]: any}) {
+        const stage = this.activeStage;
+        if (!stage || (stage.step !== 2 && stage.step !== 3)) {
+            // postpond update to the next stage
+            this.pendingUpdates.push([id, item]);
+        }
+        else if (item !== null && typeof item === 'object') {
+            // update properties
+            if (!stage.propChanges.has(id)) {
+                stage.propChanges.set(id, {});
+            }
+            Object.assign(stage.propChanges.get(id), item);
+
+            // directly push updates in step 3 (user interaction)
+            if (stage.step === 3) {
+                this.worker.broadcast([stage.id, {}, {[id]: item}, {}]);
+            }
+        }
+        else {
+            // add or remove component
+            if (stage.tagChanges.has(id)) {
+                throw('cannot perform multiple component operations in the same stage');
+            }
+            if (item && this.links.has(id)) {
+                throw('cannot change component tag');
+            }
+            stage.tagChanges.set(id, item);
+
+            // directly push updates in step 3 (user interaction)
+            if (stage.step === 3) {
+                this.worker.broadcast([stage.id, {[id]: item}, {}, {}]);
+            }
+        }
     }
 }

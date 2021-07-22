@@ -1,11 +1,12 @@
 import { version } from '../version';
 import { Game } from './game';
 import { hub2owner, split } from '../hub/types';
+import type { Link } from './link';
 
 /** An update to client side. */
 export type UITick = [
     // stage ID
-    number,
+    number | null,
     // add or delete components
     {[key: string]: string | null},
     // component property updates
