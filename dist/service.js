@@ -151,8 +151,10 @@
                 }
                 const fetched = await fetch(e.request);
                 if (fetched.ok) {
-                    const cache = await caches.open(version);
-                    await cache.put(e.request, fetched.clone());
+                    const clone = fetched.clone();
+                    caches.open(version).then(cache => {
+                        cache.put(e.request, clone);
+                    });
                 }
                 return fetched;
             }));
@@ -165,7 +167,9 @@
                 }
                 const fetched = await fetch(e.request);
                 if (fetched.ok) {
-                    await db.writeFile(url, await fetched.clone().blob());
+                    fetched.clone().blob().then(blob => {
+                        db.writeFile(url, blob);
+                    });
                 }
                 return fetched;
             }));

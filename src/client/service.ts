@@ -42,10 +42,7 @@ self.addEventListener('fetch', (e: any) => {
     if (url.startsWith(scope)) {
         url = url.slice(scope.length);
     }
-    
-    // if (scope.startsWith('http://127.0.0.1')) {
-    //     e.respondWith(fetch(e.request));
-    // }
+
     if (src.includes(url)) {
         e.respondWith(caches.match(e.request).then(async response => {
             if (response) {
@@ -53,29 +50,28 @@ self.addEventListener('fetch', (e: any) => {
             }
 
             const fetched = await fetch(e.request);
-
             if (fetched.ok) {
-                const cache = await caches.open(version);
-                await cache.put(e.request, fetched.clone());
+                const clone = fetched.clone();
+                caches.open(version).then(cache => {
+                    cache.put(e.request, clone);
+                });
             }
-            
             return fetched;
         }));
     }
     else {
         e.respondWith(db.ready.then(async () => {
             const data = await db.readFile(url);
-
             if (data) {
                 return new Response(data);
             }
             
             const fetched = await fetch(e.request);
-
             if (fetched.ok) {
-                await db.writeFile(url, await fetched.clone().blob());
+                fetched.clone().blob().then(blob => {
+                    db.writeFile(url, blob);
+                });
             }
-            
             return fetched;
         }));
     }

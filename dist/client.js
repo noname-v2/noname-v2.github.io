@@ -1464,13 +1464,15 @@
             const modes = [];
             // udpate index.json
             let write = false;
-            for (const name of extensions) {
+            await Promise.all(extensions.map(async (name) => {
                 if (!this.index[name]) {
                     await this.loadExtension(name);
                     if (this.index[name]) {
                         write = true;
                     }
                 }
+            }));
+            for (const name of extensions) {
                 if (this.index[name]?.mode) {
                     this.index[name].mode;
                     modes.push(name);
