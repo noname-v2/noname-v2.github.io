@@ -41,9 +41,6 @@ export class Worker {
     /** IDs of connected clients. */
     peers: Map<string, [string, string, number]> | null = null;
 
-    /** Clients updated since last UITick. */
-    syncPending = false;
-
     /** Room info listed in the hub. */
     get room() {
         // count number of players (excluding spectators)
@@ -149,15 +146,9 @@ export class Worker {
 
     /** Tell registered components about client update. */
     sync() {
-        if (this.game!.tickable) {
-            this.game!.arena.update({
-                peers: this.peers ? Object.fromEntries(this.peers) : null
-            });
-            this.syncPending = false;
-        }
-        else {
-            this.syncPending = true;
-        }
+        this.game!.arena.update({
+            peers: this.peers ? Object.fromEntries(this.peers) : null
+        });
     }
 
     /** The room is ready for clients to join. */

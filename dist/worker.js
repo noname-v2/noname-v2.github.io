@@ -546,10 +546,6 @@
                 console.log('game over');
             });
         }
-        /** Can apply UITick. */
-        get tickable() {
-            return [2, 3].includes(this.activeStage?.step);
-        }
         async getExtension(name) {
             if (!this.extensions.has(name)) {
                 this.extensions.set(name, (await import(`../extensions/${name}/main.js`)).default);
@@ -693,8 +689,6 @@
             this.connection = null;
             /** IDs of connected clients. */
             this.peers = null;
-            /** Clients updated since last UITick. */
-            this.syncPending = false;
             self.onmessage = ({ data }) => {
                 this.uid = data[0];
                 this.game = new Game(data[3], this);
@@ -789,15 +783,9 @@
         }
         /** Tell registered components about client update. */
         sync() {
-            if (this.game.tickable) {
-                this.game.arena.update({
-                    peers: this.peers ? Object.fromEntries(this.peers) : null
-                });
-                this.syncPending = false;
-            }
-            else {
-                this.syncPending = true;
-            }
+            this.game.arena.update({
+                peers: this.peers ? Object.fromEntries(this.peers) : null
+            });
         }
         /** The room is ready for clients to join. */
         ready() {

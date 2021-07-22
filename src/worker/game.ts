@@ -61,11 +61,6 @@ export class Game {
      */
     state = 0;
 
-    /** Can apply UITick. */
-    get tickable() {
-        return [2, 3].includes(this.activeStage?.step!);
-    }
-
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
         self.onmessage = async ({data}: {data: ClientMessage}) => {
             try {
