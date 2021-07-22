@@ -28,6 +28,12 @@ export class Lobby extends Component {
     /** Players in this seats. */
     players = <Player[]>[];
 
+    /** Container of spectators. */
+    spectateDock = this.ui.createElement('dock');
+
+    /** Container of chosen heros. */
+    heroDock = this.ui.createElement('dock');
+
     init() {
         this.app.arena!.node.appendChild(this.node);
         this.client.listeners.sync.add(this);
@@ -175,6 +181,7 @@ export class Lobby extends Component {
     }
 
     $npmax(npmax: number) {
+        // add player seats
         this.seats.innerHTML = '';
         this.players.length = 0;
         for (let i = 0; i < npmax; i++) {
@@ -185,6 +192,23 @@ export class Lobby extends Component {
             this.players.push(player);
             this.seats.appendChild(player.node);
         }
+        if (npmax > 4) {
+            this.seats.classList.add('two-rows');
+        }
+        else {
+            this.seats.classList.remove('two-rows');
+        }
+
+        // buttons below the seats
+        this.seats.appendChild(document.createElement('div'));
+        const bar = this.ui.createElement('bar');
+        this.seats.appendChild(bar);
+        bar.appendChild(this.spectateDock);
+        const spectate = this.ui.createElement('widget.button', bar);
+        const hero = this.ui.createElement('widget.button', bar);
+        bar.appendChild(this.heroDock);
+        spectate.innerHTML = '旁观';
+        hero.innerHTML = '点将';
     }
 
     sync() {

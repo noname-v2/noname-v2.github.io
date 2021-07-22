@@ -141,9 +141,6 @@
         if (url.startsWith(scope)) {
             url = url.slice(scope.length);
         }
-        // if (scope.startsWith('http://127.0.0.1')) {
-        //     e.respondWith(fetch(e.request));
-        // }
         if (src.includes(url)) {
             e.respondWith(caches.match(e.request).then(async (response) => {
                 if (response) {

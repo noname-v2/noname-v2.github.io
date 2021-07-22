@@ -5,9 +5,9 @@ noname-lobby {
 	> noname-seats {
 		position: absolute;
 		width: 700px;
-		height: 480px;
+		height: 100%;
 		left: calc(50% - 240px);
-		top: calc(50% - 240px);
+		top: 0;
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: space-evenly;
@@ -19,7 +19,40 @@ noname-lobby {
 
 		> div {
 			flex-basis: 100%;
-			height: 30px;
+			height: calc(20% - 70px);
+		}
+
+		&.two-rows > div {
+			height: calc(10% - 35px);
+		}
+
+		> noname-bar {
+			text-align: center;
+			flex-basis: 100%;
+			height: 40px;
+			> noname-dock {
+				width: 230px;
+				height: 40px;
+				position: absolute;
+				display: flex;
+				justify-content: space-evenly;
+				@include widget;
+				&:first-child {
+					left: 20px;
+				}
+				&:last-child {
+					right: 20px;
+				}
+				> noname-image {
+					width: 40px;
+					height: 40px;
+					border-radius: 100%;
+					@include widget;
+				}
+			}
+			> noname-widget {
+				height: 30px;
+			}
 		}
 	}
 

@@ -658,6 +658,10 @@
             this.exiting = false;
             /** Players in this seats. */
             this.players = [];
+            /** Container of spectators. */
+            this.spectateDock = this.ui.createElement('dock');
+            /** Container of chosen heros. */
+            this.heroDock = this.ui.createElement('dock');
         }
         init() {
             this.app.arena.node.appendChild(this.node);
@@ -795,6 +799,7 @@
             }
         }
         $npmax(npmax) {
+            // add player seats
             this.seats.innerHTML = '';
             this.players.length = 0;
             for (let i = 0; i < npmax; i++) {
@@ -805,6 +810,22 @@
                 this.players.push(player);
                 this.seats.appendChild(player.node);
             }
+            if (npmax > 4) {
+                this.seats.classList.add('two-rows');
+            }
+            else {
+                this.seats.classList.remove('two-rows');
+            }
+            // buttons below the seats
+            this.seats.appendChild(document.createElement('div'));
+            const bar = this.ui.createElement('bar');
+            this.seats.appendChild(bar);
+            bar.appendChild(this.spectateDock);
+            const spectate = this.ui.createElement('widget.button', bar);
+            const hero = this.ui.createElement('widget.button', bar);
+            bar.appendChild(this.heroDock);
+            spectate.innerHTML = '旁观';
+            hero.innerHTML = '点将';
         }
         sync() {
             const peers = this.client.peers;
@@ -1710,7 +1731,7 @@
             const group = this.pane.add('group');
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
-            const img = this.avatarImage = this.ui.createElement('image', avatarNode);
+            const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
             const url = this.db.get('avatar') ?? config.avatar;
             this.ui.setImage(img, url);
             this.ui.bindClick(avatarNode, e => {
@@ -1844,7 +1865,7 @@
             const gallery = popup.pane.addGallery(5, 9);
             for (const img of images) {
                 gallery.add(() => {
-                    const node = this.ui.createElement('image');
+                    const node = this.ui.createElement('image.avatar');
                     this.ui.setImage(node, img);
                     this.ui.bindClick(node, () => {
                         this.ui.setImage(this.avatarImage, img);
@@ -1864,7 +1885,7 @@
         constructor() {
             super(...arguments);
             /** Avatar image. */
-            this.avatar = this.ui.createElement('image', this.node);
+            this.avatar = this.ui.createElement('image.avatar', this.node);
             /** Mode name. */
             this.caption = this.ui.createElement('caption', this.node);
             /** Status text. */

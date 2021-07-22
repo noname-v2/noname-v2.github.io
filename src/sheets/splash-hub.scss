@@ -13,7 +13,6 @@ noname-popup.splash-hub > noname-pane {
 
             > noname-image {
                 border-radius: 100%;
-                background-position: var(--widget-avatar-position) !important;
             }
         }
 
@@ -80,7 +79,6 @@ noname-popup.splash-hub > noname-pane {
                 position: absolute;
                 top: 4px;
                 left: 4px;
-                background-position: var(--widget-avatar-position) !important;
             }
         
             // name of room host

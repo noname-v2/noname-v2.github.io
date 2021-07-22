@@ -153,7 +153,7 @@ export class SplashHub extends Popup {
 
         // avatar
 		const avatarNode = this.ui.createElement('widget', group);
-		const img = this.avatarImage = this.ui.createElement('image', avatarNode);
+		const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
 		const url = this.db.get('avatar') ?? config.avatar;
         this.ui.setImage(img, url);
         this.ui.bindClick(avatarNode, e => {
@@ -296,7 +296,7 @@ export class SplashHub extends Popup {
         const gallery = popup.pane.addGallery(5, 9);
         for (const img of images) {
             gallery.add(() => {
-                const node = this.ui.createElement('image');
+                const node = this.ui.createElement('image.avatar');
                 this.ui.setImage(node, img);
                 this.ui.bindClick(node, () => {
                     this.ui.setImage(this.avatarImage, img);

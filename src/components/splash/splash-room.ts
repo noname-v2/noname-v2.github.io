@@ -5,7 +5,7 @@ export class SplashRoom extends Component {
     static tag = 'widget';
 
     /** Avatar image. */
-    avatar = this.ui.createElement('image', this.node);
+    avatar = this.ui.createElement('image.avatar', this.node);
 
     /** Mode name. */
     caption = this.ui.createElement('caption', this.node);

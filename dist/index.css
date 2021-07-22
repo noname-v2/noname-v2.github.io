@@ -336,6 +336,10 @@ noname-caption {
   font-family: var(--app-caption-font);
 }
 
+noname-image.avatar {
+  background-position: var(--widget-avatar-position) !important;
+}
+
 .hidden {
   opacity: 0 !important;
 }
@@ -428,9 +432,9 @@ noname-lobby {
 noname-lobby > noname-seats {
   position: absolute;
   width: 700px;
-  height: 480px;
+  height: 100%;
   left: calc(50% - 240px);
-  top: calc(50% - 240px);
+  top: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-evenly;
@@ -441,6 +445,59 @@ noname-lobby > noname-seats > noname-player {
 }
 noname-lobby > noname-seats > div {
   flex-basis: 100%;
+  height: calc(20% - 70px);
+}
+noname-lobby > noname-seats.two-rows > div {
+  height: calc(10% - 35px);
+}
+noname-lobby > noname-seats > noname-bar {
+  text-align: center;
+  flex-basis: 100%;
+  height: 40px;
+}
+noname-lobby > noname-seats > noname-bar > noname-dock {
+  width: 230px;
+  height: 40px;
+  position: absolute;
+  display: flex;
+  justify-content: space-evenly;
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+}
+noname-lobby > noname-seats > noname-bar > noname-dock > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-lobby > noname-seats > noname-bar > noname-dock:first-child {
+  left: 20px;
+}
+noname-lobby > noname-seats > noname-bar > noname-dock:last-child {
+  right: 20px;
+}
+noname-lobby > noname-seats > noname-bar > noname-dock > noname-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+}
+noname-lobby > noname-seats > noname-bar > noname-dock > noname-image > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-lobby > noname-seats > noname-bar > noname-widget {
   height: 30px;
 }
 noname-lobby > noname-bar {
@@ -1057,7 +1114,6 @@ noname-popup.splash-hub > noname-pane > noname-group > noname-widget {
 }
 noname-popup.splash-hub > noname-pane > noname-group > noname-widget > noname-image {
   border-radius: 100%;
-  background-position: var(--widget-avatar-position) !important;
 }
 noname-popup.splash-hub > noname-pane > noname-group > noname-span {
   position: absolute;
@@ -1111,7 +1167,6 @@ noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-im
   position: absolute;
   top: 4px;
   left: 4px;
-  background-position: var(--widget-avatar-position) !important;
 }
 noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-caption {
   position: absolute;

@@ -16,6 +16,10 @@ noname-caption {
 	font-family: var(--app-caption-font);
 }
 
+noname-image.avatar {
+	background-position: var(--widget-avatar-position) !important;
+}
+
 .hidden {
 	opacity: 0 !important;
 }
