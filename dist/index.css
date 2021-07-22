@@ -461,6 +461,7 @@ noname-lobby > noname-seats > noname-bar > noname-dock {
   position: absolute;
   display: flex;
   justify-content: space-evenly;
+  display: inline-block;
   background: var(--widget-background);
   border-radius: var(--widget-radius);
   box-shadow: var(--widget-shadow);

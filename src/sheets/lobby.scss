@@ -36,6 +36,7 @@ noname-lobby {
 				position: absolute;
 				display: flex;
 				justify-content: space-evenly;
+				display: inline-block;
 				@include widget;
 				&:first-child {
 					left: 20px;

@@ -851,10 +851,15 @@
                 }
             }
             // update seats
-            const ids = Object.keys(peers || {});
+            const players = [];
+            for (const id in peers) {
+                if (peers[id][2] === 0) {
+                    players.push(id);
+                }
+            }
             for (let i = 0; i < this.players.length; i++) {
-                if (i < ids.length) {
-                    const [nickname, avatar] = peers[ids[i]];
+                if (i < players.length) {
+                    const [nickname, avatar] = peers[players[i]];
                     this.players[i].set('heroImage', avatar);
                     this.players[i].set('heroName', nickname);
                 }
