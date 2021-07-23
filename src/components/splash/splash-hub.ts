@@ -207,7 +207,6 @@ export class SplashHub extends Popup {
     }
 
     edit(msg: string) {
-        console.log(msg)
         const ws = this.client.connection;
         if (!(ws instanceof WebSocket)) {
             return;

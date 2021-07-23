@@ -1851,7 +1851,6 @@
             const [reason, content] = split(msg);
             this.clearRooms();
             this.edit(content);
-            console.log(1);
             if (reason === 'kick') {
                 await this.app.alert('你被请出了房间');
             }
