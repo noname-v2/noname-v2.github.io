@@ -99,6 +99,11 @@ export const game = <Collection>{
                         }
                     }
                     else {
+                        // game configuration change
+                        this.game.config[key] = val;
+                        lobby.set('config', this.game.config);
+
+                        // update seats in the lobby
                         if (key === 'np' ) {
                             const players = this.game.peerPlayers;
                             if (players && players.length > val) {
@@ -108,10 +113,6 @@ export const game = <Collection>{
                             }
                             this.game.updateRoom();
                         }
-
-                        // game configuration change
-                        this.game.config[key] = val;
-                        lobby.set('config', this.game.config);
                     }
                 }
                 else if (type === 'hero') {
