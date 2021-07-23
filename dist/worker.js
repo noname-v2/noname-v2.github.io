@@ -170,8 +170,8 @@
             this.location = location;
         }
         get resolved() {
-            for (const id of this.monitors.keys()) {
-                if (!this.results.has(id)) {
+            for (const val of this.results.values()) {
+                if (val === null) {
                     return false;
                 }
             }
@@ -181,12 +181,18 @@
         monitor(id, content) {
             this.monitors.set(id, content);
         }
+        /** Pause step 3 until a return value is received. */
+        await(id) {
+            this.results.set(id, null);
+        }
         /** Handle value returned from client. */
         dispatch(id, result, done) {
             if (done) {
-                this.results.set(id, result);
-                if (this.resolve && this.resolved) {
-                    this.resolve();
+                if (this.results.get(id) === null) {
+                    this.results.set(id, result ?? '#auto');
+                    if (this.resolve && this.resolved) {
+                        this.resolve();
+                    }
                 }
             }
             else {
@@ -235,11 +241,9 @@
                 this.game.worker.broadcast([this.id, Object.fromEntries(this.tagChanges), Object.fromEntries(this.propChanges), {}]);
             }
             else if (this.step === 3) {
-                // call component methods
-                this.results.clear();
                 // set the result of components without owners as '#auto'
-                for (const id of this.monitors.keys()) {
-                    if (!this.results.has(id)) {
+                for (const [id, val] of this.results.entries()) {
+                    if (val === null) {
                         const owner = this.game.links.get(id).owner;
                         const peers = this.game.worker.peers;
                         if (!owner || (peers && !peers.has(owner))) {
@@ -354,8 +358,12 @@
             this.#game.worker.broadcast([null, {}, {}, { [this.id]: [[method, arg]] }]);
         }
         /** Monitor the return value of a component call. */
-        monitor(monitor = null) {
+        monitor(monitor) {
             this.#game.activeStage.monitor(this.#id, monitor);
+        }
+        /** Pause step 3 of active stage until return value is received. */
+        await() {
+            this.#game.activeStage.await(this.#id);
         }
         /** Remove reference to a component. */
         unlink() {
@@ -458,6 +466,13 @@
                 this.#game.state = 0;
                 this.#game.worker.updateRoom();
             }
+        }
+        /** Connected clients. */
+        get peers() {
+            if (this.#game.worker.peers) {
+                return Array.from(this.#game.worker.peers.values());
+            }
+            return null;
         }
     }
 

@@ -110,6 +110,7 @@ const game = {
                 lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
                 lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
                 lobby.monitor('updateLobby');
+                lobby.await();
             },
             updateLobby(lobby, [type, key, val]) {
                 if (type === 'sync') {

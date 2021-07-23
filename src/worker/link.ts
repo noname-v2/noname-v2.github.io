@@ -59,8 +59,13 @@ export class Link {
     }
 
     /** Monitor the return value of a component call. */
-    monitor(monitor: string | null = null) {
+    monitor(monitor: string) {
         this.#game.activeStage!.monitor(this.#id, monitor);
+    }
+
+    /** Pause step 3 of active stage until return value is received. */
+    await() {
+        this.#game.activeStage!.await(this.#id);
     }
 
     /** Remove reference to a component. */

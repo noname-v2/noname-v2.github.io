@@ -117,4 +117,12 @@ export class GameAccessor {
             this.#game.worker.updateRoom();
         }
     }
+
+    /** Connected clients. */
+    get peers() {
+        if (this.#game.worker.peers) {
+            return Array.from(this.#game.worker.peers.values());
+        }
+        return null;
+    }
 }

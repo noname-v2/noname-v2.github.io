@@ -60,7 +60,7 @@ export class Stage {
     propChanges = new Map<number, {[key: string]: any}>();
 
     /** Pending return values from clients. */
-    monitors = new Map<number, string | null>();
+    monitors = new Map<number, string>();
 
     /** Return value of this.calls. */
     results = new Map<number, any>();
@@ -69,8 +69,8 @@ export class Stage {
     private resolve: (() => void) | null = null;
 
     get resolved() {
-        for (const id of this.monitors.keys()) {
-            if (!this.results.has(id)) {
+        for (const val of this.results.values()) {
+            if (val === null) {
                 return false;
             }
         }
@@ -85,16 +85,23 @@ export class Stage {
     }
 
     /** Add a callback for component function call. */
-    monitor(id: number, content: string | null) {
+    monitor(id: number, content: string) {
         this.monitors.set(id, content);
+    }
+
+    /** Pause step 3 until a return value is received. */
+    await(id: number) {
+        this.results.set(id, null);
     }
 
     /** Handle value returned from client. */
     dispatch(id: number, result: any, done: boolean) {
         if (done) {
-            this.results.set(id, result);
-            if (this.resolve && this.resolved) {
-                this.resolve();
+            if (this.results.get(id) === null) {
+                this.results.set(id, result ?? '#auto');
+                if (this.resolve && this.resolved) {
+                    this.resolve();
+                }
             }
         }
         else {
@@ -148,12 +155,9 @@ export class Stage {
             this.game.worker.broadcast([this.id, Object.fromEntries(this.tagChanges), Object.fromEntries(this.propChanges), {}]);
         }
         else if (this.step === 3) {
-            // call component methods
-            this.results.clear();
-            
             // set the result of components without owners as '#auto'
-            for (const id of this.monitors.keys()) {
-                if (!this.results.has(id)) {
+            for (const [id, val] of this.results.entries()) {
+                if (val === null) {
                     const owner = this.game.links.get(id)!.owner;
                     const peers = this.game.worker.peers;
                     if (!owner || (peers && !peers.has(owner))) {
