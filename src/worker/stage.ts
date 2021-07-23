@@ -43,7 +43,7 @@ export class Stage {
     #code = 0;
 
     /** Parent stage. */
-    #location: [Stage, StageLocation] | null;
+    #location: [Stage, StageLocation] | null = null;
 
     /** Child stages added by before event. */
     #before = <Stage[]>[];
@@ -66,11 +66,8 @@ export class Stage {
     /** Make self as game.activateStage. */
     #setStage: SetStage;
 
-    /** Input data. */
-    input: {[key: string]: any} = {};
-
-    /** Output data. */
-    output: {[key: string]: any} = {};
+    /** Auxiliary data. */
+    #data: {[key: string]: any};
 
     get id() {
         return this.#id;
@@ -110,13 +107,13 @@ export class Stage {
         return this.#game;
     }
 
-    constructor(id: number, location: [Stage, StageLocation] | null,
-        path: string, game: Game, worker: Worker, setStage: SetStage) {
+    constructor(id: number, path: string, data: {[key: string]: any},
+        game: Game, worker: Worker, setStage: SetStage) {
         this.#id = id;
         this.#path = path;
         this.#game = game;
+        this.#data = data;
         this.#worker = worker;
-        this.#location = location;
         this.#setStage = setStage;
 
         if (id === 1) {
@@ -176,14 +173,16 @@ export class Stage {
 
     /** Add a child stage. */
     add(path: string) {
-        const stage = this.game.createStage(this.#getPath(path), [this, this.#getLocation()!]);
+        const stage = this.game.createStage(this.#getPath(path));
+        stage.#location = [this, this.#getLocation()!];
         this.#getChildren()!.push(stage);
         return stage;
     }
 
     /** Add a sibling next to this. */
     addSibling(path: string) {
-        const stage = this.game.createStage(this.#getPath(path), this.#location!);
+        const stage = this.game.createStage(this.#getPath(path));
+        stage.#location = this.#location!;
         const siblings = this.siblings!;
         for (let i = 0; i < siblings.length; i++) {
             if (Object.is(siblings[i], this)) {

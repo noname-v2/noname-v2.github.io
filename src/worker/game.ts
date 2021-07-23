@@ -166,9 +166,9 @@ export class Game {
         return link;
     }
 
-    createStage(name: string, parent?: [Stage, StageLocation]) {
+    createStage(name: string, data?: {[key: string]: any}) {
         const id = ++this.#stageCount;
-        const stage = new Stage(id, parent ?? null, name, this, this.#worker, this.#setStage);
+        const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#setStage);
         this.#stages.set(id, stage);
         return stage;
     }
