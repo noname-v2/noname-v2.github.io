@@ -1849,6 +1849,9 @@
         }
         async reload(msg) {
             const [reason, content] = split(msg);
+            this.clearRooms();
+            this.edit(content);
+            console.log(1);
             if (reason === 'kick') {
                 await this.app.alert('你被请出了房间');
             }
@@ -1857,12 +1860,11 @@
             }
             this.app.splash.show();
             this.roomGroup.classList.remove('entering');
-            this.clearRooms();
             this.client.clear();
             this.roomGroup.classList.remove('hidden');
-            this.edit(content);
         }
         edit(msg) {
+            console.log(msg);
             const ws = this.client.connection;
             if (!(ws instanceof WebSocket)) {
                 return;

@@ -192,6 +192,8 @@ export class SplashHub extends Popup {
 
     async reload(msg: string) {
         const [reason, content] = split(msg);
+        this.clearRooms();
+        this.edit(content);
         if (reason === 'kick') {
             await this.app.alert('你被请出了房间');
         }
@@ -200,13 +202,12 @@ export class SplashHub extends Popup {
         }
         this.app.splash.show();
         this.roomGroup.classList.remove('entering');
-        this.clearRooms();
         this.client.clear();
         this.roomGroup.classList.remove('hidden');
-        this.edit(content);
     }
 
     edit(msg: string) {
+        console.log(msg)
         const ws = this.client.connection;
         if (!(ws instanceof WebSocket)) {
             return;
