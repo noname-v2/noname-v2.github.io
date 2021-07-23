@@ -324,6 +324,7 @@ export class Client {
             (cmp as any)[event](arg);
         }
     }
+    
     /** Remove all listeners. */
     removeListeners(cmp: Component) {
         for (const key in this.listeners) {

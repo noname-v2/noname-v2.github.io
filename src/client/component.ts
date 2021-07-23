@@ -79,7 +79,6 @@ export abstract class Component {
                 hook.apply(cmp, [newVal, oldVal]);
             }
         }
-        
         return hooks;
     }
 

@@ -222,7 +222,6 @@ export class Game {
         for (const [uid, link] of this.links.entries()) {
             [tags[uid], props[uid]] = link.flatten();
         }
-        ////// function calls in step 3
         return [this.activeStage?.id || 0, tags, props, {}];
     }
 

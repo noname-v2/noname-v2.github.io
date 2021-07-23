@@ -8,10 +8,7 @@ export class GameAccessor {
     heros = <string[]>[];
 
     /** All available cards. */
-    cards = <Link[]>[];
-
-    /** In-game players. */
-    players = <Link[]>[];
+    cards = <string[]>[];
 
     /** Game defined properties. */
     [key: string]: any;
@@ -76,11 +73,6 @@ export class GameAccessor {
     /** Disconnect from remote hub. */
     disconnect() {
         this.#game.worker.disconnect();
-    }
-
-    /** Get game configuration. */
-    get(key: string) {
-        return this.#game.config[key] ?? null;
     }
 
     /** Freeze config and tell hub about game start. */

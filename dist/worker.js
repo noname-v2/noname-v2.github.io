@@ -381,8 +381,6 @@
             this.heros = [];
             /** All available cards. */
             this.cards = [];
-            /** In-game players. */
-            this.players = [];
             this.#game = game;
         }
         #game;
@@ -430,10 +428,6 @@
         /** Disconnect from remote hub. */
         disconnect() {
             this.#game.worker.disconnect();
-        }
-        /** Get game configuration. */
-        get(key) {
-            return this.#game.config[key] ?? null;
         }
         /** Freeze config and tell hub about game start. */
         start() {
@@ -631,7 +625,6 @@
             for (const [uid, link] of this.links.entries()) {
                 [tags[uid], props[uid]] = link.flatten();
             }
-            ////// function calls in step 3
             return [this.activeStage?.id || 0, tags, props, {}];
         }
         /** Add component update (called by links when this.activeStage.step == 2 or 3). */
