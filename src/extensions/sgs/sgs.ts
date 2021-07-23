@@ -1,6 +1,10 @@
 import type { Extension, Collection, Section } from '../../worker/extension';
 export type { Collection } from '../../worker/extension';
 
+interface ModeSection extends Section {
+    np: number | number[];
+}
+
 interface HeroSection extends Section {
     gender: string;
     faction: string;
@@ -38,6 +42,7 @@ export interface Pile {
 }
 
 export interface SGS extends Extension {
+    mode?: ModeSection;
     hero?: HeroCollection;
     card?: CardCollection;
     skill?: SkillCollection;

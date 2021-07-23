@@ -8,16 +8,16 @@ export const game = <Collection>{
         },
         contents: {
             createLobby() {
-                const lobby = this.create('lobby');
-                this.lobbyID = lobby.id;
+                const lobby = this.game.create('lobby');
+                this.results.set('lobbyID', lobby.id);
 
                 // get names of hero packs and card packs
                 const heropacks = {} as any;
                 const cardpacks = {} as any;
                 const configs = {} as any;
                 for (const name of this.game.packs) {
-                    const heropack = this.getRule(name, 'heropack');
-                    const cardpack = this.getRule(name, 'cardpack');
+                    const heropack = this.game.getRule(name + ':heropack');
+                    const cardpack = this.game.getRule(name + ':cardpack');
                     if (heropack) {
                         heropacks[name] = heropack;
                     }
@@ -27,7 +27,7 @@ export const game = <Collection>{
                 }
 
                 // get configurations in sidebar
-                const fullConfigs = this.getRule('#config');
+                const fullConfigs = this.game.getRule('#config');
                 for (const name in fullConfigs) {
                     configs[name] = {};
                     configs[name].name = fullConfigs[name].name;
@@ -101,7 +101,7 @@ export const game = <Collection>{
                     else {
                         // make sure np in range
                         if (key === 'np') {
-                            const np = this.getRule(this.game.mode + ':mode').np;
+                            const np = this.game.getRule(this.game.mode + ':mode').np;
                             if (!Array.isArray(np) || val < np[0] || val > np[np.length - 1]) {
                                 return;
                             }

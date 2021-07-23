@@ -136,13 +136,13 @@ export class Client {
     }
 
     /** Fetch and parse json file. */
-	readJSON<T>(...args: string[]) {
-		return new Promise<T>(resolve => {
+    readJSON<T>(...args: string[]) {
+        return new Promise<T>(resolve => {
             fetch(args.join('/')).then(response => {
                 response.json().then(resolve);
             });
-		});
-	}
+        });
+    }
 
     /** Connect to web worker. */
     connect(config: [string, string[]] | string) {
@@ -324,7 +324,7 @@ export class Client {
             (cmp as any)[event](arg);
         }
     }
-    
+
     /** Remove all listeners. */
     removeListeners(cmp: Component) {
         for (const key in this.listeners) {

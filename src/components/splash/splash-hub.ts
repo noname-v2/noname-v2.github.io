@@ -1,7 +1,8 @@
 import { Popup } from '../popup';
 import { Splash, Dialog, SplashRoom, SplashGallery } from '../../components';
 import { config } from '../../version';
-import { hub2member, split } from '../../hub/types';
+import { hub2member } from '../../hub/types';
+import { split } from '../../utils';
 
 export class SplashHub extends Popup {
     /** Use tag <noname-popup>. */

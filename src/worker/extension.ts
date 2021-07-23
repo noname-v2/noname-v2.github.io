@@ -1,16 +1,16 @@
 import type { Component, ComponentClass } from '../client/component';
-import type { StageAccessor } from '../worker/stage-acc';
+import type { Stage } from '../worker/stage';
 
 export interface Section {
     name?: string;
     intro?: string;
-    content?: (this: StageAccessor, ...args: any[]) => any;
-    contents?: {[key: string]: (this: StageAccessor, ...args: any[]) => any};
+    content?: (this: Stage, ...args: any[]) => any;
+    contents?: {[key: string]: (this: Stage, ...args: any[]) => any};
     [key: string]: any;
 }
 
-export interface Collection<T=Section> {
-    [key: string]: T | ((stage: StageAccessor) => any);
+export interface Collection<T extends Section = Section> {
+    [key: string]: T | ((stage: Stage) => any);
 }
 
 export interface Extension {
@@ -19,6 +19,7 @@ export interface Extension {
     card?: Collection;
     hero?: Collection;
     ruleset?: {[key: string]: Collection};
+    inherit?: string;
     heropack?: string;
     cardpack?: string;
     tags?: string[];

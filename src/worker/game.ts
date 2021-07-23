@@ -1,218 +1,242 @@
 import { Stage } from './stage';
 import { Link } from './link';
-import { GameAccessor } from './game-acc';
-import type { StageLocation } from './stage';
+import { apply, freeze, access, split } from '../utils';
+import type { StageLocation, StageCallback } from './stage';
 import type { Worker, ClientMessage, UITick } from './worker';
 import type { Extension } from './extension';
 
+export type HistoryItem = string | null | {[key: string]: any} | [string, any];
+
 export class Game {
     /** Root game stage. */
-    rootStage!: Stage;
+    #rootStage!: Stage;
 
-    /** Currently active game stage. */
-    activeStage: Stage | null = null;
-
-    /** Stage of the main game loop. */
-    gameStage: Stage | null = null;
+    /** Current game stage. */
+    #active: [Stage, StageCallback] | null = null;
 
     /** Links to components. */
-    links = new Map<number, Link>();
+    #links = new Map<number, Link>();
 
     /** Game mode. */
-    mode: string;
+    #mode: string;
 
     /** Mode configuration. */
-    config: {[key: string]: any};
+    #config: {[key: string]: any};
 
     /** Hero packages. */
-    packs: Set<string>;
+    #packs: Set<string>;
 
-    /** Disabled hero packages. */
-    disabledHeropacks: Set<string>;
+    /** Banned packages. */
+    #banned = {
+        heropacks: new Set<string>(),
+        cardpacks: new Set<string>(),
+        heros: new Set<string>(),
+        cards: new Set<string>(),
+    };
 
-    /** Disabled card packages. */
-    disabledCardpacks: Set<string>;
-
-    /** Stage counter. */
-    stages = new Map<number, Stage>();
+    /** All created stages. */
+    #stages = new Map<number, Stage>();
 
     /** Loaded extensions. */
-    extensions = new Map<string, Extension>();
+    #extensions = new Map<string, Extension>();
 
     /** Worker reference. */
-    worker: Worker;
+    #worker: Worker;
 
     /** Arena link. */
-    arena!: Link;
+    #arena!: Link;
 
-    /** Game ruleset. */
-    ruleset!: {[key: string]: any};
-
-    /** An accessor to avoid exposing unsafe properties to extensions. */
-    accessor = new GameAccessor(this);
-
-    /** UI updates postponded to next stage. */
-    pendingUpdates = <[number, string | null | {[key: string]: any}][]>[];
+    /** Array of packages that define ruleset (priority: high -> low). */
+    #ruleset = <string[]>[];
 
     /** Game state.
      * 0: waiting
      * 1: gaming
-     * 2: ended
-     */
-    state = 0;
+     * 2: over
+    */
+    #state = 0;
+
+    /** UI updates. */
+    #history = <[number | null, number, HistoryItem][]>[];
+
+    /** Number of ticked history entries. */
+    #historyCount = 0;
 
     /** Number of links created. */
-    private linkCount = 0;
+    #linkCount = 0;
 
     /** Number of stages created. */
-    private stageCount = 0;
+    #stageCount = 0;
+
+    get arena() {
+        return this.#arena;
+    }
+
+    get mode() {
+        return this.#mode;
+    }
+
+    get config() {
+        return this.#config;
+    }
+
+    get packs() {
+        return this.#packs;
+    }
+
+    get banned() {
+        return this.#banned;
+    }
+
+    get rootStage() {
+        return this.#rootStage;
+    }
+
+    get activeStage() {
+        return this.#active ? this.#active[0] : null;
+    }
+
+    get links() {
+        return this.#links;
+    }
+
+    get uid() {
+        return this.#worker.uid;
+    }
+
+    get state() {
+        return this.#state;
+    }
+
+    /** Connected clients. */
+    get peers() {
+        if (this.#worker.peers) {
+            return Array.from(this.#worker.peers.values());
+        }
+        return null;
+    }
+
+    /** Connected players. */
+    get peerPlayers() {
+        return this.#worker.getPeers({playing: true});
+    }
+
+    /** Connected spectators. */
+    get peerSpectators() {
+        return this.#worker.getPeers({playing: false});
+    }
 
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
-        self.onmessage = async ({data}: {data: ClientMessage}) => {
-            try {
-                const [uid, sid, id, result, done] = data;
-                if (id < 0) {
-                    // reload UI upon error
-                    this.worker.send(uid, this.pack());
+        this.#worker = worker;
+        this.#mode = content[0];
+        this.#packs = new Set(content[1]);
+        this.#banned.heropacks = new Set(content[2]);
+        this.#banned.cardpacks = new Set(content[3]);
+        this.#config = content[4];
+        this.#worker.info = content[5];
+
+        // load extensions
+        Promise.all(content[1].map(async pack => {
+            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+            this.#extensions.set(pack, ext);
+        })).then(async () => {
+            // add ruleset based on reference order
+            let mode = this.#mode;
+            while (mode) {
+                if (this.#ruleset.includes(mode)) {
+                    break;
                 }
-                else if (sid === this.activeStage?.id) {
-                    // send result to listener
-                    const link = this.links.get(id);
-                    if (link?.owner === uid) {
-                        this.activeStage.dispatch(id, result, done);
-                    }
-                }
-            }
-            catch (e) {
-                console.log(e);
-            }
-        };
-
-        this.mode = content[0];
-        this.worker = worker;
-        this.packs = new Set(content[1]);
-        this.disabledHeropacks = new Set(content[2]);
-        this.disabledCardpacks = new Set(content[3]);
-        this.config = content[4];
-        this.worker.info = content[5];
-
-        const apply = (from: {[key: string]: any}, to: {[key: string]: any}) => {
-            for (const key in from) {
-                if (typeof from[key] === 'object' && typeof to[key] === 'object') {
-                    if (from[key] === null) {
-                        delete to[key];
-                    }
-                    else {
-                        apply(from[key], to[key]);
-                    }
-                }
-                else {
-                    to[key] = from[key];
-                }
-            }
-            return to;
-        };
-
-        const getRuleSet = async (name: string): Promise<any> => {
-            const ext = await this.getExtension(name);
-            const ruleset = ext.ruleset || {};
-
-            if (ext.mode?.ruleset) {
-                return apply(ruleset, await getRuleSet(ext.mode.ruleset));
-            }
-            return ruleset;
-        };
-
-        getRuleSet(this.mode).then(async ruleset => {
-            this.ruleset = this.deepFreeze(ruleset);
-            this.rootStage = this.createStage(`${this.mode}:mode/`);
-
-            // load extensions
-            for (const name of this.packs) {
-                await this.getExtension(name);
+                this.#ruleset.push(mode);
+                mode = this.#extensions.get(mode)?.inherit as string;
             }
 
             // start game
-            while (await this.rootStage.next());
-            console.log('game over');
+            this.#rootStage = this.createStage(`${this.mode}:mode/`);
+            this.#arena = this.create('arena');
         });
-    }
 
-    async getExtension(name: string) {
-        if (!this.extensions.has(name)) {
-            this.extensions.set(name, (await import(`../extensions/${name}/main.js`)).default);
-        }
-        return this.extensions.get(name)!;
+        // handle return message from client
+        self.onmessage = ({data}) => this.#dispatch(data);
     }
 
     create(tag: string) {
-        const id = ++this.linkCount;
-        const link = new Link(id, tag, this);
+        const id = ++this.#linkCount;
+        const link = new Link(id, tag, this, this.#update);
         this.links.set(id, link);
         return link;
     }
 
     createStage(name: string, parent?: [Stage, StageLocation]) {
-        const id = ++this.stageCount;
-        const stage = new Stage(id, parent ?? null, name, this);
-        this.stages.set(id, stage);
+        const id = ++this.#stageCount;
+        const stage = new Stage(id, parent ?? null, name, this, this.#worker, this.#setStage);
+        this.#stages.set(id, stage);
         return stage;
     }
 
     /** Get the function based on string. Format:
-     * #<path>: from this.ruleset
-     * <extname>:<path>?<section>: from an extension
+     * #<path>/<section>: from this.ruleset
+     * <extname>:<path>/<section>: from an extension
      */
-    getRule(content: string) {
-        let rule: any;
-        let path: string;
-
-        // get ruleset or extension
-        if (content[0] === '#') {
-            rule = this.ruleset;
-            path = content.slice(1);
+    getRule(path: string): any {
+        if (path[0] === '#') {
+            // get ruleset
+            path = path.slice(1);
+            for (const name of this.#ruleset) {
+                const rule = this.getRule(name + ':ruleset.' + path);
+                if (rule !== null) {
+                    return rule;
+                }
+            }
         }
         else {
-            [rule, path] = content.split(':');
-            rule = this.extensions.get(rule);
+            // get the content of an extension
+            const [name, content] = split(path);
+            const ext = this.#extensions.get(name);
+            if (ext) {
+                const [keys, section] = content.split('/');
+                const rule = access(ext, keys);
+                if (section === '') {
+                    return rule.content ?? null;
+                }
+                else if (typeof section === 'string') {
+                    return rule.contents[section] ?? null;
+                }
+                else {
+                    return rule ?? null;
+                }
+            }
+            else {
+                return null;
+            }
         }
+    }
 
-        // get target
-        const [keys, section] = path.split('/');
-        for (const key of keys.split('.')) {
-            rule = rule[key];
+    /** Update room info for idle clients. */
+    updateRoom(push=true) {
+        const room = JSON.stringify([
+            // mode name
+            this.getRule(this.mode + ':mode').name,
+            // joined players
+            this.#worker.getPeers({playing: true})?.length ?? 1,
+            // number of players in a game
+            this.config.np,
+            // nickname and avatar of owner
+            this.#worker.info,
+            // game state
+            this.state
+        ]);
+        if (push) {
+            this.#worker.connection?.send('edit:' + room);
         }
-
-        // return section of the target
-        if (section) {
-            return rule.contents[section];
-        }
-        else if (section === '') {
-            return rule.content;
-        }
-        else {
-            return rule;
-        }
+        return room;
     }
 
     /** Backup game progress. */
-    async backup() {
+    backup() {
         //////
-    }
+        return new Promise<void>(resolve => {
 
-    /** Deep freeze object. */
-    deepFreeze(obj: any) {
-        const propNames = Object.getOwnPropertyNames(obj);
-
-        for (const name of propNames) {
-            const value = obj[name];
-
-            if (value && typeof value === 'object') {
-                this.deepFreeze(value);
-            }
-        }
-
-        return Object.freeze(obj);
+        });
     }
 
     /** Get a UITick of all links. */
@@ -225,36 +249,91 @@ export class Game {
         return [this.activeStage?.id || 0, tags, props, {}];
     }
 
-    /** Add component update (called by links when this.activeStage.step == 2 or 3). */
-    update(id: number, item: string | null | {[key: string]: any}) {
-        const stage = this.activeStage;
-        if (!stage || (stage.step !== 2 && stage.step !== 3)) {
-            // postpond update to the next stage
-            this.pendingUpdates.push([id, item]);
-        }
-        else if (item !== null && typeof item === 'object') {
-            // update properties
-            if (!stage.propChanges.has(id)) {
-                stage.propChanges.set(id, {});
-            }
-            Object.assign(stage.propChanges.get(id), item);
+    /** Mark game as started and disallow changing configuration. */
+    start() {
+        freeze(this.#config);
+        freeze(this.#packs);
+        freeze(this.#banned);
+        this.#state = 1;
+        this.updateRoom();
+    }
 
-            // directly push updates in step 3 (user interaction)
-            if (stage.step === 3) {
-                this.worker.broadcast([stage.id, {}, {[id]: item}, {}]);
+    /** Connect to remote hub. */
+    connect(url: string) {
+        this.#worker.connect(url);
+    }
+
+    /** Disconnect from remote hub. */
+    disconnect() {
+        this.#worker.disconnect();
+    }
+
+    /** Add component update (called by Link). */
+    #update(id: number, item: HistoryItem) {
+        if (this.#historyCount === this.#history.length) {
+            // schedule a UITick if no pending UITick exists
+            setTimeout(() => this.#tick());
+        }
+        this.#history.push([this.activeStage?.id ?? null, id, item]);
+    }
+
+    /** Set active stage (called by Stage). */
+    #setStage(content?: [Stage, StageCallback]) {
+        this.#active = content ?? null;
+    }
+
+    /** Create a UITick from this.#history. */
+    #tick() {
+        let stageID: number | null = -1;
+        let tagChanges: {[key: string]: string | null} = {};
+        let propChanges: {[key: string]: {[key: string]: any}} = {};
+        let calls: {[key: string]: [string, any][]} = {};
+
+        while (this.#historyCount < this.#history.length) {
+            const [sid, id, item] = this.#history[this.#historyCount];
+            if (sid !== stageID) {
+                if (stageID !== -1) {
+                    // split UITick with stage change
+                    this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
+                    tagChanges = {}
+                    propChanges = {};
+                    calls = {};
+                }
+                stageID = sid;
+
+                // merge history entries into a UITick
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    apply(propChanges[id], item);
+                }
+                else {
+                    tagChanges[id] = item;
+                }
+            }
+            this.#historyCount++;
+        }
+        this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
+    }
+
+    /** Dispatch message from client. */
+    async #dispatch(data: ClientMessage) {
+        try {
+            const [uid, sid, id, result, done] = data;
+            if (id < 0) {
+                // reload UI upon error
+                this.#worker.send(uid, this.pack());
+            }
+            else if (this.#active && sid === this.#active[0].id && this.links.get(id)?.owner === uid) {
+                // send result to listener
+                this.#active[1].apply(this.#active[0], [id, result, done]);
             }
         }
-        else {
-            // add or remove component
-            if (item && this.links.has(id)) {
-                throw('cannot change component tag');
-            }
-            stage.tagChanges.set(id, item);
-
-            // directly push updates in step 3 (user interaction)
-            if (stage.step === 3) {
-                this.worker.broadcast([stage.id, {[id]: item}, {}, {}]);
-            }
+        catch (e) {
+            console.log(e);
         }
     }
 }

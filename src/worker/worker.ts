@@ -1,6 +1,7 @@
 import { version } from '../version';
 import { Game } from './game';
-import { hub2owner, split } from '../hub/types';
+import { hub2owner } from '../hub/types';
+import { split } from '../utils';
 import type { Link } from './link';
 
 /** An update to client side. */
@@ -40,22 +41,6 @@ export class Worker {
 
     /** Links of connected clients. */
     peers: Map<string, Link> | null = null;
-
-    /** Room info listed in the hub. */
-    get room() {
-        return JSON.stringify([
-            // mode name
-            this.game!.getRule(this.game!.mode + ':mode').name,
-            // joined players
-            this.getPeers({playing: true})?.length ?? 1,
-            // number of players in a game
-            this.game!.config.np,
-            // nickname and avatar of owner
-            this.info,
-            // game state
-            this.game!.state
-        ]);
-    }
 
     /**
      * Setup communication.
@@ -114,7 +99,7 @@ export class Worker {
             this.sync();
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
+            ws.send('init:' + JSON.stringify([this.uid, this.info, this.game!.updateRoom(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
@@ -163,7 +148,7 @@ export class Worker {
         // join as player or spectator
         const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
         this.createPeer(uid, info);
-        this.updateRoom();
+        this.game!.updateRoom();
         this.send(uid, this.game!.pack());
     }
 
@@ -173,18 +158,13 @@ export class Worker {
             this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
-            this.updateRoom();
+            this.game!.updateRoom();
         }
     }
 
     /** A remote client sends a response message. */
     resp(msg: string) {
         (self as any).onmessage({data: JSON.parse(msg)});
-    }
-
-    /** Update room info for idle clients. */
-    updateRoom() {
-        this.connection?.send('edit:' + this.room);
     }
 
     /** Create a peer component. */

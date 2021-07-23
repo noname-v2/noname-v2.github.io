@@ -29,14 +29,3 @@ export const member2hub = ['join', 'leave', 'resp', 'set'] as const;
  * reload: Full list of rooms.
 */
 export const hub2member = ['down', 'msg', 'edit', 'reload', 'num'] as const;
-
-/** Split message. */
-export function split<T extends string = string>(msg: string): [T, string] {
-    const idx = msg.indexOf(':');
-    if (idx === -1) {
-        return [msg as T, ''];
-    }
-    else {
-        return [msg.slice(0, idx) as T, msg.slice(idx + 1)];
-    }
-}

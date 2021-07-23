@@ -1,5 +1,6 @@
-import type { Game } from './game';
+import type { Game, HistoryItem } from './game';
 
+type Update = (this: Game, id: number, item: HistoryItem) => void;
 
 /** A link to a client-side component. */
 export class Link {
@@ -15,11 +16,15 @@ export class Link {
     /** Reference to Game. */
     #game: Game;
 
-    constructor(id: number, tag: string, game: Game) {
+    /** Reference to this.#game.#update */
+    #update: Update;
+
+    constructor(id: number, tag: string, game: Game, update: Update) {
         this.#id = id;
         this.#tag = tag;
         this.#game = game;
-        this.#game.update(this.#id, tag);
+        this.#update = update;
+        update.apply(game, [this.#id, tag]);
     }
 
     get id() {
@@ -50,12 +55,12 @@ export class Link {
             const val = items[key] ?? null;
             val === null ? this.#props.delete(key) : this.#props.set(key, val);
         }
-        this.#game.update(this.#id, items);
+        this.#update.apply(this.#game, [this.#id, items]);
     }
 
     /** Call a component method. */
     call(method: string, arg?: any) {
-        this.#game.worker.broadcast([null, {}, {}, {[this.id]: [[method, arg]]}]);
+        this.#update.apply(this.#game, [this.#id, [method, arg]]);
     }
 
     /** Monitor the return value of a component call. */
@@ -70,7 +75,7 @@ export class Link {
 
     /** Remove reference to a component. */
     unlink() {
-        this.#game.update(this.#id, null);
+        this.#update.apply(this.#game, [this.#id, null]);
     }
 
     /** Get tag and object of all properties. */

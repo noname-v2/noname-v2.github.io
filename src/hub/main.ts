@@ -4,7 +4,8 @@ import { createServer } from 'https';
 import { clients } from './client';
 import { Owner } from './owner';
 import { Member } from './member';
-import { owner2hub, member2hub, split } from './types';
+import { owner2hub, member2hub } from './types';
+import { split } from '../utils';
 
 const server = createServer({
     cert: readFileSync('cert.pem'),
