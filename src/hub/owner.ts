@@ -43,7 +43,12 @@ export class Owner extends Client {
         if (old instanceof Owner) {
             // send previously joined clients
             for (const client of old.getAll()) {
-                client.join(this.uid);
+                if (client.closed) {
+                    this.members.add(client.uid);
+                }
+                else {
+                    client.join(this.uid);
+                }
             }
         }
         else if (old instanceof Member) {

@@ -161,12 +161,19 @@
             }
             return hooks;
         }
-        /** Send result to worker (component must be monitored). */
-        yield(result, done = true) {
+        /** Send update to worker (component must be monitored). */
+        yield(result) {
             if (this.id === null) {
                 throw ('element is has no ID');
             }
-            this.client.send(this.id, result, done);
+            this.client.send(this.id, result, false);
+        }
+        /** Send return value to worker (component must be monitored). */
+        return(result) {
+            if (this.id === null) {
+                throw ('element is has no ID');
+            }
+            this.client.send(this.id, result, true);
         }
         /** Remove element. */
         remove() {
@@ -680,7 +687,7 @@
                         this.back();
                     }
                 });
-                this.sidebar.setFooter('开始游戏', () => this.yield(null));
+                this.sidebar.setFooter('开始游戏', () => this.return(null));
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
@@ -702,7 +709,7 @@
                     }
                     else {
                         this.freeze();
-                        this.yield(['config', 'online', false], false);
+                        this.yield(['config', 'online', false]);
                         this.exiting = true;
                     }
                     if (history.state === 'lobby') {
@@ -723,10 +730,10 @@
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
-                        this.yield(['config', name, this.client.url], false);
+                        this.yield(['config', name, this.client.url]);
                     }
                     else {
-                        this.yield(['config', name, result], false);
+                        this.yield(['config', name, result]);
                     }
                 }, config.options);
                 if (config.confirm) {
@@ -743,7 +750,7 @@
             for (const name in configs.heropacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
                     this.freeze();
-                    this.yield(['hero', name, result], false);
+                    this.yield(['hero', name, result]);
                 });
                 this.heroToggles.set(name, toggle);
             }
@@ -751,7 +758,7 @@
             for (const name in configs.cardpacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
                     this.freeze();
-                    this.yield(['card', name, result], false);
+                    this.yield(['card', name, result]);
                 });
                 this.cardToggles.set(name, toggle);
             }
@@ -835,7 +842,7 @@
             }
             else if (this.owner === this.client.uid) {
                 // callback for online mode toggle
-                this.yield(['sync', null, peers ? true : false], false);
+                this.yield(['sync', null, peers ? true : false]);
                 if (this.connecting && !peers) {
                     this.app.alert('连接失败');
                 }
@@ -2772,6 +2779,16 @@
         /** Connected remote clients. */
         get peers() {
             return this.ui.app?.arena?.get('peers') ?? null;
+        }
+        /** Peer component representing current client. */
+        get peer() {
+            for (const id of this.peers || []) {
+                const peer = this.components.get(id);
+                if (peer?.owner === this.uid) {
+                    return peer;
+                }
+            }
+            return null;
         }
         /** Fetch and parse json file. */
         readJSON(...args) {

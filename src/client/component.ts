@@ -83,12 +83,20 @@ export abstract class Component {
         return hooks;
     }
 
-    /** Send result to worker (component must be monitored). */
-    yield(result: any, done: boolean = true) {
+    /** Send update to worker (component must be monitored). */
+    yield(result: any) {
         if (this.id === null) {
             throw('element is has no ID');
         }
-        this.client.send(this.id, result, done);
+        this.client.send(this.id, result, false);
+    }
+
+    /** Send return value to worker (component must be monitored). */
+    return(result: any) {
+        if (this.id === null) {
+            throw('element is has no ID');
+        }
+        this.client.send(this.id, result, true);
     }
 
     /** Remove element. */

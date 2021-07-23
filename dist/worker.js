@@ -498,6 +498,10 @@
              * 2: ended
              */
             this.state = 0;
+            /** Number of links created. */
+            this.linkCount = 0;
+            /** Number of stages created. */
+            this.stageCount = 0;
             self.onmessage = async ({ data }) => {
                 try {
                     const [uid, sid, id, result, done] = data;
@@ -568,13 +572,13 @@
             return this.extensions.get(name);
         }
         create(tag) {
-            const id = this.links.size + 1;
+            const id = ++this.linkCount;
             const link = new Link(id, tag, this);
             this.links.set(id, link);
             return link;
         }
         createStage(name, parent) {
-            const id = this.stages.size + 1;
+            const id = ++this.stageCount;
             const stage = new Stage(id, parent ?? null, name, this);
             this.stages.set(id, stage);
             return stage;
@@ -828,6 +832,7 @@
         /** A remote client leaves the room. */
         leave(uid) {
             if (this.peers?.has(uid)) {
+                this.peers.get(uid).unlink();
                 this.peers.delete(uid);
                 this.sync();
                 this.updateRoom();

@@ -85,6 +85,13 @@ export const game = <Collection>{
                     // game connected to or disconnected from hub
                     this.game.set('online', val);
                     lobby.set('config', this.game.config);
+
+                    // add callback for client operations
+                    if (this.game.peers) {
+                        for (const peer of this.game.peers) {
+                            peer.monitor('updatePeer');
+                        }
+                    }
                 }
                 else if (type === 'config') {
                     if (key === 'online') {

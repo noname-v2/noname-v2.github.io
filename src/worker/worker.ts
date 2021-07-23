@@ -182,6 +182,7 @@ export class Worker {
     /** A remote client leaves the room. */
     leave(uid: string) {
         if (this.peers?.has(uid)) {
+            this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
             this.updateRoom();

@@ -61,6 +61,12 @@ export class Game {
      */
     state = 0;
 
+    /** Number of links created. */
+    private linkCount = 0;
+
+    /** Number of stages created. */
+    private stageCount = 0;
+
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
         self.onmessage = async ({data}: {data: ClientMessage}) => {
             try {
@@ -140,14 +146,14 @@ export class Game {
     }
 
     create(tag: string) {
-        const id = this.links.size + 1;
+        const id = ++this.linkCount;
         const link = new Link(id, tag, this);
         this.links.set(id, link);
         return link;
     }
 
     createStage(name: string, parent?: [Stage, StageLocation]) {
-        const id = this.stages.size + 1;
+        const id = ++this.stageCount;
         const stage = new Stage(id, parent ?? null, name, this);
         this.stages.set(id, stage);
         return stage;

@@ -52,7 +52,7 @@ export class Lobby extends Component {
                     this.back();
                 }
             });
-            this.sidebar.setFooter('开始游戏', () => this.yield(null));
+            this.sidebar.setFooter('开始游戏', () => this.return(null));
         });
 
         this.sidebar.pane.node.classList.add('fixed');
@@ -77,7 +77,7 @@ export class Lobby extends Component {
                 }
                 else {
                     this.freeze();
-                    this.yield(['config', 'online', false], false);
+                    this.yield(['config', 'online', false]);
                     this.exiting = true;
                 }
 
@@ -100,10 +100,10 @@ export class Lobby extends Component {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
-                    this.yield(['config', name, this.client.url], false);
+                    this.yield(['config', name, this.client.url]);
                 }
                 else {
-                    this.yield(['config', name, result], false);
+                    this.yield(['config', name, result]);
                 }
             }, config.options);
             if (config.confirm) {
@@ -120,7 +120,7 @@ export class Lobby extends Component {
         for (const name in configs.heropacks) {
             const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
                 this.freeze();
-                this.yield(['hero', name, result], false);
+                this.yield(['hero', name, result]);
             });
             this.heroToggles.set(name, toggle);
         }
@@ -128,7 +128,7 @@ export class Lobby extends Component {
         for (const name in configs.cardpacks) {
             const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
                 this.freeze();
-                this.yield(['card', name, result], false);
+                this.yield(['card', name, result]);
             });
             this.cardToggles.set(name, toggle);
         }
@@ -219,7 +219,7 @@ export class Lobby extends Component {
         }
         else if (this.owner === this.client.uid) {
             // callback for online mode toggle
-            this.yield(['sync', null, peers ? true : false], false);
+            this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {
                 this.app.alert('连接失败');
             }

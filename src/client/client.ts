@@ -2,6 +2,7 @@ import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
 import { Component } from './component';
+import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
 /**
@@ -110,6 +111,17 @@ export class Client {
     /** Connected remote clients. */
     get peers(): number[] | null {
         return this.ui.app?.arena?.get('peers') ?? null;
+    }
+
+    /** Peer component representing current client. */
+    get peer(): Peer | null {
+        for (const id of this.peers || []) {
+            const peer = this.components.get(id);
+            if (peer?.owner === this.uid) {
+                return peer;
+            }
+        }
+        return null;
     }
 
     /** Fetch and parse json file. */
