@@ -170,7 +170,7 @@ export class Lobby extends Component {
                 for (let i = 0; i < this.get('npmax'); i++) {
                     this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                 }
-                this.spectateButton.classList.remove('disabled');
+                this.checkSpectate();
             });
         }
     }
@@ -239,11 +239,9 @@ export class Lobby extends Component {
         this.ui.bindClick(this.spectateButton, () => {
             if (this.spectateButton.dataset.fill === 'red') {
                 this.client.peer!.yield('play');
-                this.spectateButton.classList.add('disabled');
             }
             else {
                 this.client.peer!.yield('spectate');
-                this.spectateButton.classList.add('disabled');
             }
         });
     }
@@ -300,8 +298,8 @@ export class Lobby extends Component {
         if (peer) {
             this.seats.classList.remove('offline');
             this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-            this.spectateButton.classList.remove('disabled');
             this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+            this.checkSpectate();
         }
         else {
             this.seats.classList.add('offline');
@@ -327,6 +325,22 @@ export class Lobby extends Component {
             frag.appendChild(img);
         }
         (dock as any).replaceChildren(frag);
+    }
+
+    checkSpectate() {
+        if (!this.spectateButton.dataset.fill) {
+            this.spectateButton.classList.remove('disabled');
+        }
+        else {
+            const np = this.get('config').np;
+            let n = 0;
+            for (const player of this.players) {
+                if (player.get('heroName')) {
+                    n++;
+                }
+            }
+            this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
+        }
     }
 
     freeze() {

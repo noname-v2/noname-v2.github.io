@@ -796,7 +796,7 @@
                     for (let i = 0; i < this.get('npmax'); i++) {
                         this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                     }
-                    this.spectateButton.classList.remove('disabled');
+                    this.checkSpectate();
                 });
             }
         }
@@ -860,11 +860,9 @@
             this.ui.bindClick(this.spectateButton, () => {
                 if (this.spectateButton.dataset.fill === 'red') {
                     this.client.peer.yield('play');
-                    this.spectateButton.classList.add('disabled');
                 }
                 else {
                     this.client.peer.yield('spectate');
-                    this.spectateButton.classList.add('disabled');
                 }
             });
         }
@@ -918,8 +916,8 @@
             if (peer) {
                 this.seats.classList.remove('offline');
                 this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-                this.spectateButton.classList.remove('disabled');
                 this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+                this.checkSpectate();
             }
             else {
                 this.seats.classList.add('offline');
@@ -944,6 +942,21 @@
                 frag.appendChild(img);
             }
             dock.replaceChildren(frag);
+        }
+        checkSpectate() {
+            if (!this.spectateButton.dataset.fill) {
+                this.spectateButton.classList.remove('disabled');
+            }
+            else {
+                const np = this.get('config').np;
+                let n = 0;
+                for (const player of this.players) {
+                    if (player.get('heroName')) {
+                        n++;
+                    }
+                }
+                this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
+            }
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
@@ -1631,6 +1644,9 @@
             caption.innerHTML = name;
             // bind click
             ui.bindClick(entry, () => {
+                if (this.splash.hidden) {
+                    return;
+                }
                 const packs = [];
                 for (const name in this.index) {
                     let add = true;

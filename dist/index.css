@@ -1512,4 +1512,5 @@ noname-widget.button.blurred {
 noname-widget.button.disabled {
   cursor: default;
   pointer-events: none;
+  opacity: var(--app-select-opacity);
 }

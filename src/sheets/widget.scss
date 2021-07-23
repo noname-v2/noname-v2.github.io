@@ -43,6 +43,7 @@ noname-widget {
 		&.disabled {
 			cursor: default;
 			pointer-events: none;
+			opacity: var(--app-select-opacity);
 		}
 	}
 }

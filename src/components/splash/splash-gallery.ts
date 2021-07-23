@@ -110,6 +110,9 @@ export class SplashGallery extends Gallery {
 
 		// bind click
 		ui.bindClick(entry, () => {
+			if (this.splash.hidden) {
+				return;
+			}
 			const packs = [];
 
 			for (const name in this.index) {
