@@ -35,17 +35,14 @@ export const game = <Collection>{
                     configs[name].options = fullConfigs[name].options;
                     configs[name].requires = fullConfigs[name].requires;
                     configs[name].confirm = fullConfigs[name].confirm;
-
-                    if (this.game.get(name) === null) {
-                        this.game.set(name, fullConfigs[name].init);
-                    }
+                    this.game.config[name] ??= fullConfigs[name].init;
                 }
 
                 // configuration for player number
                 const np = this.getRule(this.game.mode + ':mode').np;
                 let npmax: number;
                 if (typeof np === 'number') {
-                    this.game.set('np', np);
+                    this.game.config.np = np;
                     npmax = np;
                 }
                 else {
@@ -59,9 +56,7 @@ export const game = <Collection>{
                         options: nps,
                         init: npmax
                     };
-                    if (!this.game.get('np')) {
-                        this.game.set('np', npmax);
-                    }
+                    this.game.config.np ??= npmax;
                 }
 
                 // create lobby
@@ -83,7 +78,7 @@ export const game = <Collection>{
             updateLobby(lobby, [type, key, val]: [string, string, any]) {
                 if (type === 'sync') {
                     // game connected to or disconnected from hub
-                    this.game.set('online', val);
+                    this.game.config.online = val;
                     lobby.set('config', this.game.config);
 
                     // add callback for client operations
@@ -104,8 +99,18 @@ export const game = <Collection>{
                         }
                     }
                     else {
+                        if (key === 'np' ) {
+                            const players = this.game.peerPlayers;
+                            if (players && players.length > val) {
+                                for (let i = val; i < players.length; i++) {
+                                    players[i].set('playing', false);
+                                }
+                            }
+                            this.game.updateRoom();
+                        }
+
                         // game configuration change
-                        this.game.set(key, val);
+                        this.game.config[key] = val;
                         lobby.set('config', this.game.config);
                     }
                 }
@@ -123,9 +128,11 @@ export const game = <Collection>{
             updatePeer(peer, val: string) {
                 if (val === 'spectate' && peer.get('playing')) {
                     peer.set('playing', false);
+                    this.game.updateRoom();
                 }
-                else if (val === 'play' && !peer.get('playing') && this.game.peers!.length < this.game.get('np')) {
+                else if (val === 'play' && !peer.get('playing') && this.game.peerPlayers!.length < this.game.config.np) {
                     peer.set('playing', true);
+                    this.game.updateRoom();
                 }
             },
             cleanUp() {

@@ -393,13 +393,7 @@
             return this.#game.mode;
         }
         get config() {
-            if (this.#game.state === 0) {
-                return this.#game.config;
-            }
-            else {
-                console.log('please use game.get after game started');
-                return null;
-            }
+            return this.#game.config;
         }
         get packs() {
             return this.#game.packs;
@@ -441,18 +435,6 @@
         get(key) {
             return this.#game.config[key] ?? null;
         }
-        /** Set game configuration. */
-        set(key, val) {
-            if (this.#game.state === 0) {
-                this.#game.config[key] = val;
-                if (key === 'np') {
-                    this.#game.worker.updateRoom();
-                }
-            }
-            else {
-                console.log('cannot change configuration during game');
-            }
-        }
         /** Freeze config and tell hub about game start. */
         start() {
             if (this.#game.state === 0) {
@@ -467,12 +449,24 @@
                 this.#game.worker.updateRoom();
             }
         }
+        /** Update client info. */
+        updateRoom() {
+            this.#game.worker.updateRoom();
+        }
         /** Connected clients. */
         get peers() {
             if (this.#game.worker.peers) {
                 return Array.from(this.#game.worker.peers.values());
             }
             return null;
+        }
+        /** Connected players. */
+        get peerPlayers() {
+            return this.#game.worker.getPeers({ playing: true });
+        }
+        /** Connected spectators. */
+        get peerSpectators() {
+            return this.#game.worker.getPeers({ playing: false });
         }
     }
 
@@ -713,23 +707,11 @@
         }
         /** Room info listed in the hub. */
         get room() {
-            // count number of players (excluding spectators)
-            let np = 0;
-            if (this.peers) {
-                for (const peer of this.peers.values()) {
-                    if (peer.get('playing')) {
-                        np++;
-                    }
-                }
-            }
-            else {
-                np = 1;
-            }
             return JSON.stringify([
                 // mode name
                 this.game.getRule(this.game.mode + ':mode').name,
                 // joined players
-                np,
+                this.getPeers({ playing: true })?.length ?? 1,
                 // number of players in a game
                 this.game.config.np,
                 // nickname and avatar of owner
@@ -853,10 +835,30 @@
                 owner: uid,
                 nickname: info[0],
                 avatar: info[1],
-                playing: this.peers.size < this.game.config.np
+                playing: this.getPeers({ playing: true }).length < this.game.config.np
             });
             this.peers.set(uid, peer);
             this.sync();
+        }
+        /** Get peers that match certain condition. */
+        getPeers(filter) {
+            if (!this.peers) {
+                return null;
+            }
+            const peers = [];
+            for (const peer of this.peers.values()) {
+                let skip = false;
+                for (const key in filter) {
+                    if (peer.get(key) !== filter[key]) {
+                        skip = true;
+                        continue;
+                    }
+                }
+                if (!skip) {
+                    peers.push(peer);
+                }
+            }
+            return peers;
         }
     }
 

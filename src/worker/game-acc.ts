@@ -29,13 +29,7 @@ export class GameAccessor {
     }
 
     get config() {
-        if (this.#game.state === 0) {
-            return this.#game.config;
-        }
-        else {
-            console.log('please use game.get after game started')
-            return null;
-        }
+        return this.#game.config;
     }
 
     get packs() {
@@ -89,19 +83,6 @@ export class GameAccessor {
         return this.#game.config[key] ?? null;
     }
 
-    /** Set game configuration. */
-    set(key: string, val: any) {
-        if (this.#game.state === 0) {
-            this.#game.config[key] = val;
-            if (key === 'np') {
-                this.#game.worker.updateRoom();
-            }
-        }
-        else {
-            console.log('cannot change configuration during game');
-        }
-    }
-
     /** Freeze config and tell hub about game start. */
     start() {
         if (this.#game.state === 0) {
@@ -118,11 +99,26 @@ export class GameAccessor {
         }
     }
 
+    /** Update client info. */
+    updateRoom() {
+        this.#game.worker.updateRoom();
+    }
+
     /** Connected clients. */
     get peers() {
         if (this.#game.worker.peers) {
             return Array.from(this.#game.worker.peers.values());
         }
         return null;
+    }
+
+    /** Connected players. */
+    get peerPlayers() {
+        return this.#game.worker.getPeers({playing: true});
+    }
+
+    /** Connected spectators. */
+    get peerSpectators() {
+        return this.#game.worker.getPeers({playing: false});
     }
 }

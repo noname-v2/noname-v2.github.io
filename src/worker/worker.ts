@@ -43,23 +43,11 @@ export class Worker {
 
     /** Room info listed in the hub. */
     get room() {
-        // count number of players (excluding spectators)
-        let np = 0;
-        if (this.peers) {
-            for (const peer of this.peers!.values()) {
-                if (peer.get('playing')) {
-                    np++;
-                }
-            }
-        }
-        else {
-            np = 1;
-        }
         return JSON.stringify([
             // mode name
             this.game!.getRule(this.game!.mode + ':mode').name,
             // joined players
-            np,
+            this.getPeers({playing: true})?.length ?? 1,
             // number of players in a game
             this.game!.config.np,
             // nickname and avatar of owner
@@ -206,9 +194,30 @@ export class Worker {
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: this.peers!.size < this.game!.config.np
+            playing: this.getPeers({playing: true})!.length < this.game!.config.np
         });
         this.peers!.set(uid, peer);
         this.sync();
+    }
+
+    /** Get peers that match certain condition. */
+    getPeers(filter: {[key: string]: any}) {
+        if (!this.peers) {
+            return null;
+        }
+        const peers = [];
+        for (const peer of this.peers.values()) {
+            let skip = false;
+            for (const key in filter) {
+                if (peer.get(key) !== filter[key]) {
+                    skip = true;
+                    continue;
+                }
+            }
+            if (!skip) {
+                peers.push(peer);
+            }
+        }
+        return peers;
     }
 }

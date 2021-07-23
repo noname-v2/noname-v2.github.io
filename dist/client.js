@@ -790,6 +790,15 @@
                 delete config.online;
                 this.db.set(this.get('mode') + ':config', config);
             }
+            if (config.np) {
+                // make sure npmax is set
+                setTimeout(() => {
+                    for (let i = 0; i < this.get('npmax'); i++) {
+                        this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
+                    }
+                    this.spectateButton.classList.remove('disabled');
+                });
+            }
         }
         $disabledHeropacks(packs) {
             this.unfreeze();
@@ -903,28 +912,31 @@
                 this.seats.classList.remove('offline');
                 this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
                 this.spectateButton.classList.remove('disabled');
-                const frag = document.createDocumentFragment();
-                const n = spectators.length;
-                for (let i = 0; i < spectators.length; i++) {
-                    const img = this.ui.createElement('image.avatar');
-                    if (spectators.length < 4) {
-                        img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
-                    }
-                    else if (spectators.length === 4) {
-                        const left = (230 - n * 40 - (n - 1) * 15) / 2;
-                        img.style.left = `${left + i * 55}px`;
-                    }
-                    else {
-                        img.style.left = `${190 / (n - 1) * i}px`;
-                    }
-                    this.ui.setImage(img, spectators[i].get('avatar'));
-                    frag.appendChild(img);
-                }
-                this.spectateDock.replaceChildren(frag);
+                this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
             }
             else {
                 this.seats.classList.add('offline');
             }
+        }
+        alignAvatars(dock, names) {
+            const frag = document.createDocumentFragment();
+            const n = names.length;
+            for (let i = 0; i < n; i++) {
+                const img = this.ui.createElement('image.avatar');
+                if (n < 4) {
+                    img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
+                }
+                else if (n === 4) {
+                    const left = (230 - n * 40 - (n - 1) * 15) / 2;
+                    img.style.left = `${left + i * 55}px`;
+                }
+                else {
+                    img.style.left = `${190 / (n - 1) * i}px`;
+                }
+                this.ui.setImage(img, names[i]);
+                frag.appendChild(img);
+            }
+            dock.replaceChildren(frag);
         }
         freeze() {
             this.sidebar.pane.node.classList.add('pending');
