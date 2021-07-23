@@ -109,15 +109,26 @@ export class Client {
     }
 
     /** Connected remote clients. */
-    get peers(): number[] | null {
-        return this.ui.app?.arena?.get('peers') ?? null;
+    get peers(): Peer[] | null {
+        const ids = this.ui.app?.arena?.get('peers');
+        if (!ids) {
+            return null;
+        }
+
+        const peers = [];
+        for (const id of ids) {
+            const cmp = this.components.get(id);
+            if (cmp) {
+                peers.push(<Peer>cmp);
+            }
+        }
+        return peers;
     }
 
     /** Peer component representing current client. */
     get peer(): Peer | null {
-        for (const id of this.peers || []) {
-            const peer = this.components.get(id);
-            if (peer?.owner === this.uid) {
+        for (const peer of this.peers || []) {
+            if (peer.owner === this.uid) {
                 return peer;
             }
         }

@@ -39,5 +39,10 @@ noname-widget {
 		&.blurred {
 			pointer-events: none;
 		}
+
+		&.disabled {
+			cursor: default;
+			pointer-events: none;
+		}
 	}
 }

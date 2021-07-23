@@ -16,7 +16,7 @@ noname-popup.splash-avatar > noname-pane {
             width: 60px;
             height: 60px;
             > noname-image {
-                @include widget;
+                box-shadow: var(--widget-shadow);
                 border-radius: 100%;
             }
         }

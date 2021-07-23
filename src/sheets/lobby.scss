@@ -23,7 +23,13 @@ noname-lobby {
 		}
 
 		&.two-rows > div {
-			height: calc(10% - 35px);
+			height: calc(10% - 34px);
+		}
+
+		&.offline {
+			> noname-bar, div.bar {
+				display: none;
+			}
 		}
 
 		> noname-bar {
@@ -34,10 +40,6 @@ noname-lobby {
 				width: 230px;
 				height: 40px;
 				position: absolute;
-				display: flex;
-				justify-content: space-evenly;
-				display: inline-block;
-				@include widget;
 				&:first-child {
 					left: 20px;
 				}
@@ -45,10 +47,12 @@ noname-lobby {
 					right: 20px;
 				}
 				> noname-image {
+					box-shadow: var(--widget-shadow);
 					width: 40px;
 					height: 40px;
 					border-radius: 100%;
-					@include widget;
+					position: absolute;
+					display: inline-block;
 				}
 			}
 			> noname-widget {

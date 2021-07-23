@@ -28,8 +28,14 @@ export class Lobby extends Component {
     /** Players in this seats. */
     players = <Player[]>[];
 
+    /** Button to toggle spectating. */
+    spectateButton = this.ui.createElement('widget.button');
+
     /** Container of spectators. */
     spectateDock = this.ui.createElement('dock');
+
+    /** Button to choose hero. */
+    heroButton = this.ui.createElement('widget.button');
 
     /** Container of chosen heros. */
     heroDock = this.ui.createElement('dock');
@@ -200,15 +206,30 @@ export class Lobby extends Component {
         }
 
         // buttons below the seats
-        this.seats.appendChild(document.createElement('div'));
+        const div = document.createElement('div');
+        div.classList.add('bar');
+        this.seats.appendChild(div);
         const bar = this.ui.createElement('bar');
+        this.seats.classList.add('offline');
         this.seats.appendChild(bar);
         bar.appendChild(this.spectateDock);
-        const spectate = this.ui.createElement('widget.button', bar);
-        const hero = this.ui.createElement('widget.button', bar);
+        bar.appendChild(this.spectateButton);
+        bar.appendChild(this.heroButton);
         bar.appendChild(this.heroDock);
-        spectate.innerHTML = '旁观';
-        hero.innerHTML = '点将';
+        this.spectateButton.innerHTML = '旁观';
+        this.heroButton.innerHTML = '点将';
+        
+        // toggle between spectator and player
+        this.ui.bindClick(this.spectateButton, () => {
+            if (this.spectateButton.dataset.fill === 'red') {
+                this.client.peer!.yield('play');
+                this.spectateButton.classList.add('disabled');
+            }
+            else {
+                this.client.peer!.yield('spectate');
+                this.spectateButton.classList.add('disabled');
+            }
+        });
     }
 
     sync() {
@@ -238,8 +259,7 @@ export class Lobby extends Component {
         // update seats
         const players = [];
         const spectators = [];
-        for (const id of peers || []) {
-            const peer = this.client.components.get(id)!;
+        for (const peer of peers || []) {
             if (peer.get('playing')) {
                 players.push(peer);
             }
@@ -257,6 +277,36 @@ export class Lobby extends Component {
                 this.players[i].set('heroImage', null);
                 this.players[i].set('heroName', null);
             }
+        }
+
+        // update spectate button
+        const peer = this.client.peer;
+        if (peer) {
+            this.seats.classList.remove('offline');
+            this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
+            this.spectateButton.classList.remove('disabled');
+
+            const frag = document.createDocumentFragment();
+            const n = spectators.length;
+            for (let i = 0; i < spectators.length; i++) {
+                const img = this.ui.createElement('image.avatar');
+                if (spectators.length < 4) {
+                    img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
+                }
+                else if (spectators.length === 4) {
+                    const left = (230 - n * 40 - (n - 1) * 15) / 2;
+                    img.style.left = `${left + i * 55}px`;
+                }
+                else {
+                    img.style.left = `${190 / (n - 1) * i}px`;
+                }
+                this.ui.setImage(img, spectators[i].get('avatar'));
+                frag.appendChild(img);
+            }
+            (this.spectateDock as any).replaceChildren(frag);
+        }
+        else {
+            this.seats.classList.add('offline');
         }
     }
 

@@ -191,7 +191,7 @@ export class Worker {
 
     /** A remote client sends a response message. */
     resp(msg: string) {
-        self.onmessage!(JSON.parse(msg));
+        (self as any).onmessage({data: JSON.parse(msg)});
     }
 
     /** Update room info for idle clients. */

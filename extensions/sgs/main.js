@@ -151,6 +151,14 @@ const game = {
                     lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
                 }
             },
+            updatePeer(peer, val) {
+                if (val === 'spectate' && peer.get('playing')) {
+                    peer.set('playing', false);
+                }
+                else if (val === 'play' && !peer.get('playing') && this.game.peers.length < this.game.get('np')) {
+                    peer.set('playing', true);
+                }
+            },
             cleanUp() {
                 // remove lobby and disable further configuration change
                 const lobby = this.game.links.get(this.parent.lobbyID);

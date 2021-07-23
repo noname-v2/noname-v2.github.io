@@ -840,7 +840,7 @@
         }
         /** A remote client sends a response message. */
         resp(msg) {
-            self.onmessage(JSON.parse(msg));
+            self.onmessage({ data: JSON.parse(msg) });
         }
         /** Update room info for idle clients. */
         updateRoom() {

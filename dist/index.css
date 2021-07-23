@@ -448,7 +448,10 @@ noname-lobby > noname-seats > div {
   height: calc(20% - 70px);
 }
 noname-lobby > noname-seats.two-rows > div {
-  height: calc(10% - 35px);
+  height: calc(10% - 34px);
+}
+noname-lobby > noname-seats.offline > noname-bar, noname-lobby > noname-seats.offline div.bar {
+  display: none;
 }
 noname-lobby > noname-seats > noname-bar {
   text-align: center;
@@ -459,21 +462,6 @@ noname-lobby > noname-seats > noname-bar > noname-dock {
   width: 230px;
   height: 40px;
   position: absolute;
-  display: flex;
-  justify-content: space-evenly;
-  display: inline-block;
-  background: var(--widget-background);
-  border-radius: var(--widget-radius);
-  box-shadow: var(--widget-shadow);
-}
-noname-lobby > noname-seats > noname-bar > noname-dock > noname-image {
-  position: absolute;
-  width: calc(100% - 2 * var(--widget-image-margin));
-  height: calc(100% - 2 * var(--widget-image-margin));
-  left: var(--widget-image-margin);
-  top: var(--widget-image-margin);
-  border-radius: var(--widget-image-radius);
-  box-shadow: var(--widget-image-shadow);
 }
 noname-lobby > noname-seats > noname-bar > noname-dock:first-child {
   left: 20px;
@@ -482,21 +470,12 @@ noname-lobby > noname-seats > noname-bar > noname-dock:last-child {
   right: 20px;
 }
 noname-lobby > noname-seats > noname-bar > noname-dock > noname-image {
+  box-shadow: var(--widget-shadow);
   width: 40px;
   height: 40px;
   border-radius: 100%;
-  background: var(--widget-background);
-  border-radius: var(--widget-radius);
-  box-shadow: var(--widget-shadow);
-}
-noname-lobby > noname-seats > noname-bar > noname-dock > noname-image > noname-image {
   position: absolute;
-  width: calc(100% - 2 * var(--widget-image-margin));
-  height: calc(100% - 2 * var(--widget-image-margin));
-  left: var(--widget-image-margin);
-  top: var(--widget-image-margin);
-  border-radius: var(--widget-image-radius);
-  box-shadow: var(--widget-image-shadow);
+  display: inline-block;
 }
 noname-lobby > noname-seats > noname-bar > noname-widget {
   height: 30px;
@@ -1087,19 +1066,8 @@ noname-popup.splash-avatar > noname-pane > noname-gallery noname-item {
   height: 60px;
 }
 noname-popup.splash-avatar > noname-pane > noname-gallery noname-item > noname-image {
-  background: var(--widget-background);
-  border-radius: var(--widget-radius);
   box-shadow: var(--widget-shadow);
   border-radius: 100%;
-}
-noname-popup.splash-avatar > noname-pane > noname-gallery noname-item > noname-image > noname-image {
-  position: absolute;
-  width: calc(100% - 2 * var(--widget-image-margin));
-  height: calc(100% - 2 * var(--widget-image-margin));
-  left: var(--widget-image-margin);
-  top: var(--widget-image-margin);
-  border-radius: var(--widget-image-radius);
-  box-shadow: var(--widget-image-shadow);
 }
 
 noname-popup.splash-hub > noname-pane > noname-group {
@@ -1538,5 +1506,9 @@ noname-widget.button {
   font-family: var(--app-caption-font);
 }
 noname-widget.button.blurred {
+  pointer-events: none;
+}
+noname-widget.button.disabled {
+  cursor: default;
   pointer-events: none;
 }
