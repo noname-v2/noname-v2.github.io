@@ -1863,7 +1863,6 @@
             this.roomGroup.classList.remove('hidden');
         }
         edit(msg) {
-            console.log(msg);
             const ws = this.client.connection;
             if (!(ws instanceof WebSocket)) {
                 return;
