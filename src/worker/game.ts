@@ -241,9 +241,6 @@ export class Game {
         }
         else {
             // add or remove component
-            if (stage.tagChanges.has(id)) {
-                throw('cannot perform multiple component operations in the same stage');
-            }
             if (item && this.links.has(id)) {
                 throw('cannot change component tag');
             }

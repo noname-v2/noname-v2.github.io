@@ -852,16 +852,17 @@
             }
             // update seats
             const players = [];
-            for (const id in peers) {
-                if (peers[id][2] === 0) {
-                    players.push(id);
+            for (const id of peers || []) {
+                const peer = this.client.components.get(id);
+                if (peer.get('playing')) {
+                    players.push(peer);
                 }
             }
             for (let i = 0; i < this.players.length; i++) {
                 if (i < players.length) {
-                    const [nickname, avatar] = peers[players[i]];
-                    this.players[i].set('heroImage', avatar);
-                    this.players[i].set('heroName', nickname);
+                    const peer = players[i];
+                    this.players[i].set('heroImage', peer.get('avatar'));
+                    this.players[i].set('heroName', peer.get('nickname'));
                 }
                 else {
                     this.players[i].set('heroImage', null);
@@ -1393,6 +1394,9 @@
                 span.parentNode.style.transform = `translateX(${dx}px)`;
             }
         }
+    }
+
+    class Peer extends Component {
     }
 
     class SplashBar extends Component {
@@ -2316,6 +2320,7 @@
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
+    componentClasses.set('peer', Peer);
     componentClasses.set('popup', Popup);
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);

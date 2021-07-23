@@ -38,17 +38,22 @@ export class Worker {
     /** Connected hub. */
     connection: WebSocket | null = null;
 
-    /** IDs of connected clients. */
-    peers: Map<string, [string, string, number]> | null = null;
+    /** Links of connected clients. */
+    peers: Map<string, Link> | null = null;
 
     /** Room info listed in the hub. */
     get room() {
         // count number of players (excluding spectators)
         let np = 0;
-        for (const [,,spec] of this.peers!.values()) {
-            if (spec === 0) {
-                np++;
+        if (this.peers) {
+            for (const peer of this.peers!.values()) {
+                if (peer.get('playing')) {
+                    np++;
+                }
             }
+        }
+        else {
+            np = 1;
         }
         return JSON.stringify([
             // mode name
@@ -89,9 +94,9 @@ export class Worker {
         if (uid === this.uid) {
             this.tick(tick);
         }
-        else if (this.game && this.connection) {
+        else if (this.game && this.peers) {
             // send tick to a remote client
-            this.connection.send('to:' + JSON.stringify([
+            this.connection!.send('to:' + JSON.stringify([
                 uid, JSON.stringify(tick)
             ]))
         }
@@ -112,12 +117,15 @@ export class Worker {
             if (this.connection === ws) {
                 this.connection = null;
             }
+            if (this.peers) {
+                for (const peer of this.peers.values()) {
+                    peer.unlink();
+                }
+            }
             this.peers = null;
             this.sync();
         };
         ws.onopen = () => {
-            this.peers = new Map();
-            this.peers.set(this.uid, [...this.info, 0]);
             ws.send('init:' + JSON.stringify([this.uid, this.info, this.room]));
         };
         ws.onmessage = ({data}) => {
@@ -146,26 +154,29 @@ export class Worker {
 
     /** Tell registered components about client update. */
     sync() {
-        this.game!.arena.update({
-            peers: this.peers ? Object.fromEntries(this.peers) : null
-        });
+        let peers = null;
+        if (this.peers) {
+            peers = [];
+            for (const peer of this.peers.values()) {
+                peers.push(peer.id);
+            }
+        }
+        this.game!.arena.update({peers});
     }
 
     /** The room is ready for clients to join. */
     ready() {
-        this.sync();
+        this.peers = new Map();
+        this.createPeer(this.uid, this.info);
     }
 
     /** A remote client joins the room. */
     join(msg: string) {
         // join as player or spectator
         const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
-        const spec = this.peers!.size < this.game!.config.np ? 0 : 1;
-        this.peers!.set(uid, [...info, spec]);
-        this.sync();
+        this.createPeer(uid, info);
         this.updateRoom();
         this.send(uid, this.game!.pack());
-        ////// stage === 3: send stage.calls
     }
 
     /** A remote client leaves the room. */
@@ -185,5 +196,18 @@ export class Worker {
     /** Update room info for idle clients. */
     updateRoom() {
         this.connection?.send('edit:' + this.room);
+    }
+
+    /** Create a peer component. */
+    createPeer(uid: string, info: [string, string]) {
+        const peer = this.game!.create('peer');
+        peer.update({
+            owner: uid,
+            nickname: info[0],
+            avatar: info[1],
+            playing: this.peers!.size < this.game!.config.np
+        });
+        this.peers!.set(uid, peer);
+        this.sync();
     }
 }

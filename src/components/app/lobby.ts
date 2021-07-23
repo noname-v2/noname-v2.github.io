@@ -238,19 +238,20 @@ export class Lobby extends Component {
         // update seats
         const players = [];
         const spectators = [];
-        for (const id in peers) {
-            if (peers[id][2] === 0) {
-                players.push(id);
+        for (const id of peers || []) {
+            const peer = this.client.components.get(id)!;
+            if (peer.get('playing')) {
+                players.push(peer);
             }
             else {
-                spectators.push(id);
+                spectators.push(peer);
             }
         }
         for (let i = 0; i < this.players.length; i++) {
             if (i < players.length) {
-                const [nickname, avatar] = peers![players[i]];
-                this.players[i].set('heroImage', avatar);
-                this.players[i].set('heroName', nickname);
+                const peer = players[i]!;
+                this.players[i].set('heroImage', peer.get('avatar'));
+                this.players[i].set('heroName', peer.get('nickname'));
             }
             else {
                 this.players[i].set('heroImage', null);
