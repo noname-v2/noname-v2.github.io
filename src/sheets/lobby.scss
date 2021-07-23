@@ -15,6 +15,7 @@ noname-lobby {
 
 		> noname-player {
 			position: relative;
+			transition: opacity var(--app-transition);
 		}
 
 		> div {

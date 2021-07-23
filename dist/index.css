@@ -442,6 +442,7 @@ noname-lobby > noname-seats {
 }
 noname-lobby > noname-seats > noname-player {
   position: relative;
+  transition: opacity var(--app-transition);
 }
 noname-lobby > noname-seats > div {
   flex-basis: 100%;

@@ -99,6 +99,14 @@ export const game = <Collection>{
                         }
                     }
                     else {
+                        // make sure np in range
+                        if (key === 'np') {
+                            const np = this.getRule(this.game.mode + ':mode').np;
+                            if (!Array.isArray(np) || val < np[0] || val > np[np.length - 1]) {
+                                return;
+                            }
+                        }
+
                         // game configuration change
                         this.game.config[key] = val;
                         lobby.set('config', this.game.config);

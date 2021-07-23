@@ -829,6 +829,13 @@
                 const player = this.ui.create('player');
                 this.players.push(player);
                 this.seats.appendChild(player.node);
+                this.ui.bindClick(player.node, () => {
+                    if (this.owner !== this.client.uid) {
+                        return;
+                    }
+                    const delta = player.node.classList.contains('blurred') ? 1 : -1;
+                    this.yield(['config', 'np', this.get('config').np + delta]);
+                });
             }
             if (npmax > 4) {
                 this.seats.classList.add('two-rows');
