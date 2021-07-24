@@ -4,9 +4,8 @@ import type { Worker } from './worker';
 export type StageLocation = 'before' | 'main' | 'after';
 export type StageCallback = (id: number, result: any, done: boolean) => void;
 
-/** Private game methods passed to constructor. */
-type SetStage = (this: Game, content?: [Stage, StageCallback]) => void;
-type SetData = (this: Game, stageID: number | null, data: {[key: string]: any}) => void;
+/** Reference to private method game.#focus(). */
+type Focus = (this: Game, content?: [Stage, StageCallback]) => void;
 
 export class Stage {
     /** Stage ID. */
@@ -67,7 +66,7 @@ export class Stage {
     #resolve: (() => void) | null = null;
 
     /** Make self as game.activateStage. */
-    #setStage: SetStage;
+    #focus: Focus;
 
     /** Stage data. */
     #data: {[key: string]: any};
@@ -144,24 +143,13 @@ export class Stage {
     }
 
     constructor(id: number, path: string, data: {[key: string]: any},
-        game: Game, worker: Worker, setStage: SetStage, setData: SetData) {
+        game: Game, worker: Worker, focus: Focus) {
         this.#id = id;
         this.#path = path;
         this.#game = game;
         this.#worker = worker;
-        this.#setStage = setStage;
-        
-        // create getter and setter of stage data
-        this.#data = new Proxy(data, {
-            get: (data, key: string) => {
-                return data[key] ?? null;
-            },
-            set: (data, key: string, val: any) => {
-                data[key] = val;
-                setData.apply(game, [this.id, {[key]: val}]);
-                return true;
-            }
-        });
+        this.#focus = focus;
+        this.#data = data;
 
         // start game if this is rootStage
         if (id === 1) {
@@ -262,7 +250,7 @@ export class Stage {
         }
         else if (this.#step === 2) {
             // execute main stage function
-            this.#setStage.call(this.game, [this, this.#dispatch]);
+            this.#focus.call(this.game, [this, this.#dispatch]);
             await this.game.getRule('#stage.main/').apply(this);
             
             // set the result of components without owners as '#auto'
@@ -283,7 +271,7 @@ export class Stage {
             }
 
             // remove active stage
-            this.#setStage.call(this.game);
+            this.#focus.call(this.game);
         }
         else if (this.#step === 4) {
             // generate this.after

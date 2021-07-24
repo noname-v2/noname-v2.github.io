@@ -1,7 +1,7 @@
-import type { Game, HistoryItem } from './game';
+import type { Game, TickItem } from './game';
 
-/** Private game method passed to constructor. */
-type Update = (this: Game, id: number, item: HistoryItem) => void;
+/** Reference to private method game.#tick(). */
+type Tick = (this: Game, id: number, item: TickItem) => void;
 
 /** A link to a client-side component. */
 export class Link {
@@ -18,14 +18,14 @@ export class Link {
     #game: Game;
 
     /** Reference to this.#game.#update */
-    #update: Update;
+    #tick: Tick;
 
-    constructor(id: number, tag: string, game: Game, update: Update) {
+    constructor(id: number, tag: string, game: Game, tick: Tick) {
         this.#id = id;
         this.#tag = tag;
         this.#game = game;
-        this.#update = update;
-        update.apply(game, [this.#id, tag]);
+        this.#tick = tick;
+        tick.apply(game, [this.#id, tag]);
     }
 
     get id() {
@@ -56,12 +56,12 @@ export class Link {
             const val = items[key] ?? null;
             val === null ? this.#props.delete(key) : this.#props.set(key, val);
         }
-        this.#update.apply(this.#game, [this.#id, items]);
+        this.#tick.apply(this.#game, [this.#id, items]);
     }
 
     /** Call a component method. */
     call(method: string, arg?: any) {
-        this.#update.apply(this.#game, [this.#id, [method, arg]]);
+        this.#tick.apply(this.#game, [this.#id, [method, arg]]);
     }
 
     /** Monitor the return value of a component call. */
@@ -76,7 +76,7 @@ export class Link {
 
     /** Remove reference to a component. */
     unlink() {
-        this.#update.apply(this.#game, [this.#id, null]);
+        this.#tick.apply(this.#game, [this.#id, null]);
     }
 
     /** Get tag and object of all properties. */

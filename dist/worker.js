@@ -49,7 +49,7 @@
         /** Resolved when all monitors are done. */
         #resolve = null;
         /** Make self as game.activateStage. */
-        #setStage;
+        #focus;
         /** Stage data. */
         #data;
         /** All awaits have been resolved. */
@@ -111,23 +111,13 @@
         get data() {
             return this.#data;
         }
-        constructor(id, path, data, game, worker, setStage, setData) {
+        constructor(id, path, data, game, worker, focus) {
             this.#id = id;
             this.#path = path;
             this.#game = game;
             this.#worker = worker;
-            this.#setStage = setStage;
-            // create getter and setter of stage data
-            this.#data = new Proxy(data, {
-                get: (data, key) => {
-                    return data[key] ?? null;
-                },
-                set: (data, key, val) => {
-                    data[key] = val;
-                    setData.apply(game, [this.id, { [key]: val }]);
-                    return true;
-                }
-            });
+            this.#focus = focus;
+            this.#data = data;
             // start game if this is rootStage
             if (id === 1) {
                 setTimeout(() => this.#run());
@@ -218,7 +208,7 @@
             }
             else if (this.#step === 2) {
                 // execute main stage function
-                this.#setStage.call(this.game, [this, this.#dispatch]);
+                this.#focus.call(this.game, [this, this.#dispatch]);
                 await this.game.getRule('#stage.main/').apply(this);
                 // set the result of components without owners as '#auto'
                 for (const [id, val] of this.results.entries()) {
@@ -236,7 +226,7 @@
                     this.#resolve = null;
                 }
                 // remove active stage
-                this.#setStage.call(this.game);
+                this.#focus.call(this.game);
             }
             else if (this.#step === 4) {
                 // generate this.after
@@ -331,13 +321,13 @@
         /** Reference to Game. */
         #game;
         /** Reference to this.#game.#update */
-        #update;
-        constructor(id, tag, game, update) {
+        #tick;
+        constructor(id, tag, game, tick) {
             this.#id = id;
             this.#tag = tag;
             this.#game = game;
-            this.#update = update;
-            update.apply(game, [this.#id, tag]);
+            this.#tick = tick;
+            tick.apply(game, [this.#id, tag]);
         }
         get id() {
             return this.#id;
@@ -362,11 +352,11 @@
                 const val = items[key] ?? null;
                 val === null ? this.#props.delete(key) : this.#props.set(key, val);
             }
-            this.#update.apply(this.#game, [this.#id, items]);
+            this.#tick.apply(this.#game, [this.#id, items]);
         }
         /** Call a component method. */
         call(method, arg) {
-            this.#update.apply(this.#game, [this.#id, [method, arg]]);
+            this.#tick.apply(this.#game, [this.#id, [method, arg]]);
         }
         /** Monitor the return value of a component call. */
         monitor(monitor) {
@@ -378,7 +368,7 @@
         }
         /** Remove reference to a component. */
         unlink() {
-            this.#update.apply(this.#game, [this.#id, null]);
+            this.#tick.apply(this.#game, [this.#id, null]);
         }
         /** Get tag and object of all properties. */
         flatten() {
@@ -447,7 +437,7 @@
         /** Game configuration. */
         #config;
         /** Game data. */
-        #data;
+        #data = {};
         /** Hero packages. */
         #packs;
         /** Banned packages. */
@@ -538,17 +528,6 @@
             this.#banned.cardpacks = new Set(content[3]);
             this.#config = content[4];
             this.#worker.info = content[5];
-            // create getter and setter of game data
-            this.#data = new Proxy({}, {
-                get: (data, name) => {
-                    return data[name] ?? null;
-                },
-                set: (data, key, val) => {
-                    data[key] = val;
-                    this.#setData(null, { [key]: val });
-                    return true;
-                }
-            });
             // load extensions
             const load = async (pack) => {
                 const ext = (await import(`../extensions/${pack}/main.js`)).default;
@@ -581,13 +560,13 @@
         }
         create(tag) {
             const id = ++this.#linkCount;
-            const link = new Link(id, tag, this, this.#update);
+            const link = new Link(id, tag, this, this.#tick);
             this.links.set(id, link);
             return link;
         }
         createStage(name, data) {
             const id = ++this.#stageCount;
-            const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#setStage, this.#setData);
+            const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#focus);
             this.#stages.set(id, stage);
             return stage;
         }
@@ -673,40 +652,19 @@
             this.#worker.disconnect();
         }
         /** Add component update (called by Link). */
-        #update(id, item) {
+        #tick(id, item) {
             if (this.#ticks.length === 0) {
                 // schedule a UITick if no pending UITick exists
-                setTimeout(() => this.#tick());
+                setTimeout(() => this.#update());
             }
             this.#ticks.push([this.activeStage?.id ?? null, id, item]);
         }
         /** Set active stage (called by Stage). */
-        #setStage(content) {
+        #focus(content) {
             this.#active = content ?? null;
         }
-        /** Set stage data (called by Stage). */
-        #setData(stageID, data) {
-            if (this.#ticks.length === 0) {
-                // directly add to history if no UITick is scheduled
-                this.#pushData(stageID, data);
-            }
-            else {
-                this.#ticks.push([stageID, data]);
-            }
-        }
-        /** Add data update to history. */
-        #pushData(stageID, data) {
-            const lastEntry = this.#history[this.#history.length - 1];
-            if (lastEntry[1].length === 2 && lastEntry[1][0] === stageID) {
-                // merge consecutive data updates into 1 object
-                Object.assign(lastEntry[1][1], data);
-            }
-            else {
-                this.#history.push([Date.now(), [stageID, data]]);
-            }
-        }
         /** Create a UITick from this.#history. */
-        #tick() {
+        #update() {
             let stageID = -1;
             let tagChanges = {};
             let propChanges = {};
@@ -714,35 +672,30 @@
             // save current timestamp in this.#history
             const now = Date.now();
             for (const entry of this.#ticks) {
-                if (entry.length === 3) {
-                    const [sid, id, item] = entry;
-                    // split UITick by stage change
-                    if (sid !== stageID) {
-                        if (stageID !== -1) {
-                            this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
-                            tagChanges = {};
-                            propChanges = {};
-                            calls = {};
-                        }
-                        stageID = sid;
+                const [sid, id, item] = entry;
+                // split UITick by stage change
+                if (sid !== stageID) {
+                    if (stageID !== -1) {
+                        this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
+                        tagChanges = {};
+                        propChanges = {};
+                        calls = {};
                     }
-                    // merge history entries into a single UITick
-                    if (Array.isArray(item)) {
-                        calls[id] ??= [];
-                        calls[id].push(item);
-                    }
-                    else if (item && typeof item === 'object') {
-                        propChanges[id] ??= {};
-                        Object.assign(propChanges[id], item);
-                    }
-                    else {
-                        tagChanges[id] = item;
-                    }
-                    this.#history.push([now, entry]);
+                    stageID = sid;
+                }
+                // merge history entries into a single UITick
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    Object.assign(propChanges[id], item);
                 }
                 else {
-                    this.#pushData(...entry);
+                    tagChanges[id] = item;
                 }
+                this.#history.push([now, entry]);
             }
             this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
             this.#ticks.length = 0;
