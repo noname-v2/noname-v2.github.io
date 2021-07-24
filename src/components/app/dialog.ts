@@ -22,6 +22,9 @@ export class Dialog extends Popup {
     /** Name of the button clicked. */
     result: string | null = null;
 
+    /** Faster transition. */
+    transition = 'fast' as const;
+
     init() {
         super.init();
         this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;

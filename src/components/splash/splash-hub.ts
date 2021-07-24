@@ -202,7 +202,7 @@ export class SplashHub extends Popup {
             else if (reason === 'end') {
                 await this.app.alert('房间已关闭');
             }
-            setTimeout(() => this.client.clear(), this.app.getTransition('fast'));
+            setTimeout(() => this.client.clear(), this.app.getTransition('faster'));
         }
         this.roomGroup.classList.remove('entering');
         this.roomGroup.classList.remove('hidden');
