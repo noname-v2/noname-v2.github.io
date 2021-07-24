@@ -202,23 +202,11 @@ export class SplashHub extends Popup {
             else if (reason === 'end') {
                 await this.app.alert('房间已关闭');
             }
-            setTimeout(() => this.client.clear(), this.app.getTransition('faster'));
+            this.app.arena.faded = true;
+            this.client.clear();
         }
         this.roomGroup.classList.remove('entering');
         this.roomGroup.classList.remove('hidden');
-    }
-
-    leave() {
-        const ws = this.client.connection;
-        const arena = this.app.arena;
-        if (ws instanceof WebSocket && arena) {
-            ws.send('leave:init');
-            setTimeout(() => {
-                if (arena === this.app.arena) {
-                    this.client.clear();
-                }
-            }, 1000);
-        }
     }
 
     edit(msg: string) {
@@ -278,7 +266,11 @@ export class SplashHub extends Popup {
         promise.then(val => {
             clearInterval(interval);
             if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
-                this.leave();
+                if (this.app.arena) {
+                    this.app.arena.faded = true;
+                    this.client.clear();
+                }
+                ws.send('leave:init');
             }
         });
     }

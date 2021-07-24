@@ -13,6 +13,9 @@ export class Arena extends Component {
 	/** Player container. */
 	players = this.ui.createElement('players');
 
+	/** A dialog has been popped before this.remove() is called. */
+	faded = false;
+
 	init() {
 		this.app.arena = this;
 		this.app.node.appendChild(this.node);
@@ -48,7 +51,7 @@ export class Arena extends Component {
 	/** Remove arena. */
 	remove() {
 		this.ui.animate(this.node, {
-			opacity: [1, 0]
+			opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
 		}).onfinish = () => {
 			super.remove();
 		};

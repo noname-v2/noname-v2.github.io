@@ -716,7 +716,11 @@
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
                 if (!peers || Object.keys(peers).length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
                     if (ws instanceof WebSocket) {
-                        this.app.splash.hub.leave();
+                        ws.send('leave:init');
+                        if (this.app.arena) {
+                            this.app.arena.faded = true;
+                            this.client.clear();
+                        }
                     }
                     else {
                         this.freeze();
@@ -1028,6 +1032,8 @@
         cards = this.ui.createElement('cards');
         /** Player container. */
         players = this.ui.createElement('players');
+        /** A dialog has been popped before this.remove() is called. */
+        faded = false;
         init() {
             this.app.arena = this;
             this.app.node.appendChild(this.node);
@@ -1059,7 +1065,7 @@
         /** Remove arena. */
         remove() {
             this.ui.animate(this.node, {
-                opacity: [1, 0]
+                opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
             }).onfinish = () => {
                 super.remove();
             };
@@ -1880,22 +1886,11 @@
                 else if (reason === 'end') {
                     await this.app.alert('房间已关闭');
                 }
-                setTimeout(() => this.client.clear(), this.app.getTransition('faster'));
+                this.app.arena.faded = true;
+                this.client.clear();
             }
             this.roomGroup.classList.remove('entering');
             this.roomGroup.classList.remove('hidden');
-        }
-        leave() {
-            const ws = this.client.connection;
-            const arena = this.app.arena;
-            if (ws instanceof WebSocket && arena) {
-                ws.send('leave:init');
-                setTimeout(() => {
-                    if (arena === this.app.arena) {
-                        this.client.clear();
-                    }
-                }, 1000);
-            }
         }
         edit(msg) {
             const ws = this.client.connection;
@@ -1951,7 +1946,11 @@
             promise.then(val => {
                 clearInterval(interval);
                 if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
-                    this.leave();
+                    if (this.app.arena) {
+                        this.app.arena.faded = true;
+                        this.client.clear();
+                    }
+                    ws.send('leave:init');
                 }
             });
         }
@@ -2944,10 +2943,6 @@
         clear(back = true) {
             for (const cmp of this.components.values()) {
                 this.removeListeners(cmp);
-                if (!back) {
-                    // directly remove to get smoother fadein transition
-                    cmp.node.remove();
-                }
             }
             this.components.clear();
             this.ui.app.clearPopups();
@@ -2987,6 +2982,9 @@
                 // check if tick is a full UI reload
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
+                        if (this.ui.app.arena) {
+                            this.ui.app.arena.faded = true;
+                        }
                         this.clear(false);
                         this.#loaded = Date.now();
                         break;
