@@ -2792,8 +2792,6 @@
         registration = null;
         /** User identifier. */
         uid;
-        /** ID of current stage. */
-        sid = 0;
         /** IndexedDB manager. */
         db = new Database();
         /** Component manager. */
@@ -2815,10 +2813,12 @@
             // stage change
             stage: new Set()
         };
+        /** ID of current stage. */
+        #sid = 0;
         /**  UITicks waiting for dispatch. */
-        ticks = [];
+        #ticks = [];
         /** Timestamp of the last full UI load. */
-        loaded = 0;
+        #loaded = 0;
         constructor() {
             // get user ID
             this.db.ready.then(() => {
@@ -2937,7 +2937,7 @@
             this.ui.app.arena = null;
             if (back) {
                 this.ui.app.splash.show();
-                this.sid = 0;
+                this.#sid = 0;
             }
         }
         /**
@@ -2947,7 +2947,7 @@
          * @param {...any[]} args - Message content.
          */
         send(id, result, done) {
-            const msg = [this.uid, this.sid, id, result, done];
+            const msg = [this.uid, this.#sid, id, result, done];
             if (this.connection instanceof Worker) {
                 this.connection.postMessage(msg);
             }
@@ -2965,23 +2965,23 @@
          */
         async dispatch() {
             try {
-                const [sid, tags, props, calls] = this.ticks[0];
+                const [sid, tags, props, calls] = this.#ticks[0];
                 // check if tick is a full UI reload
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
                         this.clear(false);
-                        this.loaded = Date.now();
+                        this.#loaded = Date.now();
                         break;
                     }
                 }
-                if (!this.loaded) {
+                if (!this.#loaded) {
                     throw ('UI not loaded');
                 }
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
-                if (sid !== null && sid !== this.sid) {
+                if (sid !== null && sid !== this.#sid) {
                     this.triggerListeners('stage');
                     this.listeners.stage.clear();
-                    this.sid = sid;
+                    this.#sid = sid;
                 }
                 // create new components
                 const newComponents = [];
@@ -3025,9 +3025,9 @@
             }
             catch (e) {
                 console.log(e);
-                if (Date.now() - this.loaded < 500) {
+                if (Date.now() - this.#loaded < 500) {
                     // prompt reload if error occus within 0.5s after reload
-                    this.loaded = 0;
+                    this.#loaded = 0;
                     this.ui.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
                         if (reload === true) {
                             window.location.reload();
@@ -3037,21 +3037,21 @@
                         }
                     });
                 }
-                else if (this.loaded) {
+                else if (this.#loaded) {
                     // tell worker to reload UI
-                    this.loaded = 0;
+                    this.#loaded = 0;
                     this.send(-1, null, false);
                 }
             }
-            this.ticks.shift();
-            if (this.ticks.length) {
+            this.#ticks.shift();
+            if (this.#ticks.length) {
                 this.dispatch();
             }
         }
         /** Add a UITick to dispatch. */
         tick(data) {
-            this.ticks.push(data);
-            if (this.ticks.length === 1) {
+            this.#ticks.push(data);
+            if (this.#ticks.length === 1) {
                 this.dispatch();
             }
         }

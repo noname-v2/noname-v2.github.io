@@ -61,6 +61,7 @@
             }
             return true;
         }
+        /** Current location. */
         get #current() {
             if ([0, 1].includes(this.#step)) {
                 return 'before';
@@ -231,7 +232,6 @@
                 }
                 // await return value from client
                 if (!this.#resolved) {
-                    console.log(this.results);
                     await new Promise(resolve => this.#resolve = resolve);
                     this.#resolve = null;
                 }
@@ -776,25 +776,25 @@
         uid;
         /** User nickname and avatar. */
         info;
-        /** Game object. */
-        game = null;
         /** Connected hub. */
         connection = null;
         /** Links of connected clients. */
         peers = null;
+        /** Game object. */
+        #game;
         /**
          * Setup communication.
          */
         constructor() {
             self.onmessage = ({ data }) => {
                 this.uid = data[0];
-                this.game = new Game(data[3], this);
+                this.#game = new Game(data[3], this);
             };
             self.postMessage('ready');
         }
         /** Send a message to all clients. */
         broadcast(tick) {
-            if (this.game && this.connection) {
+            if (this.connection) {
                 // broadcast tick
                 this.connection.send('bcast:' + JSON.stringify(tick));
             }
@@ -805,7 +805,7 @@
             if (uid === this.uid) {
                 this.tick(tick);
             }
-            else if (this.game && this.peers) {
+            else if (this.#game && this.peers) {
                 // send tick to a remote client
                 this.connection.send('to:' + JSON.stringify([
                     uid, JSON.stringify(tick)
@@ -835,7 +835,7 @@
                 this.sync();
             };
             ws.onopen = () => {
-                ws.send('init:' + JSON.stringify([this.uid, this.info, this.game.updateRoom(false)]));
+                ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.updateRoom(false)]));
             };
             ws.onmessage = ({ data }) => {
                 try {
@@ -868,7 +868,7 @@
                     peers.push(peer.id);
                 }
             }
-            this.game.arena.update({ peers });
+            this.#game.arena.update({ peers });
         }
         /** The room is ready for clients to join. */
         ready() {
@@ -880,8 +880,8 @@
             // join as player or spectator
             const [uid, info] = JSON.parse(msg);
             this.createPeer(uid, info);
-            this.game.updateRoom();
-            this.send(uid, this.game.pack());
+            this.#game.updateRoom();
+            this.send(uid, this.#game.pack());
         }
         /** A remote client leaves the room. */
         leave(uid) {
@@ -889,7 +889,7 @@
                 this.peers.get(uid).unlink();
                 this.peers.delete(uid);
                 this.sync();
-                this.game.updateRoom();
+                this.#game.updateRoom();
             }
         }
         /** A remote client sends a response message. */
@@ -898,12 +898,12 @@
         }
         /** Create a peer component. */
         createPeer(uid, info) {
-            const peer = this.game.create('peer');
+            const peer = this.#game.create('peer');
             peer.update({
                 owner: uid,
                 nickname: info[0],
                 avatar: info[1],
-                playing: this.getPeers({ playing: true }).length < this.game.config.np
+                playing: this.getPeers({ playing: true }).length < this.#game.config.np
             });
             this.peers.set(uid, peer);
             this.sync();

@@ -33,14 +33,14 @@ export class Worker {
     /** User nickname and avatar. */
     info!: [string, string];
 
-    /** Game object. */
-    game: Game | null = null;
-
     /** Connected hub. */
     connection: WebSocket | null = null;
 
     /** Links of connected clients. */
     peers: Map<string, Link> | null = null;
+
+    /** Game object. */
+    #game!: Game;
 
     /**
      * Setup communication.
@@ -48,14 +48,14 @@ export class Worker {
     constructor() {
         self.onmessage = ({data}: {data: ClientMessage}) => {
             this.uid = data[0];
-            this.game = new Game(data[3], this);
+            this.#game = new Game(data[3], this);
         }
         (self as any).postMessage('ready');
     }
 
     /** Send a message to all clients. */
     broadcast(tick: UITick) {
-        if (this.game && this.connection) {
+        if (this.connection) {
             // broadcast tick
             this.connection.send('bcast:' + JSON.stringify(tick));
         }
@@ -67,7 +67,7 @@ export class Worker {
         if (uid === this.uid) {
             this.tick(tick);
         }
-        else if (this.game && this.peers) {
+        else if (this.#game && this.peers) {
             // send tick to a remote client
             this.connection!.send('to:' + JSON.stringify([
                 uid, JSON.stringify(tick)
@@ -99,7 +99,7 @@ export class Worker {
             this.sync();
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, this.game!.updateRoom(false)]));
+            ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.updateRoom(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
@@ -134,7 +134,7 @@ export class Worker {
                 peers.push(peer.id);
             }
         }
-        this.game!.arena.update({peers});
+        this.#game.arena.update({peers});
     }
 
     /** The room is ready for clients to join. */
@@ -148,8 +148,8 @@ export class Worker {
         // join as player or spectator
         const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
         this.createPeer(uid, info);
-        this.game!.updateRoom();
-        this.send(uid, this.game!.pack());
+        this.#game.updateRoom();
+        this.send(uid, this.#game.pack());
     }
 
     /** A remote client leaves the room. */
@@ -158,7 +158,7 @@ export class Worker {
             this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
-            this.game!.updateRoom();
+            this.#game.updateRoom();
         }
     }
 
@@ -169,12 +169,12 @@ export class Worker {
 
     /** Create a peer component. */
     createPeer(uid: string, info: [string, string]) {
-        const peer = this.game!.create('peer');
+        const peer = this.#game.create('peer');
         peer.update({
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: this.getPeers({playing: true})!.length < this.game!.config.np
+            playing: this.getPeers({playing: true})!.length < this.#game.config.np
         });
         this.peers!.set(uid, peer);
         this.sync();

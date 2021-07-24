@@ -4,6 +4,7 @@ import type { Worker } from './worker';
 export type StageLocation = 'before' | 'main' | 'after';
 export type StageCallback = (id: number, result: any, done: boolean) => void;
 
+/** Private game methods passed to constructor. */
 type SetStage = (this: Game, content?: [Stage, StageCallback]) => void;
 type SetData = (this: Game, stageID: number | null, data: {[key: string]: any}) => void;
 
@@ -81,6 +82,7 @@ export class Stage {
         return true;
     }
 
+    /** Current location. */
     get #current(): StageLocation | null {
         if ([0, 1].includes(this.#step)) {
             return 'before';

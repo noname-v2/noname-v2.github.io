@@ -1,5 +1,6 @@
 import type { Game, HistoryItem } from './game';
 
+/** Private game method passed to constructor. */
 type Update = (this: Game, id: number, item: HistoryItem) => void;
 
 /** A link to a client-side component. */
