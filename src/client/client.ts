@@ -152,7 +152,7 @@ export class Client {
             const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
             connection.onmessage = ({data}) => {
                 if (data === 'ready') {
-                    connection.onmessage = ({data}) => this.tick(data);
+                    connection.onmessage = ({data}) => this.dispatch(data);
                     config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                     config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(this.db.get(config[0] + ':config') || {});
@@ -217,7 +217,7 @@ export class Client {
      * @param {any[]} [args] - If args is array, call method with args as arguments,
      * if args is undefined, check the existence of the method instead.
      */
-    async dispatch() {
+    async render() {
         try {
             const [sid, tags, props, calls] = this.#ticks[0];
 
@@ -306,15 +306,15 @@ export class Client {
 
         this.#ticks.shift();
         if (this.#ticks.length) {
-            this.dispatch();
+            this.render();
         }
     }
 
     /** Add a UITick to dispatch. */
-    tick(data: UITick) {
+    dispatch(data: UITick) {
         this.#ticks.push(data);
         if (this.#ticks.length === 1) {
-            this.dispatch();
+            this.render();
         }
     }
 

@@ -655,7 +655,7 @@
         #tick(id, item) {
             if (this.#ticks.length === 0) {
                 // schedule a UITick if no pending UITick exists
-                setTimeout(() => this.#update());
+                setTimeout(() => this.#commit());
             }
             this.#ticks.push([this.activeStage?.id ?? null, id, item]);
         }
@@ -663,8 +663,8 @@
         #focus(content) {
             this.#active = content ?? null;
         }
-        /** Create a UITick from this.#history. */
-        #update() {
+        /** Create UITick(s) from this.#history. */
+        #commit() {
             let stageID = -1;
             let tagChanges = {};
             let propChanges = {};
@@ -747,27 +747,23 @@
         }
         /** Send a message to all clients. */
         broadcast(tick) {
-            if (this.connection) {
+            if (this.peers) {
                 // broadcast tick
                 this.connection.send('bcast:' + JSON.stringify(tick));
             }
-            this.tick(tick);
+            self.postMessage(tick);
         }
         /** Send a message to a client. */
         send(uid, tick) {
             if (uid === this.uid) {
-                this.tick(tick);
+                self.postMessage(tick);
             }
-            else if (this.#game && this.peers) {
+            else if (this.peers) {
                 // send tick to a remote client
                 this.connection.send('to:' + JSON.stringify([
                     uid, JSON.stringify(tick)
                 ]));
             }
-        }
-        /** Send a message to local client. */
-        tick(tick) {
-            self.postMessage(tick);
         }
         /** Connect to remote hub. */
         connect(url) {
@@ -778,14 +774,14 @@
             ws.onerror = ws.onclose = () => {
                 if (this.connection === ws) {
                     this.connection = null;
-                }
-                if (this.peers) {
-                    for (const peer of this.peers.values()) {
-                        peer.unlink();
+                    if (this.peers) {
+                        for (const peer of this.peers.values()) {
+                            peer.unlink();
+                        }
                     }
+                    this.peers = null;
+                    this.sync();
                 }
-                this.peers = null;
-                this.sync();
             };
             ws.onopen = () => {
                 ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.updateRoom(false)]));

@@ -195,16 +195,30 @@ export class SplashHub extends Popup {
         const [reason, content] = split(msg);
         this.clearRooms();
         this.edit(content);
-        if (reason === 'kick') {
-            await this.app.alert('你被请出了房间');
+        if (this.app.arena) {
+            if (reason === 'kick') {
+                await this.app.alert('你被请出了房间');
+            }
+            else if (reason === 'end') {
+                await this.app.alert('房间已关闭');
+            }
+            setTimeout(() => this.client.clear(), this.app.getTransition('fast'));
         }
-        else if (reason === 'end') {
-            await this.app.alert('房间已关闭');
-        }
-        this.app.splash.show();
         this.roomGroup.classList.remove('entering');
-        this.client.clear();
         this.roomGroup.classList.remove('hidden');
+    }
+
+    leave() {
+        const ws = this.client.connection;
+        const arena = this.app.arena;
+        if (ws instanceof WebSocket && arena) {
+            ws.send('leave:init');
+            setTimeout(() => {
+                if (arena === this.app.arena) {
+                    this.client.clear();
+                }
+            }, 1000);
+        }
     }
 
     edit(msg: string) {
@@ -245,7 +259,7 @@ export class SplashHub extends Popup {
     }
 
     msg(msg: string) {
-        this.client.tick(JSON.parse(msg));
+        this.client.dispatch(JSON.parse(msg));
         this.app.splash.hide();
         this.close();
     }
@@ -264,7 +278,7 @@ export class SplashHub extends Popup {
         promise.then(val => {
             clearInterval(interval);
             if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
-                ws.send('leave:init');
+                this.leave();
             }
         });
     }

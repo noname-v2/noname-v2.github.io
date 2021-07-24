@@ -55,29 +55,24 @@ export class Worker {
 
     /** Send a message to all clients. */
     broadcast(tick: UITick) {
-        if (this.connection) {
+        if (this.peers) {
             // broadcast tick
-            this.connection.send('bcast:' + JSON.stringify(tick));
+            this.connection!.send('bcast:' + JSON.stringify(tick));
         }
-        this.tick(tick);
+        (self as any).postMessage(tick);
     }
 
     /** Send a message to a client. */
     send(uid: string, tick: UITick) {
         if (uid === this.uid) {
-            this.tick(tick);
+            (self as any).postMessage(tick);
         }
-        else if (this.#game && this.peers) {
+        else if (this.peers) {
             // send tick to a remote client
             this.connection!.send('to:' + JSON.stringify([
                 uid, JSON.stringify(tick)
             ]))
         }
-    }
-
-    /** Send a message to local client. */
-    tick(tick: UITick) {
-        (self as any).postMessage(tick);
     }
 
     /** Connect to remote hub. */
@@ -89,14 +84,14 @@ export class Worker {
         ws.onerror = ws.onclose = () => {
             if (this.connection === ws) {
                 this.connection = null;
-            }
-            if (this.peers) {
-                for (const peer of this.peers.values()) {
-                    peer.unlink();
+                if (this.peers) {
+                    for (const peer of this.peers.values()) {
+                        peer.unlink();
+                    }
                 }
+                this.peers = null;
+                this.sync();
             }
-            this.peers = null;
-            this.sync();
         };
         ws.onopen = () => {
             ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.updateRoom(false)]));

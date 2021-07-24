@@ -289,7 +289,7 @@ export class Game {
     #tick(id: number, item: TickItem) {
         if (this.#ticks.length === 0) {
             // schedule a UITick if no pending UITick exists
-            setTimeout(() => this.#update());
+            setTimeout(() => this.#commit());
         }
         this.#ticks.push([this.activeStage?.id ?? null, id, item]);
     }
@@ -299,8 +299,8 @@ export class Game {
         this.#active = content ?? null;
     }
 
-    /** Create a UITick from this.#history. */
-    #update() {
+    /** Create UITick(s) from this.#history. */
+    #commit() {
         let stageID: number | null = -1;
         let tagChanges: {[key: string]: string | null} = {};
         let propChanges: {[key: string]: {[key: string]: any}} = {};

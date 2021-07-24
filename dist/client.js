@@ -714,8 +714,7 @@
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
                 if (!peers || Object.keys(peers).length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
                     if (ws instanceof WebSocket) {
-                        this.client.clear();
-                        ws.send('leave:init');
+                        this.app.splash.hub.leave();
                     }
                     else {
                         this.freeze();
@@ -1872,16 +1871,29 @@
             const [reason, content] = split(msg);
             this.clearRooms();
             this.edit(content);
-            if (reason === 'kick') {
-                await this.app.alert('你被请出了房间');
+            if (this.app.arena) {
+                if (reason === 'kick') {
+                    await this.app.alert('你被请出了房间');
+                }
+                else if (reason === 'end') {
+                    await this.app.alert('房间已关闭');
+                }
+                setTimeout(() => this.client.clear(), this.app.getTransition('fast'));
             }
-            else if (reason === 'end') {
-                await this.app.alert('房间已关闭');
-            }
-            this.app.splash.show();
             this.roomGroup.classList.remove('entering');
-            this.client.clear();
             this.roomGroup.classList.remove('hidden');
+        }
+        leave() {
+            const ws = this.client.connection;
+            const arena = this.app.arena;
+            if (ws instanceof WebSocket && arena) {
+                ws.send('leave:init');
+                setTimeout(() => {
+                    if (arena === this.app.arena) {
+                        this.client.clear();
+                    }
+                }, 1000);
+            }
         }
         edit(msg) {
             const ws = this.client.connection;
@@ -1919,7 +1931,7 @@
             this.numSection.firstChild.innerHTML = '在线：' + msg;
         }
         msg(msg) {
-            this.client.tick(JSON.parse(msg));
+            this.client.dispatch(JSON.parse(msg));
             this.app.splash.hide();
             this.close();
         }
@@ -1937,7 +1949,7 @@
             promise.then(val => {
                 clearInterval(interval);
                 if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
-                    ws.send('leave:init');
+                    this.leave();
                 }
             });
         }
@@ -2902,7 +2914,7 @@
                 const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
                 connection.onmessage = ({ data }) => {
                     if (data === 'ready') {
-                        connection.onmessage = ({ data }) => this.tick(data);
+                        connection.onmessage = ({ data }) => this.dispatch(data);
                         config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                         config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(this.db.get(config[0] + ':config') || {});
@@ -2963,7 +2975,7 @@
          * @param {any[]} [args] - If args is array, call method with args as arguments,
          * if args is undefined, check the existence of the method instead.
          */
-        async dispatch() {
+        async render() {
             try {
                 const [sid, tags, props, calls] = this.#ticks[0];
                 // check if tick is a full UI reload
@@ -3045,14 +3057,14 @@
             }
             this.#ticks.shift();
             if (this.#ticks.length) {
-                this.dispatch();
+                this.render();
             }
         }
         /** Add a UITick to dispatch. */
-        tick(data) {
+        dispatch(data) {
             this.#ticks.push(data);
             if (this.#ticks.length === 1) {
-                this.dispatch();
+                this.render();
             }
         }
         /** Trigger a listener. */
