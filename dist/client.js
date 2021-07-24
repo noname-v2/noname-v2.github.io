@@ -2944,6 +2944,10 @@
         clear(back = true) {
             for (const cmp of this.components.values()) {
                 this.removeListeners(cmp);
+                if (!back) {
+                    // directly remove to get smoother fadein transition
+                    cmp.node.remove();
+                }
             }
             this.components.clear();
             this.ui.app.clearPopups();

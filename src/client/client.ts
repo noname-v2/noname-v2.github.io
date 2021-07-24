@@ -182,11 +182,17 @@ export class Client {
     clear(back: boolean = true) {
         for (const cmp of this.components.values()) {
             this.removeListeners(cmp);
+
+            if (!back) {
+                // directly remove to get smoother fadein transition
+                cmp.node.remove();
+            }
         }
         this.components.clear();
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
+        
         if (back) {
             this.ui.app.splash.show();
             this.#sid = 0;
