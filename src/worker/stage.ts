@@ -70,6 +70,29 @@ export class Stage {
 
     /** Stage data. */
     #data: {[key: string]: any};
+    
+    /** All awaits have been resolved. */
+    get #resolved() {
+        for (const val of this.results.values()) {
+            if (val === null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    get #current(): StageLocation | null {
+        if ([0, 1].includes(this.#step)) {
+            return 'before';
+        }
+        if ([2, 3].includes(this.#step)) {
+            return 'main';
+        }
+        if ([4, 5].includes(this.#step)) {
+            return 'after';
+        }
+        return null;
+    }
 
     get id() {
         return this.#id;
@@ -167,7 +190,7 @@ export class Stage {
     /** Force stage to finish (without triggering any additional event). */
     cancel() {
         if (this.#step === 0) {
-            this.#step = 7;
+            this.#step = 6;
             this.#code = 2;
             return true;
         }
@@ -197,7 +220,7 @@ export class Stage {
     /** Add a child stage. */
     add(path: string) {
         const stage = this.game.createStage(this.#getPath(path));
-        stage.#location = [this, this.#getLocation()!];
+        stage.#location = [this, this.#current!];
         this.#getChildren()!.push(stage);
         return stage;
     }
@@ -252,7 +275,7 @@ export class Stage {
             }
             
             // await return value from client
-            if (!this.#checkResolve()) {
+            if (!this.#resolved) {
                 await new Promise<void>(resolve => this.#resolve = resolve);
                 this.#resolve = null;
             }
@@ -264,7 +287,7 @@ export class Stage {
             // generate this.after
             await this.game.getRule('#stage.after/').apply(this);
         }
-        else if (this.#getLocation()) {
+        else if (this.#current) {
             // execute this.before / this.main / this.after
             for (const stage of this.#getChildren()!) {
                 if (!stage.done) {
@@ -277,11 +300,11 @@ export class Stage {
 
         if (incr) {
             this.#step++;
-
             if (this.#step === 2) {
                 await this.game.backup();
             }
         }
+
         return true;
     }
 
@@ -316,7 +339,7 @@ export class Stage {
             // results: component.return() -> link.await()
             if (this.results.get(id) === null) {
                 this.results.set(id, result ?? '#auto');
-                if (this.#resolve && this.#checkResolve()) {
+                if (this.#resolve && this.#resolved) {
                     this.#resolve();
                 }
             }
@@ -330,33 +353,10 @@ export class Stage {
             }
         }
     }
-    
-    /** All awaits have been resolved. */
-    #checkResolve() {
-        for (const val of this.results.values()) {
-            if (val === null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    #getLocation(): StageLocation | null {
-        if ([0, 1].includes(this.#step)) {
-            return 'before';
-        }
-        if ([2, 3].includes(this.#step)) {
-            return 'main';
-        }
-        if ([4, 5].includes(this.#step)) {
-            return 'after';
-        }
-        return null;
-    }
 
     /** Get child stages based on current step. */
     #getChildren(location?: StageLocation) {
-        location ??= this.#getLocation()!;
+        location ??= this.#current!;
         if (location === 'before') {
             return this.#before;
         }

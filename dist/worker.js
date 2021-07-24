@@ -4,58 +4,6 @@
     const version = '2.0.0dev1';
 
     class Stage {
-        constructor(id, path, data, game, worker, setStage, setData) {
-            /** Current step of execution. Action:
-             * 0: generate this.before
-             * 1: execute this.before[]
-             * 2: execute main function and update await user input
-             * 3: execute this.main[]
-             * 4: generate this.after
-             * 5: execute this.after[]
-             * 6: no action (done)
-            */
-            this.#step = 0;
-            /** Execution status.
-             * 0: normal
-             * 1: skipped
-             * 2: cancelled
-             */
-            this.#code = 0;
-            /** Parent stage. */
-            this.#location = null;
-            /** Child stages added by before event. */
-            this.#before = [];
-            /** Child stages added by main function. */
-            this.#main = [];
-            /** Child stages added by after event. */
-            this.#after = [];
-            /** Pending return values from clients. */
-            this.#monitors = new Map();
-            /** Return value of this.calls. */
-            this.#results = new Map();
-            /** Resolved when all monitors are done. */
-            this.#resolve = null;
-            this.#id = id;
-            this.#path = path;
-            this.#game = game;
-            this.#worker = worker;
-            this.#setStage = setStage;
-            // create getter and setter of stage data
-            this.#data = new Proxy(data, {
-                get: (data, key) => {
-                    return data[key] ?? null;
-                },
-                set: (data, key, val) => {
-                    data[key] = val;
-                    setData.apply(game, [this.id, { [key]: val }]);
-                    return true;
-                }
-            });
-            // start game if this is rootStage
-            if (id === 1) {
-                setTimeout(() => this.#run());
-            }
-        }
         /** Stage ID. */
         #id;
         /** Path to the function to be executed.
@@ -79,31 +27,52 @@
          * 5: execute this.after[]
          * 6: no action (done)
         */
-        #step;
+        #step = 0;
         /** Execution status.
          * 0: normal
          * 1: skipped
          * 2: cancelled
          */
-        #code;
+        #code = 0;
         /** Parent stage. */
-        #location;
+        #location = null;
         /** Child stages added by before event. */
-        #before;
+        #before = [];
         /** Child stages added by main function. */
-        #main;
+        #main = [];
         /** Child stages added by after event. */
-        #after;
+        #after = [];
         /** Pending return values from clients. */
-        #monitors;
+        #monitors = new Map();
         /** Return value of this.calls. */
-        #results;
+        #results = new Map();
         /** Resolved when all monitors are done. */
-        #resolve;
+        #resolve = null;
         /** Make self as game.activateStage. */
         #setStage;
         /** Stage data. */
         #data;
+        /** All awaits have been resolved. */
+        get #resolved() {
+            for (const val of this.results.values()) {
+                if (val === null) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        get #current() {
+            if ([0, 1].includes(this.#step)) {
+                return 'before';
+            }
+            if ([2, 3].includes(this.#step)) {
+                return 'main';
+            }
+            if ([4, 5].includes(this.#step)) {
+                return 'after';
+            }
+            return null;
+        }
         get id() {
             return this.#id;
         }
@@ -141,6 +110,28 @@
         get data() {
             return this.#data;
         }
+        constructor(id, path, data, game, worker, setStage, setData) {
+            this.#id = id;
+            this.#path = path;
+            this.#game = game;
+            this.#worker = worker;
+            this.#setStage = setStage;
+            // create getter and setter of stage data
+            this.#data = new Proxy(data, {
+                get: (data, key) => {
+                    return data[key] ?? null;
+                },
+                set: (data, key, val) => {
+                    data[key] = val;
+                    setData.apply(game, [this.id, { [key]: val }]);
+                    return true;
+                }
+            });
+            // start game if this is rootStage
+            if (id === 1) {
+                setTimeout(() => this.#run());
+            }
+        }
         /** Add a callback for component function call. */
         monitor(id, path) {
             this.#monitors.set(id, path);
@@ -161,7 +152,7 @@
         /** Force stage to finish (without triggering any additional event). */
         cancel() {
             if (this.#step === 0) {
-                this.#step = 7;
+                this.#step = 6;
                 this.#code = 2;
                 return true;
             }
@@ -189,7 +180,7 @@
         /** Add a child stage. */
         add(path) {
             const stage = this.game.createStage(this.#getPath(path));
-            stage.#location = [this, this.#getLocation()];
+            stage.#location = [this, this.#current];
             this.#getChildren().push(stage);
             return stage;
         }
@@ -239,7 +230,7 @@
                     }
                 }
                 // await return value from client
-                if (!this.#checkResolve()) {
+                if (!this.#resolved) {
                     await new Promise(resolve => this.#resolve = resolve);
                     this.#resolve = null;
                 }
@@ -250,7 +241,7 @@
                 // generate this.after
                 await this.game.getRule('#stage.after/').apply(this);
             }
-            else if (this.#getLocation()) {
+            else if (this.#current) {
                 // execute this.before / this.main / this.after
                 for (const stage of this.#getChildren()) {
                     if (!stage.done) {
@@ -298,7 +289,7 @@
                 // results: component.return() -> link.await()
                 if (this.results.get(id) === null) {
                     this.results.set(id, result ?? '#auto');
-                    if (this.#resolve && this.#checkResolve()) {
+                    if (this.#resolve && this.#resolved) {
                         this.#resolve();
                     }
                 }
@@ -312,30 +303,9 @@
                 }
             }
         }
-        /** All awaits have been resolved. */
-        #checkResolve() {
-            for (const val of this.results.values()) {
-                if (val === null) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        #getLocation() {
-            if ([0, 1].includes(this.#step)) {
-                return 'before';
-            }
-            if ([2, 3].includes(this.#step)) {
-                return 'main';
-            }
-            if ([4, 5].includes(this.#step)) {
-                return 'after';
-            }
-            return null;
-        }
         /** Get child stages based on current step. */
         #getChildren(location) {
-            location ??= this.#getLocation();
+            location ??= this.#current;
             if (location === 'before') {
                 return this.#before;
             }
@@ -351,25 +321,23 @@
 
     /** A link to a client-side component. */
     class Link {
+        /** Component ID. */
+        #id;
+        /** Component tag. */
+        #tag;
+        /** Properties synced with worker. */
+        #props = new Map();
+        /** Reference to Game. */
+        #game;
+        /** Reference to this.#game.#update */
+        #update;
         constructor(id, tag, game, update) {
-            /** Properties synced with worker. */
-            this.#props = new Map();
             this.#id = id;
             this.#tag = tag;
             this.#game = game;
             this.#update = update;
             update.apply(game, [this.#id, tag]);
         }
-        /** Component ID. */
-        #id;
-        /** Component tag. */
-        #tag;
-        /** Properties synced with worker. */
-        #props;
-        /** Reference to Game. */
-        #game;
-        /** Reference to this.#game.#update */
-        #update;
         get id() {
             return this.#id;
         }
@@ -417,16 +385,20 @@
         }
     }
 
-    /** Deep copy object. */
-    /** Access key of a nested object. */
-    function access(obj, keys) {
-        for (const key of keys.split('.')) {
-            obj = obj[key] ?? null;
-            if (obj === null) {
-                break;
+    /** Deep assign object. */
+    function apply(from, to) {
+        for (const key in from) {
+            if (from[key] === null) {
+                delete to[key];
+            }
+            else if (typeof from[key] === 'object' && typeof to[key] === 'object' && to[key]) {
+                apply(from[key], to[key]);
+            }
+            else {
+                to[key] = from[key];
             }
         }
-        return obj;
+        return to;
     }
     /** Deep freeze object. */
     function freeze(obj) {
@@ -438,6 +410,18 @@
             }
         }
         return Object.freeze(obj);
+    }
+    /** Access key of a nested object. */
+    function access(obj, keys) {
+        if (keys && obj) {
+            for (const key of keys.split('.')) {
+                obj = obj[key] ?? null;
+                if (obj === null) {
+                    break;
+                }
+            }
+        }
+        return obj ?? null;
     }
     /** Split string with `:`. */
     function split(msg, delimiter = ':') {
@@ -451,83 +435,12 @@
     }
 
     class Game {
-        constructor(content, worker) {
-            /** Current game stage. */
-            this.#active = null;
-            /** Links to components. */
-            this.#links = new Map();
-            /** Banned packages. */
-            this.#banned = {
-                heropacks: new Set(),
-                cardpacks: new Set(),
-                heros: new Set(),
-                cards: new Set(),
-            };
-            /** All created stages. */
-            this.#stages = new Map();
-            /** Loaded extensions. */
-            this.#extensions = new Map();
-            /** Array of packages that define ruleset (priority: high -> low). */
-            this.#ruleset = [];
-            /** Game state.
-             * 0: waiting
-             * 1: gaming
-             * 2: over
-            */
-            this.#state = 0;
-            /** Ticked history items with timestamp. */
-            this.#history = [];
-            /** Entries to be ticked. */
-            this.#ticks = [];
-            /** Number of links created. */
-            this.#linkCount = 0;
-            /** Number of stages created. */
-            this.#stageCount = 0;
-            this.#worker = worker;
-            this.#mode = content[0];
-            this.#packs = new Set(content[1]);
-            this.#banned.heropacks = new Set(content[2]);
-            this.#banned.cardpacks = new Set(content[3]);
-            this.#config = content[4];
-            this.#worker.info = content[5];
-            // create getter and setter of game data
-            this.#data = new Proxy({}, {
-                get: (data, name) => {
-                    return data[name] ?? null;
-                },
-                set: (data, key, val) => {
-                    data[key] = val;
-                    this.#setData(null, { [key]: val });
-                    return true;
-                }
-            });
-            // load extensions
-            Promise.all(content[1].map(async (pack) => {
-                const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-                this.#extensions.set(pack, ext);
-            })).then(async () => {
-                // add ruleset based on reference order
-                let mode = this.#mode;
-                while (mode) {
-                    if (this.#ruleset.includes(mode)) {
-                        break;
-                    }
-                    this.#ruleset.push(mode);
-                    mode = this.#extensions.get(mode)?.inherit;
-                }
-                // start game
-                this.#rootStage = this.createStage(`${this.mode}:mode/`);
-                this.#arena = this.create('arena');
-            });
-            // handle return message from client
-            self.onmessage = ({ data }) => this.#dispatch(data);
-        }
         /** Root game stage. */
         #rootStage;
         /** Current game stage. */
-        #active;
+        #active = null;
         /** Links to components. */
-        #links;
+        #links = new Map();
         /** Game mode. */
         #mode;
         /** Game configuration. */
@@ -537,31 +450,36 @@
         /** Hero packages. */
         #packs;
         /** Banned packages. */
-        #banned;
+        #banned = {
+            heropacks: new Set(),
+            cardpacks: new Set(),
+            heros: new Set(),
+            cards: new Set(),
+        };
         /** All created stages. */
-        #stages;
+        #stages = new Map();
         /** Loaded extensions. */
-        #extensions;
+        #extensions = new Map();
         /** Worker reference. */
         #worker;
         /** Arena link. */
         #arena;
         /** Array of packages that define ruleset (priority: high -> low). */
-        #ruleset;
+        #ruleset = {};
         /** Game state.
          * 0: waiting
          * 1: gaming
          * 2: over
         */
-        #state;
+        #state = 0;
         /** Ticked history items with timestamp. */
-        #history;
+        #history = [];
         /** Entries to be ticked. */
-        #ticks;
+        #ticks = [];
         /** Number of links created. */
-        #linkCount;
+        #linkCount = 0;
         /** Number of stages created. */
-        #stageCount;
+        #stageCount = 0;
         get arena() {
             return this.#arena;
         }
@@ -611,6 +529,55 @@
         get data() {
             return this.#data;
         }
+        constructor(content, worker) {
+            this.#worker = worker;
+            this.#mode = content[0];
+            this.#packs = new Set(content[1]);
+            this.#banned.heropacks = new Set(content[2]);
+            this.#banned.cardpacks = new Set(content[3]);
+            this.#config = content[4];
+            this.#worker.info = content[5];
+            // create getter and setter of game data
+            this.#data = new Proxy({}, {
+                get: (data, name) => {
+                    return data[name] ?? null;
+                },
+                set: (data, key, val) => {
+                    data[key] = val;
+                    this.#setData(null, { [key]: val });
+                    return true;
+                }
+            });
+            // load extensions
+            const load = async (pack) => {
+                const ext = (await import(`../extensions/${pack}/main.js`)).default;
+                this.#extensions.set(pack, ext);
+            };
+            Promise.all(content[1].map(load)).then(async () => {
+                // included rulesets
+                const inc = [];
+                let mode = this.#mode;
+                while (mode) {
+                    if (inc.includes(mode)) {
+                        break;
+                    }
+                    if (!this.#extensions.has(mode)) {
+                        await load(mode);
+                    }
+                    inc.unshift(mode);
+                    mode = this.#extensions.get(mode)?.inherit;
+                }
+                // add ruleset based on reference order
+                for (const name of inc) {
+                    apply(this.#extensions.get(name).ruleset ?? {}, this.#ruleset);
+                }
+                // start game
+                this.#rootStage = this.createStage(`${this.mode}:mode/`);
+                this.#arena = this.create('arena');
+            });
+            // handle return message from client
+            self.onmessage = ({ data }) => this.#dispatch(data);
+        }
         create(tag) {
             const id = ++this.#linkCount;
             const link = new Link(id, tag, this, this.#update);
@@ -628,36 +595,29 @@
          * <extname>:<path>/<section>: from an extension
          */
         getRule(path) {
+            let target;
             if (path[0] === '#') {
                 // get ruleset
+                target = this.#ruleset;
                 path = path.slice(1);
-                for (const name of this.#ruleset) {
-                    const rule = this.getRule(name + ':ruleset.' + path);
-                    if (rule !== null) {
-                        return rule;
-                    }
-                }
             }
             else {
                 // get the content of an extension
-                const [name, content] = split(path);
-                const ext = this.#extensions.get(name);
-                if (ext) {
-                    const [keys, section] = content.split('/');
-                    const rule = access(ext, keys);
-                    if (section === '') {
-                        return rule.content ?? null;
-                    }
-                    else if (typeof section === 'string') {
-                        return rule.contents[section] ?? null;
-                    }
-                    else {
-                        return rule ?? null;
-                    }
-                }
-                else {
-                    return null;
-                }
+                let name;
+                [name, path] = split(path);
+                target = this.#extensions.get(name);
+            }
+            // access rule
+            const [keys, section] = path.split('/');
+            const rule = access(target, keys);
+            if (section === '') {
+                return rule?.content ?? null;
+            }
+            else if (typeof section === 'string') {
+                return rule?.contents[section] ?? null;
+            }
+            else {
+                return rule ?? null;
             }
         }
         /** Update room info for idle clients. */
@@ -683,6 +643,7 @@
         backup() {
             //////
             return new Promise(resolve => {
+                resolve();
             });
         }
         /** Get a UITick of all links. */
@@ -724,13 +685,6 @@
         }
         /** Set stage data (called by Stage). */
         #setData(stageID, data) {
-            // make data savable as string
-            const flatten = this.getRule('#data.flatten');
-            if (flatten) {
-                for (const key in data) {
-                    data[key] = flatten(data[key]);
-                }
-            }
             if (this.#ticks.length === 0) {
                 // directly add to history if no UITick is scheduled
                 this.#pushData(stageID, data);
@@ -815,18 +769,22 @@
      * Manager of component syncing between client and server.
      */
     class Worker {
+        /** Worker version. */
+        version = version;
+        /** User identifier. */
+        uid;
+        /** User nickname and avatar. */
+        info;
+        /** Game object. */
+        game = null;
+        /** Connected hub. */
+        connection = null;
+        /** Links of connected clients. */
+        peers = null;
         /**
          * Setup communication.
          */
         constructor() {
-            /** Worker version. */
-            this.version = version;
-            /** Game object. */
-            this.game = null;
-            /** Connected hub. */
-            this.connection = null;
-            /** Links of connected clients. */
-            this.peers = null;
             self.onmessage = ({ data }) => {
                 this.uid = data[0];
                 this.game = new Game(data[3], this);

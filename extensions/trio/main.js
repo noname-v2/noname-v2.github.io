@@ -14,7 +14,8 @@ var main = {
                 console.log(this.game.packs);
             }
         }
-    }
+    },
+    inherit: 'sgs'
 };
 
 export default main;

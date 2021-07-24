@@ -2,9 +2,22 @@
     'use strict';
 
     class Database {
+        /** indexedDB object. */
+        db;
+        /** Get, set or delete database entry. */
+        transact(name, cmd, key, value) {
+            return new Promise(resolve => {
+                const mode = cmd === 'get' ? 'readonly' : 'readwrite';
+                const store = this.db.transaction(name, mode).objectStore(name);
+                const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
+                request.onsuccess = () => resolve(request.result ?? null);
+            });
+        }
+        /** Cache for synthronous database. */
+        cache = new Map();
+        /** Resolved when ready. */
+        ready;
         constructor() {
-            /** Cache for synthronous database. */
-            this.cache = new Map();
             // open database
             const request = indexedDB.open('noname_v2', 2);
             const timeout = setTimeout(() => window.location.reload(), 3000); // workaround for Safari indexedDB problem
@@ -42,15 +55,6 @@
                         }
                     };
                 };
-            });
-        }
-        /** Get, set or delete database entry. */
-        transact(name, cmd, key, value) {
-            return new Promise(resolve => {
-                const mode = cmd === 'get' ? 'readonly' : 'readwrite';
-                const store = this.db.transaction(name, mode).objectStore(name);
-                const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
-                request.onsuccess = () => resolve(request.result ?? null);
             });
         }
         /** Get value of synchronous database entry. */
@@ -108,15 +112,18 @@
     }
 
     class Component {
-        /** Create node. */
-        constructor(client, tag, id) {
-            /** Properties synced with worker. */
-            this.props = new Map();
-            this.client = client;
-            this.id = id;
-            this.node = client.ui.createElement(tag);
-            this.ready = Promise.resolve().then(() => this.init());
-        }
+        /** Properties synced with worker. */
+        props = new Map();
+        /** Component ID (for worker-managed components). */
+        id;
+        /** HTMLElement tag  name */
+        static tag = null;
+        /** Root element. */
+        node;
+        /** Client object. */
+        client;
+        /** Resolved */
+        ready;
         get db() {
             return this.client.db;
         }
@@ -128,6 +135,13 @@
         }
         get owner() {
             return this.get('owner');
+        }
+        /** Create node. */
+        constructor(client, tag, id) {
+            this.client = client;
+            this.id = id;
+            this.node = client.ui.createElement(tag);
+            this.ready = Promise.resolve().then(() => this.init());
         }
         /** Make init() optional for subclasses. */
         init() { }
@@ -180,29 +194,30 @@
             this.node.remove();
         }
     }
-    /** HTMLElement tag  name */
-    Component.tag = null;
 
     class App extends Component {
-        constructor() {
-            super(...arguments);
-            /** Arena component. */
-            this.arena = null;
-            /** Transition durations. */
-            this.css = {};
-            /** Stylesheet for theme. */
-            this.themeNode = document.createElement('style');
-            /** Node for displaying background. */
-            this.bgNode = this.ui.createElement('background', this.node);
-            /** Node for playing background music. */
-            this.bgmNode = document.createElement('audio');
-            /** Audio context. */
-            this.audio = new (window.AudioContext || window.webkitAudioContext)();
-            /** Popup components cleared when arena close. */
-            this.popups = new Map();
-            /** Count dialog for dialog ID */
-            this.dialogCount = 0;
-        }
+        /** Arena component. */
+        arena = null;
+        /** Splash component. */
+        splash;
+        /** Transition durations. */
+        css = {};
+        /** Index of assets. */
+        assets;
+        /** Stylesheet for theme. */
+        themeNode = document.createElement('style');
+        /** Node for displaying background. */
+        bgNode = this.ui.createElement('background', this.node);
+        /** Node for playing background music. */
+        bgmNode = document.createElement('audio');
+        /** Background music volume control. */
+        bgmGain;
+        /** Audio context. */
+        audio = new (window.AudioContext || window.webkitAudioContext)();
+        /** Popup components cleared when arena close. */
+        popups = new Map();
+        /** Count dialog for dialog ID */
+        dialogCount = 0;
         /** Initialize volume settings. */
         initAudio() {
             // add default settings
@@ -503,25 +518,22 @@
     }
 
     class Popup extends Component {
-        constructor() {
-            super(...arguments);
-            /** Main content. */
-            this.pane = this.ui.create('pane', this.node);
-            /** Trigger when dialog is opened. */
-            this.onopen = null;
-            /** Trigger when dialog is closed. */
-            this.onclose = null;
-            /** Whether popup is closed when clicking on background layer. */
-            this.temp = true;
-            /** Whether popup appears at the center. */
-            this.location = null;
-            /** Built-in sizes. */
-            this.size = null;
-            /** Animation speed of open and close. */
-            this.transition = null;
-            /** Currently hidden. */
-            this.hidden = true;
-        }
+        /** Main content. */
+        pane = this.ui.create('pane', this.node);
+        /** Trigger when dialog is opened. */
+        onopen = null;
+        /** Trigger when dialog is closed. */
+        onclose = null;
+        /** Whether popup is closed when clicking on background layer. */
+        temp = true;
+        /** Whether popup appears at the center. */
+        location = null;
+        /** Built-in sizes. */
+        size = null;
+        /** Animation speed of open and close. */
+        transition = null;
+        /** Currently hidden. */
+        hidden = true;
         init() {
             this.node.classList.add('noname-popup');
             // block DOM events behind the pane
@@ -598,21 +610,20 @@
     }
 
     class Dialog extends Popup {
-        constructor() {
-            super(...arguments);
-            /** Locate at center. */
-            this.center = true;
-            /** Don't close when clicking blank area. */
-            this.temp = false;
-            /** Dialog caption. */
-            this.caption = this.pane.addCaption('', true);
-            /** Dialog text. */
-            this.text = this.pane.addText('');
-            /** Dialog buttons. */
-            this.buttons = this.pane.add('bar');
-            /** Name of the button clicked. */
-            this.result = null;
-        }
+        /** Use <noname-popup> as tag. */
+        static tag = 'popup';
+        /** Locate at center. */
+        center = true;
+        /** Don't close when clicking blank area. */
+        temp = false;
+        /** Dialog caption. */
+        caption = this.pane.addCaption('', true);
+        /** Dialog text. */
+        text = this.pane.addText('');
+        /** Dialog buttons. */
+        buttons = this.pane.add('bar');
+        /** Name of the button clicked. */
+        result = null;
         init() {
             super.init();
             this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
@@ -641,39 +652,34 @@
             }
         }
     }
-    /** Use <noname-popup> as tag. */
-    Dialog.tag = 'popup';
 
     class Lobby extends Component {
-        constructor() {
-            super(...arguments);
-            /** Sidebar for configurations. */
-            this.sidebar = this.ui.create('sidebar', this.node);
-            /** Player seats. */
-            this.seats = this.ui.createElement('seats', this.node);
-            /** Toggles for mode configuration. */
-            this.configToggles = new Map();
-            /** Toggles that show or hide based on other toggles. */
-            this.configDynamicToggles = new Map();
-            /** Toggles for hero packs. */
-            this.heroToggles = new Map();
-            /** Toggles for card packs. */
-            this.cardToggles = new Map();
-            /** Trying to connect to server. */
-            this.connecting = false;
-            /** Trying to exit. */
-            this.exiting = false;
-            /** Players in this seats. */
-            this.players = [];
-            /** Button to toggle spectating. */
-            this.spectateButton = this.ui.createElement('widget.button');
-            /** Container of spectators. */
-            this.spectateDock = this.ui.createElement('dock');
-            /** Button to choose hero. */
-            this.heroButton = this.ui.createElement('widget.button');
-            /** Container of chosen heros. */
-            this.heroDock = this.ui.createElement('dock');
-        }
+        /** Sidebar for configurations. */
+        sidebar = this.ui.create('sidebar', this.node);
+        /** Player seats. */
+        seats = this.ui.createElement('seats', this.node);
+        /** Toggles for mode configuration. */
+        configToggles = new Map();
+        /** Toggles that show or hide based on other toggles. */
+        configDynamicToggles = new Map();
+        /** Toggles for hero packs. */
+        heroToggles = new Map();
+        /** Toggles for card packs. */
+        cardToggles = new Map();
+        /** Trying to connect to server. */
+        connecting = false;
+        /** Trying to exit. */
+        exiting = false;
+        /** Players in this seats. */
+        players = [];
+        /** Button to toggle spectating. */
+        spectateButton = this.ui.createElement('widget.button');
+        /** Container of spectators. */
+        spectateDock = this.ui.createElement('dock');
+        /** Button to choose hero. */
+        heroButton = this.ui.createElement('widget.button');
+        /** Container of chosen heros. */
+        heroDock = this.ui.createElement('dock');
         init() {
             this.app.arena.node.appendChild(this.node);
             this.client.listeners.sync.add(this);
@@ -982,16 +988,13 @@
     }
 
     class Sidebar extends Component {
-        constructor() {
-            super(...arguments);
-            // header text
-            this.header = this.ui.createElement('caption', this.node);
-            // pane container
-            this.pane = this.ui.create('pane', this.node);
-            // pane footer
-            this.footer = this.ui.createElement('caption.footer', this.node);
-        }
+        // header text
+        header = this.ui.createElement('caption', this.node);
         ;
+        // pane container
+        pane = this.ui.create('pane', this.node);
+        // pane footer
+        footer = this.ui.createElement('caption.footer', this.node);
         init() {
             // header with text and back button
             this.pane.node.classList.add('scrolly');
@@ -1016,17 +1019,14 @@
     }
 
     class Arena extends Component {
-        constructor() {
-            super(...arguments);
-            /** Layout mode. */
-            this.layout = 0;
-            /** Player that is under control. */
-            this.viewport = 0;
-            /** Card container. */
-            this.cards = this.ui.createElement('cards');
-            /** Player container. */
-            this.players = this.ui.createElement('players');
-        }
+        /** Layout mode. */
+        layout = 0;
+        /** Player that is under control. */
+        viewport = 0;
+        /** Card container. */
+        cards = this.ui.createElement('cards');
+        /** Player container. */
+        players = this.ui.createElement('players');
         init() {
             this.app.arena = this;
             this.app.node.appendChild(this.node);
@@ -1071,21 +1071,18 @@
     }
 
     class Player extends Component {
-        constructor() {
-            super(...arguments);
-            /** Player background. */
-            this.background = this.ui.createElement('background', this.node);
-            /** Main hero image. */
-            this.heroImage = this.ui.createElement('image', this.background);
-            /** Vice hero image. */
-            this.viceImage = this.ui.createElement('image.vice', this.background);
-            /** Container of name content. */
-            this.content = this.ui.createElement('content', this.node);
-            /** Main hero name. */
-            this.heroName = this.ui.createElement('caption', this.content);
-            /** Vice hero name. */
-            this.viceName = this.ui.createElement('caption.vice', this.content);
-        }
+        /** Player background. */
+        background = this.ui.createElement('background', this.node);
+        /** Main hero image. */
+        heroImage = this.ui.createElement('image', this.background);
+        /** Vice hero image. */
+        viceImage = this.ui.createElement('image.vice', this.background);
+        /** Container of name content. */
+        content = this.ui.createElement('content', this.node);
+        /** Main hero name. */
+        heroName = this.ui.createElement('caption', this.content);
+        /** Vice hero name. */
+        viceName = this.ui.createElement('caption.vice', this.content);
         init() {
             this.node.classList.add('hero-hidden');
             this.node.classList.add('vice-hidden');
@@ -1106,15 +1103,12 @@
     }
 
     class Button extends Component {
-        constructor() {
-            super(...arguments);
-            // background circle image
-            this.background = this.ui.createElement('background', this.node);
-            // background colored image
-            this.image = this.ui.createElement('image', this.background);
-            // text container
-            this.content = this.ui.createElement('content', this.node);
-        }
+        // background circle image
+        background = this.ui.createElement('background', this.node);
+        // background colored image
+        image = this.ui.createElement('image', this.background);
+        // text container
+        content = this.ui.createElement('content', this.node);
         $caption(caption) {
             this.content.innerHTML = '';
             const str1 = this.ui.createElement('caption');
@@ -1130,29 +1124,30 @@
     }
 
     class Gallery extends Component {
-        constructor() {
-            super(...arguments);
-            /** Page container. */
-            this.pages = this.ui.createElement('pages', this.node);
-            /** Page indicator */
-            this.indicator = this.ui.createElement('indicator', this.node);
-            /** Number of pages. */
-            this.pageCount = 0;
-            /** Rendered pages. */
-            this.rendered = new Set();
-            /** Gallery items. */
-            this.items = [];
-            /** Index of current page. */
-            this.currentPage = -1;
-            /** Cache of item number per page. */
-            this.currentSize = null;
-            /** Device can scroll horizontally. */
-            this.horizontal = false;
-            /** Target page after multiple wheel input. */
-            this.targetPage = null;
-            /** Clear target page after 0.5s without input. */
-            this.scrollTimeout = 0;
-        }
+        /** Page container. */
+        pages = this.ui.createElement('pages', this.node);
+        /** Page indicator */
+        indicator = this.ui.createElement('indicator', this.node);
+        /** Number of rows. */
+        nrows;
+        /** Number of nodes in a row. */
+        ncols;
+        /** Number of pages. */
+        pageCount = 0;
+        /** Rendered pages. */
+        rendered = new Set();
+        /** Gallery items. */
+        items = [];
+        /** Index of current page. */
+        currentPage = -1;
+        /** Cache of item number per page. */
+        currentSize = null;
+        /** Device can scroll horizontally. */
+        horizontal = false;
+        /** Target page after multiple wheel input. */
+        targetPage = null;
+        /** Clear target page after 0.5s without input. */
+        scrollTimeout = 0;
         /** Render page when needed. */
         renderPage(i) {
             const page = this.pages.childNodes[i];
@@ -1355,15 +1350,14 @@
     }
 
     class Input extends Component {
-        constructor() {
-            super(...arguments);
-            // icon in <input>
-            this.icon = this.ui.createElement('icon');
-            // callback when blur or pressed enter
-            this.callback = null;
-            // callback when clicking icon
-            this.onicon = null;
-        }
+        // <input> element
+        input;
+        // icon in <input>
+        icon = this.ui.createElement('icon');
+        // callback when blur or pressed enter
+        callback = null;
+        // callback when clicking icon
+        onicon = null;
         init() {
             this.input = document.createElement('input');
             this.node.appendChild(this.input);
@@ -1421,11 +1415,8 @@
     }
 
     class Pane extends Component {
-        constructor() {
-            super(...arguments);
-            /** Pane width for text alignment. */
-            this.width = null;
-        }
+        /** Pane width for text alignment. */
+        width = null;
         /** Section title. */
         addSection(content) {
             const node = this.ui.createElement('section', this.node);
@@ -1493,21 +1484,22 @@
     }
 
     class SplashBar extends Component {
-        constructor() {
-            super(...arguments);
-            this.buttons = {
-                /** Clear cached files and reload. */
-                reset: this.ui.create('button'),
-                /** Refresh page. */
-                refresh: this.ui.create('button'),
-                /** Workshop button. */
-                workshop: this.ui.create('button'),
-                /** Hub button. */
-                hub: this.ui.create('button'),
-                /** Settings button. */
-                settings: this.ui.create('button')
-            };
-        }
+        /** Use tag <noname-bar>. */
+        static tag = 'bar';
+        /** Reference to Splash. */
+        splash;
+        buttons = {
+            /** Clear cached files and reload. */
+            reset: this.ui.create('button'),
+            /** Refresh page. */
+            refresh: this.ui.create('button'),
+            /** Workshop button. */
+            workshop: this.ui.create('button'),
+            /** Hub button. */
+            hub: this.ui.create('button'),
+            /** Settings button. */
+            settings: this.ui.create('button')
+        };
         init() {
             // update button styles
             const buttons = [
@@ -1564,19 +1556,20 @@
             this.splash?.settings.open();
         }
     }
-    /** Use tag <noname-bar>. */
-    SplashBar.tag = 'bar';
 
     class SplashGallery extends Gallery {
-        constructor() {
-            super(...arguments);
-            /** Gallery has no boundary. */
-            this.overflow = true;
-            /** Single row. */
-            this.nrows = 1;
-            /** Default window width. */
-            this.width = 900;
-        }
+        /** Use tag <noname-gallery>. */
+        static tag = 'gallery';
+        /** Reference to Splash. */
+        splash;
+        /** Gallery has no boundary. */
+        overflow = true;
+        /** Single row. */
+        nrows = 1;
+        /** Default window width. */
+        width = 900;
+        /** Extension index. */
+        index;
         async init() {
             const margin = parseInt(this.app.css.app['splash-margin']);
             this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
@@ -1683,8 +1676,6 @@
             return entry;
         }
     }
-    /** Use tag <noname-gallery>. */
-    SplashGallery.tag = 'gallery';
 
     const version = '2.0.0dev1';
     const config = {
@@ -1708,7 +1699,7 @@
     */
     const hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
 
-    /** Deep copy object. */
+    /** Deep assign object. */
     /** Split string with `:`. */
     function split(msg, delimiter = ':') {
         const idx = msg.indexOf(delimiter);
@@ -1721,23 +1712,28 @@
     }
 
     class SplashHub extends Popup {
-        constructor() {
-            super(...arguments);
-            /** Portrait sized popup. */
-            this.size = 'portrait';
-            /** Room widgets. */
-            this.rooms = new Map();
-            /** Room widget container. */
-            this.roomGroup = this.ui.createElement('rooms.hidden');
-            /** Caption container. */
-            this.caption = this.ui.createElement('caption.hidden');
-            /** nickname input */
-            this.nickname = this.ui.create('input');
-            /** address input */
-            this.address = this.ui.create('input');
-            /** Popup for avatar selection. */
-            this.avatarSelector = null;
-        }
+        /** Use tag <noname-popup>. */
+        static tag = 'popup';
+        /** Portrait sized popup. */
+        size = 'portrait';
+        /** Room widgets. */
+        rooms = new Map();
+        /** Number of online clients. */
+        numSection;
+        /** Room widget container. */
+        roomGroup = this.ui.createElement('rooms.hidden');
+        /** Caption container. */
+        caption = this.ui.createElement('caption.hidden');
+        /** Avatar image. */
+        avatarImage;
+        /** nickname input */
+        nickname = this.ui.create('input');
+        /** address input */
+        address = this.ui.create('input');
+        /** Mode gallery for reference to extension index. */
+        gallery;
+        /** Popup for avatar selection. */
+        avatarSelector = null;
         create(splash) {
             // nickname, avatar and this address
             this.addInfo();
@@ -1985,21 +1981,18 @@
             }
         }
     }
-    /** Use tag <noname-popup>. */
-    SplashHub.tag = 'popup';
 
     class SplashRoom extends Component {
-        constructor() {
-            super(...arguments);
-            /** Avatar image. */
-            this.avatar = this.ui.createElement('image.avatar', this.node);
-            /** Mode name. */
-            this.caption = this.ui.createElement('caption', this.node);
-            /** Status text. */
-            this.status = this.ui.createElement('span', this.node);
-            /** Nickname text. */
-            this.nickname = this.ui.createElement('span.nickname', this.node);
-        }
+        /** Use <noname-widget> as tag */
+        static tag = 'widget';
+        /** Avatar image. */
+        avatar = this.ui.createElement('image.avatar', this.node);
+        /** Mode name. */
+        caption = this.ui.createElement('caption', this.node);
+        /** Status text. */
+        status = this.ui.createElement('span', this.node);
+        /** Nickname text. */
+        nickname = this.ui.createElement('span.nickname', this.node);
         setup([name, np, npmax, [nickname, avatar], state]) {
             this.ui.setImage(this.avatar, avatar);
             this.caption.innerHTML = name;
@@ -2008,23 +2001,20 @@
             this.nickname.innerHTML = `<noname-image></noname-image>${nickname}`;
         }
     }
-    /** Use <noname-widget> as tag */
-    SplashRoom.tag = 'widget';
 
     class SplashSettings extends Popup {
-        constructor() {
-            super(...arguments);
-            /** Portrait sized popup. */
-            this.size = 'portrait';
-            /** Currently rotating music nodes. */
-            this.rotating = null;
-            /** Animation of this.rotating. */
-            this.rotatingAnimation = null;
-            /** Gallery column number. */
-            this.ncols = 3;
-            /** All galleries. */
-            this.galleries = new Set();
-        }
+        /** Use tag <noname-popup>. */
+        static tag = 'popup';
+        /** Portrait sized popup. */
+        size = 'portrait';
+        /** Currently rotating music nodes. */
+        rotating = null;
+        /** Animation of this.rotating. */
+        rotatingAnimation = null;
+        /** Gallery column number. */
+        ncols = 3;
+        /** All galleries. */
+        galleries = new Set();
         create(splash) {
             this.onopen = () => {
                 for (const gallery of this.galleries) {
@@ -2278,23 +2268,18 @@
             }
         }
     }
-    /** Use tag <noname-popup>. */
-    SplashSettings.tag = 'popup';
 
     class Splash extends Component {
-        constructor() {
-            super(...arguments);
-            // gallery of modes
-            this.gallery = this.ui.create('splash-gallery');
-            // bottom toolbar
-            this.bar = this.ui.create('splash-bar');
-            // settings menu
-            this.settings = this.ui.create('splash-settings');
-            // hub menu
-            this.hub = this.ui.create('splash-hub');
-            // currently hidden
-            this.hidden = true;
-        }
+        // gallery of modes
+        gallery = this.ui.create('splash-gallery');
+        // bottom toolbar
+        bar = this.ui.create('splash-bar');
+        // settings menu
+        settings = this.ui.create('splash-settings');
+        // hub menu
+        hub = this.ui.create('splash-hub');
+        // currently hidden
+        hidden = true;
         init() {
             // create mode selection gallery
             this.gallery.splash = this;
@@ -2337,15 +2322,16 @@
     }
 
     class Toggle extends Component {
-        constructor() {
-            super(...arguments);
-            /** Caption text. */
-            this.span = this.ui.createElement('span', this.node);
-            /** Disabled choices. */
-            this.disabledChoices = new Set();
-            /** Requires confirmation when toggling to a value. */
-            this.confirm = new Map();
-        }
+        /** Caption text. */
+        span = this.ui.createElement('span', this.node);
+        /** Switcher text. */
+        text;
+        /** Choices. */
+        choices;
+        /** Disabled choices. */
+        disabledChoices = new Set();
+        /** Requires confirmation when toggling to a value. */
+        confirm = new Map();
         setup(caption, onclick, choices) {
             this.span.innerHTML = caption;
             if (choices) {
@@ -2430,63 +2416,48 @@
 
     /** Callback for dom events. */
     class Binding {
-        constructor() {
-            // current offset
-            this.offset = null;
-            // maximium offset
-            this.movable = null;
-            // move callback for pointermove
-            this.onmove = null;
-            // move callback for pointermove outside the range
-            this.onoff = null;
-            // move callback for pointerup
-            this.onmoveend = null;
-            // click callback for pointerup
-            this.onclick = null;
-            // callback for pointerdown
-            this.ondown = null;
-        }
+        // current offset
+        offset = null;
+        // maximium offset
+        movable = null;
+        // move callback for pointermove
+        onmove = null;
+        // move callback for pointermove outside the range
+        onoff = null;
+        // move callback for pointerup
+        onmoveend = null;
+        // click callback for pointerup
+        onclick = null;
+        // callback for pointerdown
+        ondown = null;
     }
     class UI {
-        constructor(client) {
-            /** Current zoom level. */
-            this.zoom = 1;
-            // temperoary disable event trigger after pointerup to prevent unintended clicks
-            this.dispatched = false;
-            /** Bindings for DOM events. */
-            this.bindings = new Map();
-            // clicking[0]: element that is clicked
-            // clicking[1]: location of pointerdown
-            // clicking[2]: started by a touch event
-            this.clicking = null;
-            // moving[0]: element that is moved
-            // moving[1]: location of pointerdown
-            // moving[2]: initial transform of target element when pointerdown is fired
-            // moving[3]: return value of the binding.onmove
-            // moving[4]: started by a touch event
-            this.moving = null;
-            this.client = client;
-            // wait for document.body to load
-            if (document.readyState === 'loading') {
-                this.ready = new Promise(resolve => {
-                    document.addEventListener('DOMContentLoaded', resolve);
-                });
-            }
-            else {
-                this.ready = Promise.resolve();
-            }
-            this.ready.then(() => {
-                document.body.addEventListener('touchmove', e => this.pointerMove(e.touches[0], true), { passive: true });
-                document.body.addEventListener('touchend', () => this.pointerEnd(true), { passive: true });
-                document.body.addEventListener('touchcancel', () => this.pointerCancel(true), { passive: true });
-                if (this.client.platform !== 'Android') {
-                    document.body.addEventListener('mousemove', e => this.pointerMove(e, false), { passive: true });
-                    document.body.addEventListener('mouseup', () => this.pointerEnd(false), { passive: true });
-                    document.body.addEventListener('mouseleave', () => this.pointerCancel(false), { passive: true });
-                }
-                this.app = this.create('app');
-            });
-        }
+        /** App width. */
+        width;
+        /** App height. */
+        height;
+        /** Current zoom level. */
+        zoom = 1;
+        /** Client object. */
+        client;
+        /** Resolved when ready. */
+        ready;
+        /** Root component. */
+        app;
+        // temperoary disable event trigger after pointerup to prevent unintended clicks
+        dispatched = false;
+        /** Bindings for DOM events. */
+        bindings = new Map();
+        // clicking[0]: element that is clicked
+        // clicking[1]: location of pointerdown
+        // clicking[2]: started by a touch event
+        clicking = null;
+        // moving[0]: element that is moved
+        // moving[1]: location of pointerdown
+        // moving[2]: initial transform of target element when pointerdown is fired
+        // moving[3]: return value of the binding.onmove
+        // moving[4]: started by a touch event
+        moving = null;
         // get the location of mouse or touch event
         locate(e) {
             return {
@@ -2590,6 +2561,29 @@
             }
             this.clicking = null;
             this.moving = null;
+        }
+        constructor(client) {
+            this.client = client;
+            // wait for document.body to load
+            if (document.readyState === 'loading') {
+                this.ready = new Promise(resolve => {
+                    document.addEventListener('DOMContentLoaded', resolve);
+                });
+            }
+            else {
+                this.ready = Promise.resolve();
+            }
+            this.ready.then(() => {
+                document.body.addEventListener('touchmove', e => this.pointerMove(e.touches[0], true), { passive: true });
+                document.body.addEventListener('touchend', () => this.pointerEnd(true), { passive: true });
+                document.body.addEventListener('touchcancel', () => this.pointerCancel(true), { passive: true });
+                if (this.client.platform !== 'Android') {
+                    document.body.addEventListener('mousemove', e => this.pointerMove(e, false), { passive: true });
+                    document.body.addEventListener('mouseup', () => this.pointerEnd(false), { passive: true });
+                    document.body.addEventListener('mouseleave', () => this.pointerCancel(false), { passive: true });
+                }
+                this.app = this.create('app');
+            });
         }
         /** Create new component. */
         create(tag, parent = null, id = null) {
@@ -2790,40 +2784,42 @@
      * Executor of worker commands.
      */
     class Client {
+        /** Client version. */
+        version = version;
+        /** Worker object. */
+        connection = null;
+        /** Service worker. */
+        registration = null;
+        /** User identifier. */
+        uid;
+        /** ID of current stage. */
+        sid = 0;
+        /** IndexedDB manager. */
+        db = new Database();
+        /** Component manager. */
+        ui = new UI(this);
+        /** Debug mode */
+        debug = false;
+        /** Components synced with the worker. */
+        components = new Map();
+        /** Event listeners. */
+        listeners = {
+            // connection status change
+            sync: new Set(),
+            // document resize
+            resize: new Set(),
+            // back button pressed (Android)
+            history: new Set(),
+            // keyboard event
+            key: new Set(),
+            // stage change
+            stage: new Set()
+        };
+        /**  UITicks waiting for dispatch. */
+        ticks = [];
+        /** Timestamp of the last full UI load. */
+        loaded = 0;
         constructor() {
-            /** Client version. */
-            this.version = version;
-            /** Worker object. */
-            this.connection = null;
-            /** Service worker. */
-            this.registration = null;
-            /** ID of current stage. */
-            this.sid = 0;
-            /** IndexedDB manager. */
-            this.db = new Database();
-            /** Component manager. */
-            this.ui = new UI(this);
-            /** Debug mode */
-            this.debug = false;
-            /** Components synced with the worker. */
-            this.components = new Map();
-            /** Event listeners. */
-            this.listeners = {
-                // connection status change
-                sync: new Set(),
-                // document resize
-                resize: new Set(),
-                // back button pressed (Android)
-                history: new Set(),
-                // keyboard event
-                key: new Set(),
-                // stage change
-                stage: new Set()
-            };
-            /**  UITicks waiting for dispatch. */
-            this.ticks = [];
-            /** Timestamp of the last full UI load. */
-            this.loaded = 0;
             // get user ID
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {

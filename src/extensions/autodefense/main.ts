@@ -2,7 +2,6 @@ import type { SGS } from '../sgs/sgs';
 
 export default <SGS>{
     mode: {
-        ruleset: 'sgs',
         name: '塔防',
         np: [1, 2, 3, 4],
         content() {
@@ -17,5 +16,6 @@ export default <SGS>{
             }
         }
     },
-    tags: ['autochess!']
+    tags: ['autochess!'],
+    inherit: 'autochess'
 }

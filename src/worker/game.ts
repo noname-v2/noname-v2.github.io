@@ -1,6 +1,6 @@
 import { Stage } from './stage';
 import { Link } from './link';
-import { freeze, access, split } from '../utils';
+import { apply, freeze, access, split } from '../utils';
 import type { StageCallback } from './stage';
 import type { Worker, ClientMessage, UITick } from './worker';
 import type { Extension } from './extension';
@@ -57,7 +57,7 @@ export class Game {
     #arena!: Link;
 
     /** Array of packages that define ruleset (priority: high -> low). */
-    #ruleset = <string[]>[];
+    #ruleset = <{[key: string]: any}>{};
 
     /** Game state.
      * 0: waiting
@@ -163,18 +163,29 @@ export class Game {
         });
 
         // load extensions
-        Promise.all(content[1].map(async pack => {
-            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+        const load = async (pack: string) => {
+            const ext = (await import(`../extensions/${pack}/main.js`)).default;
             this.#extensions.set(pack, ext);
-        })).then(async () => {
-            // add ruleset based on reference order
+        };
+
+        Promise.all(content[1].map(load)).then(async () => {
+            // included rulesets
+            const inc: string[] = [];
             let mode = this.#mode;
             while (mode) {
-                if (this.#ruleset.includes(mode)) {
+                if (inc.includes(mode)) {
                     break;
                 }
-                this.#ruleset.push(mode);
+                if (!this.#extensions.has(mode)) {
+                    await load(mode);
+                }
+                inc.unshift(mode);
                 mode = this.#extensions.get(mode)?.inherit as string;
+            }
+
+            // add ruleset based on reference order
+            for (const name of inc) {
+                apply(this.#extensions.get(name)!.ruleset ?? {}, this.#ruleset);
             }
 
             // start game
@@ -205,36 +216,30 @@ export class Game {
      * <extname>:<path>/<section>: from an extension
      */
     getRule(path: string): any {
+        let target: any;
         if (path[0] === '#') {
             // get ruleset
+            target = this.#ruleset;
             path = path.slice(1);
-            for (const name of this.#ruleset) {
-                const rule = this.getRule(name + ':ruleset.' + path);
-                if (rule !== null) {
-                    return rule;
-                }
-            }
         }
         else {
             // get the content of an extension
-            const [name, content] = split(path);
-            const ext = this.#extensions.get(name);
-            if (ext) {
-                const [keys, section] = content.split('/');
-                const rule = access(ext, keys);
-                if (section === '') {
-                    return rule.content ?? null;
-                }
-                else if (typeof section === 'string') {
-                    return rule.contents[section] ?? null;
-                }
-                else {
-                    return rule ?? null;
-                }
-            }
-            else {
-                return null;
-            }
+            let name;
+            [name, path] = split(path);
+            target = this.#extensions.get(name);
+        }
+
+        // access rule
+        const [keys, section] = path.split('/');
+        const rule = access(target, keys);
+        if (section === '') {
+            return rule?.content ?? null;
+        }
+        else if (typeof section === 'string') {
+            return rule?.contents[section] ?? null;
+        }
+        else {
+            return rule ?? null;
         }
     }
 
@@ -262,7 +267,7 @@ export class Game {
     backup() {
         //////
         return new Promise<void>(resolve => {
-
+            resolve();
         });
     }
 
@@ -311,14 +316,6 @@ export class Game {
 
     /** Set stage data (called by Stage). */
     #setData(stageID: number | null, data: {[key: string]: any}) {
-        // make data savable as string
-        const flatten = this.getRule('#data.flatten');
-        if (flatten) {
-            for (const key in data) {
-                data[key] = flatten(data[key]);
-            }
-        }
-
         if (this.#ticks.length === 0) {
             // directly add to history if no UITick is scheduled
             this.#pushData(stageID, data);

@@ -1,6 +1,5 @@
 var main = {
     mode: {
-        ruleset: 'sgs',
         name: '对弈',
         np: 2,
         content() {
@@ -15,7 +14,8 @@ var main = {
             }
         }
     },
-    tags: ['autochess!']
+    tags: ['autochess!'],
+    inherit: 'autochess'
 };
 
 export default main;

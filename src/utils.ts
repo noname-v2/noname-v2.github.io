@@ -1,4 +1,4 @@
-/** Deep copy object. */
+/** Deep assign object. */
 export function apply(from: {[key: string]: any}, to: {[key: string]: any}) {
     for (const key in from) {
         if (from[key] === null) {
@@ -14,17 +14,6 @@ export function apply(from: {[key: string]: any}, to: {[key: string]: any}) {
     return to;
 }
 
-/** Access key of a nested object. */
-export function access(obj: any, keys: string) {
-    for (const key of keys.split('.')) {
-        obj = obj[key] ?? null;
-        if (obj === null) {
-            break;
-        }
-    }
-    return obj;
-}
-
 /** Deep freeze object. */
 export function freeze(obj: any) {
     const propNames = Object.getOwnPropertyNames(obj);
@@ -35,6 +24,19 @@ export function freeze(obj: any) {
         }
     }
     return Object.freeze(obj);
+}
+
+/** Access key of a nested object. */
+export function access(obj: any, keys: string) {
+    if (keys && obj) {
+        for (const key of keys.split('.')) {
+            obj = obj[key] ?? null;
+            if (obj === null) {
+                break;
+            }
+        }
+    }
+    return obj ?? null;
 }
 
 /** Split string with `:`. */

@@ -2,7 +2,6 @@ import type { SGS } from '../sgs/sgs';
 
 export default <SGS>{
     mode: {
-        ruleset: 'sgs',
         name: '欢乐',
         np: 4,
         content() {
@@ -17,5 +16,6 @@ export default <SGS>{
             }
         }
     },
-    tags: ['swap']
+    tags: ['swap'],
+    inherit: 'sgs'
 }

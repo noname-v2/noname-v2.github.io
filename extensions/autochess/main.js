@@ -1,6 +1,5 @@
 var main = {
     mode: {
-        ruleset: 'sgs',
         name: '战棋',
         np: [4, 6, 8],
         content() {
@@ -17,7 +16,8 @@ var main = {
     },
     heropack: '战棋标准',
     cardpack: '战棋标准',
-    tags: ['autochess!']
+    tags: ['autochess!'],
+    inherit: 'sgs'
 };
 
 export default main;

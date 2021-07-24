@@ -774,7 +774,6 @@ const skill = {
 
 var main = {
     mode: {
-        ruleset: 'sgs',
         name: '国战',
         np: [2, 3, 4, 5, 6, 7, 8],
         content() {
@@ -796,7 +795,8 @@ var main = {
     heropack: '国战标准',
     cardpack: '国战标准',
     tags: ['guess-side', 'double-hidden!'],
-    hero, card, skill
+    hero, card, skill,
+    inherit: 'sgs'
 };
 
 export default main;

@@ -1,6 +1,5 @@
 var main = {
     mode: {
-        ruleset: 'sgs',
         name: '欢乐',
         np: 4,
         content() {
@@ -15,7 +14,8 @@ var main = {
             }
         }
     },
-    tags: ['swap']
+    tags: ['swap'],
+    inherit: 'sgs'
 };
 
 export default main;

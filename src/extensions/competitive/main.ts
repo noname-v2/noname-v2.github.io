@@ -2,7 +2,6 @@ import type { SGS } from '../sgs/sgs';
 
 export default <SGS>{
     mode: {
-        ruleset: 'sgs',
         name: '竞技',
         np: [4, 6, 8],
         content() {
@@ -15,7 +14,8 @@ export default <SGS>{
             createPlayers() {
                 console.log(this.game.packs);
             }
-        },
-        tags: ['leader']
-    }
+        }
+    },
+    tags: ['leader'],
+    inherit: 'identity'
 }

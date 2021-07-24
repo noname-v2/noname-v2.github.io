@@ -2,9 +2,22 @@
     'use strict';
 
     class Database {
+        /** indexedDB object. */
+        db;
+        /** Get, set or delete database entry. */
+        transact(name, cmd, key, value) {
+            return new Promise(resolve => {
+                const mode = cmd === 'get' ? 'readonly' : 'readwrite';
+                const store = this.db.transaction(name, mode).objectStore(name);
+                const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
+                request.onsuccess = () => resolve(request.result ?? null);
+            });
+        }
+        /** Cache for synthronous database. */
+        cache = new Map();
+        /** Resolved when ready. */
+        ready;
         constructor() {
-            /** Cache for synthronous database. */
-            this.cache = new Map();
             // open database
             const request = indexedDB.open('noname_v2', 2);
             const timeout = setTimeout(() => window.location.reload(), 3000); // workaround for Safari indexedDB problem
@@ -42,15 +55,6 @@
                         }
                     };
                 };
-            });
-        }
-        /** Get, set or delete database entry. */
-        transact(name, cmd, key, value) {
-            return new Promise(resolve => {
-                const mode = cmd === 'get' ? 'readonly' : 'readwrite';
-                const store = this.db.transaction(name, mode).objectStore(name);
-                const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
-                request.onsuccess = () => resolve(request.result ?? null);
             });
         }
         /** Get value of synchronous database entry. */
