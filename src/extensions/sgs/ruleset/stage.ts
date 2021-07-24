@@ -8,7 +8,7 @@ export const stage = <Collection>{
     },
     main: {
         async content() {
-            await this.getRule().apply(this);
+            await this.game.getRule(this.path).call(this);
         }
     },
     after: {

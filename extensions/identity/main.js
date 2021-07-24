@@ -1,6 +1,5 @@
 var main = {
     mode: {
-        ruleset: 'sgs',
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
         content() {
@@ -32,7 +31,8 @@ var main = {
         },
         stage: {}
     },
-    tags: ['guess-side', 'leader']
+    tags: ['guess-side', 'leader'],
+    inherit: 'sgs'
 };
 
 export default main;

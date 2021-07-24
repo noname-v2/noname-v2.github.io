@@ -9,7 +9,7 @@ export const game = <Collection>{
         contents: {
             createLobby() {
                 const lobby = this.game.create('lobby');
-                this.results.set('lobbyID', lobby.id);
+                this.data.lobby = lobby;
 
                 // get names of hero packs and card packs
                 const heropacks = {} as any;
@@ -39,7 +39,7 @@ export const game = <Collection>{
                 }
 
                 // configuration for player number
-                const np = this.getRule(this.game.mode + ':mode').np;
+                const np = this.game.getRule(this.game.mode + ':mode').np;
                 let npmax: number;
                 if (typeof np === 'number') {
                     this.game.config.np = np;
@@ -66,12 +66,12 @@ export const game = <Collection>{
             },
             awaitStart() {
                 // monitor configuration change and await game start
-                const lobby = this.game.links.get(this.parent!.lobbyID)!;
+                const lobby = this.parent.data.lobby;
                 lobby.owner = this.game.uid;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
-                lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
-                lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
+                lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
+                lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
                 lobby.monitor('updateLobby');
                 lobby.await();
             },
@@ -125,13 +125,13 @@ export const game = <Collection>{
                 }
                 else if (type === 'hero') {
                     // enable or disable a heropack
-                    this.game.disabledHeropacks[val ? 'delete' : 'add'](key);
-                    lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
+                    this.game.banned.heropacks[val ? 'delete' : 'add'](key);
+                    lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
                 }
                 else if (type === 'card') {
                     // enable or disable a cardpack
-                    this.game.disabledCardpacks[val ? 'delete' : 'add'](key);
-                    lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
+                    this.game.banned.cardpacks[val ? 'delete' : 'add'](key);
+                    lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
                 }
             },
             updatePeer(peer, val: string) {
@@ -146,9 +146,8 @@ export const game = <Collection>{
             },
             cleanUp() {
                 // remove lobby and disable further configuration change
-                const lobby = this.game.links.get(this.parent!.lobbyID)!;
-                lobby.unlink();
-                this.game.freeze();
+                this.parent.data.lobby.unlink();
+                this.game.start();
             },
             createGame() {
                 

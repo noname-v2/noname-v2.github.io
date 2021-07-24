@@ -28,7 +28,7 @@ const stage = {
     },
     main: {
         async content() {
-            await this.getRule().apply(this);
+            await this.game.getRule(this.path).call(this);
         }
     },
     after: {
@@ -45,15 +45,15 @@ const game = {
         },
         contents: {
             createLobby() {
-                const lobby = this.create('lobby');
-                this.lobbyID = lobby.id;
+                const lobby = this.game.create('lobby');
+                this.data.lobby = lobby;
                 // get names of hero packs and card packs
                 const heropacks = {};
                 const cardpacks = {};
                 const configs = {};
                 for (const name of this.game.packs) {
-                    const heropack = this.getRule(name, 'heropack');
-                    const cardpack = this.getRule(name, 'cardpack');
+                    const heropack = this.game.getRule(name + ':heropack');
+                    const cardpack = this.game.getRule(name + ':cardpack');
                     if (heropack) {
                         heropacks[name] = heropack;
                     }
@@ -62,7 +62,7 @@ const game = {
                     }
                 }
                 // get configurations in sidebar
-                const fullConfigs = this.getRule('#config');
+                const fullConfigs = this.game.getRule('#config');
                 for (const name in fullConfigs) {
                     configs[name] = {};
                     configs[name].name = fullConfigs[name].name;
@@ -73,7 +73,7 @@ const game = {
                     this.game.config[name] ??= fullConfigs[name].init;
                 }
                 // configuration for player number
-                const np = this.getRule(this.game.mode + ':mode').np;
+                const np = this.game.getRule(this.game.mode + ':mode').np;
                 let npmax;
                 if (typeof np === 'number') {
                     this.game.config.np = np;
@@ -99,12 +99,12 @@ const game = {
             },
             awaitStart() {
                 // monitor configuration change and await game start
-                const lobby = this.game.links.get(this.parent.lobbyID);
+                const lobby = this.parent.data.lobby;
                 lobby.owner = this.game.uid;
                 lobby.set('mode', this.game.mode);
                 lobby.set('config', this.game.config);
-                lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
-                lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
+                lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
+                lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
                 lobby.monitor('updateLobby');
                 lobby.await();
             },
@@ -133,7 +133,7 @@ const game = {
                     else {
                         // make sure np in range
                         if (key === 'np') {
-                            const np = this.getRule(this.game.mode + ':mode').np;
+                            const np = this.game.getRule(this.game.mode + ':mode').np;
                             if (!Array.isArray(np) || val < np[0] || val > np[np.length - 1]) {
                                 return;
                             }
@@ -155,13 +155,13 @@ const game = {
                 }
                 else if (type === 'hero') {
                     // enable or disable a heropack
-                    this.game.disabledHeropacks[val ? 'delete' : 'add'](key);
-                    lobby.set('disabledHeropacks', Array.from(this.game.disabledHeropacks));
+                    this.game.banned.heropacks[val ? 'delete' : 'add'](key);
+                    lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
                 }
                 else if (type === 'card') {
                     // enable or disable a cardpack
-                    this.game.disabledCardpacks[val ? 'delete' : 'add'](key);
-                    lobby.set('disabledCardpacks', Array.from(this.game.disabledCardpacks));
+                    this.game.banned.cardpacks[val ? 'delete' : 'add'](key);
+                    lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
                 }
             },
             updatePeer(peer, val) {
@@ -176,9 +176,8 @@ const game = {
             },
             cleanUp() {
                 // remove lobby and disable further configuration change
-                const lobby = this.game.links.get(this.parent.lobbyID);
-                lobby.unlink();
-                this.game.freeze();
+                this.parent.data.lobby.unlink();
+                this.game.start();
             },
             createGame() {
             }

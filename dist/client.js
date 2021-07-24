@@ -1707,9 +1707,11 @@
      * reload: Full list of rooms.
     */
     const hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
-    /** Split message. */
-    function split(msg) {
-        const idx = msg.indexOf(':');
+
+    /** Deep copy object. */
+    /** Split string with `:`. */
+    function split(msg, delimiter = ':') {
+        const idx = msg.indexOf(delimiter);
         if (idx === -1) {
             return [msg, ''];
         }

@@ -87,8 +87,12 @@ export class Stage {
         return this.#step >= 6;
     }
     
-    get parent(): Stage | null {
-        return this.#location ? this.#location[0] : null;
+    get parent(): Stage {
+        return this.#location ? this.#location[0] : this;
+    }
+
+    get path() {
+        return this.#path;
     }
 
     /** Get all siblings. */
@@ -351,7 +355,8 @@ export class Stage {
     }
 
     /** Get child stages based on current step. */
-    #getChildren(location=this.#getLocation()) {
+    #getChildren(location?: StageLocation) {
+        location ??= this.#getLocation()!;
         if (location === 'before') {
             return this.#before;
         }

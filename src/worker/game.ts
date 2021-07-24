@@ -183,7 +183,7 @@ export class Game {
         });
 
         // handle return message from client
-        self.onmessage = ({data}) => this.#dispatch(data);
+        self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
     }
 
     create(tag: string) {
@@ -311,6 +311,14 @@ export class Game {
 
     /** Set stage data (called by Stage). */
     #setData(stageID: number | null, data: {[key: string]: any}) {
+        // make data savable as string
+        const flatten = this.getRule('#data.flatten');
+        if (flatten) {
+            for (const key in data) {
+                data[key] = flatten(data[key]);
+            }
+        }
+
         if (this.#ticks.length === 0) {
             // directly add to history if no UITick is scheduled
             this.#pushData(stageID, data);
