@@ -1,11 +1,18 @@
 import { Stage } from './stage';
 import { Link } from './link';
-import { apply, freeze, access, split } from '../utils';
-import type { StageLocation, StageCallback } from './stage';
+import { freeze, access, split } from '../utils';
+import type { StageCallback } from './stage';
 import type { Worker, ClientMessage, UITick } from './worker';
 import type { Extension } from './extension';
 
 export type HistoryItem = string | null | {[key: string]: any} | [string, any];
+
+/** UI update or data update.
+ * [, , HistoryItem]: UI update
+ * [number, {}]: stage data update
+ * [null, {}]: game data update
+ */
+type HistoryEntry = [number | null, number, HistoryItem] | [number | null, {[key: string]: any}];
 
 export class Game {
     /** Root game stage. */
@@ -20,8 +27,11 @@ export class Game {
     /** Game mode. */
     #mode: string;
 
-    /** Mode configuration. */
+    /** Game configuration. */
     #config: {[key: string]: any};
+
+    /** Game data. */
+    #data: {[key: string]: any};
 
     /** Hero packages. */
     #packs: Set<string>;
@@ -56,11 +66,11 @@ export class Game {
     */
     #state = 0;
 
-    /** UI updates. */
-    #history = <[number | null, number, HistoryItem][]>[];
+    /** Ticked history items with timestamp. */
+    #history = <[number, HistoryEntry][]>[];
 
-    /** Number of ticked history entries. */
-    #historyCount = 0;
+    /** Entries to be ticked. */
+    #ticks = <HistoryEntry[]>[];
 
     /** Number of links created. */
     #linkCount = 0;
@@ -126,6 +136,11 @@ export class Game {
         return this.#worker.getPeers({playing: false});
     }
 
+    /** Game data accessor. */
+    get data() {
+        return this.#data;
+    }
+
     constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
         this.#worker = worker;
         this.#mode = content[0];
@@ -134,6 +149,18 @@ export class Game {
         this.#banned.cardpacks = new Set(content[3]);
         this.#config = content[4];
         this.#worker.info = content[5];
+
+        // create getter and setter of game data
+        this.#data = new Proxy(<{[key: string]: any}>{}, {
+            get: (data, name: string) => {
+                return data[name] ?? null;
+            },
+            set: (data, key: string, val: any) => {
+                data[key] = val;
+                this.#setData(null, {[key]: val});
+                return true;
+            }
+        });
 
         // load extensions
         Promise.all(content[1].map(async pack => {
@@ -168,7 +195,7 @@ export class Game {
 
     createStage(name: string, data?: {[key: string]: any}) {
         const id = ++this.#stageCount;
-        const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#setStage);
+        const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#setStage, this.#setData);
         this.#stages.set(id, stage);
         return stage;
     }
@@ -270,16 +297,39 @@ export class Game {
 
     /** Add component update (called by Link). */
     #update(id: number, item: HistoryItem) {
-        if (this.#historyCount === this.#history.length) {
+        if (this.#ticks.length === 0) {
             // schedule a UITick if no pending UITick exists
             setTimeout(() => this.#tick());
         }
-        this.#history.push([this.activeStage?.id ?? null, id, item]);
+        this.#ticks.push([this.activeStage?.id ?? null, id, item]);
     }
 
     /** Set active stage (called by Stage). */
     #setStage(content?: [Stage, StageCallback]) {
         this.#active = content ?? null;
+    }
+
+    /** Set stage data (called by Stage). */
+    #setData(stageID: number | null, data: {[key: string]: any}) {
+        if (this.#ticks.length === 0) {
+            // directly add to history if no UITick is scheduled
+            this.#pushData(stageID, data);
+        }
+        else {
+            this.#ticks.push([stageID, data]);
+        }
+    }
+
+    /** Add data update to history. */
+    #pushData(stageID: number | null, data: {[key: string]: any}) {
+        const lastEntry = this.#history[this.#history.length - 1];
+        if (lastEntry[1].length === 2 && lastEntry[1][0] === stageID) {
+            // merge consecutive data updates into 1 object
+            Object.assign(lastEntry[1][1], data);
+        }
+        else {
+            this.#history.push([Date.now(), [stageID, data]]);
+        }
     }
 
     /** Create a UITick from this.#history. */
@@ -289,34 +339,46 @@ export class Game {
         let propChanges: {[key: string]: {[key: string]: any}} = {};
         let calls: {[key: string]: [string, any][]} = {};
 
-        while (this.#historyCount < this.#history.length) {
-            const [sid, id, item] = this.#history[this.#historyCount];
-            if (sid !== stageID) {
-                if (stageID !== -1) {
-                    // split UITick with stage change
-                    this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
-                    tagChanges = {}
-                    propChanges = {};
-                    calls = {};
-                }
-                stageID = sid;
+        // save current timestamp in this.#history
+        const now = Date.now();
 
-                // merge history entries into a UITick
+        for (const entry of this.#ticks) {
+            if (entry.length === 3) {
+                const [sid, id, item] = entry;
+
+                // split UITick by stage change
+                if (sid !== stageID) {
+                    if (stageID !== -1) {
+                        this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
+                        tagChanges = {}
+                        propChanges = {};
+                        calls = {};
+                    }
+                    stageID = sid;
+                }
+
+                // merge history entries into a single UITick
                 if (Array.isArray(item)) {
                     calls[id] ??= [];
                     calls[id].push(item);
                 }
                 else if (item && typeof item === 'object') {
                     propChanges[id] ??= {};
-                    apply(propChanges[id], item);
+                    Object.assign(propChanges[id], item);
                 }
                 else {
                     tagChanges[id] = item;
                 }
+
+                this.#history.push([now, entry]);
             }
-            this.#historyCount++;
+            else {
+                this.#pushData(...entry);
+            }
         }
+
         this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
+        this.#ticks.length = 0;
     }
 
     /** Dispatch message from client. */

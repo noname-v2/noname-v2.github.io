@@ -18,7 +18,18 @@ export interface Extension {
     skill?: Collection;
     card?: Collection;
     hero?: Collection;
-    ruleset?: {[key: string]: Collection};
+    ruleset?: {
+        stage?: {
+            before?: Section;
+            main?: Section;
+            after?: Section;
+        };
+        data?: {
+            flatten?: (data: {[key: string]: any}) => {[key: string]: any};
+            restore?: (data: {[key: string]: any}) => {[key: string]: any};
+        };
+        [key: string]: Collection | undefined
+    };
     inherit?: string;
     heropack?: string;
     cardpack?: string;

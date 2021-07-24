@@ -3,7 +3,9 @@ import type { Worker } from './worker';
 
 export type StageLocation = 'before' | 'main' | 'after';
 export type StageCallback = (id: number, result: any, done: boolean) => void;
+
 type SetStage = (this: Game, content?: [Stage, StageCallback]) => void;
+type SetData = (this: Game, stageID: number | null, data: {[key: string]: any}) => void;
 
 export class Stage {
     /** Stage ID. */
@@ -26,11 +28,11 @@ export class Stage {
 
     /** Current step of execution. Action:
      * 0: generate this.before
-     * 1: execute this.before
-     * 2: execute main function and update components
-     * 3: execute this.main
+     * 1: execute this.before[]
+     * 2: execute main function and update await user input
+     * 3: execute this.main[]
      * 4: generate this.after
-     * 5: execute this.after
+     * 5: execute this.after[]
      * 6: no action (done)
     */
     #step = 0;
@@ -66,7 +68,7 @@ export class Stage {
     /** Make self as game.activateStage. */
     #setStage: SetStage;
 
-    /** Auxiliary data. */
+    /** Stage data. */
     #data: {[key: string]: any};
 
     get id() {
@@ -107,15 +109,32 @@ export class Stage {
         return this.#game;
     }
 
+    /** Game data accessor. */
+    get data() {
+        return this.#data;
+    }
+
     constructor(id: number, path: string, data: {[key: string]: any},
-        game: Game, worker: Worker, setStage: SetStage) {
+        game: Game, worker: Worker, setStage: SetStage, setData: SetData) {
         this.#id = id;
         this.#path = path;
         this.#game = game;
-        this.#data = data;
         this.#worker = worker;
         this.#setStage = setStage;
+        
+        // create getter and setter of stage data
+        this.#data = new Proxy(data, {
+            get: (data, key: string) => {
+                return data[key] ?? null;
+            },
+            set: (data, key: string, val: any) => {
+                data[key] = val;
+                setData.apply(game, [this.id, {[key]: val}]);
+                return true;
+            }
+        });
 
+        // start game if this is rootStage
         if (id === 1) {
             setTimeout(() => this.#run());
         }
