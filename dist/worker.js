@@ -231,6 +231,7 @@
                 }
                 // await return value from client
                 if (!this.#resolved) {
+                    console.log(this.results);
                     await new Promise(resolve => this.#resolve = resolve);
                     this.#resolve = null;
                 }
@@ -282,7 +283,7 @@
         }
         /** Handle value returned from client. */
         #dispatch(id, result, done) {
-            if (this.#step !== 3) {
+            if (this.#step !== 2) {
                 return;
             }
             if (done) {

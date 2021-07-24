@@ -332,7 +332,7 @@ export class Stage {
 
     /** Handle value returned from client. */
     #dispatch(id: number, result: any, done: boolean) {
-        if (this.#step !== 3) {
+        if (this.#step !== 2) {
             return;
         }
         if (done) {
