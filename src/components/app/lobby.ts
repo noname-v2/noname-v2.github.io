@@ -1,4 +1,5 @@
 import { Component, Toggle, Player } from '../../components';
+import type { Config } from '../../worker/extension';
 
 export class Lobby extends Component {
     /** Sidebar for configurations. */
@@ -104,8 +105,8 @@ export class Lobby extends Component {
     $pane(configs: any) {
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
-            const config = configs.configs[name];
-            const toggle = this.sidebar.pane.addToggle(config.name, result => {
+            const config: Config = configs.configs[name];
+            const toggle = this.sidebar.pane.addToggle(config.name!, result => {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
@@ -114,7 +115,7 @@ export class Lobby extends Component {
                 else {
                     this.yield(['config', name, result]);
                 }
-            }, config.options);
+            }, config.options!);
             if (config.confirm) {
                 for (const [key, val] of config.confirm) {
                     toggle.confirm.set(key, val);

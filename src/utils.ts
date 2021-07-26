@@ -1,21 +1,35 @@
-/** Deep assign object. */
-export function apply(from: {[key: string]: any}, to: {[key: string]: any}) {
+/** Plain object. */
+export type Dict<T=any> = {[key: string]: T};
+
+/** Deep copy plain object. */
+export function copy(from: Dict) {
+    const to: Dict = {};
     for (const key in from) {
-        if (from[key] === null) {
-            delete to[key];
+        if (from[key]?.constructor === Object) {
+            to[key] = copy(from[key])
         }
-        else if (typeof from[key] === 'object' && typeof to[key] === 'object' && to[key]) {
-            apply(from[key], to[key]);
-        }
-        else {
+        else if (from[key] !== null && from[key] !== undefined) {
             to[key] = from[key];
         }
     }
     return to;
 }
 
+/** Merge two objects. */
+export function apply<T extends Dict = Dict>(to: T, from: Dict): T {
+    for (const key in from) {
+        if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+            apply(to[key], from[key])
+        }
+        else if (from[key] !== null && from[key] !== undefined) {
+            (to as Dict)[key] = from[key];
+        }
+    }
+    return to;
+}
+
 /** Deep freeze object. */
-export function freeze(obj: any) {
+export function freeze(obj: Dict) {
     const propNames = Object.getOwnPropertyNames(obj);
     for (const name of propNames) {
         const value = obj[name];
@@ -27,7 +41,7 @@ export function freeze(obj: any) {
 }
 
 /** Access key of a nested object. */
-export function access(obj: any, keys: string) {
+export function access(obj: Dict, keys: string) {
     if (keys && obj) {
         for (const key of keys.split('.')) {
             obj = obj[key] ?? null;

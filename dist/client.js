@@ -112,18 +112,21 @@
     }
 
     class Component {
-        /** Properties synced with worker. */
-        props = new Map();
-        /** Component ID (for worker-managed components). */
-        id;
         /** HTMLElement tag  name */
         static tag = null;
+        /** Properties synced with worker. */
+        #props = new Map();
+        /** Component ID (for worker-managed components). */
+        #id;
+        /** Client object. */
+        #client;
         /** Root element. */
         node;
-        /** Client object. */
-        client;
         /** Resolved */
         ready;
+        get client() {
+            return this.#client;
+        }
         get db() {
             return this.client.db;
         }
@@ -138,8 +141,8 @@
         }
         /** Create node. */
         constructor(client, tag, id) {
-            this.client = client;
-            this.id = id;
+            this.#id = id;
+            this.#client = client;
             this.node = client.ui.createElement(tag);
             this.ready = Promise.resolve().then(() => this.init());
         }
@@ -148,7 +151,7 @@
         ;
         /** Property getter. */
         get(key) {
-            return this.props.get(key) ?? null;
+            return this.#props.get(key) ?? null;
         }
         /** Property setter. */
         set(key, val) {
@@ -162,7 +165,7 @@
             for (const key in items) {
                 const oldVal = this.get(key);
                 const newVal = items[key] ?? null;
-                newVal === null ? this.props.delete(key) : this.props.set(key, newVal);
+                newVal === null ? this.#props.delete(key) : this.#props.set(key, newVal);
                 const hook = this['$' + key];
                 if (typeof hook === 'function') {
                     hooks.push([hook, this, newVal, oldVal]);
@@ -177,17 +180,17 @@
         }
         /** Send update to worker (component must be monitored). */
         yield(result) {
-            if (this.id === null) {
+            if (this.#id === null) {
                 throw ('element is has no ID');
             }
-            this.client.send(this.id, result, false);
+            this.client.send(this.#id, result, false);
         }
         /** Send return value to worker (component must be monitored). */
         return(result) {
-            if (this.id === null) {
+            if (this.#id === null) {
                 throw ('element is has no ID');
             }
-            this.client.send(this.id, result, true);
+            this.client.send(this.#id, result, true);
         }
         /** Remove element. */
         remove() {
@@ -473,7 +476,7 @@
                 // blur arena, splash and other popups
                 this.node.classList.add('popped');
                 for (const [id, popup] of this.popups.entries()) {
-                    if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
+                    if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                         popup.node.classList.add('blurred');
                         blurred.push(id);
                     }
@@ -1706,7 +1709,7 @@
     */
     const hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
 
-    /** Deep assign object. */
+    /** Deep copy plain object. */
     /** Split string with `:`. */
     function split(msg, delimiter = ':') {
         const idx = msg.indexOf(delimiter);
@@ -1945,7 +1948,7 @@
             const interval = setInterval(update, 1000);
             promise.then(val => {
                 clearInterval(interval);
-                if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
+                if (val === true && ws === this.client.connection && ws instanceof WebSocket) {
                     if (this.app.arena) {
                         this.app.arena.faded = true;
                         this.client.clear();
@@ -2827,7 +2830,7 @@
             stage: new Set()
         };
         /** ID of current stage. */
-        #sid = 0;
+        #stageID = 0;
         /**  UITicks waiting for dispatch. */
         #ticks = [];
         /** Timestamp of the last full UI load. */
@@ -2950,7 +2953,7 @@
             this.ui.app.arena = null;
             if (back) {
                 this.ui.app.splash.show();
-                this.#sid = 0;
+                this.#stageID = 0;
             }
         }
         /**
@@ -2960,7 +2963,7 @@
          * @param {...any[]} args - Message content.
          */
         send(id, result, done) {
-            const msg = [this.uid, this.#sid, id, result, done];
+            const msg = [this.uid, this.#stageID, id, result, done];
             if (this.connection instanceof Worker) {
                 this.connection.postMessage(msg);
             }
@@ -2994,10 +2997,10 @@
                     throw ('UI not loaded');
                 }
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
-                if (sid !== null && sid !== this.#sid) {
+                if (sid !== this.#stageID) {
                     this.triggerListeners('stage');
                     this.listeners.stage.clear();
-                    this.#sid = sid;
+                    this.#stageID = sid;
                 }
                 // create new components
                 const newComponents = [];

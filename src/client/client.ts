@@ -48,7 +48,7 @@ export class Client {
     };
 
     /** ID of current stage. */
-    #sid = 0;
+    #stageID = 0;
 
     /**  UITicks waiting for dispatch. */
     #ticks = <UITick[]>[];
@@ -191,7 +191,7 @@ export class Client {
 
         if (back) {
             this.ui.app.splash.show();
-            this.#sid = 0;
+            this.#stageID = 0;
         }
     }
 
@@ -202,7 +202,7 @@ export class Client {
      * @param {...any[]} args - Message content.
      */
     send(id: number, result: any, done: boolean) {
-        const msg = <ClientMessage>[this.uid, this.#sid, id, result, done];
+        const msg = <ClientMessage>[this.uid, this.#stageID, id, result, done];
         if (this.connection instanceof Worker) {
             this.connection.postMessage(msg)
         }
@@ -239,10 +239,10 @@ export class Client {
             }
             
             // clear unfinished function calls (e.g. selectCard / selectTarget)
-            if (sid !== null && sid !== this.#sid) {
+            if (sid !== this.#stageID) {
                 this.triggerListeners('stage');
                 this.listeners.stage.clear();
-                this.#sid = sid;
+                this.#stageID = sid;
             }
 
             // create new components

@@ -1,10 +1,16 @@
-import { card } from './ruleset/card';
-import { player } from './ruleset/player';
-import { stage } from './ruleset/stage';
-import { game } from './ruleset/game';
-import { config } from './ruleset/config';
 import type { SGS } from './sgs';
+import { config } from './config';
+import { trigger } from './tasks/trigger';
+import { loop } from './tasks/loop';
+import { lobby } from './tasks/lobby';
+import { chooseHero } from './tasks/choose-hero';
 
 export default <SGS>{
-    ruleset: { card, player, stage, game, config }
+    mode: {
+        np: 0,
+        config,
+        tasks: {
+            trigger, loop, lobby, chooseHero
+        }
+    }
 }

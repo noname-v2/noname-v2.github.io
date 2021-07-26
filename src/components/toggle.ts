@@ -14,7 +14,7 @@ export class Toggle extends Component {
 	disabledChoices = new Set<string | number>();
 
 	/** Requires confirmation when toggling to a value. */
-	confirm = new Map<string | number | boolean, (string | null)[]>();
+	confirm = new Map<string | number | boolean, [string | null, string?]>();
 
 	setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
 		this.span.innerHTML = caption;
@@ -31,7 +31,7 @@ export class Toggle extends Component {
                 for (const [id, name] of choices) {
                     menu.pane.addOption(name, async () => {
 						if (this.confirm.has(id)) {
-							const [title, content] = <[string?, string?]>this.confirm.get(id);
+							const [title, content] = this.confirm.get(id)!;
 							if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', {content})) {
 								return;
 							}

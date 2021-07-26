@@ -4,15 +4,15 @@ export default <SGS>{
     mode: {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
-        content() {
-            this.add('#game.init/');
-            this.add('createPlayers');
-            this.add('#game.chooseHero/');
-            this.add('#game.loop/');
-        },
-        contents: {
-            createPlayers() {
-                console.log('createPlayers')
+        tasks: {
+            main(Task) {
+                return class extends Task {
+                    main() {
+                        this.addTask('lobby');
+                        this.addTask('chooseHero', {np: 7});
+                        this.addTask('loop');
+                    }
+                }
             }
         }
     },

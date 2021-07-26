@@ -1,7 +1,4 @@
-import type { Game, TickItem } from './game';
-
-/** Reference to private method game.#tick(). */
-type Tick = (this: Game, id: number, item: TickItem) => void;
+import type { Worker } from './worker';
 
 /** A link to a client-side component. */
 export class Link {
@@ -15,17 +12,13 @@ export class Link {
     #props = new Map<string, any>();
 
     /** Reference to Game. */
-    #game: Game;
+    #worker: Worker;
 
-    /** Reference to this.#game.#update */
-    #tick: Tick;
-
-    constructor(id: number, tag: string, game: Game, tick: Tick) {
+    constructor(id: number, tag: string, worker: Worker) {
         this.#id = id;
         this.#tag = tag;
-        this.#game = game;
-        this.#tick = tick;
-        tick.apply(game, [this.#id, tag]);
+        this.#worker = worker;
+        worker.tick(this.#id, tag);
     }
 
     get id() {
@@ -56,27 +49,17 @@ export class Link {
             const val = items[key] ?? null;
             val === null ? this.#props.delete(key) : this.#props.set(key, val);
         }
-        this.#tick.apply(this.#game, [this.#id, items]);
+        this.#worker.tick(this.#id, items);
     }
 
     /** Call a component method. */
     call(method: string, arg?: any) {
-        this.#tick.apply(this.#game, [this.#id, [method, arg]]);
-    }
-
-    /** Monitor the return value of a component call. */
-    monitor(monitor: string) {
-        this.#game.activeStage!.monitor(this.#id, monitor);
-    }
-
-    /** Pause step 3 of active stage until return value is received. */
-    await() {
-        this.#game.activeStage!.await(this.#id);
+        this.#worker.tick(this.#id, [method, arg]);
     }
 
     /** Remove reference to a component. */
     unlink() {
-        this.#tick.apply(this.#game, [this.#id, null]);
+        this.#worker.tick(this.#id, null);
     }
 
     /** Get tag and object of all properties. */

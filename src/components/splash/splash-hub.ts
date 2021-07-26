@@ -265,7 +265,7 @@ export class SplashHub extends Popup {
         const interval = setInterval(update, 1000);
         promise.then(val => {
             clearInterval(interval);
-            if (val === true && Object.is(ws, this.client.connection) && ws instanceof WebSocket) {
+            if (val === true && ws === this.client.connection && ws instanceof WebSocket) {
                 if (this.app.arena) {
                     this.app.arena.faded = true;
                     this.client.clear();

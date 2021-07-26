@@ -1,45 +1,59 @@
 import { Stage } from './stage';
 import { Link } from './link';
-import { apply, freeze, access, split } from '../utils';
-import type { StageCallback } from './stage';
-import type { Worker, ClientMessage, UITick } from './worker';
-import type { Extension } from './extension';
-
-/** One section of a UITick. */
-export type TickItem = string | null | {[key: string]: any} | [string, any];
-
-/** Stage ID, component ID and UITick section. */
-type TickEntry = [number | null, number, TickItem];
+import { copy, apply, freeze, access, Dict } from '../utils';
+import { Task } from './task';
+import { Accessor } from './accessor';
+import type { Worker, UITick } from './worker';
+import type { Extension, Section, Mode } from './extension';
 
 export class Game {
     /** Root game stage. */
-    #rootStage!: Stage;
+    rootStage!: Stage;
 
     /** Current game stage. */
-    #active: [Stage, StageCallback] | null = null;
+    currentStage!: Stage;
 
     /** Links to components. */
-    #links = new Map<number, Link>();
+    links = new Map<number, Link>();
 
     /** Game mode. */
-    #mode: string;
+    mode: Mode;
 
     /** Game configuration. */
-    #config: {[key: string]: any};
+    config: Dict;
 
     /** Game data. */
-    #data: {[key: string]: any} = {};
+    data: Dict = {};
 
     /** Hero packages. */
-    #packs: Set<string>;
+    packs: Set<string>;
 
     /** Banned packages. */
-    #banned = {
+    banned = {
         heropacks: new Set<string>(),
         cardpacks: new Set<string>(),
         heros: new Set<string>(),
         cards: new Set<string>(),
     };
+
+    /** Arena link. */
+    arena!: Link;
+
+    /** Game progress.
+     * 0: waiting
+     * 1: gaming
+     * 2: over
+    */
+    progress = 0;
+
+    /** Currently paused by stage.awaits. */
+    paused = true;
+
+    /** Property and method accessor. */
+    accessor: Accessor;
+
+    /** Worker reference. */
+    #worker: Worker;
 
     /** All created stages. */
     #stages = new Map<number, Stage>();
@@ -47,27 +61,11 @@ export class Game {
     /** Loaded extensions. */
     #extensions = new Map<string, Extension>();
 
-    /** Worker reference. */
-    #worker: Worker;
+    /** Array of packages that define mode tasks (priority: high -> low). */
+    #ruleset: string[] = [];
 
-    /** Arena link. */
-    #arena!: Link;
-
-    /** Array of packages that define ruleset (priority: high -> low). */
-    #ruleset = <{[key: string]: any}>{};
-
-    /** Game state.
-     * 0: waiting
-     * 1: gaming
-     * 2: over
-    */
-    #state = 0;
-
-    /** Ticked history items with timestamp. */
-    #history = <[number, TickItem][]>[];
-
-    /** Entries to be ticked. */
-    #ticks = <TickEntry[]>[];
+    /** Map of task classes. */
+    #taskClasses = new Map<string, typeof Task>();
 
     /** Number of links created. */
     #linkCount = 0;
@@ -75,164 +73,93 @@ export class Game {
     /** Number of stages created. */
     #stageCount = 0;
 
-    get arena() {
-        return this.#arena;
-    }
-
-    get mode() {
-        return this.#mode;
-    }
-
-    get config() {
-        return this.#config;
-    }
-
-    get packs() {
-        return this.#packs;
-    }
-
-    get banned() {
-        return this.#banned;
-    }
-
-    get rootStage() {
-        return this.#rootStage;
-    }
-
-    get activeStage() {
-        return this.#active ? this.#active[0] : null;
-    }
-
-    get links() {
-        return this.#links;
-    }
-
-    get uid() {
-        return this.#worker.uid;
-    }
-
-    get state() {
-        return this.#state;
-    }
-
-    /** Connected clients. */
-    get peers() {
-        if (this.#worker.peers) {
-            return Array.from(this.#worker.peers.values());
-        }
-        return null;
-    }
-
-    /** Connected players. */
-    get peerPlayers() {
-        return this.#worker.getPeers({playing: true});
-    }
-
-    /** Connected spectators. */
-    get peerSpectators() {
-        return this.#worker.getPeers({playing: false});
-    }
-
-    /** Game data accessor. */
-    get data() {
-        return this.#data;
-    }
-
-    constructor(content: [string, string[], string[], string[], {[key: string]: any}, [string, string]], worker: Worker) {
+    constructor(content: [string, string[], string[], string[], Dict, [string, string]], worker: Worker) {
         this.#worker = worker;
-        this.#mode = content[0];
-        this.#packs = new Set(content[1]);
-        this.#banned.heropacks = new Set(content[2]);
-        this.#banned.cardpacks = new Set(content[3]);
-        this.#config = content[4];
+        this.mode = {};
+        this.packs = new Set(content[1]);
+        this.banned.heropacks = new Set(content[2]);
+        this.banned.cardpacks = new Set(content[3]);
+        this.config = content[4];
         this.#worker.info = content[5];
+        this.accessor = new Accessor(this, worker);
 
         // load extensions
         const load = async (pack: string) => {
-            const ext = (await import(`../extensions/${pack}/main.js`)).default;
+            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
             this.#extensions.set(pack, ext);
         };
 
         Promise.all(content[1].map(load)).then(async () => {
-            // included rulesets
-            const inc: string[] = [];
-            let mode = this.#mode;
+            // index packages that define mode tasks
+            let mode = content[0];
             while (mode) {
-                if (inc.includes(mode)) {
+                if (this.#ruleset.includes(mode)) {
                     break;
                 }
                 if (!this.#extensions.has(mode)) {
                     await load(mode);
                 }
-                inc.unshift(mode);
-                mode = this.#extensions.get(mode)?.inherit as string;
+                this.#ruleset.unshift(mode);
+                mode = this.#extensions.get(mode)?.mode?.inherit as string;
             }
 
-            // add ruleset based on reference order
-            for (const name of inc) {
-                apply(this.#extensions.get(name)!.ruleset ?? {}, this.#ruleset);
+            // merge mode objects from extensions and create task constructors
+            for (const name of this.#ruleset) {
+                const mode: Mode = copy(this.#extensions.get(name)?.mode ?? {});
+                for (const task in mode.tasks) {
+                    const cls = this.#taskClasses.get(task) ?? Task;
+                    this.#taskClasses.set(task, mode.tasks[task](cls));
+                }
+                apply(this.mode, mode);
             }
+            delete this.mode.tasks;
+            delete this.mode.components;
 
             // start game
-            this.#rootStage = this.createStage(`${this.mode}:mode/`);
-            this.#arena = this.create('arena');
+            this.rootStage = this.currentStage = this.createStage('main');
+            this.arena = this.create('arena');
+            this.loop();
         });
-
-        // handle return message from client
-        self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
     }
 
+    /** Create a link. */
     create(tag: string) {
         const id = ++this.#linkCount;
-        const link = new Link(id, tag, this, this.#tick);
+        const link = new Link(id, tag, this.#worker);
         this.links.set(id, link);
         return link;
     }
 
-    createStage(name: string, data?: {[key: string]: any}) {
+    /** Create a stage. */
+    createStage(path: string, data?: Dict) {
         const id = ++this.#stageCount;
-        const stage = new Stage(id, name, data ?? {}, this, this.#worker, this.#focus);
+        const stage = new Stage(id, path, data ?? {}, this);
         this.#stages.set(id, stage);
         return stage;
     }
 
-    /** Get the function based on string. Format:
-     * #<path>/<section>: from this.ruleset
-     * <extname>:<path>/<section>: from an extension
-     */
-    getRule(path: string): any {
-        let target: any;
-        if (path[0] === '#') {
-            // get ruleset
-            target = this.#ruleset;
-            path = path.slice(1);
-        }
-        else {
-            // get the content of an extension
-            let name;
-            [name, path] = split(path);
-            target = this.#extensions.get(name);
-        }
+    /** Access extension content. */
+    getExtension(path: string): any {
+        const [ext, keys] = path.split(':');
+        return access(this.#extensions.get(ext)!, keys) ?? null;
+    }
 
-        // access rule
-        const [keys, section] = path.split('/');
-        const rule = access(target, keys);
-        if (section === '') {
-            return rule?.content ?? null;
+    /** Get or create task constructor. */
+    getTask(path: string): typeof Task {
+        if (!this.#taskClasses.has(path)) {
+            // get task from extension sections
+            const section: Section = this.getExtension(path);
+            const cls = section.inherit ? this.getTask(section.inherit) : Task;
+            this.#taskClasses.set(path, section.task!(cls));
         }
-        else if (typeof section === 'string') {
-            return rule?.contents[section] ?? null;
-        }
-        else {
-            return rule ?? null;
-        }
+        return this.#taskClasses.get(path)!;
     }
 
     /** Update room info for idle clients. */
-    updateRoom(push=true) {
+    syncRoom(push=true) {
         const room = JSON.stringify([
             // mode name
-            this.getRule(this.mode + ':mode').name,
+            this.mode.name,
             // joined players
             this.#worker.getPeers({playing: true})?.length ?? 1,
             // number of players in a game
@@ -240,7 +167,7 @@ export class Game {
             // nickname and avatar of owner
             this.#worker.info,
             // game state
-            this.state
+            this.progress
         ]);
         if (push) {
             this.#worker.connection?.send('edit:' + room);
@@ -259,105 +186,28 @@ export class Game {
     /** Get a UITick of all links. */
     pack(): UITick {
         const tags = <{[key: string]: string}>{};
-        const props = <{[key: string]: {[key: string]: any}}>{};
+        const props = <{[key: string]: Dict}>{};
         for (const [uid, link] of this.links.entries()) {
             [tags[uid], props[uid]] = link.flatten();
         }
-        return [this.activeStage?.id || 0, tags, props, {}];
+        return [this.currentStage.id, tags, props, {}];
     }
 
     /** Mark game as started and disallow changing configuration. */
     start() {
-        freeze(this.#config);
-        freeze(this.#packs);
-        freeze(this.#banned);
-        this.#state = 1;
-        this.updateRoom();
+        freeze(this.mode);
+        freeze(this.config);
+        freeze(this.packs);
+        freeze(this.banned);
+        this.progress = 1;
+        this.syncRoom();
     }
 
-    /** Connect to remote hub. */
-    connect(url: string) {
-        this.#worker.connect(url);
-    }
-
-    /** Disconnect from remote hub. */
-    disconnect() {
-        this.#worker.disconnect();
-    }
-
-    /** Add component update (called by Link). */
-    #tick(id: number, item: TickItem) {
-        if (this.#ticks.length === 0) {
-            // schedule a UITick if no pending UITick exists
-            setTimeout(() => this.#commit());
-        }
-        this.#ticks.push([this.activeStage?.id ?? null, id, item]);
-    }
-
-    /** Set active stage (called by Stage). */
-    #focus(content?: [Stage, StageCallback]) {
-        this.#active = content ?? null;
-    }
-
-    /** Create UITick(s) from this.#history. */
-    #commit() {
-        let stageID: number | null = -1;
-        let tagChanges: {[key: string]: string | null} = {};
-        let propChanges: {[key: string]: {[key: string]: any}} = {};
-        let calls: {[key: string]: [string, any][]} = {};
-
-        // save current timestamp in this.#history
-        const now = Date.now();
-
-        for (const entry of this.#ticks) {
-            const [sid, id, item] = entry;
-
-            // split UITick by stage change
-            if (sid !== stageID) {
-                if (stageID !== -1) {
-                    this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
-                    tagChanges = {}
-                    propChanges = {};
-                    calls = {};
-                }
-                stageID = sid;
-            }
-
-            // merge history entries into a single UITick
-            if (Array.isArray(item)) {
-                calls[id] ??= [];
-                calls[id].push(item);
-            }
-            else if (item && typeof item === 'object') {
-                propChanges[id] ??= {};
-                Object.assign(propChanges[id], item);
-            }
-            else {
-                tagChanges[id] = item;
-            }
-
-            this.#history.push([now, entry]);
-        }
-
-        this.#worker.broadcast([stageID, tagChanges, propChanges, calls]);
-        this.#ticks.length = 0;
-    }
-
-    /** Dispatch message from client. */
-    async #dispatch(data: ClientMessage) {
-        try {
-            const [uid, sid, id, result, done] = data;
-            if (id < 0) {
-                // reload UI upon error
-                this.#worker.send(uid, this.pack());
-            }
-            else if (this.#active && sid === this.#active[0].id && this.links.get(id)?.owner === uid) {
-                // send result to listener
-                this.#active[1].apply(this.#active[0], [id, result, done]);
-            }
-        }
-        catch (e) {
-            console.log(e);
+    /** Execute stages. */
+    async loop() {
+        if (this.paused && this.progress !== 2) {
+            this.paused = false;
+            while (await this.rootStage.next());
         }
     }
 }

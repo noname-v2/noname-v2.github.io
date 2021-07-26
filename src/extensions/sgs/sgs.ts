@@ -1,10 +1,12 @@
-import type { Extension, Collection, Section } from '../../worker/extension';
-export type { Collection } from '../../worker/extension';
+import type { Extension, Section } from '../../worker/extension';
+import type { Dict } from '../../utils';
 
-interface ModeSection extends Section {
-    np: number | number[];
-}
+export type { Config } from '../../worker/extension';
+export type { Link } from '../../worker/link';
+export type { Task } from '../../worker/task';
+export type { Dict } from '../../utils';
 
+/** SGS hero definition. */
 interface HeroSection extends Section {
     gender: string;
     faction: string;
@@ -13,6 +15,8 @@ interface HeroSection extends Section {
     subpack?: string;
 }
 
+
+/** SGS card definition. */
 interface CardSection extends Section {
     type: string;
     subtype?: string;
@@ -25,24 +29,19 @@ interface CardSection extends Section {
     distance?: number | [number, number];
 }
 
+/** SGS skill definition. */
 interface SkillSection extends Section {
     trigger?: {[key: string]: string};
 }
 
-export interface HeroCollection extends Collection<HeroSection> {}
+/** Type shortcuts. */
+export type HeroCollection = Dict<HeroSection>;
+export type CardCollection = Dict<CardSection>;
+export type SkillCollection = Dict<SkillSection>;
+export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
 
-export interface CardCollection extends Collection<CardSection> {}
-
-export interface SkillCollection extends Collection<SkillSection> {}
-
-export interface Pile {
-    [key: string]: {
-        [key: string]: (number | [number, ...string[]])[];
-    }
-}
-
+/** Basic SGS extension structure. */
 export interface SGS extends Extension {
-    mode?: ModeSection;
     hero?: HeroCollection;
     card?: CardCollection;
     skill?: SkillCollection;

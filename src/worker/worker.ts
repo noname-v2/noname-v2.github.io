@@ -1,13 +1,13 @@
 import { version } from '../version';
 import { Game } from './game';
 import { hub2owner } from '../hub/types';
-import { split } from '../utils';
+import { split, Dict } from '../utils';
 import type { Link } from './link';
 
 /** An update to client side. */
 export type UITick = [
     // stage ID
-    number | null,
+    number,
     // add or delete components
     {[key: string]: string | null},
     // component property updates
@@ -16,9 +16,20 @@ export type UITick = [
     {[key: string]: [string, any][]}
 ];
 
-/** Client-side message */
-export type ClientMessage = [string, number, number, any, boolean];
+/** One section of a UITick. */
+type TickItem = string | null | Dict | [string, any];
 
+/** Stage ID, component ID and UITick section. */
+type TickEntry = [number, number, TickItem];
+
+/** Client-side message.
+ * 0: uid
+ * 1: stage ID
+ * 2: component ID
+ * 3: component return value (from yield() or return())
+ * 4: component return type (true: result from return(), false: result from yield())
+ */
+export type ClientMessage = [string, number, number, any, boolean];
 
 /**
  * Manager of component syncing between client and server.
@@ -39,6 +50,12 @@ export class Worker {
     /** Links of connected clients. */
     peers: Map<string, Link> | null = null;
 
+    /** Ticked history items with timestamp. */
+    #history = <[number, TickItem][]>[];
+
+    /** Entries to be ticked. */
+    #ticks = <TickEntry[]>[];
+
     /** Game object. */
     #game!: Game;
 
@@ -47,8 +64,11 @@ export class Worker {
      */
     constructor() {
         self.onmessage = ({data}: {data: ClientMessage}) => {
-            this.uid = data[0];
-            this.#game = new Game(data[3], this);
+            if (data[1] === 0) {
+                self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
+                this.uid = data[0];
+                this.#game = new Game(data[3], this);
+            }
         }
         (self as any).postMessage('ready');
     }
@@ -94,7 +114,7 @@ export class Worker {
             }
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.updateRoom(false)]));
+            ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.syncRoom(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
@@ -143,7 +163,7 @@ export class Worker {
         // join as player or spectator
         const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
         this.createPeer(uid, info);
-        this.#game.updateRoom();
+        this.#game.syncRoom();
         this.send(uid, this.#game.pack());
     }
 
@@ -153,13 +173,13 @@ export class Worker {
             this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
-            this.#game.updateRoom();
+            this.#game.syncRoom();
         }
     }
 
     /** A remote client sends a response message. */
     resp(msg: string) {
-        (self as any).onmessage({data: JSON.parse(msg)});
+        this.#dispatch(JSON.parse(msg));
     }
 
     /** Create a peer component. */
@@ -176,7 +196,7 @@ export class Worker {
     }
 
     /** Get peers that match certain condition. */
-    getPeers(filter: {[key: string]: any}) {
+    getPeers(filter?: Dict) {
         if (!this.peers) {
             return null;
         }
@@ -194,5 +214,96 @@ export class Worker {
             }
         }
         return peers;
+    }
+
+    /** Add component update (called by Link). */
+    tick(id: number, item: TickItem) {
+        if (this.#ticks.length === 0) {
+            // schedule a UITick if no pending UITick exists
+            setTimeout(() => this.#commit());
+        }
+        this.#ticks.push([this.#game.currentStage.id, id, item]);
+    }
+
+    /** Create UITick(s) from this.#history. */
+    #commit() {
+        let stageID: number | null = -1;
+        let tagChanges: {[key: string]: string | null} = {};
+        let propChanges: {[key: string]: Dict} = {};
+        let calls: {[key: string]: [string, any][]} = {};
+
+        // save current timestamp in this.#history
+        const now = Date.now();
+
+        for (const entry of this.#ticks) {
+            const [sid, id, item] = entry;
+
+            // split UITick by stage change
+            if (sid !== stageID) {
+                if (stageID !== -1) {
+                    this.broadcast([stageID, tagChanges, propChanges, calls]);
+                    tagChanges = {}
+                    propChanges = {};
+                    calls = {};
+                }
+                stageID = sid;
+            }
+
+            // merge history entries into a single UITick
+            if (Array.isArray(item)) {
+                calls[id] ??= [];
+                calls[id].push(item);
+            }
+            else if (item && typeof item === 'object') {
+                propChanges[id] ??= {};
+                Object.assign(propChanges[id], item);
+            }
+            else {
+                tagChanges[id] = item;
+            }
+
+            this.#history.push([now, entry]);
+        }
+
+        this.broadcast([stageID, tagChanges, propChanges, calls]);
+        this.#ticks.length = 0;
+    }
+
+    /** Dispatch message from client. */
+    async #dispatch(data: ClientMessage) {
+        try {
+            const [uid, sid, id, result, done] = data;
+            const stage = this.#game.currentStage;
+            if (id < 0) {
+                // reload UI upon error
+                this.send(uid, this.#game.pack());
+            }
+            else if (sid === stage.id && this.#game.links.get(id)?.owner === uid) {
+                // send result to listener
+                if (done && stage.awaits.has(id)) {
+                    // results: component.return() -> link.await()
+                    const key = stage.awaits.get(id);
+                    if (key) {
+                        stage.results[key] = result;
+                    }
+                    stage.awaits.delete(id);
+                    if (!stage.awaits.size && this.#game.paused) {
+                        this.#game.loop();
+                    }
+                }
+                else if (!done && stage.monitors.has(id)) {
+                    // results: component.yield() -> link.monitor()
+                    const task = stage.task;
+                    const link = this.#game.links.get(id);
+                    if (task && link) {
+                        const method = stage.monitors.get(id)!;
+                        (stage.task as any)[method](result, link);
+                    }
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
     }
 }

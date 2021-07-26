@@ -351,7 +351,7 @@ export class App extends Component {
             // blur arena, splash and other popups
             this.node.classList.add('popped');
             for (const [id, popup] of this.popups.entries()) {
-                if (!Object.is(popup, dialog) && !popup.node.classList.contains('blurred')) {
+                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
                     blurred.push(id);
                 }

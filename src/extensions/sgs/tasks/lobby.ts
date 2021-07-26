@@ -1,74 +1,18 @@
-const config = {
-    online: {
-        name: '联机模式',
-        intro: '允许其他玩家通过主页的联机键加入游戏。',
-        init: false
-    },
-    online_join: {
-        name: '允许中途加入',
-        intro: '允许旁观玩家在游戏过程中加入游戏。',
-        init: true,
-        requires: 'online'
-    },
-    online_timeout: {
-        name: '出牌时限',
-        init: 30,
-        options: [
-            [15, '<span class="mono">15</span>秒'],
-            [30, '<span class="mono">30</span>秒'],
-            [60, '<span class="mono">1</span>分钟'],
-            [120, '<span class="mono">2</span>分钟']
-        ],
-        requires: 'online'
-    },
-    online_specify: {
-        name: '点将',
-        intro: '允许玩家在游戏开始前自由选择武将。',
-        init: false,
-        requires: 'online'
-    },
-    online_mulligan: {
-        name: '手气卡',
-        intro: '游戏开始时玩家可以更换一至两次手牌。',
-        init: 0,
-        options: [
-            [0, '禁用'],
-            [1, '一次'],
-            [2, '两次']
-        ],
-        requires: 'online'
-    },
-    mulligan: {
-        name: '手气卡',
-        intro: '游戏开始时玩家可以更换任意次手牌。',
-        init: false,
-        requires: '!online'
-    }
-};
+import type { Task, Link, Config, Dict } from '../sgs';
 
-function trigger(T) {
+export function lobby(T: typeof Task): typeof Task {
     return class extends T {
-    };
-}
+        lobby!: Link;
 
-function loop(T) {
-    return class extends T {
-        main() {
-            console.log('loop');
-        }
-    };
-}
-
-function lobby(T) {
-    return class extends T {
-        lobby;
         main() {
             const lobby = this.lobby = this.create('lobby');
+
             // get names of hero packs and card packs
-            const heropacks = {};
-            const cardpacks = {};
-            const configs = {};
+            const heropacks: Dict<string> = {};
+            const cardpacks: Dict<string> = {};
+            const configs: Dict<Config> = {};
             Object.assign(configs, this.game.mode.config);
+
             for (const name of this.game.packs) {
                 const heropack = this.getExtension(name + ':heropack');
                 const cardpack = this.getExtension(name + ':cardpack');
@@ -79,9 +23,10 @@ function lobby(T) {
                     cardpacks[name] = cardpack;
                 }
             }
+
             // configuration for player number
-            const np = this.game.mode.np;
-            let npmax;
+            const np = this.game.mode.np!;
+            let npmax: number;
             if (typeof np === 'number') {
                 this.game.config.np = np;
                 npmax = np;
@@ -94,15 +39,17 @@ function lobby(T) {
                     init: npmax
                 };
                 for (const n of np) {
-                    configs.np.options.push([n, `<span class="mono">${n}</span>人`]);
+                    configs.np.options!.push([n, `<span class="mono">${n}</span>人`]);
                 }
                 this.game.config.np ??= npmax;
             }
+
             // create lobby
-            lobby.update({ npmax, pane: { heropacks, cardpacks, configs } });
+            lobby.update({npmax, pane: {heropacks, cardpacks, configs}});
             this.add('awaitStart');
             this.add('cleanUp');
         }
+
         awaitStart() {
             // monitor configuration change and await game start
             const lobby = this.lobby;
@@ -114,11 +61,13 @@ function lobby(T) {
             this.monitor(lobby, 'updateLobby');
             this.await(lobby);
         }
-        updateLobby([type, key, val]) {
+
+        updateLobby([type, key, val]: [string, string, any]) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
                 this.game.config.online = val;
                 this.lobby.set('config', this.game.config);
+
                 // add callback for client operations
                 const peers = this.getPeers();
                 if (peers) {
@@ -145,11 +94,13 @@ function lobby(T) {
                             return;
                         }
                     }
+
                     // game configuration change
                     this.game.config[key] = val;
                     this.lobby.set('config', this.game.config);
+
                     // update seats in the lobby
-                    if (key === 'np') {
+                    if (key === 'np' ) {
                         const players = this.game.playerLinks;
                         if (players && players.length > val) {
                             for (let i = val; i < players.length; i++) {
@@ -171,37 +122,22 @@ function lobby(T) {
                 this.lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
             }
         }
-        updatePeer(val, peer) {
+
+        updatePeer(val: string, peer: Link) {
             if (val === 'spectate' && peer.get('playing')) {
                 peer.set('playing', false);
                 this.game.syncRoom();
             }
-            else if (val === 'play' && !peer.get('playing') && this.game.playerLinks.length < this.game.config.np) {
+            else if (val === 'play' && !peer.get('playing') && this.game.playerLinks!.length < this.game.config.np) {
                 peer.set('playing', true);
                 this.game.syncRoom();
             }
         }
+
         cleanUp() {
             // remove lobby and disable further configuration change
             this.parent.data.lobby.unlink();
             this.game.start();
         }
-    };
-}
-
-function chooseHero(T) {
-    return class extends T {
-    };
-}
-
-var main = {
-    mode: {
-        np: 0,
-        config,
-        tasks: {
-            trigger, loop, lobby, chooseHero
-        }
     }
-};
-
-export default main;
+}
