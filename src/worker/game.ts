@@ -100,7 +100,7 @@ export class Game {
                     await load(mode);
                 }
                 this.#ruleset.unshift(mode);
-                mode = this.#extensions.get(mode)?.mode?.inherit as string;
+                mode = this.#extensions.get(mode)!.mode?.inherit as string;
             }
 
             // merge mode objects from extensions and create task constructors
@@ -148,6 +148,7 @@ export class Game {
     getTask(path: string): typeof Task {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
+            console.log(path)
             const section: Section = this.getExtension(path);
             const cls = section.inherit ? this.getTask(section.inherit) : Task;
             this.#taskClasses.set(path, section.task!(cls));

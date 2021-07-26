@@ -47,12 +47,12 @@ const config = {
 };
 
 function trigger(T) {
-    return class extends T {
+    return class Trigger extends T {
     };
 }
 
 function loop(T) {
-    return class extends T {
+    return class Loop extends T {
         main() {
             console.log('loop');
         }
@@ -60,7 +60,7 @@ function loop(T) {
 }
 
 function lobby(T) {
-    return class extends T {
+    return class Lobby extends T {
         lobby;
         main() {
             const lobby = this.lobby = this.create('lobby');
@@ -70,8 +70,8 @@ function lobby(T) {
             const configs = {};
             Object.assign(configs, this.game.mode.config);
             for (const name of this.game.packs) {
-                const heropack = this.getExtension(name + ':heropack');
-                const cardpack = this.getExtension(name + ':cardpack');
+                const heropack = this.game.getExtension(name + ':heropack');
+                const cardpack = this.game.getExtension(name + ':cardpack');
                 if (heropack) {
                     heropacks[name] = heropack;
                 }
@@ -120,7 +120,7 @@ function lobby(T) {
                 this.game.config.online = val;
                 this.lobby.set('config', this.game.config);
                 // add callback for client operations
-                const peers = this.getPeers();
+                const peers = this.game.getPeers();
                 if (peers) {
                     for (const peer of peers) {
                         this.monitor(peer, 'updatePeer');
@@ -190,7 +190,19 @@ function lobby(T) {
 }
 
 function chooseHero(T) {
-    return class extends T {
+    return class ChooseHero extends T {
+        np;
+        main() {
+            console.log('chooseHero', this.np);
+        }
+    };
+}
+
+function createPlayers(T) {
+    return class ChoosePlayer extends T {
+        main() {
+            console.log('createPlayers');
+        }
     };
 }
 
@@ -199,7 +211,7 @@ var main = {
         np: 0,
         config,
         tasks: {
-            trigger, loop, lobby, chooseHero
+            trigger, loop, lobby, chooseHero, createPlayers
         }
     }
 };

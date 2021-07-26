@@ -1,7 +1,7 @@
 import type { Task, Link, Config, Dict } from '../sgs';
 
 export function lobby(T: typeof Task): typeof Task {
-    return class extends T {
+    return class Lobby extends T {
         lobby!: Link;
 
         main() {
@@ -14,8 +14,8 @@ export function lobby(T: typeof Task): typeof Task {
             Object.assign(configs, this.game.mode.config);
 
             for (const name of this.game.packs) {
-                const heropack = this.getExtension(name + ':heropack');
-                const cardpack = this.getExtension(name + ':cardpack');
+                const heropack = this.game.getExtension(name + ':heropack');
+                const cardpack = this.game.getExtension(name + ':cardpack');
                 if (heropack) {
                     heropacks[name] = heropack;
                 }
@@ -69,7 +69,7 @@ export function lobby(T: typeof Task): typeof Task {
                 this.lobby.set('config', this.game.config);
 
                 // add callback for client operations
-                const peers = this.getPeers();
+                const peers = this.game.getPeers();
                 if (peers) {
                     for (const peer of peers) {
                         this.monitor(peer, 'updatePeer');

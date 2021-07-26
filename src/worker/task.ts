@@ -21,6 +21,7 @@ export class Task {
     constructor(stage: Stage, game: Game) {
         this.#stage = stage;
         this.#game = game;
+        stage.steps.set(this, []);
     }
 
     /** Main function. */

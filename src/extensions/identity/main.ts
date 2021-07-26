@@ -6,17 +6,16 @@ export default <SGS>{
         np: [2, 3, 4, 5, 6, 7, 8],
         tasks: {
             main(Task) {
-                return class extends Task {
+                return class Identity extends Task {
                     main() {
                         this.addTask('lobby');
+                        this.addTask('createPlayers');
                         this.addTask('chooseHero', {np: 7});
                         this.addTask('loop');
                     }
                 }
             }
-        }
-    },
-    ruleset: {
+        },
         config: {
             identity: {
                 name: '选择身份',
@@ -31,10 +30,7 @@ export default <SGS>{
                 requires: '!online'
             }
         },
-        stage: {
-            
-        }
+        inherit: 'sgs'
     },
-    tags: ['guess-side', 'leader'],
-    inherit: 'sgs'
+    tags: ['guess-side', 'leader']
 }

@@ -126,6 +126,11 @@
                 return null;
             }
             this.monitors.clear();
+            // skip trigger stage
+            if (!this.trigger && [0, 1, 4, 5].includes(this.progress)) {
+                this.progress++;
+                return true;
+            }
             const task = this.task;
             if (task) {
                 if (this.progress % 2 === 0) {
@@ -229,6 +234,7 @@
         constructor(stage, game) {
             this.#stage = stage;
             this.#game = game;
+            stage.steps.set(this, []);
         }
         /** Main function. */
         main() { }
@@ -422,7 +428,7 @@
                         await load(mode);
                     }
                     this.#ruleset.unshift(mode);
-                    mode = this.#extensions.get(mode)?.mode?.inherit;
+                    mode = this.#extensions.get(mode).mode?.inherit;
                 }
                 // merge mode objects from extensions and create task constructors
                 for (const name of this.#ruleset) {
@@ -464,6 +470,7 @@
         getTask(path) {
             if (!this.#taskClasses.has(path)) {
                 // get task from extension sections
+                console.log(path);
                 const section = this.getExtension(path);
                 const cls = section.inherit ? this.getTask(section.inherit) : Task;
                 this.#taskClasses.set(path, section.task(cls));

@@ -82,6 +82,12 @@ export class Stage {
         }
         this.monitors.clear();
 
+        // skip trigger stage
+        if (!this.trigger && [0, 1, 4, 5].includes(this.progress)) {
+            this.progress++;
+            return true;
+        }
+
         const task = this.task;
         if (task) {
             if (this.progress % 2 === 0) {
