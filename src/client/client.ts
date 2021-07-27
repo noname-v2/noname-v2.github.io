@@ -2,7 +2,7 @@ import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
 import { Component } from './component';
-import { uid } from '../utils';
+import * as utils from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
@@ -30,6 +30,9 @@ export class Client {
 
     /** Debug mode */
     debug: boolean = false;
+
+    /** Module containing JS utilities. */
+    readonly utils = utils;
 
     /** Components synced with the worker. */
     readonly components = new Map<number, Component>();
@@ -61,7 +64,7 @@ export class Client {
         // get user identifier
         this.db.ready.then(() => {
             if (!this.db.get('uid')) {
-                this.db.set('uid', uid());
+                this.db.set('uid', this.utils.uid());
             }
             (this as any).uid = this.db.get('uid');
         });
@@ -128,15 +131,6 @@ export class Client {
             }
         }
         return null;
-    }
-
-    /** Fetch and parse json file. */
-    readJSON<T>(...args: string[]) {
-        return new Promise<T>(resolve => {
-            fetch(args.join('/')).then(response => {
-                response.json().then(resolve);
-            });
-        });
     }
 
     /** Connect to a game server. */

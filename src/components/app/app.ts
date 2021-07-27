@@ -84,7 +84,7 @@ export class App extends Component {
 
     /** Index assets and load fonts. */
     private async initAssets() {
-        this.assets = await this.client.readJSON('assets/index.json');
+        this.assets = await this.client.utils.readJSON('assets/index.json');
 
         // add fonts
         for (const font in this.assets['font']) {
@@ -142,8 +142,8 @@ export class App extends Component {
         const name = this.db.get('theme');
 
         // fetch current and default theme defination
-        const currentTheme = await this.client.readJSON<any>('assets/theme', name, 'theme.json');
-        const defaultTheme = await this.client.readJSON<any>('assets/theme', 'default', 'theme.json');
+        const currentTheme = await this.client.utils.readJSON<any>('assets/theme', name, 'theme.json');
+        const defaultTheme = await this.client.utils.readJSON<any>('assets/theme', 'default', 'theme.json');
 
         // theme stylesheet
         const sheet = this.themeNode.sheet!;

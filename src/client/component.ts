@@ -1,7 +1,6 @@
 import type { Client } from './client';
 import type { Dict } from '../utils';
 import type { TransitionDuration } from '../components';
-import { sleep } from '../utils';
 
 // type for component constructor
 export type ComponentClass = {tag: string | null, new(client: Client, tag: string, id: number | null): Component};
@@ -110,7 +109,7 @@ export abstract class Component {
 
     /** Delay for a time period. */
     sleep(dur: TransitionDuration) {
-        return sleep(this.app.getTransition(dur) / 1000)
+        return this.client.utils.sleep(this.app.getTransition(dur) / 1000)
     }
 
     /** Remove element. */

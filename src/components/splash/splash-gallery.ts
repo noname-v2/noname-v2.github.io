@@ -40,7 +40,7 @@ export class SplashGallery extends Gallery {
 
 		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
-		const extensions = await this.client.readJSON<string[]>('extensions/extensions.json');
+		const extensions = await this.client.utils.readJSON<string[]>('extensions/extensions.json');
 		const modeNames: Dict<string> ={};
 		const modes: string[] = [];
 

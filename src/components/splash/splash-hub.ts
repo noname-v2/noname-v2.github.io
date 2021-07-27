@@ -2,7 +2,6 @@ import { Popup } from '../popup';
 import { Splash, Dialog, SplashRoom, SplashGallery } from '../../components';
 import { config } from '../../version';
 import { hub2member } from '../../hub/types';
-import { split } from '../../utils';
 
 export class SplashHub extends Popup {
     /** Use tag <noname-popup>. */
@@ -121,7 +120,7 @@ export class SplashHub extends Popup {
 
                 ws.onmessage = ({data}: {data: string}) => {
                     try {
-                        const [method, arg] = split<typeof hub2member[number]>(data);
+                        const [method, arg] = this.client.utils.split<typeof hub2member[number]>(data);
                         if (hub2member.includes(method)) {
                             this[method](arg);
                         }
@@ -192,7 +191,7 @@ export class SplashHub extends Popup {
     }
 
     async reload(msg: string) {
-        const [reason, content] = split(msg);
+        const [reason, content] = this.client.utils.split(msg);
         this.clearRooms();
         this.edit(content);
         if (this.app.arena) {

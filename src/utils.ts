@@ -78,3 +78,12 @@ export function uid() {
         return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
     }).join('');
 }
+
+/** Fetch and parse json file. */
+export function readJSON<T>(...args: string[]) {
+    return new Promise<T>(resolve => {
+        fetch(args.join('/')).then(response => {
+            response.json().then(resolve);
+        });
+    });
+}

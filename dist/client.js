@@ -111,22 +111,6 @@
         }
     }
 
-    /** Deep copy plain object. */
-    /** Split string with `:`. */
-    function split(msg, delimiter = ':') {
-        const idx = msg.indexOf(delimiter);
-        if (idx === -1) {
-            return [msg, ''];
-        }
-        else {
-            return [msg.slice(0, idx), msg.slice(idx + 1)];
-        }
-    }
-    /** Return a promise that resolves after n seconds. */
-    function sleep(n) {
-        return new Promise(resolve => setTimeout(resolve, n * 1000));
-    }
-
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
@@ -212,7 +196,7 @@
         }
         /** Delay for a time period. */
         sleep(dur) {
-            return sleep(this.ui.app.getTransition(dur) / 1000);
+            return this.client.utils.sleep(this.app.getTransition(dur) / 1000);
         }
         /** Remove element. */
         remove() {
@@ -275,7 +259,7 @@
         }
         /** Index assets and load fonts. */
         async initAssets() {
-            this.assets = await this.client.readJSON('assets/index.json');
+            this.assets = await this.client.utils.readJSON('assets/index.json');
             // add fonts
             for (const font in this.assets['font']) {
                 const fontPath = 'assets/font/' + font + '.woff2';
@@ -323,8 +307,8 @@
             // name of current theme (or use default value from defaluts.json)
             const name = this.db.get('theme');
             // fetch current and default theme defination
-            const currentTheme = await this.client.readJSON('assets/theme', name, 'theme.json');
-            const defaultTheme = await this.client.readJSON('assets/theme', 'default', 'theme.json');
+            const currentTheme = await this.client.utils.readJSON('assets/theme', name, 'theme.json');
+            const defaultTheme = await this.client.utils.readJSON('assets/theme', 'default', 'theme.json');
             // theme stylesheet
             const sheet = this.themeNode.sheet;
             // get css rules from theme.json (fallback to default any entry not exist)
@@ -1202,7 +1186,7 @@
         /** Cache of item number per page. */
         currentSize = null;
         /** Device can scroll horizontally. */
-        horizontal = false;
+        horizontal = this.client.mobile;
         /** Target page after multiple wheel input. */
         targetPage = null;
         /** Clear target page after 0.5s without input. */
@@ -1583,7 +1567,7 @@
             else {
                 this.buttons.reset.node.classList.remove('disabled');
                 this.buttons.refresh.node.classList.remove('disabled');
-                if (['iOS', 'Android'].includes(this.client.platform)) {
+                if (this.client.mobile) {
                     this.buttons.refresh.node.style.display = '';
                 }
                 else {
@@ -1635,7 +1619,7 @@
             super.init();
             // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
-            const extensions = await this.client.readJSON('extensions/extensions.json');
+            const extensions = await this.client.utils.readJSON('extensions/extensions.json');
             const modes = [];
             // udpate index.json
             let write = false;
@@ -1851,7 +1835,7 @@
                     };
                     ws.onmessage = ({ data }) => {
                         try {
-                            const [method, arg] = split(data);
+                            const [method, arg] = this.client.utils.split(data);
                             if (hub2member.includes(method)) {
                                 this[method](arg);
                             }
@@ -1916,7 +1900,7 @@
             address.callback = () => this.connect();
         }
         async reload(msg) {
-            const [reason, content] = split(msg);
+            const [reason, content] = this.client.utils.split(msg);
             this.clearRooms();
             this.edit(content);
             if (this.app.arena) {
@@ -2343,7 +2327,7 @@
             this.bar.splash = this;
             this.node.appendChild(this.bar.node);
             // debug mode
-            if (this.client.debug && ['iOS', 'Android'].includes(this.client.platform)) {
+            if (this.client.debug && this.client.mobile) {
                 const script = document.createElement('script');
                 script.src = 'lib/eruda/eruda.js';
                 script.onload = () => window.eruda.init();
@@ -2835,6 +2819,98 @@
         }
     }
 
+    /** Deep copy plain object. */
+    function copy(from) {
+        const to = {};
+        for (const key in from) {
+            if (from[key]?.constructor === Object) {
+                to[key] = copy(from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Merge two objects. */
+    function apply(to, from) {
+        for (const key in from) {
+            if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+                apply(to[key], from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Deep freeze object. */
+    function freeze(obj) {
+        const propNames = Object.getOwnPropertyNames(obj);
+        for (const name of propNames) {
+            const value = obj[name];
+            if (value && typeof value === 'object') {
+                freeze(value);
+            }
+        }
+        return Object.freeze(obj);
+    }
+    /** Access key of a nested object. */
+    function access(obj, keys) {
+        if (keys && obj) {
+            for (const key of keys.split('.')) {
+                obj = obj[key] ?? null;
+                if (obj === null) {
+                    break;
+                }
+            }
+        }
+        return obj ?? null;
+    }
+    /** Split string with `:`. */
+    function split(msg, delimiter = ':') {
+        const idx = msg.indexOf(delimiter);
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
+    }
+    /** Return a promise that resolves after n seconds. */
+    function sleep(n) {
+        return new Promise(resolve => setTimeout(resolve, n * 1000));
+    }
+    /** Generate a unique ID based on current Date.now().
+     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
+     */
+    function uid() {
+        return new Date().getTime().toString().split('').map(n => {
+            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
+            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
+        }).join('');
+    }
+    /** Fetch and parse json file. */
+    function readJSON(...args) {
+        return new Promise(resolve => {
+            fetch(args.join('/')).then(response => {
+                response.json().then(resolve);
+            });
+        });
+    }
+
+    var utils = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        copy: copy,
+        apply: apply,
+        freeze: freeze,
+        access: access,
+        split: split,
+        sleep: sleep,
+        uid: uid,
+        readJSON: readJSON
+    });
+
     /**
      * Executor of worker commands.
      */
@@ -2853,6 +2929,8 @@
         ui = new UI(this);
         /** Debug mode */
         debug = false;
+        /** Module containing JS utilities. */
+        utils = utils;
         /** Components synced with the worker. */
         components = new Map();
         /** Event listeners. */
@@ -2875,18 +2953,10 @@
         /** Timestamp of the last full UI load. */
         #loaded = 0;
         constructor() {
-            // get user ID
+            // get user identifier
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
-                    // create a new unique client id based on current timestamp
-                    const seed = new Date().getTime().toString();
-                    // map timestamp to random string
-                    this.db.set('uid', seed.split('').map(n => {
-                        // [0-9] -> [0-62]
-                        const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
-                        // [0-62] -> [A-Z] | [a-z] | [0-9]
-                        return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
-                    }).join(''));
+                    this.db.set('uid', this.utils.uid());
                 }
                 this.uid = this.db.get('uid');
             });
@@ -2906,6 +2976,10 @@
             else {
                 return 'Desktop';
             }
+        }
+        /** Client is mobile platform. */
+        get mobile() {
+            return ['iOS', 'Android'].includes(this.platform) && 'ontouchend' in document;
         }
         /** Initialization message. */
         get info() {
@@ -2941,14 +3015,6 @@
                 }
             }
             return null;
-        }
-        /** Fetch and parse json file. */
-        readJSON(...args) {
-            return new Promise(resolve => {
-                fetch(args.join('/')).then(response => {
-                    response.json().then(resolve);
-                });
-            });
         }
         /** Connect to a game server. */
         connect(config) {
