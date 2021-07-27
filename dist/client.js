@@ -114,18 +114,18 @@
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
+        /** Root element. */
+        node;
+        /** Resolved */
+        ready;
+        /** This.remove() is being executed. */
+        #removing = false;
         /** Properties synced with worker. */
         #props = new Map();
         /** Component ID (for worker-managed components). */
         #id;
         /** Client object. */
         #client;
-        /** Root element. */
-        node;
-        /** Resolved */
-        ready;
-        /** This.remove() is being executed. */
-        removing = false;
         get client() {
             return this.#client;
         }
@@ -199,9 +199,20 @@
             return this.client.utils.sleep(this.app.getTransition(dur) / 1000);
         }
         /** Remove element. */
-        remove() {
-            this.node.remove();
-            this.removing = false;
+        remove(promise) {
+            if (!this.#removing) {
+                this.return;
+            }
+            if (promise) {
+                this.#removing = true;
+                promise.then(() => {
+                    this.node.remove();
+                    this.#removing = false;
+                });
+            }
+            else {
+                this.node.remove();
+            }
         }
     }
 
@@ -999,20 +1010,19 @@
             this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
         }
         remove() {
-            if (!this.removing) {
+            super.remove(new Promise(resolve => {
                 if (history.state === 'lobby') {
                     history.back();
                 }
-                this.removing = true;
                 let done = 0;
                 const onfinish = () => {
                     if (++done === 2) {
-                        super.remove();
+                        resolve();
                     }
                 };
                 this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' }).onfinish = onfinish;
                 this.ui.animate(this.seats, { opacity: [1, 0] }, { fill: 'forwards' }).onfinish = onfinish;
-            }
+            }));
         }
         async history(state) {
             if (this.client.platform === 'Android' && state !== 'lobby') {
@@ -1099,12 +1109,11 @@
         }
         /** Remove arena. */
         remove() {
-            if (!this.removing) {
-                this.removing = true;
+            super.remove(new Promise(resolve => {
                 this.ui.animate(this.node, {
                     opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
-                }).onfinish = () => super.remove();
-            }
+                }).onfinish = resolve;
+            }));
         }
         /** Connection status change. */
         $peers() {

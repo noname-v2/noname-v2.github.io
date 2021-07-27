@@ -50,12 +50,11 @@ export class Arena extends Component {
 
     /** Remove arena. */
     remove() {
-        if (!this.removing) {
-            this.removing = true;
+        super.remove(new Promise(resolve => {
             this.ui.animate(this.node, {
                 opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
-            }).onfinish = () => super.remove();
-        }
+            }).onfinish = resolve;
+        }));
     }
 
     /** Connection status change. */

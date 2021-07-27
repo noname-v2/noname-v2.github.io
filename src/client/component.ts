@@ -9,6 +9,15 @@ export abstract class Component {
     /** HTMLElement tag  name */
     static tag: string | null = null;
 
+    /** Root element. */
+	readonly node: HTMLElement;
+
+    /** Resolved */
+    readonly ready: Promise<unknown>;
+
+    /** This.remove() is being executed. */
+    #removing = false;
+
     /** Properties synced with worker. */
     #props = new Map<string, any>();
 
@@ -17,15 +26,6 @@ export abstract class Component {
 
     /** Client object. */
     #client: Client;
-
-    /** Root element. */
-	node: HTMLElement;
-
-    /** Resolved */
-    ready: Promise<unknown>;
-
-    /** This.remove() is being executed. */
-    removing = false;
 
     get client() {
         return this.#client;
@@ -113,8 +113,20 @@ export abstract class Component {
     }
 
     /** Remove element. */
-    remove() {
-        this.node.remove();
-        this.removing = false;
+    remove(promise?: Promise<any>) {
+        if (!this.#removing) {
+            this.return;
+        }
+
+        if (promise) {
+            this.#removing = true;
+            promise.then(() => {
+                this.node.remove();
+                this.#removing = false;
+            });
+        }
+        else {
+            this.node.remove();
+        }
     }
 }

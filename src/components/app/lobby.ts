@@ -373,20 +373,19 @@ export class Lobby extends Component {
     }
 
     remove() {
-        if (!this.removing) {
+        super.remove(new Promise<void>(resolve => {
             if (history.state === 'lobby') {
                 history.back();
             }
-            this.removing = true;
             let done = 0;
             const onfinish = () => {
                 if (++done === 2) {
-                    super.remove();
+                    resolve();
                 }
             }
             this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
             this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
-        }
+        }));
     }
 
     async history(state: string) {
