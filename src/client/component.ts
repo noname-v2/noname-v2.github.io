@@ -1,9 +1,14 @@
 import type { Client } from './client';
 import type { Dict } from '../utils';
 import type { TransitionDuration } from '../components';
+import type { Database } from './database';
+import type { UI } from './ui';
 
 // type for component constructor
-export type ComponentClass = {tag: string | null, new(client: Client, tag: string, id: number | null): Component};
+export type ComponentClass = {
+    tag: string | null,
+    new(client: Client, db: Database, ui: UI, tag: string, id: number | null): Component
+};
 
 export abstract class Component {
     /** HTMLElement tag  name */
@@ -27,20 +32,26 @@ export abstract class Component {
     /** Client object. */
     #client: Client;
 
+    /** Database object. */
+    #db: Database;
+
+    /** UI object. */
+    #ui: UI;
+
     get client() {
         return this.#client;
     }
 
     get db() {
-        return this.client.db;
+        return this.#db;
     }
 
     get ui() {
-        return this.client.ui;
+        return this.#ui;
     }
 
     get app() {
-        return this.client.ui.app;
+        return this.ui.app;
     }
 
     get owner() {
@@ -48,10 +59,12 @@ export abstract class Component {
     }
 
     /** Create node. */
-    constructor(client: Client, tag: string, id: number | null) {
+    constructor(client: Client, db: Database, ui: UI, tag: string, id: number | null) {
         this.#id = id;
         this.#client = client;
-        this.node = client.ui.createElement(tag);
+        this.#db = db;
+        this.#ui = ui;
+        this.node = ui.createElement(tag);
         this.ready = Promise.resolve().then(() => this.init());
     }
 

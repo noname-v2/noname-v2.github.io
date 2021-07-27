@@ -10,32 +10,32 @@ import type { UITick, ClientMessage } from '../worker/worker';
  * Executor of worker commands.
  */
 export class Client {
-    /** Client version. */
-    readonly version = version;
-
-    /** Worker object. */
-    connection: Worker | WebSocket | null = null;
-
-    /** Service worker. */
-    readonly registration: ServiceWorkerRegistration | null = null;
-
-    /** User identifier. */
-    readonly uid!: string;
-
-    /** IndexedDB manager. */
-    readonly db: Database = new Database();
-
-    /** Component manager. */
-    readonly ui: UI = new UI(this);
-
     /** Debug mode */
     debug: boolean = false;
 
+    /** Client version. */
+    #version = version;
+
+    /** Worker object. */
+    #connection: Worker | WebSocket | null = null;
+
+    /** Service worker. */
+    #registration: ServiceWorkerRegistration | null = null;
+
+    /** User identifier. */
+    #uid!: string;
+
+    /** IndexedDB manager. */
+    #db: Database = new Database();
+
+    /** Component manager. */
+    #ui: UI;
+
     /** Module containing JS utilities. */
-    readonly utils = utils;
+    #utils = utils;
 
     /** Event listeners. */
-    readonly listeners = {
+    #listeners = Object.freeze({
         // connection status change
         sync: new Set<{sync: () => void}>(),
         // document resize
@@ -46,10 +46,13 @@ export class Client {
         key: new Set<{key: (e: KeyboardEvent) => void}>(),
         // stage change
         stage: new Set<{key: () => void}>()
-    };
+    });
 
     /** Components synced with the worker. */
     #components = new Map<number, Component>();
+
+    /** Number of connections used as connection identifier. */
+    #connectionCount = 0;
 
     /** ID of current stage. */
     #stageID = 0;
@@ -60,21 +63,44 @@ export class Client {
     /** Timestamp of the last full UI load. */
     #loaded = 0;
 
+    get version() {
+        return this.#version;
+    }
+
+    get connection() {
+        return this.#connection;
+    }
+
+    get registration() {
+        return this.#registration;
+    }
+
+    get uid() {
+        return this.#uid;
+    }
+
+    get utils() {
+        return this.#utils;
+    }
+
+    get listeners() {
+        return this.#listeners;
+    }
+
     constructor() {
-        // disallow changing listener keys
-        Object.freeze(this.listeners);
+        this.#ui = new UI(this, this.#db);
 
         // get user identifier
-        this.db.ready.then(() => {
-            if (!this.db.get('uid')) {
-                this.db.set('uid', this.utils.uid());
+        this.#db.ready.then(() => {
+            if (!this.#db.get('uid')) {
+                this.#db.set('uid', this.utils.uid());
             }
-            (this as any).uid = this.db.get('uid');
+            this.#uid = this.#db.get('uid');
         });
 
         // register service worker for PWA
         navigator.serviceWorker?.register('/service.js').then(reg => {
-            (this as any).registration = reg;
+            this.#registration = reg;
         });
     }
 
@@ -99,19 +125,19 @@ export class Client {
     /** Initialization message. */
     get info(): [string, string] {
         return [
-            this.db.get('nickname') || config.nickname,
-            this.db.get('avatar') || config.avatar
+            this.#db.get('nickname') || config.nickname,
+            this.#db.get('avatar') || config.avatar
         ];
     }
 
     /** WebSocket address. */
     get url() {
-        return this.db.get('ws') || config.ws;
+        return this.#db.get('ws') || config.ws;
     }
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
-        const ids = this.ui.app?.arena?.get('peers');
+        const ids = this.#ui.app?.arena?.get('peers');
         if (!ids) {
             return null;
         }
@@ -141,20 +167,20 @@ export class Client {
         this.disconnect();
 
         if (Array.isArray(config)) {
-            const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
+            const worker = this.#connection = new Worker(`dist/worker.js`, { type: 'module'});
             worker.onmessage = ({data}) => {
                 if (data === 'ready') {
                     worker.onmessage = ({data}) => this.dispatch(data);
-                    config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
-                    config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
-                    config.push(this.db.get(config[0] + ':config') || {});
+                    config.push(this.#db.get(config[0] + ':disabledHeropacks') || []);
+                    config.push(this.#db.get(config[0] + ':disabledCardpacks') || []);
+                    config.push(this.#db.get(config[0] + ':config') || {});
                     config.push(this.info);
                     this.send(0, config, true);
                 }
             }
         }
         else {
-            this.connection = new WebSocket(config);
+            this.#connection = new WebSocket(config);
         }
     }
 
@@ -166,7 +192,7 @@ export class Client {
         else if (this.connection instanceof WebSocket) {
             this.connection.close();
         }
-        this.connection = null;
+        this.#connection = null;
         this.clear();
     }
 
@@ -177,12 +203,12 @@ export class Client {
         }
 
         this.#components.clear();
-        this.ui.app.clearPopups();
-        this.ui.app.arena?.remove();
-        this.ui.app.arena = null;
+        this.#ui.app.clearPopups();
+        this.#ui.app.arena?.remove();
+        this.#ui.app.arena = null;
 
         if (back) {
-            this.ui.app.splash.show();
+            this.#ui.app.splash.show();
             this.#stageID = 0;
         }
     }
@@ -233,14 +259,14 @@ export class Client {
             // check if tick is a full UI reload
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    const arena = this.ui.app.arena;
-                    if (arena && this.ui.app.popups.size) {
+                    const arena = this.#ui.app.arena;
+                    if (arena && this.#ui.app.popups.size) {
                         arena.faded = true;
                     }
                     this.clear(false);
                     this.#loaded = Date.now();
                     if (arena) {
-                        await this.ui.app.sleep('fast');
+                        await this.#ui.app.sleep('fast');
                     }
                     break;
                 }
@@ -263,7 +289,7 @@ export class Client {
                 const tag = tags[key]
                 if (typeof tag === 'string') {
                     this.#components.get(id)?.remove();
-                    const cmp = this.ui.create(tag, null, id);
+                    const cmp = this.#ui.create(tag, null, id);
                     this.#components.set(id, cmp);
                     newComponents.push(cmp.ready);
                 }
@@ -305,7 +331,7 @@ export class Client {
             if (Date.now() - this.#loaded < 500) {
                 // prompt reload if error occus within 0.5s after reload
                 this.#loaded = 0;
-                this.ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
+                this.#ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
                     if (reload === true) {
                         window.location.reload();
                     }

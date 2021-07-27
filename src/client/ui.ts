@@ -1,6 +1,7 @@
 import type { Client } from './client';
 import type { App } from '../components';
 import type { ComponentClass } from './component';
+import type { Database } from './database';
 import { componentClasses, ComponentTagMap } from '../classes';
 
 // type for point location
@@ -54,7 +55,10 @@ export class UI {
 	zoom = 1;
 
     /** Client object. */
-    client: Client;
+    #client: Client;
+
+    /** Database object. */
+    #db: Database;
 
 	/** Resolved when ready. */
 	ready: Promise<unknown>;
@@ -117,7 +121,7 @@ export class UI {
 
 		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-		if (this.client.platform !== 'Android') {
+		if (this.#client.platform !== 'Android') {
 			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
 		}
 
@@ -207,8 +211,9 @@ export class UI {
 		this.moving = null;
 	}
 
-    constructor(client: Client) {
-		this.client = client;
+    constructor(client: Client, db: Database) {
+		this.#client = client;
+		this.#db = db;
 
 		// wait for document.body to load
         if (document.readyState === 'loading') {
@@ -225,7 +230,7 @@ export class UI {
 			document.body.addEventListener('touchend', () => this.pointerEnd(true), {passive: true});
 			document.body.addEventListener('touchcancel', () => this.pointerCancel(true), {passive: true});
 
-			if (this.client.platform !== 'Android') {
+			if (this.#client.platform !== 'Android') {
 				document.body.addEventListener('mousemove', e => this.pointerMove(e, false), {passive: true});
 				document.body.addEventListener('mouseup', () => this.pointerEnd(false), {passive: true});
 				document.body.addEventListener('mouseleave', () => this.pointerCancel(false), {passive: true});
@@ -238,7 +243,7 @@ export class UI {
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
 		const cls = componentClasses.get(tag as string)!;
-        const cmp = new cls(this.client, cls.tag || tag as string, id);
+        const cmp = new cls(this.#client, this.#db, this, cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
 		if (cls.tag) {

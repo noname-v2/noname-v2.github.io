@@ -126,26 +126,32 @@
         #id;
         /** Client object. */
         #client;
+        /** Database object. */
+        #db;
+        /** UI object. */
+        #ui;
         get client() {
             return this.#client;
         }
         get db() {
-            return this.client.db;
+            return this.#db;
         }
         get ui() {
-            return this.client.ui;
+            return this.#ui;
         }
         get app() {
-            return this.client.ui.app;
+            return this.ui.app;
         }
         get owner() {
             return this.get('owner');
         }
         /** Create node. */
-        constructor(client, tag, id) {
+        constructor(client, db, ui, tag, id) {
             this.#id = id;
             this.#client = client;
-            this.node = client.ui.createElement(tag);
+            this.#db = db;
+            this.#ui = ui;
+            this.node = ui.createElement(tag);
             this.ready = Promise.resolve().then(() => this.init());
         }
         /** Make init() optional for subclasses. */
@@ -735,8 +741,8 @@
                     history.forward();
                 }
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-                if (!peers || Object.keys(peers).length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
-                    if (this.app.arena && peers && Object.keys(peers).length > 1) {
+                if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
+                    if (this.app.arena && peers && peers.length > 1) {
                         this.app.arena.faded = true;
                     }
                     if (ws instanceof WebSocket) {
@@ -922,7 +928,7 @@
                 this.connecting = false;
                 const toggle = this.configToggles.get('online');
                 if (toggle) {
-                    if (peers && Object.keys(peers).length > 1) {
+                    if (peers && peers.length > 1) {
                         toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
                     }
                     else {
@@ -1819,7 +1825,7 @@
         connect() {
             try {
                 if (!this.address.input.value) {
-                    this.client.db.set('ws', null);
+                    this.db.set('ws', null);
                     return;
                 }
                 this.client.connect('wss://' + this.address.input.value);
@@ -1839,7 +1845,7 @@
                         this.setCaption('');
                         ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
                         if (this.address.input.value !== config.ws) {
-                            this.client.db.set('ws', this.address.input.value);
+                            this.db.set('ws', this.address.input.value);
                         }
                     };
                     ws.onmessage = ({ data }) => {
@@ -2488,7 +2494,9 @@
         /** Current zoom level. */
         zoom = 1;
         /** Client object. */
-        client;
+        #client;
+        /** Database object. */
+        #db;
         /** Resolved when ready. */
         ready;
         /** Root component. */
@@ -2537,7 +2545,7 @@
                 }
             };
             node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (this.client.platform !== 'Android') {
+            if (this.#client.platform !== 'Android') {
                 node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
             }
             return binding;
@@ -2611,8 +2619,9 @@
             this.clicking = null;
             this.moving = null;
         }
-        constructor(client) {
-            this.client = client;
+        constructor(client, db) {
+            this.#client = client;
+            this.#db = db;
             // wait for document.body to load
             if (document.readyState === 'loading') {
                 this.ready = new Promise(resolve => {
@@ -2626,7 +2635,7 @@
                 document.body.addEventListener('touchmove', e => this.pointerMove(e.touches[0], true), { passive: true });
                 document.body.addEventListener('touchend', () => this.pointerEnd(true), { passive: true });
                 document.body.addEventListener('touchcancel', () => this.pointerCancel(true), { passive: true });
-                if (this.client.platform !== 'Android') {
+                if (this.#client.platform !== 'Android') {
                     document.body.addEventListener('mousemove', e => this.pointerMove(e, false), { passive: true });
                     document.body.addEventListener('mouseup', () => this.pointerEnd(false), { passive: true });
                     document.body.addEventListener('mouseleave', () => this.pointerCancel(false), { passive: true });
@@ -2637,7 +2646,7 @@
         /** Create new component. */
         create(tag, parent = null, id = null) {
             const cls = componentClasses.get(tag);
-            const cmp = new cls(this.client, cls.tag || tag, id);
+            const cmp = new cls(this.#client, this.#db, this, cls.tag || tag, id);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
                 cmp.node.classList.add(tag);
@@ -2924,24 +2933,24 @@
      * Executor of worker commands.
      */
     class Client {
-        /** Client version. */
-        version = version;
-        /** Worker object. */
-        connection = null;
-        /** Service worker. */
-        registration = null;
-        /** User identifier. */
-        uid;
-        /** IndexedDB manager. */
-        db = new Database();
-        /** Component manager. */
-        ui = new UI(this);
         /** Debug mode */
         debug = false;
+        /** Client version. */
+        #version = version;
+        /** Worker object. */
+        #connection = null;
+        /** Service worker. */
+        #registration = null;
+        /** User identifier. */
+        #uid;
+        /** IndexedDB manager. */
+        #db = new Database();
+        /** Component manager. */
+        #ui;
         /** Module containing JS utilities. */
-        utils = utils;
+        #utils = utils;
         /** Event listeners. */
-        listeners = {
+        #listeners = Object.freeze({
             // connection status change
             sync: new Set(),
             // document resize
@@ -2952,28 +2961,47 @@
             key: new Set(),
             // stage change
             stage: new Set()
-        };
+        });
         /** Components synced with the worker. */
         #components = new Map();
+        /** Number of connections used as connection identifier. */
+        #connectionCount = 0;
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
         #ticks = [];
         /** Timestamp of the last full UI load. */
         #loaded = 0;
+        get version() {
+            return this.#version;
+        }
+        get connection() {
+            return this.#connection;
+        }
+        get registration() {
+            return this.#registration;
+        }
+        get uid() {
+            return this.#uid;
+        }
+        get utils() {
+            return this.#utils;
+        }
+        get listeners() {
+            return this.#listeners;
+        }
         constructor() {
-            // disallow changing listener keys
-            Object.freeze(this.listeners);
+            this.#ui = new UI(this, this.#db);
             // get user identifier
-            this.db.ready.then(() => {
-                if (!this.db.get('uid')) {
-                    this.db.set('uid', this.utils.uid());
+            this.#db.ready.then(() => {
+                if (!this.#db.get('uid')) {
+                    this.#db.set('uid', this.utils.uid());
                 }
-                this.uid = this.db.get('uid');
+                this.#uid = this.#db.get('uid');
             });
             // register service worker for PWA
             navigator.serviceWorker?.register('/service.js').then(reg => {
-                this.registration = reg;
+                this.#registration = reg;
             });
         }
         /** Client platform. */
@@ -2995,17 +3023,17 @@
         /** Initialization message. */
         get info() {
             return [
-                this.db.get('nickname') || config.nickname,
-                this.db.get('avatar') || config.avatar
+                this.#db.get('nickname') || config.nickname,
+                this.#db.get('avatar') || config.avatar
             ];
         }
         /** WebSocket address. */
         get url() {
-            return this.db.get('ws') || config.ws;
+            return this.#db.get('ws') || config.ws;
         }
         /** Connected remote clients. */
         get peers() {
-            const ids = this.ui.app?.arena?.get('peers');
+            const ids = this.#ui.app?.arena?.get('peers');
             if (!ids) {
                 return null;
             }
@@ -3031,20 +3059,20 @@
         connect(config) {
             this.disconnect();
             if (Array.isArray(config)) {
-                const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
+                const worker = this.#connection = new Worker(`dist/worker.js`, { type: 'module' });
                 worker.onmessage = ({ data }) => {
                     if (data === 'ready') {
                         worker.onmessage = ({ data }) => this.dispatch(data);
-                        config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
-                        config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
-                        config.push(this.db.get(config[0] + ':config') || {});
+                        config.push(this.#db.get(config[0] + ':disabledHeropacks') || []);
+                        config.push(this.#db.get(config[0] + ':disabledCardpacks') || []);
+                        config.push(this.#db.get(config[0] + ':config') || {});
                         config.push(this.info);
                         this.send(0, config, true);
                     }
                 };
             }
             else {
-                this.connection = new WebSocket(config);
+                this.#connection = new WebSocket(config);
             }
         }
         /** Disconnect from web worker. */
@@ -3055,7 +3083,7 @@
             else if (this.connection instanceof WebSocket) {
                 this.connection.close();
             }
-            this.connection = null;
+            this.#connection = null;
             this.clear();
         }
         /** Clear currently connection status without disconnecting. */
@@ -3064,11 +3092,11 @@
                 this.#removeListeners(cmp);
             }
             this.#components.clear();
-            this.ui.app.clearPopups();
-            this.ui.app.arena?.remove();
-            this.ui.app.arena = null;
+            this.#ui.app.clearPopups();
+            this.#ui.app.arena?.remove();
+            this.#ui.app.arena = null;
             if (back) {
-                this.ui.app.splash.show();
+                this.#ui.app.splash.show();
                 this.#stageID = 0;
             }
         }
@@ -3114,14 +3142,14 @@
                 // check if tick is a full UI reload
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
-                        const arena = this.ui.app.arena;
-                        if (arena && this.ui.app.popups.size) {
+                        const arena = this.#ui.app.arena;
+                        if (arena && this.#ui.app.popups.size) {
                             arena.faded = true;
                         }
                         this.clear(false);
                         this.#loaded = Date.now();
                         if (arena) {
-                            await this.ui.app.sleep('fast');
+                            await this.#ui.app.sleep('fast');
                         }
                         break;
                     }
@@ -3142,7 +3170,7 @@
                     const tag = tags[key];
                     if (typeof tag === 'string') {
                         this.#components.get(id)?.remove();
-                        const cmp = this.ui.create(tag, null, id);
+                        const cmp = this.#ui.create(tag, null, id);
                         this.#components.set(id, cmp);
                         newComponents.push(cmp.ready);
                     }
@@ -3181,7 +3209,7 @@
                 if (Date.now() - this.#loaded < 500) {
                     // prompt reload if error occus within 0.5s after reload
                     this.#loaded = 0;
-                    this.ui.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
+                    this.#ui.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
                         if (reload === true) {
                             window.location.reload();
                         }
