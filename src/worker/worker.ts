@@ -51,7 +51,7 @@ export class Worker {
     peers: Map<string, Link> | null = null;
 
     /** Ticked history items with timestamp. */
-    #history: [number, TickItem][] = [];
+    #history: [number, UITick][] = [];
 
     /** Entries to be ticked. */
     #ticks: TickEntry[] = [];
@@ -225,47 +225,45 @@ export class Worker {
         this.#ticks.push([this.#game.currentStage.id, id, item]);
     }
 
-    /** Create UITick(s) from this.#history. */
+    /** Generate UITick(s) from this.#ticks. */
     #commit() {
-        let stageID: number | null = -1;
-        let tagChanges: Dict<string | null> = {};
-        let propChanges: Dict<Dict> = {};
-        let calls: Dict<[string, any][]> = {};
-
-        // save current timestamp in this.#history
+        // split UITick by stage change
+        const stages: [number, TickEntry[]][] = [];
         const now = Date.now();
-
         for (const entry of this.#ticks) {
-            const [sid, id, item] = entry;
-
-            // split UITick by stage change
-            if (sid !== stageID) {
-                if (stageID !== -1) {
-                    this.broadcast([stageID, tagChanges, propChanges, calls]);
-                    tagChanges = {}
-                    propChanges = {};
-                    calls = {};
-                }
-                stageID = sid;
+            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
+                stages.push([entry[0], []]);
             }
-
-            // merge history entries into a single UITick
-            if (Array.isArray(item)) {
-                calls[id] ??= [];
-                calls[id].push(item);
-            }
-            else if (item && typeof item === 'object') {
-                propChanges[id] ??= {};
-                Object.assign(propChanges[id], item);
-            }
-            else {
-                tagChanges[id] = item;
-            }
-
-            this.#history.push([now, entry]);
+            stages[stages.length - 1][1].push(entry);
         }
 
-        this.broadcast([stageID, tagChanges, propChanges, calls]);
+        // generate UITick(s)
+        for (const [stageID, entries] of stages) {
+            const tagChanges: Dict<string | null> = {};
+            const propChanges: Dict<Dict> = {};
+            const calls: Dict<[string, any][]> = {};
+
+            // merge updates from different ticks
+            for (const [, id, item] of entries) {
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    Object.assign(propChanges[id], item);
+                }
+                else {
+                    tagChanges[id] = item;
+                }
+            }
+
+            // sync and save UITick
+            const tick: UITick = [stageID, tagChanges, propChanges, calls];
+            this.broadcast(tick);
+            this.#history.push([now, tick]);
+        }
+
         this.#ticks.length = 0;
     }
 
