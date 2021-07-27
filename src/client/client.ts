@@ -2,6 +2,7 @@ import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
 import { Component } from './component';
+import { uid } from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
@@ -10,31 +11,31 @@ import type { UITick, ClientMessage } from '../worker/worker';
  */
 export class Client {
     /** Client version. */
-    version = version;
+    readonly version = version;
 
     /** Worker object. */
     connection: Worker | WebSocket | null = null;
 
     /** Service worker. */
-    registration: ServiceWorkerRegistration | null = null;
+    readonly registration: ServiceWorkerRegistration | null = null;
 
     /** User identifier. */
-    uid!: string;
+    readonly uid!: string;
 
     /** IndexedDB manager. */
-    db: Database = new Database();
+    readonly db: Database = new Database();
 
     /** Component manager. */
-    ui: UI = new UI(this);
+    readonly ui: UI = new UI(this);
 
     /** Debug mode */
     debug: boolean = false;
 
     /** Components synced with the worker. */
-    components = new Map<number, Component>();
+    readonly components = new Map<number, Component>();
 
     /** Event listeners. */
-    listeners = {
+    readonly listeners = {
         // connection status change
         sync: new Set<{sync: () => void}>(),
         // document resize
@@ -57,28 +58,17 @@ export class Client {
     #loaded = 0;
 
     constructor() {
-        // get user ID
+        // get user identifier
         this.db.ready.then(() => {
             if (!this.db.get('uid')) {
-                // create a new unique client id based on current timestamp
-                const seed = new Date().getTime().toString();
-                
-                // map timestamp to random string
-                this.db.set('uid', seed.split('').map(n => {
-                    // [0-9] -> [0-62]
-                    const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
-
-                    // [0-62] -> [A-Z] | [a-z] | [0-9]
-                    return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
-                }).join(''));
+                this.db.set('uid', uid());
             }
-
-            this.uid = this.db.get('uid');
+            (this as any).uid = this.db.get('uid');
         });
 
         // register service worker for PWA
         navigator.serviceWorker?.register('/service.js').then(reg => {
-            this.registration = reg;
+            (this as any).registration = reg;
         });
     }
 
@@ -93,6 +83,11 @@ export class Client {
         else {
             return 'Desktop';
         }
+    }
+
+    /** Client is mobile platform. */
+    get mobile() {
+        return ['iOS', 'Android'].includes(this.platform) && 'ontouchend' in document;
     }
 
     /** Initialization message. */

@@ -31,7 +31,7 @@ export class Gallery extends Component {
     private currentSize: [number, number] | null = null;
 
     /** Device can scroll horizontally. */
-    private horizontal = false;
+    private horizontal = this.client.mobile;
 
     /** Target page after multiple wheel input. */
     private targetPage: [number, number] | null = null;

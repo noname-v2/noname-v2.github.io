@@ -50,7 +50,7 @@ export class SplashBar extends Component {
         else {
             this.buttons.reset.node.classList.remove('disabled');
             this.buttons.refresh.node.classList.remove('disabled');
-            if (['iOS', 'Android'].includes(this.client.platform)) {
+            if (this.client.mobile) {
                 this.buttons.refresh.node.style.display = '';
             }
             else {
