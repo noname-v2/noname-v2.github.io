@@ -731,6 +731,12 @@
                         this.freeze();
                         this.yield(['config', 'online', false]);
                         this.exiting = true;
+                        // force exit if worker doesn't respond within 0.5s
+                        setTimeout(() => {
+                            if (this.exiting) {
+                                this.close();
+                            }
+                        }, 500);
                     }
                     if (history.state === 'lobby') {
                         this.client.listeners.history.delete(this);

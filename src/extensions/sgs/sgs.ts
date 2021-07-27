@@ -40,7 +40,7 @@ export type CardDict = Dict<{
 export type SkillDict = Dict<{
     name: string;
     intro: string;
-    type: string;
+    type?: string;
     task?: TaskCreator;
     trigger?: Dict<string>;
     [key: string]: any;
