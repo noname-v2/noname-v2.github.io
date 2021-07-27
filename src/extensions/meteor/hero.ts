@@ -1,6 +1,6 @@
 import type { HeroCollection } from '../sgs/sgs';
 
-export const hero = <HeroCollection>{
+export const hero = {
     caoang:{
         name:'曹昂',
         intro:'字子修，曹操的长子，由于性情谦和且聪慧所以深得曹操喜爱。曹操征讨张绣时，羞辱张绣之婶邹氏，被张绣突然袭击。曹昂为保护曹操撤退，与典韦一起战死在宛城。',
@@ -433,4 +433,4 @@ export const hero = <HeroCollection>{
         hp:4,
         skills:['jijun', 'fangtong']
     }
-};
+} as HeroCollection;

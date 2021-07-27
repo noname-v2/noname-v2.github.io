@@ -51,10 +51,10 @@ export class Worker {
     peers: Map<string, Link> | null = null;
 
     /** Ticked history items with timestamp. */
-    #history = <[number, TickItem][]>[];
+    #history: [number, TickItem][] = [];
 
     /** Entries to be ticked. */
-    #ticks = <TickEntry[]>[];
+    #ticks: TickEntry[] = [];
 
     /** Game object. */
     #game!: Game;
@@ -161,7 +161,7 @@ export class Worker {
     /** A remote client joins the room. */
     join(msg: string) {
         // join as player or spectator
-        const [uid, info] = <[string, [string, string]]>JSON.parse(msg);
+        const [uid, info]: [string, [string, string]] = JSON.parse(msg);
         this.createPeer(uid, info);
         this.#game.syncRoom();
         this.send(uid, this.#game.pack());

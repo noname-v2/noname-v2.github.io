@@ -1,6 +1,6 @@
 import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <SkillCollection>{
+export const skill = {
     zijiang: {
         name: '资粮',
         intro: '@(副将技) 当与你势力相同的一名角色受到伤害后，你可以将一张“田”交给该角色。'
@@ -113,4 +113,4 @@ export const skill = <SkillCollection>{
         name: '锋矢',
         intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard.sha)指定被围攻角色为目标后，可令该角色弃置装备区里的一张牌。'
     }
-};
+} as SkillCollection;

@@ -105,7 +105,7 @@ export class Database  {
 	readdir() {
 		const store = this.db!.transaction('files', 'readonly').objectStore('files');
 		const iterator = store.openCursor();
-		const files = <string[]>[];
+		const files: string[] = [];
 		
 		return new Promise<string[]>(resolve => {
 			iterator.onsuccess = () => {

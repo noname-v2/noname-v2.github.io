@@ -1,5 +1,5 @@
 import type { CardCollection } from '../sgs/sgs';
 
-export const card = <CardCollection>{
+export const card = {
 
-};
+} as CardCollection;

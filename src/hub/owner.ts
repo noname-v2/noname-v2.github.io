@@ -26,7 +26,7 @@ export class Owner extends Client {
 
     /** Return all member client objects. */
     private getAll() {
-        const members = <Member[]>[];
+        const members: Member[] = [];
         for (const uid of this.members) {
             const client = this.get(uid);
             if (client) {

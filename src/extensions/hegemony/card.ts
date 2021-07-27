@@ -1,6 +1,6 @@
 import type { CardCollection } from '../sgs/sgs';
 
-export const card = <CardCollection>{
+export const card = {
     guowuxie: {
         name: '无懈可击·国',
         caption: '无懈可击',
@@ -42,4 +42,4 @@ export const card = <CardCollection>{
         subtype: 'weapon',
         range: 2
     }
-};
+} as CardCollection;

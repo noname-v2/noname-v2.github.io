@@ -1,6 +1,6 @@
 import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <SkillCollection>{
+export const skill = {
     hujia: {
         name: '护驾',
         intro: '@(主公技) 魏势力角色可以替你打出@(standard.shan)'
@@ -201,4 +201,4 @@ export const skill = <SkillCollection>{
         name: '耀武',
         intro: '@(锁定技) 当你受到@(standard.sha)造成的伤害时，若此@(standard.sha)为红色，伤害来源回复1点体力或摸一张牌；若此@(standard.sha)不为红色，则你摸一张牌'
     }
-};
+} as SkillCollection;

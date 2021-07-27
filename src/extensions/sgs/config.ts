@@ -1,6 +1,6 @@
 import type { Config, Dict } from './sgs';
 
-export const config = <Dict<Config>>{
+export const config = {
     online: {
         name: '联机模式',
         intro: '允许其他玩家通过主页的联机键加入游戏。',
@@ -46,4 +46,4 @@ export const config = <Dict<Config>>{
         init: false,
         requires: '!online'
     }
-}
+} as Dict<Config>;

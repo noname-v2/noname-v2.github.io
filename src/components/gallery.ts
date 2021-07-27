@@ -22,7 +22,7 @@ export class Gallery extends Component {
     private rendered = new Set<number>();
 
     /** Gallery items. */
-    private items = <GalleryItem[]>[];
+    private items: GalleryItem[] = [];
 
     /** Index of current page. */
     private currentPage: number = -1;
@@ -41,7 +41,7 @@ export class Gallery extends Component {
 
     /** Render page when needed. */
     private renderPage(i: number) {
-        const page = <HTMLElement>this.pages.childNodes[i];
+        const page = this.pages.childNodes[i] as HTMLElement;
 
         if (!page || this.rendered.has(i)) {
             return;

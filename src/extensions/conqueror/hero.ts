@@ -1,6 +1,6 @@
 import type { HeroCollection } from '../sgs/sgs';
 
-export const hero = <HeroCollection>{
+export const hero = {
     dengai: {
         name: '邓艾',
         intro: '字士载，义阳棘阳人。三国时期魏国杰出的军事家、将领。公元263年他与钟会分别率军攻打蜀汉，最后他率先进入成都，使得蜀汉灭亡。后因遭到钟会的污蔑和陷害，被司马昭猜忌而被收押，最后与其子邓忠一起被卫瓘派遣的武将田续所杀害。',
@@ -154,4 +154,4 @@ export const hero = <HeroCollection>{
         hp: 3,
         skills: ['qice', 'zhiyu']
     }
-};
+} as HeroCollection;

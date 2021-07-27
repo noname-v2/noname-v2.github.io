@@ -52,7 +52,7 @@ export class Client {
     #stageID = 0;
 
     /**  UITicks waiting for dispatch. */
-    #ticks = <UITick[]>[];
+    #ticks: UITick[] = [];
 
     /** Timestamp of the last full UI load. */
     #loaded = 0;
@@ -203,7 +203,7 @@ export class Client {
      * @param {...any[]} args - Message content.
      */
     send(id: number, result: any, done: boolean) {
-        const msg = <ClientMessage>[this.uid, this.#stageID, id, result, done];
+        const msg: ClientMessage = [this.uid, this.#stageID, id, result, done];
         if (this.connection instanceof Worker) {
             this.connection.postMessage(msg)
         }
@@ -251,7 +251,7 @@ export class Client {
             }
 
             // create new components
-            const newComponents = <Promise<unknown>[]>[];
+            const newComponents: Promise<unknown>[] = [];
             for (const key in tags) {
                 const id = parseInt(key);
                 const tag = tags[key]
@@ -265,7 +265,7 @@ export class Client {
             await Promise.all(newComponents);
 
             // update component properties
-            let hooks = <any[]>[];
+            let hooks: any[] = [];
             for (const key in props) {
                 hooks = hooks.concat(this.components.get(parseInt(key))!.update(props[key], false));
             }

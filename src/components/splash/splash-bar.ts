@@ -35,7 +35,7 @@ export class SplashBar extends Component {
         ];
 
         for (const [name, caption, color] of buttons) {
-            const button = <Button>(this as any).buttons[name];
+            const button: Button = (this as any).buttons[name];
             button.update({caption, color});
             this.ui.bindClick(button.node, () => (this as any)[name]());
             button.node.classList.add('disabled');

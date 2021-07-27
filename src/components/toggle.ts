@@ -56,7 +56,7 @@ export class Toggle extends Component {
 			this.ui.bindClick(switcher, async () => {
 				const val = !this.node.classList.contains('on');
 				if (this.confirm.has(val)) {
-					const [title, content] = <[string?, string?]>this.confirm.get(val);
+					const [title, content] = this.confirm.get(val) as [string?, string?];
 					if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', {content})) {
 						return;
 					}

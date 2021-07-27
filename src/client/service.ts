@@ -37,7 +37,7 @@ self.addEventListener('activate', (e: any) => {
 });
 
 self.addEventListener('fetch', (e: any) => {
-    let url = <string>e.request.url;
+    let url: string = e.request.url;
     if (url.startsWith(scope)) {
         url = url.slice(scope.length);
     }

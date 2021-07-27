@@ -28,7 +28,7 @@ export class Lobby extends Component {
     exiting = false;
 
     /** Players in this seats. */
-    players = <Player[]>[];
+    players: Player[] = [];
 
     /** Button to toggle spectating. */
     spectateButton = this.ui.createElement('widget.button');

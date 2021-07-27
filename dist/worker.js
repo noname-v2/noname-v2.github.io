@@ -353,6 +353,10 @@
         start() {
             this.#game.start();
         }
+        /** Mark game as over. */
+        over() {
+            this.#game.over();
+        }
     }
 
     class Game {
@@ -521,11 +525,16 @@
             this.progress = 1;
             this.syncRoom();
         }
+        /** Mark game as over. */
+        over() {
+            this.progress = 2;
+            this.syncRoom();
+        }
         /** Execute stages. */
         async loop() {
-            if (this.paused && this.progress !== 2) {
+            if (this.paused) {
                 this.paused = false;
-                while (await this.rootStage.next())
+                while (this.progress !== 2 && await this.rootStage.next())
                     ;
                 this.paused = true;
             }

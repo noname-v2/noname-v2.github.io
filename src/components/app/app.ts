@@ -146,7 +146,7 @@ export class App extends Component {
         const defaultTheme = await this.client.readJSON<any>('assets/theme', 'default', 'theme.json');
 
         // theme stylesheet
-        const sheet = <CSSStyleSheet>this.themeNode.sheet;
+        const sheet = this.themeNode.sheet!;
         
         // get css rules from theme.json (fallback to default any entry not exist)
         let rules = '';

@@ -1,6 +1,6 @@
 import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <SkillCollection>{
+export const skill = {
     jushou: {
         name: '据守',
         intro: '结束阶段开始时，你可以翻面，若如此做，你摸四张牌，然后选择一项：1.弃置一张不为装备牌的牌；2.使用一张装备牌。'
@@ -397,4 +397,4 @@ export const skill = <SkillCollection>{
         name: '从谏',
         intro: '当你成为锦囊牌的目标时，若此牌的目标数大于1，则你可以交给其中一名其他目标角色一张牌，然后摸一张牌，若你给出的是装备牌，改为摸两张牌。'
     }
-};
+} as SkillCollection;

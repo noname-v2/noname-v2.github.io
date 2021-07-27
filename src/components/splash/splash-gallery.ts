@@ -74,8 +74,8 @@ export class SplashGallery extends Gallery {
 	async loadExtension(name: string) {
 		if (!this.index[name]) {
 			try {
-				const idx = <ExtensionMeta>{};
-				const ext = <Extension>(await import(`../extensions/${name}/main.js`)).default;
+				const idx = {} as ExtensionMeta;
+				const ext = (await import(`../extensions/${name}/main.js`)).default as Extension;
 				if (ext.heropack || ext.cardpack) {
 					idx.pack = true;
 				}

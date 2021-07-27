@@ -71,14 +71,14 @@ export class UI {
 	// clicking[0]: element that is clicked
 	// clicking[1]: location of pointerdown
 	// clicking[2]: started by a touch event
-	private clicking = <[HTMLElement, Point, boolean] | null>null;
+	private clicking: [HTMLElement, Point, boolean] | null = null;
 
 	// moving[0]: element that is moved
 	// moving[1]: location of pointerdown
 	// moving[2]: initial transform of target element when pointerdown is fired
 	// moving[3]: return value of the binding.onmove
 	// moving[4]: started by a touch event
-	private moving = <[HTMLElement, Point, Point, MoveState, boolean] | null>null;
+	private moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
 
 	// get the location of mouse or touch event
 	private locate(e: EventPoint) {
@@ -231,14 +231,14 @@ export class UI {
 				document.body.addEventListener('mouseleave', () => this.pointerCancel(false), {passive: true});
 			}
 
-			this.app = <App>this.create('app');
+			this.app = this.create('app');
 		});
     }
 
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
 		const cls = componentClasses.get(tag as string)!;
-        const cmp = <ComponentTagMap[T]>new cls(this.client, cls.tag || tag as string, id);
+        const cmp = new cls(this.client, cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
 		if (cls.tag) {

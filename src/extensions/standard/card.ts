@@ -1,6 +1,6 @@
 import type { CardCollection } from '../sgs/sgs';
 
-export const card = <CardCollection>{
+export const card = {
     sha: {
         name: '杀',
         caption: '殺',
@@ -208,4 +208,4 @@ export const card = <CardCollection>{
         subtype: 'horse',
         distance: -1
     }
-};
+} as CardCollection;

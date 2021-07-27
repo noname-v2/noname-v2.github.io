@@ -1,6 +1,6 @@
 import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <SkillCollection>{
+export const skill = {
     jianxiong: {
         name: '奸雄',
         intro: '当你受到伤害后，你可以获得造成此伤害的牌。'
@@ -245,4 +245,4 @@ export const skill = <SkillCollection>{
         name: '倾城',
         intro: '出牌阶段，你可以弃置一张黑色牌并选择一名武将牌均明置的其他角色，然后你暗置其一张武将牌。然后若你以此法弃置的牌是装备牌，则你可以再选择另一名武将牌均明置的其他角色，暗置其一张武将牌。'
     }
-};
+} as SkillCollection;

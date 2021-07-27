@@ -1,6 +1,6 @@
 import type { SkillCollection } from '../sgs/sgs';
 
-export const skill = <SkillCollection>{
+export const skill = {
     kangkai: {
         name: '慷忾',
         intro: '当一名角色成为@(standard.sha)的目标后，若你与其距离1以内，则你可以摸一张牌，然后交给其一张牌并展示之。若此牌为装备牌，该角色可以使用此牌。'
@@ -377,4 +377,4 @@ export const skill = <SkillCollection>{
         name: '方统',
         intro: '结束阶段开始时，若有“方”，你可弃置一张牌，若如此做，你将至少一张“方”置入弃牌堆。若此牌与你以此法置入弃牌堆的所有“方”的点数之和为36，你对一名其他角色造成3点雷电伤害。'	
     }
-};
+} as SkillCollection;
