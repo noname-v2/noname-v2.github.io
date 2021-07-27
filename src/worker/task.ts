@@ -38,8 +38,8 @@ export class Task {
     }
 
     /** Add a child stage in current stage. */
-    addTask(path: string, ...args: any[]) {
-        const stage = this.#game.createStage(path, args);
+    addTask(path: string, data?: Dict) {
+        const stage = this.#game.createStage(path, data);
         stage.parent = this.#stage;
         this.#stage.steps.get(this)!.push(stage);
         return stage.tasks[1];

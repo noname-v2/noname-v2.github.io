@@ -96,7 +96,7 @@ export abstract class Component {
     }
 
     /** Send return value to worker (component must be monitored). */
-    return(result: any) {
+    return(result?: any) {
         if (this.#id === null) {
             throw('element is has no ID');
         }

@@ -183,7 +183,7 @@ function lobby(T) {
         }
         cleanUp() {
             // remove lobby and disable further configuration change
-            this.parent.data.lobby.unlink();
+            this.lobby.unlink();
             this.game.start();
         }
     };

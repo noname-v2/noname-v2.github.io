@@ -136,7 +136,7 @@ export function lobby(T: typeof Task): typeof Task {
 
         cleanUp() {
             // remove lobby and disable further configuration change
-            this.parent.data.lobby.unlink();
+            this.lobby.unlink();
             this.game.start();
         }
     }

@@ -702,7 +702,7 @@
                         this.back();
                     }
                 });
-                this.sidebar.setFooter('开始游戏', () => this.return(null));
+                this.sidebar.setFooter('开始游戏', () => this.return());
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });

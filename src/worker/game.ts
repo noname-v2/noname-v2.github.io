@@ -209,6 +209,7 @@ export class Game {
         if (this.paused && this.progress !== 2) {
             this.paused = false;
             while (await this.rootStage.next());
+            this.paused = true;
         }
     }
 }

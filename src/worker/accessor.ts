@@ -31,11 +31,11 @@ export class Accessor {
     }
 
     get playerLinks() {
-        return this.#worker.getPeers({player: true});
+        return this.#worker.getPeers({playing: true});
     }
 
     get spectatorLinks() {
-        return this.#worker.getPeers({player: false});
+        return this.#worker.getPeers({playing: false});
     }
 
     constructor(game: Game, worker: Worker) {

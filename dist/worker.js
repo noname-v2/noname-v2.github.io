@@ -247,8 +247,8 @@
             this.#stage.steps.get(this).push([step, false, args]);
         }
         /** Add a child stage in current stage. */
-        addTask(path, ...args) {
-            const stage = this.#game.createStage(path, args);
+        addTask(path, data) {
+            const stage = this.#game.createStage(path, data);
             stage.parent = this.#stage;
             this.#stage.steps.get(this).push(stage);
             return stage.tasks[1];
@@ -320,10 +320,10 @@
             return this.#game.banned;
         }
         get playerLinks() {
-            return this.#worker.getPeers({ player: true });
+            return this.#worker.getPeers({ playing: true });
         }
         get spectatorLinks() {
-            return this.#worker.getPeers({ player: false });
+            return this.#worker.getPeers({ playing: false });
         }
         constructor(game, worker) {
             this.#game = game;
@@ -527,6 +527,7 @@
                 this.paused = false;
                 while (await this.rootStage.next())
                     ;
+                this.paused = true;
             }
         }
     }
