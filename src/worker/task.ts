@@ -15,11 +15,22 @@ export class Task {
     get game() {
         return this.#game.accessor;
     }
+
+    get path() {
+        return this.#stage.path;
+    }
+
+    get parent(): Task | null {
+        return this.#stage.parent?.task ?? null;
+    }
+
+    get results() {
+        return this.#stage.results;
+    }
     
     constructor(stage: Stage, game: Game) {
         this.#stage = stage;
         this.#game = game;
-        stage.steps.set(this, []);
     }
 
     /** Main function. */
@@ -32,29 +43,27 @@ export class Task {
 
     /** Add a step in current stage. */
     add(step: string, ...args: any[]) {
-        this.#stage.steps.get(this)!.push([step, false, args]);
+        this.#stage.steps.push([step, false, args]);
     }
 
     /** Add a child stage in current stage. */
     addTask(path: string, data?: Dict) {
         const stage = this.#game.createStage(path, data);
         stage.parent = this.#stage;
-        this.#stage.steps.get(this)!.push(stage);
-        return stage.tasks[1];
+        this.#stage.steps.push(stage);
+        return stage.task;
     }
 
     /** Add a sibline stage next to current stage. */
     addSiblingTask(path: string, data?: Dict) {
         const stage = this.#game.createStage(path, data);
         stage.parent = this.#stage.parent!;
-        for (const steps of this.#stage.parent!.steps.values()) {
-            const idx = steps.indexOf(this.#stage.parent!);
-            if (idx !== -1) {
-                steps.splice(idx + 1, 0, stage);
-                return stage.tasks[1];
-            }
+        const idx = this.#stage.steps.indexOf(this.#stage.parent!);
+        if (idx !== -1) {
+            this.#stage.steps.splice(idx + 1, 0, stage);
+            return stage.task;
         }
-        throw('failed to add sibling ' + path);
+        throw('failed to add sibling to ' + path);
     }
 
     /** Add a callback for component function call. */
@@ -70,7 +79,6 @@ export class Task {
     /** Skip stage (may trigger skip event). */
     skip() {
         if (this.#stage.progress < 2) {
-            this.#stage.progress = 4;
             this.#stage.skipped = true;
             this.#stage.awaits.clear();
             this.#stage.monitors.clear();
@@ -81,13 +89,20 @@ export class Task {
 
     /** Force stage to finish (without triggering skip event). */
     cancel() {
-        if (this.#stage.progress < 2) {
-            this.#stage.progress = -1;
-            this.#stage.skipped = true;
-            this.#stage.awaits.clear();
-            this.#stage.monitors.clear();
-            return true;
+        this.#stage.progress = -1;
+        this.#stage.awaits.clear();
+        this.#stage.monitors.clear();
+    }
+
+    /** Trigger an event. Reserved names:
+     * before: triggered before executing task.main()
+     * after: triggered after executing task.main()
+     * skip: triggered after skipping task.main()
+     */
+    trigger(name: string) {
+        if (name === 'before' || name === 'after' || name === 'skip') {
+            throw('reserved event name: ' + name);
         }
-        return false;
+        return this.#stage.trigger(name);
     }
 }

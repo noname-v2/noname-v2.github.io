@@ -65,25 +65,26 @@
     class Stage {
         /** Stage ID. */
         id;
-        /** Child task triggered by before or after event. */
-        trigger = 'trigger';
-        /** Main task. */
-        tasks;
+        /** Path to main task constructor. */
+        path;
+        /** Main task object. */
+        task;
         /** Child steps of task objects.
          * Stage: child stage
          * array: [function name, executed, function arguments]
          * Dict:
          */
-        steps = new Map();
+        steps = [];
         /** Parent stage. */
         parent = null;
-        /** Current state of execution. Action:
-         * 0: call this.preTask.main()
-         * 1: execute child stages this.preTask
+        /** Current state of execution.
+         * -1: no action (cancelled)
+         * 0: trigger before event
+         * 1: execute steps added by before event
          * 2: call this.task.main()
-         * 3: execute child stages of this.task
-         * 4: call this.postTask.main()
-         * 5: execute child stages of this.postTask
+         * 3: execute steps added by this.task.main()
+         * 4: trigger after event
+         * 5: execute steps added by after event
          * 6: no action (done)
         */
         progress = 0;
@@ -97,21 +98,13 @@
         results = {};
         /** Reference to game object. */
         #game;
-        /** Get task based on current progress. */
-        get task() {
-            if (this.progress >= 0) {
-                return this.tasks[Math.floor(this.progress / 2)] ?? null;
-            }
-            return null;
-        }
+        /** Stage may trigger before and after event. */
+        #trigger = true;
         constructor(id, path, data, game) {
             this.id = id;
+            this.path = path;
+            this.task = apply(new (game.getTask(path))(this, game), data);
             this.#game = game;
-            // main task, pre-task and post-task
-            const task = apply(new (game.getTask(path))(this, this.#game), data);
-            const preTask = this.trigger ? new (game.getTask(this.trigger))(this, this.#game) : null;
-            const postTask = this.trigger ? new (game.getTask(this.trigger))(this, this.#game) : null;
-            this.tasks = [preTask, task, postTask];
         }
         /** Execute the next step.
          * @returns {boolean | null}
@@ -120,40 +113,46 @@
          * null: await user input
          */
         async next() {
-            // check if trigger stage is skipped
-            if (!this.trigger && [0, 1, 4, 5].includes(this.progress)) {
+            // check if stage is cancelled / done /skipped
+            if (this.progress < 0 || this.progress >= 6) {
+                return false;
+            }
+            if ((this.skipped && this.progress < 4) ||
+                (!this.#trigger && [0, 1, 4, 5].includes(this.progress))) {
                 this.progress++;
                 return true;
             }
-            // check if stage is finished
-            const task = this.task;
-            if (!task) {
-                return false;
-            }
-            this.#game.currentStage = this;
             // check if stage is awaiting user input
+            this.#game.currentStage = this;
             if (this.awaits.size) {
                 return null;
             }
             this.monitors.clear();
-            if (this.progress % 2 === 0) {
+            if (this.progress === 0) {
+                // trigger before event
+                this.trigger('before');
+            }
+            else if (this.progress === 2) {
                 // call task.main()
                 try {
-                    await task.main();
+                    await this.task.main();
                 }
                 catch (e) {
                     console.log(e);
                 }
             }
+            else if (this.progress === 4) {
+                // trigger after or skip event
+                this.trigger(this.skipped ? 'skipped' : 'after');
+            }
             else {
                 // execute child steps of current task
-                const steps = this.steps.get(task);
-                for (const step of steps) {
+                for (const step of this.steps) {
                     if (Array.isArray(step)) {
                         // call a task method
                         if (step[1] === false) {
                             try {
-                                await task[step[0]](...step[2]);
+                                await this.task[step[0]](...step[2]);
                             }
                             catch (e) {
                                 console.log(e);
@@ -172,9 +171,15 @@
                     }
                 }
             }
-            // increment progress if task.main() is called or all child steps done
             this.progress++;
             return true;
+        }
+        /** Trigger an event. */
+        trigger(event = null) {
+            const stage = this.#game.createStage('trigger', { event });
+            stage.parent = this;
+            stage.#trigger = false;
+            this.steps.push(stage);
         }
     }
 
@@ -186,10 +191,18 @@
         get game() {
             return this.#game.accessor;
         }
+        get path() {
+            return this.#stage.path;
+        }
+        get parent() {
+            return this.#stage.parent?.task ?? null;
+        }
+        get results() {
+            return this.#stage.results;
+        }
         constructor(stage, game) {
             this.#stage = stage;
             this.#game = game;
-            stage.steps.set(this, []);
         }
         /** Main function. */
         main() { }
@@ -199,27 +212,25 @@
         }
         /** Add a step in current stage. */
         add(step, ...args) {
-            this.#stage.steps.get(this).push([step, false, args]);
+            this.#stage.steps.push([step, false, args]);
         }
         /** Add a child stage in current stage. */
         addTask(path, data) {
             const stage = this.#game.createStage(path, data);
             stage.parent = this.#stage;
-            this.#stage.steps.get(this).push(stage);
-            return stage.tasks[1];
+            this.#stage.steps.push(stage);
+            return stage.task;
         }
         /** Add a sibline stage next to current stage. */
         addSiblingTask(path, data) {
             const stage = this.#game.createStage(path, data);
             stage.parent = this.#stage.parent;
-            for (const steps of this.#stage.parent.steps.values()) {
-                const idx = steps.indexOf(this.#stage.parent);
-                if (idx !== -1) {
-                    steps.splice(idx + 1, 0, stage);
-                    return stage.tasks[1];
-                }
+            const idx = this.#stage.steps.indexOf(this.#stage.parent);
+            if (idx !== -1) {
+                this.#stage.steps.splice(idx + 1, 0, stage);
+                return stage.task;
             }
-            throw ('failed to add sibling ' + path);
+            throw ('failed to add sibling to ' + path);
         }
         /** Add a callback for component function call. */
         monitor(link, callback) {
@@ -232,7 +243,6 @@
         /** Skip stage (may trigger skip event). */
         skip() {
             if (this.#stage.progress < 2) {
-                this.#stage.progress = 4;
                 this.#stage.skipped = true;
                 this.#stage.awaits.clear();
                 this.#stage.monitors.clear();
@@ -242,14 +252,20 @@
         }
         /** Force stage to finish (without triggering skip event). */
         cancel() {
-            if (this.#stage.progress < 2) {
-                this.#stage.progress = -1;
-                this.#stage.skipped = true;
-                this.#stage.awaits.clear();
-                this.#stage.monitors.clear();
-                return true;
+            this.#stage.progress = -1;
+            this.#stage.awaits.clear();
+            this.#stage.monitors.clear();
+        }
+        /** Trigger an event. Reserved names:
+         * before: triggered before executing task.main()
+         * after: triggered after executing task.main()
+         * skip: triggered after skipping task.main()
+         */
+        trigger(name) {
+            if (name === 'before' || name === 'after' || name === 'skip') {
+                throw ('reserved event name: ' + name);
             }
-            return false;
+            return this.#stage.trigger(name);
         }
     }
 
@@ -398,10 +414,11 @@
                     }
                     apply(this.mode, mode);
                 }
-                // delete useless properties
+                // finalize and freez mode object
                 delete this.mode.tasks;
                 delete this.mode.components;
                 this.mode.extension = content[0];
+                freeze(this.mode);
                 // start game
                 this.rootStage = this.currentStage = this.createStage('main');
                 this.arena = this.create('arena');

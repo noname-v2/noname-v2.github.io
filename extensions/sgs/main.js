@@ -48,6 +48,11 @@ const config = {
 
 function trigger(T) {
     return class Trigger extends T {
+        /** Event name. */
+        event;
+        main() {
+            // console.log('>', this.event, this.parent?.path)
+        }
     };
 }
 

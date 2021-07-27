@@ -4,7 +4,7 @@ import type { config } from '../config';
 
 type A = typeof config
 
-export function chooseHero(T: typeof Task): typeof Task {
+export function chooseHero(T: typeof Task) {
     return class ChooseHero extends (T as ReturnType<typeof choose>) {
         main() {
             console.log('chooseHero', this.np);

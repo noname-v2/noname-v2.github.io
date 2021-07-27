@@ -1,6 +1,6 @@
 import type { Task, Link, Config, Dict } from '../sgs';
 
-export function lobby(T: typeof Task): typeof Task {
+export function lobby(T: typeof Task) {
     return class Lobby extends T {
         lobby!: Link;
 
