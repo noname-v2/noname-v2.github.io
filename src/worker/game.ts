@@ -62,9 +62,6 @@ export class Game {
     */
     progress = 0;
 
-    /** Currently paused by stage.awaits. */
-    paused = true;
-
     /** Property and method accessor. */
     readonly accessor: Accessor;
 
@@ -88,6 +85,9 @@ export class Game {
 
     /** Number of stages created. */
     #stageCount = 0;
+
+    /** Currently paused by stage.awaits. */
+    #paused = true;
 
     constructor(content: [string, string[], string[], string[], Dict, [string, string]], worker: Worker) {
         this.#worker = worker;
@@ -272,10 +272,10 @@ export class Game {
 
     /** Execute stages. */
     async loop() {
-        if (this.paused) {
-            this.paused = false;
+        if (this.#paused) {
+            this.#paused = false;
             while (this.progress !== 2 && await this.rootStage.next());
-            this.paused = true;
+            this.#paused = true;
         }
     }
 }

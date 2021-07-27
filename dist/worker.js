@@ -357,8 +357,6 @@
          * 2: over
         */
         progress = 0;
-        /** Currently paused by stage.awaits. */
-        paused = true;
         /** Property and method accessor. */
         accessor;
         /** Worker reference. */
@@ -375,6 +373,8 @@
         #linkCount = 0;
         /** Number of stages created. */
         #stageCount = 0;
+        /** Currently paused by stage.awaits. */
+        #paused = true;
         constructor(content, worker) {
             this.#worker = worker;
             this.packs = new Set(content[1]);
@@ -540,11 +540,11 @@
         }
         /** Execute stages. */
         async loop() {
-            if (this.paused) {
-                this.paused = false;
+            if (this.#paused) {
+                this.#paused = false;
                 while (this.progress !== 2 && await this.rootStage.next())
                     ;
-                this.paused = true;
+                this.#paused = true;
             }
         }
     }
@@ -778,7 +778,7 @@
                             stage.results[key] = result;
                         }
                         stage.awaits.delete(id);
-                        if (!stage.awaits.size && this.#game.paused) {
+                        if (!stage.awaits.size) {
                             this.#game.loop();
                         }
                     }

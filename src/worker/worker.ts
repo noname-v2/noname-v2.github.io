@@ -286,7 +286,7 @@ export class Worker {
                         stage.results[key] = result;
                     }
                     stage.awaits.delete(id);
-                    if (!stage.awaits.size && this.#game.paused) {
+                    if (!stage.awaits.size) {
                         this.#game.loop();
                     }
                 }

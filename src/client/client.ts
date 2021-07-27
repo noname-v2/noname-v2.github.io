@@ -51,9 +51,6 @@ export class Client {
     /** Components synced with the worker. */
     #components = new Map<number, Component>();
 
-    /** Number of connections used as connection identifier. */
-    #connectionCount = 0;
-
     /** ID of current stage. */
     #stageID = 0;
 
@@ -62,6 +59,9 @@ export class Client {
 
     /** Timestamp of the last full UI load. */
     #loaded = 0;
+
+    /** This.#loop is not running. */
+    #paused = true;
 
     get version() {
         return this.#version;
@@ -85,23 +85,6 @@ export class Client {
 
     get listeners() {
         return this.#listeners;
-    }
-
-    constructor() {
-        this.#ui = new UI(this, this.#db);
-
-        // get user identifier
-        this.#db.ready.then(() => {
-            if (!this.#db.get('uid')) {
-                this.#db.set('uid', this.utils.uid());
-            }
-            this.#uid = this.#db.get('uid');
-        });
-
-        // register service worker for PWA
-        navigator.serviceWorker?.register('/service.js').then(reg => {
-            this.#registration = reg;
-        });
     }
 
     /** Client platform. */
@@ -160,6 +143,23 @@ export class Client {
             }
         }
         return null;
+    }
+
+    constructor() {
+        this.#ui = new UI(this, this.#db);
+
+        // get user identifier
+        this.#db.ready.then(() => {
+            if (!this.#db.get('uid')) {
+                this.#db.set('uid', this.utils.uid());
+            }
+            this.#uid = this.#db.get('uid');
+        });
+
+        // register service worker for PWA
+        navigator.serviceWorker?.register('/service.js').then(reg => {
+            this.#registration = reg;
+        });
     }
 
     /** Connect to a game server. */
@@ -229,11 +229,11 @@ export class Client {
         }
     }
 
-    /** Add a UITick to dispatch. */
+    /** Add a UITick to render queue. */
     dispatch(data: UITick) {
         this.#ticks.push(data);
-        if (this.#ticks.length === 1) {
-            this.#render();
+        if (this.#paused) {
+            this.#loop();
         }
     }
 
@@ -245,18 +245,14 @@ export class Client {
     }
 
     /**
-     * Call or check the existence of a plugin method.
-     * @param {number} id - ID of the method call.
-     * @param {string} name - Plugin name .
-     * @param {string} method - Method to be called or checked.
-     * @param {any[]} [args] - If args is array, call method with args as arguments,
-     * if args is undefined, check the existence of the method instead.
+     * Render the next UITick.
      */
     async #render() {
-        try {
-            const [sid, tags, props, calls] = this.#ticks[0];
+        const tick = this.#ticks.shift()!;
 
+        try {
             // check if tick is a full UI reload
+            const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
                     const arena = this.#ui.app.arena;
@@ -346,10 +342,16 @@ export class Client {
                 this.send(-1, null, false);
             }
         }
+    }
 
-        this.#ticks.shift();
-        if (this.#ticks.length) {
-            this.#render();
+    /** Render UITick(s). */
+    async #loop() {
+        if (this.#paused) {
+            this.#paused = false;
+            while (this.#ticks.length) {
+                await this.#render();
+            }
+            this.#paused = true;
         }
     }
 
