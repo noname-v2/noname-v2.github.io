@@ -89,6 +89,7 @@ export class Lobby extends Component {
                     }
                 }
                 else {
+                    this.ui.app.arena?.remove();
                     this.freeze();
                     this.yield(['config', 'online', false]);
                     this.exiting = true;

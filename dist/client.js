@@ -752,6 +752,7 @@
                         }
                     }
                     else {
+                        this.ui.app.arena?.remove();
                         this.freeze();
                         this.yield(['config', 'online', false]);
                         this.exiting = true;
@@ -3115,7 +3116,7 @@
                 this.connection.send('resp:' + JSON.stringify(msg));
             }
         }
-        /** Add a UITick to dispatch. */
+        /** Add a UITick to render queue. */
         dispatch(data) {
             this.#ticks.push(data);
             if (this.#paused) {
