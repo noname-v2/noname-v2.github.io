@@ -72,4 +72,9 @@ export class Accessor {
     start() {
         this.#game.start();
     }
+
+    /** Mark game as over. */
+    over() {
+        this.#game.over();
+    }
 }

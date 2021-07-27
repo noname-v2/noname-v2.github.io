@@ -1,4 +1,5 @@
 import type { Worker } from './worker';
+import type { Dict } from '../utils';
 
 /** A link to a client-side component. */
 export class Link {
@@ -44,7 +45,7 @@ export class Link {
     }
 
     /** Update properties. */
-    update(items: {[key: string]: any}) {
+    update(items: Dict) {
         for (const key in items) {
             const val = items[key] ?? null;
             val === null ? this.#props.delete(key) : this.#props.set(key, val);
@@ -63,7 +64,7 @@ export class Link {
     }
 
     /** Get tag and object of all properties. */
-    flatten(): [string, {[key: string]: any}] {
+    flatten(): [string, Dict] {
         return [this.#tag, Object.fromEntries(this.#props)];
     }
 }

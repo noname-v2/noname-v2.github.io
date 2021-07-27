@@ -1,6 +1,7 @@
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
 import type { Extension } from '../../worker/extension';
+import type { Dict } from '../../utils';
 
 interface ExtensionMeta {
 	mode: string;
@@ -40,8 +41,8 @@ export class SplashGallery extends Gallery {
 		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
 		const extensions = await this.client.readJSON<string[]>('extensions/extensions.json');
-		const modeNames = <{[key: string]: string}>{};
-		const modes = <string[]>[];
+		const modeNames: Dict<string> ={};
+		const modes: string[] = [];
 
 		// udpate index.json
 		let write = false;

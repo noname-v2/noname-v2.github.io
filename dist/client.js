@@ -2920,14 +2920,14 @@
                 });
             });
         }
-        /** Connect to web worker. */
+        /** Connect to a game server. */
         connect(config) {
             this.disconnect();
             if (Array.isArray(config)) {
-                const connection = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
-                connection.onmessage = ({ data }) => {
+                const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
+                worker.onmessage = ({ data }) => {
                     if (data === 'ready') {
-                        connection.onmessage = ({ data }) => this.dispatch(data);
+                        worker.onmessage = ({ data }) => this.dispatch(data);
                         config.push(this.db.get(config[0] + ':disabledHeropacks') || []);
                         config.push(this.db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(this.db.get(config[0] + ':config') || {});

@@ -186,8 +186,8 @@ export class Game {
 
     /** Get a UITick of all links. */
     pack(): UITick {
-        const tags = <{[key: string]: string}>{};
-        const props = <{[key: string]: Dict}>{};
+        const tags: Dict<string> = {};
+        const props: Dict<Dict> = {};
         for (const [uid, link] of this.links.entries()) {
             [tags[uid], props[uid]] = link.flatten();
         }
@@ -204,11 +204,17 @@ export class Game {
         this.syncRoom();
     }
 
+    /** Mark game as over. */
+    over() {
+        this.progress = 2;
+        this.syncRoom();
+    }
+
     /** Execute stages. */
     async loop() {
-        if (this.paused && this.progress !== 2) {
+        if (this.paused) {
             this.paused = false;
-            while (await this.rootStage.next());
+            while (this.progress !== 2 && await this.rootStage.next());
             this.paused = true;
         }
     }

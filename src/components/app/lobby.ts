@@ -1,5 +1,6 @@
 import { Component, Toggle, Player } from '../../components';
 import type { Config } from '../../worker/extension';
+import type { Dict } from '../../utils';
 
 export class Lobby extends Component {
     /** Sidebar for configurations. */
@@ -151,7 +152,7 @@ export class Lobby extends Component {
         this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
     }
 
-    $config(config: {[key: string]: any}) {
+    $config(config: Dict) {
         this.unfreeze();
         for (const key in config) {
             const toggle = this.configToggles.get(key);

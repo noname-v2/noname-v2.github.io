@@ -9,11 +9,11 @@ export type UITick = [
     // stage ID
     number,
     // add or delete components
-    {[key: string]: string | null},
+    Dict<string | null>,
     // component property updates
-    {[key: string]: {[key: string]: any}},
+    Dict<Dict>,
     // component function calls
-    {[key: string]: [string, any][]}
+    Dict<[string, any][]>
 ];
 
 /** One section of a UITick. */
@@ -228,9 +228,9 @@ export class Worker {
     /** Create UITick(s) from this.#history. */
     #commit() {
         let stageID: number | null = -1;
-        let tagChanges: {[key: string]: string | null} = {};
-        let propChanges: {[key: string]: Dict} = {};
-        let calls: {[key: string]: [string, any][]} = {};
+        let tagChanges: Dict<string | null> = {};
+        let propChanges: Dict<Dict> = {};
+        let calls: Dict<[string, any][]> = {};
 
         // save current timestamp in this.#history
         const now = Date.now();

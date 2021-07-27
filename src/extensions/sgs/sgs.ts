@@ -31,7 +31,7 @@ interface CardSection extends Section {
 
 /** SGS skill definition. */
 interface SkillSection extends Section {
-    trigger?: {[key: string]: string};
+    trigger?: Dict<string>;
 }
 
 /** Type shortcuts. */

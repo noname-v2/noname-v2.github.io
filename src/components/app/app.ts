@@ -1,4 +1,5 @@
 import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
+import type { Dict } from '../../utils';
 
 interface DialogOptions {
     buttons?: [string, string, string?][];
@@ -20,10 +21,10 @@ export class App extends Component {
     splash!: Splash;
 
     /** Transition durations. */
-    css: {[key: string]: {[key: string]: string}} = {};
+    css: Dict<Dict<string>> = {};
 
     /** Index of assets. */
-    assets!: {[key: string]: {[key: string]: string}};
+    assets!: Dict<Dict<string>>;
 
     /** Stylesheet for theme. */
     themeNode = document.createElement('style');
