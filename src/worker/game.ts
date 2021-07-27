@@ -27,28 +27,25 @@ export interface Link {
 
 export class Game {
     /** Root game stage. */
-    rootStage!: Stage;
+    readonly rootStage!: Stage;
 
     /** Current game stage. */
     currentStage!: Stage;
 
     /** Links to components. */
-    links = new Map<number, [Link, Dict]>();
+    readonly links = new Map<number, [Link, Dict]>();
 
     /** Game mode. */
-    mode: Mode;
+    readonly mode: Mode = {};
 
     /** Game configuration. */
-    config: Dict;
-
-    /** Game data. */
-    data: Dict = {};
+    readonly config: Dict;
 
     /** Hero packages. */
-    packs: Set<string>;
+    readonly packs: Set<string>;
 
     /** Banned packages. */
-    banned = {
+    readonly banned = {
         heropacks: new Set<string>(),
         cardpacks: new Set<string>(),
         heros: new Set<string>(),
@@ -56,7 +53,7 @@ export class Game {
     };
 
     /** Arena link. */
-    arena!: Link;
+    readonly arena!: Link;
 
     /** Game progress.
      * 0: waiting
@@ -69,7 +66,7 @@ export class Game {
     paused = true;
 
     /** Property and method accessor. */
-    accessor: Accessor;
+    readonly accessor: Accessor;
 
     /** Worker reference. */
     #worker: Worker;
@@ -94,12 +91,11 @@ export class Game {
 
     constructor(content: [string, string[], string[], string[], Dict, [string, string]], worker: Worker) {
         this.#worker = worker;
-        this.mode = {};
         this.packs = new Set(content[1]);
         this.banned.heropacks = new Set(content[2]);
         this.banned.cardpacks = new Set(content[3]);
         this.config = content[4];
-        this.#worker.info = content[5];
+        (this.#worker as any).info = content[5];
         this.accessor = new Accessor(this, worker);
 
         // load extensions
@@ -139,8 +135,8 @@ export class Game {
             freeze(this.mode);
 
             // start game
-            this.rootStage = this.currentStage = this.createStage('main');
-            this.arena = this.create('arena');
+            (this as any).rootStage = this.currentStage = this.createStage('main');
+            (this as any).arena = this.create('arena');
             this.loop();
         });
     }
@@ -195,9 +191,9 @@ export class Game {
     }
 
     /** Create a stage. */
-    createStage(path: string, data?: Dict) {
+    createStage(path: string, data?: Dict, parent?: Stage) {
         const id = ++this.#stageCount;
-        const stage = new Stage(id, path, data ?? {}, this);
+        const stage = new Stage(id, path, data ?? {}, parent ?? null, this);
         this.#stages.set(id, stage);
         return stage;
     }

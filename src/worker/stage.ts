@@ -4,23 +4,23 @@ import { apply, Dict } from '../utils';
 
 export class Stage {
     /** Stage ID. */
-    id: number;
+    readonly id: number;
 
     /** Path to main task constructor. */
-    path: string;
+    readonly path: string;
 
     /** Main task object. */
-    task: Task;
+    readonly task: Task;
 
     /** Child steps of task objects.
      * Stage: child stage
      * array: [function name, executed, function arguments]
      * Dict: 
      */
-    steps: (Stage | [string, boolean, any[]])[] = [];
+    readonly steps: (Stage | [string, boolean, any[]])[] = [];
 
     /** Parent stage. */
-    parent: Stage | null = null;
+    readonly parent: Stage | null;
 
     /** Current state of execution.
      * -1: no action (cancelled)
@@ -38,13 +38,13 @@ export class Stage {
     skipped = false;
 
     /** Handler of component.yield(). */
-    monitors = new Map<number, string>();
+    readonly monitors = new Map<number, string>();
 
     /** Awaiting values from component.return(). */
-    awaits = new Map<number, string | null>();
+    readonly awaits = new Map<number, string | null>();
 
     /** Values from component.return(). */
-    results: Dict = {};
+    readonly results: Dict = {};
 
     /** Reference to game object. */
     #game: Game;
@@ -52,9 +52,10 @@ export class Stage {
     /** Stage may trigger before and after event. */
     #trigger: boolean = true;
 
-    constructor(id: number, path: string, data: Dict, game: Game) {
+    constructor(id: number, path: string, data: Dict, parent: Stage | null, game: Game) {
         this.id = id;
         this.path = path;
+        this.parent = parent;
         this.task = apply(new (game.getTask(path))(this, game), data);
         this.#game = game;
     }
@@ -66,11 +67,13 @@ export class Stage {
      * null: await user input
      */
     async next(): Promise<boolean | null> {
-        // check if stage is cancelled / done /skipped
+        // check if stage is done or cancelled
         if (this.progress < 0 || this.progress >= 6) {
             return false;
         }
 
+        // check if current step is skipped
+        this.#game.currentStage = this;
         if ((this.skipped && this.progress < 4) ||
             (!this.#trigger && [0, 1, 4, 5].includes(this.progress))) {
             this.progress++;
@@ -78,7 +81,6 @@ export class Stage {
         }
 
         // check if stage is awaiting user input
-        this.#game.currentStage = this;
         if (this.awaits.size) {
             return null;
         }
@@ -134,8 +136,7 @@ export class Stage {
 
     /** Trigger an event. */
     trigger(event: string | null = null) {
-        const stage = this.#game.createStage('trigger', {event});
-        stage.parent = this;
+        const stage = this.#game.createStage('trigger', {event}, this);
         stage.#trigger = false;
         this.steps.push(stage);
     }

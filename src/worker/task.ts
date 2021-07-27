@@ -48,16 +48,14 @@ export class Task {
 
     /** Add a child stage in current stage. */
     addTask(path: string, data?: Dict) {
-        const stage = this.#game.createStage(path, data);
-        stage.parent = this.#stage;
+        const stage = this.#game.createStage(path, data, this.#stage);
         this.#stage.steps.push(stage);
         return stage.task;
     }
 
     /** Add a sibline stage next to current stage. */
     addSiblingTask(path: string, data?: Dict) {
-        const stage = this.#game.createStage(path, data);
-        stage.parent = this.#stage.parent!;
+        const stage = this.#game.createStage(path, data, this.#stage.parent!);
         const idx = this.#stage.steps.indexOf(this.#stage.parent!);
         if (idx !== -1) {
             this.#stage.steps.splice(idx + 1, 0, stage);

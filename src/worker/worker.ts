@@ -36,13 +36,13 @@ export type ClientMessage = [string, number, number, any, boolean];
  */
 export class Worker {
     /** Worker version. */
-    version = version;
+    readonly version = version;
 
     /** User identifier. */
-    uid!: string;
+    readonly uid!: string;
 
     /** User nickname and avatar. */
-    info!: [string, string];
+    readonly info!: [string, string];
 
     /** Connected hub. */
     connection: WebSocket | null = null;
@@ -66,7 +66,7 @@ export class Worker {
         self.onmessage = ({data}: {data: ClientMessage}) => {
             if (data[1] === 0) {
                 self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
-                this.uid = data[0];
+                (this as any).uid = data[0];
                 this.#game = new Game(data[3], this);
             }
         }

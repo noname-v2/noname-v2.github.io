@@ -76,7 +76,7 @@
          */
         steps = [];
         /** Parent stage. */
-        parent = null;
+        parent;
         /** Current state of execution.
          * -1: no action (cancelled)
          * 0: trigger before event
@@ -100,9 +100,10 @@
         #game;
         /** Stage may trigger before and after event. */
         #trigger = true;
-        constructor(id, path, data, game) {
+        constructor(id, path, data, parent, game) {
             this.id = id;
             this.path = path;
+            this.parent = parent;
             this.task = apply(new (game.getTask(path))(this, game), data);
             this.#game = game;
         }
@@ -113,17 +114,18 @@
          * null: await user input
          */
         async next() {
-            // check if stage is cancelled / done /skipped
+            // check if stage is done or cancelled
             if (this.progress < 0 || this.progress >= 6) {
                 return false;
             }
+            // check if current step is skipped
+            this.#game.currentStage = this;
             if ((this.skipped && this.progress < 4) ||
                 (!this.#trigger && [0, 1, 4, 5].includes(this.progress))) {
                 this.progress++;
                 return true;
             }
             // check if stage is awaiting user input
-            this.#game.currentStage = this;
             if (this.awaits.size) {
                 return null;
             }
@@ -176,8 +178,7 @@
         }
         /** Trigger an event. */
         trigger(event = null) {
-            const stage = this.#game.createStage('trigger', { event });
-            stage.parent = this;
+            const stage = this.#game.createStage('trigger', { event }, this);
             stage.#trigger = false;
             this.steps.push(stage);
         }
@@ -216,15 +217,13 @@
         }
         /** Add a child stage in current stage. */
         addTask(path, data) {
-            const stage = this.#game.createStage(path, data);
-            stage.parent = this.#stage;
+            const stage = this.#game.createStage(path, data, this.#stage);
             this.#stage.steps.push(stage);
             return stage.task;
         }
         /** Add a sibline stage next to current stage. */
         addSiblingTask(path, data) {
-            const stage = this.#game.createStage(path, data);
-            stage.parent = this.#stage.parent;
+            const stage = this.#game.createStage(path, data, this.#stage.parent);
             const idx = this.#stage.steps.indexOf(this.#stage.parent);
             if (idx !== -1) {
                 this.#stage.steps.splice(idx + 1, 0, stage);
@@ -338,11 +337,9 @@
         /** Links to components. */
         links = new Map();
         /** Game mode. */
-        mode;
+        mode = {};
         /** Game configuration. */
         config;
-        /** Game data. */
-        data = {};
         /** Hero packages. */
         packs;
         /** Banned packages. */
@@ -380,7 +377,6 @@
         #stageCount = 0;
         constructor(content, worker) {
             this.#worker = worker;
-            this.mode = {};
             this.packs = new Set(content[1]);
             this.banned.heropacks = new Set(content[2]);
             this.banned.cardpacks = new Set(content[3]);
@@ -471,9 +467,9 @@
             return link;
         }
         /** Create a stage. */
-        createStage(path, data) {
+        createStage(path, data, parent) {
             const id = ++this.#stageCount;
-            const stage = new Stage(id, path, data ?? {}, this);
+            const stage = new Stage(id, path, data ?? {}, parent ?? null, this);
             this.#stages.set(id, stage);
             return stage;
         }
