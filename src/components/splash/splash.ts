@@ -35,13 +35,14 @@ export class Splash extends Component {
 		}
 	}
 
-	hide() {
+	hide(faded: boolean = false) {
 		if (this.hidden) {
 			return;
 		}
 		this.hidden = true;
 		this.ui.animate(this.node, {
-			scale: [1, 'var(--app-splash-transform)'], opacity: [1, 0]
+			scale: [faded ? 'var(--app-splash-transform)' : 1, 'var(--app-splash-transform)'],
+			opacity: [faded ? 'var(--app-blurred-opacity)' : 1, 0]
 		}).onfinish = () => {
 			this.node.remove();
 		}

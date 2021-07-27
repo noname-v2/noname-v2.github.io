@@ -248,8 +248,10 @@ export class SplashHub extends Popup {
 
     msg(msg: string) {
         this.client.dispatch(JSON.parse(msg));
-        this.app.splash.hide();
-        this.close();
+        if (!this.app.splash.hidden) {
+            this.app.splash.hide(true);
+            this.close();
+        }
     }
 
     down(msg: string) {

@@ -428,25 +428,24 @@ export class UI {
 		
 		let length = 0;
 		for (const key in animation) {
-			if (key === 'auto' || key === 'forward') {
-				continue;
+			if (Array.isArray((animation as any)[key])) {
+				length = Math.max(length, (animation as any)[key].length);
 			}
-			length = Math.max(length, (animation as any)[key].length);
 		}
 
 		for (let i = 0; i < length; i++) {
 			const frame: Keyframe = {};
-			if ('x' in animation) {
-				frame.transform = `translateX(${animation.x![i]}px)`;
+			if (animation.x) {
+				frame.transform = `translateX(${animation.x[i]}px)`;
 			}
-			if ('y' in animation) {
-				frame.transform = (frame.transform || '') + ` translateY(${animation.y![i]}px)`;
+			if (animation.y) {
+				frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
 			}
-			if ('scale' in animation) {
-				frame.transform = (frame.transform || '') + ` scale(${animation.scale![i]})`;
+			if (animation.scale) {
+				frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
 			}
-			if ('opacity' in animation) {
-				frame.opacity = animation.opacity![i].toString();
+			if (animation.opacity) {
+				frame.opacity = animation.opacity[i].toString();
 			}
 			keyframes.push(frame);
 		}

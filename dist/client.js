@@ -1939,8 +1939,10 @@
         }
         msg(msg) {
             this.client.dispatch(JSON.parse(msg));
-            this.app.splash.hide();
-            this.close();
+            if (!this.app.splash.hidden) {
+                this.app.splash.hide(true);
+                this.close();
+            }
         }
         down(msg) {
             // room owner disconnected
@@ -2318,13 +2320,14 @@
                 document.head.appendChild(script);
             }
         }
-        hide() {
+        hide(faded = false) {
             if (this.hidden) {
                 return;
             }
             this.hidden = true;
             this.ui.animate(this.node, {
-                scale: [1, 'var(--app-splash-transform)'], opacity: [1, 0]
+                scale: [faded ? 'var(--app-splash-transform)' : 1, 'var(--app-splash-transform)'],
+                opacity: [faded ? 'var(--app-blurred-opacity)' : 1, 0]
             }).onfinish = () => {
                 this.node.remove();
             };
@@ -2753,23 +2756,22 @@
             const keyframes = [];
             let length = 0;
             for (const key in animation) {
-                if (key === 'auto' || key === 'forward') {
-                    continue;
+                if (Array.isArray(animation[key])) {
+                    length = Math.max(length, animation[key].length);
                 }
-                length = Math.max(length, animation[key].length);
             }
             for (let i = 0; i < length; i++) {
                 const frame = {};
-                if ('x' in animation) {
+                if (animation.x) {
                     frame.transform = `translateX(${animation.x[i]}px)`;
                 }
-                if ('y' in animation) {
+                if (animation.y) {
                     frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
                 }
-                if ('scale' in animation) {
+                if (animation.scale) {
                     frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
                 }
-                if ('opacity' in animation) {
+                if (animation.opacity) {
                     frame.opacity = animation.opacity[i].toString();
                 }
                 keyframes.push(frame);
