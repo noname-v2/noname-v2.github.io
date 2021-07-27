@@ -420,6 +420,7 @@
                 },
                 unlink: () => {
                     this.#worker.tick(id, null);
+                    this.links.delete(id);
                 },
                 update: (items) => {
                     for (const key in items) {

@@ -124,6 +124,8 @@
         node;
         /** Resolved */
         ready;
+        /** This.remove() is being executed. */
+        removing = false;
         get client() {
             return this.#client;
         }
@@ -195,6 +197,7 @@
         /** Remove element. */
         remove() {
             this.node.remove();
+            this.removing = false;
         }
     }
 
@@ -991,6 +994,19 @@
             this.client.disconnect();
             this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
         }
+        remove() {
+            if (!this.removing) {
+                this.removing = true;
+                let done = 0;
+                const onfinish = () => {
+                    if (++done === 2) {
+                        super.remove();
+                    }
+                };
+                this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' }).onfinish = onfinish;
+                this.ui.animate(this.seats, { opacity: [1, 0] }, { fill: 'forwards' }).onfinish = onfinish;
+            }
+        }
         async history(state) {
             if (this.client.platform === 'Android' && state !== 'lobby') {
                 if (this.app.popups.has('exitLobby')) {
@@ -1076,11 +1092,12 @@
         }
         /** Remove arena. */
         remove() {
-            this.ui.animate(this.node, {
-                opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
-            }).onfinish = () => {
-                super.remove();
-            };
+            if (!this.removing) {
+                this.removing = true;
+                this.ui.animate(this.node, {
+                    opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
+                }).onfinish = () => super.remove();
+            }
         }
         /** Connection status change. */
         $peers() {
@@ -3057,6 +3074,7 @@
                         if (cmp) {
                             this.removeListeners(cmp);
                             this.components.delete(id);
+                            cmp.remove();
                         }
                     }
                 }

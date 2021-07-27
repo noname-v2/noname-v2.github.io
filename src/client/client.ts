@@ -289,6 +289,7 @@ export class Client {
                     if (cmp) {
                         this.removeListeners(cmp);
                         this.components.delete(id);
+                        cmp.remove();
                     }
                 }
             }

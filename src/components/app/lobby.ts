@@ -372,6 +372,20 @@ export class Lobby extends Component {
         this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
     }
 
+    remove() {
+        if (!this.removing) {
+            this.removing = true;
+            let done = 0;
+            const onfinish = () => {
+                if (++done === 2) {
+                    super.remove();
+                }
+            }
+            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
+            this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
+        }
+    }
+
     async history(state: string) {
         if (this.client.platform === 'Android' && state !== 'lobby') {
             if (this.app.popups.has('exitLobby')) {

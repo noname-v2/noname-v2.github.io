@@ -23,6 +23,9 @@ export abstract class Component {
     /** Resolved */
     ready: Promise<unknown>;
 
+    /** This.remove() is being executed. */
+    removing = false;
+
     get client() {
         return this.#client;
     }
@@ -106,5 +109,6 @@ export abstract class Component {
     /** Remove element. */
     remove() {
         this.node.remove();
+        this.removing = false;
     }
 }
