@@ -1,4 +1,4 @@
-import type { CardCollection } from '../sgs/sgs';
+import type { CardDict } from '../sgs/sgs';
 
 export const card = {
     guowuxie: {
@@ -42,4 +42,4 @@ export const card = {
         subtype: 'weapon',
         range: 2
     }
-} as CardCollection;
+} as CardDict;

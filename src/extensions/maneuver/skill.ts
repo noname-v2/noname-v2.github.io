@@ -1,5 +1,5 @@
-import type { SkillCollection } from '../sgs/sgs';
+import type { SkillDict } from '../sgs/sgs';
 
 export const skill = {
 
-} as SkillCollection;
+} as SkillDict;

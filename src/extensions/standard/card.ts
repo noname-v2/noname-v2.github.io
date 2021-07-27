@@ -1,4 +1,4 @@
-import type { CardCollection } from '../sgs/sgs';
+import type { CardDict } from '../sgs/sgs';
 
 export const card = {
     sha: {
@@ -208,4 +208,4 @@ export const card = {
         subtype: 'horse',
         distance: -1
     }
-} as CardCollection;
+} as CardDict;

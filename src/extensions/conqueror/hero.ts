@@ -1,4 +1,4 @@
-import type { HeroCollection } from '../sgs/sgs';
+import type { HeroDict } from '../sgs/sgs';
 
 export const hero = {
     dengai: {
@@ -154,4 +154,4 @@ export const hero = {
         hp: 3,
         skills: ['qice', 'zhiyu']
     }
-} as HeroCollection;
+} as HeroDict;

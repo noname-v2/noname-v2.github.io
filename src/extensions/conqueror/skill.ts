@@ -1,4 +1,4 @@
-import type { SkillCollection } from '../sgs/sgs';
+import type { SkillDict } from '../sgs/sgs';
 
 export const skill = {
     zijiang: {
@@ -113,4 +113,4 @@ export const skill = {
         name: '锋矢',
         intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard.sha)指定被围攻角色为目标后，可令该角色弃置装备区里的一张牌。'
     }
-} as SkillCollection;
+} as SkillDict;

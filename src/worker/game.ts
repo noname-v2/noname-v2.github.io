@@ -4,7 +4,7 @@ import { copy, apply, freeze, access, Dict } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
 import type { Worker, UITick } from './worker';
-import type { Extension, Section, Mode } from './extension';
+import type { Extension, Mode } from './extension';
 
 export class Game {
     /** Root game stage. */
@@ -148,8 +148,7 @@ export class Game {
     getTask(path: string): typeof Task {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
-            console.log(path)
-            const section: Section = this.getExtension(path);
+            const section = this.getExtension(path);
             const cls = section.inherit ? this.getTask(section.inherit) : Task;
             this.#taskClasses.set(path, section.task!(cls));
         }

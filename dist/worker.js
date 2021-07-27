@@ -474,7 +474,6 @@
         getTask(path) {
             if (!this.#taskClasses.has(path)) {
                 // get task from extension sections
-                console.log(path);
                 const section = this.getExtension(path);
                 const cls = section.inherit ? this.getTask(section.inherit) : Task;
                 this.#taskClasses.set(path, section.task(cls));

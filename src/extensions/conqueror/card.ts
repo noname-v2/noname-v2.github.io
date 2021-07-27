@@ -1,4 +1,4 @@
-import type { CardCollection } from '../sgs/sgs';
+import type { CardDict } from '../sgs/sgs';
 
 export const card = {
     chiling: {
@@ -126,4 +126,4 @@ export const card = {
         distance: [1, -1],
         subpack: '君主专属'
     }
-} as CardCollection;
+} as CardDict;

@@ -1,5 +1,5 @@
-import type { CardCollection } from '../sgs/sgs';
+import type { CardDict } from '../sgs/sgs';
 
 export const card = {
 
-} as CardCollection;
+} as CardDict;

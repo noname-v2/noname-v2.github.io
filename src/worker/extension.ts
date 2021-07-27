@@ -1,5 +1,4 @@
 import type { Component } from '../client/component';
-import type { Stage } from './stage';
 import type { Task } from './task';
 import type { Dict } from '../utils';
 
@@ -8,15 +7,6 @@ export type TaskCreator = (cls: typeof Task) => typeof Task;
 
 /** Creates a subclass of Componenbt. */
 export type ComponentCreator = (cls: typeof Component) => typeof Component;
-
-/** Definitions for heros, cards, skills, etc. */
-export interface Section {
-    name?: string;
-    intro?: string;
-    task?: TaskCreator;
-    inherit?: string;
-    [key: string]: any;
-}
 
 /** Mode configuration entry. */
 export interface Config {
@@ -43,9 +33,9 @@ export interface Mode {
 /** Basic extension structure. */
 export interface Extension {
     mode?: Mode;
-    hero?: Dict<Section>;
-    card?: Dict<Section>;
-    skill?: Dict<Section>;
+    hero?: Dict;
+    card?: Dict;
+    skill?: Dict;
     heropack?: string;
     cardpack?: string;
     tags?: string[];

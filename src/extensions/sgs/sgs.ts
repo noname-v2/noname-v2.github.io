@@ -1,4 +1,4 @@
-import type { Extension, Section } from '../../worker/extension';
+import type { Extension, TaskCreator } from '../../worker/extension';
 import type { Dict } from '../../utils';
 
 export type { Config } from '../../worker/extension';
@@ -7,18 +7,24 @@ export type { Task } from '../../worker/task';
 export type { Dict } from '../../utils';
 
 /** SGS hero definition. */
-interface HeroSection extends Section {
+export type HeroDict = Dict<{
+    name: string;
+    intro: string;
     gender: string;
     faction: string;
     hp: number;
     skills: string[];
     subpack?: string;
-}
-
+    [key: string]: any;
+}>;
 
 /** SGS card definition. */
-interface CardSection extends Section {
+export type CardDict = Dict<{
+    name: string;
+    intro: string;
     type: string;
+    task?: TaskCreator;
+    skills?: string[];
     subtype?: string;
     decoration?: string;
     originated?: string;
@@ -27,23 +33,26 @@ interface CardSection extends Section {
     subpack?: string;
     range?: number;
     distance?: number | [number, number];
-}
+    [key: string]: any;
+}>;
 
 /** SGS skill definition. */
-interface SkillSection extends Section {
+export type SkillDict = Dict<{
+    name: string;
+    intro: string;
+    type: string;
+    task?: TaskCreator;
     trigger?: Dict<string>;
-}
+    [key: string]: any;
+}>;
 
-/** Type shortcuts. */
-export type HeroCollection = Dict<HeroSection>;
-export type CardCollection = Dict<CardSection>;
-export type SkillCollection = Dict<SkillSection>;
+/** Card pile format. */
 export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
 
 /** Basic SGS extension structure. */
 export interface SGS extends Extension {
-    hero?: HeroCollection;
-    card?: CardCollection;
-    skill?: SkillCollection;
+    hero?: HeroDict;
+    card?: CardDict;
+    skill?: SkillDict;
     pile?: Pile;
 }
