@@ -24,9 +24,6 @@ export class Lobby extends Component {
     /** Trying to connect to server. */
     connecting = false;
 
-    /** Trying to exit. */
-    exiting = false;
-
     /** Players in this seats. */
     players: Player[] = [];
 
@@ -43,74 +40,17 @@ export class Lobby extends Component {
     heroDock = this.ui.createElement('dock');
 
     init() {
-        this.app.arena!.node.appendChild(this.node);
+        const arena = this.app.arena!;
+        arena.node.appendChild(this.node);
         this.client.listeners.sync.add(this);
-        this.client.listeners.history.add(this);
-
-        // make android back button function as returning to previous page
-        if (this.client.platform === 'Android') {
-            history.pushState('lobby', '');
-        }
         this.sidebar.ready.then(() => {
-            this.sidebar.setHeader('返回', () => {
-                if (history.state === 'lobby') {
-                    history.back();
-                }
-                else {
-                    this.back();
-                }
-            });
+            this.sidebar.setHeader('返回', () => arena.back());
             this.sidebar.setFooter('开始游戏', () => this.return());
         });
 
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
         this.ui.animate(this.seats, {scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]});
-    }
-
-    async back() {
-        const ws = this.client.connection;
-        const peers = this.client.peers;
-        if (peers || ws instanceof WebSocket) {
-            // history back posponded
-            if (this.client.platform === 'Android') {
-                history.forward();
-            }
-
-            const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-            if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', {content, id: 'exitLobby'})) {
-                if (this.app.arena && peers && peers.length > 1) {
-                    this.app.arena.faded = true;
-                }
-                if (ws instanceof WebSocket) {
-                    ws.send('leave:init');
-                    if (this.app.arena) {
-                        this.client.clear();
-                    }
-                }
-                else {
-                    this.ui.app.arena?.remove();
-                    this.freeze();
-                    this.yield(['config', 'online', false]);
-                    this.exiting = true;
-
-                    // force exit if worker doesn't respond within 0.5s
-                    setTimeout(() => {
-                        if (this.exiting) {
-                            this.close();
-                        }
-                    }, 500);
-                }
-
-                if (history.state === 'lobby') {
-                    this.client.listeners.history.delete(this);
-                    history.back();
-                }
-            }
-        }
-        else {
-            this.close();
-        }
     }
 
     $pane(configs: {heropacks: Dict<string>, cardpacks: Dict<string>, configs: Dict<Config>}) {
@@ -263,14 +203,9 @@ export class Lobby extends Component {
 
     sync() {
         const peers = this.client.peers;
-        if (!peers && this.exiting) {
-            // room closed successfully
-            this.close();
-            return;
-        }
         
+        // callback for online mode toggle
         if (this.owner === this.client.uid) {
-            // callback for online mode toggle
             this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {
                 this.app.alert('连接失败');
@@ -368,16 +303,8 @@ export class Lobby extends Component {
         this.sidebar.pane.node.classList.remove('pending');
     }
 
-    close() {
-        this.client.disconnect();
-        this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'});
-    }
-
     remove() {
         super.remove(new Promise<void>(resolve => {
-            if (history.state === 'lobby') {
-                history.back();
-            }
             let done = 0;
             const onfinish = () => {
                 if (++done === 2) {
@@ -387,17 +314,5 @@ export class Lobby extends Component {
             this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
             this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
         }));
-    }
-
-    async history(state: string) {
-        if (this.client.platform === 'Android' && state !== 'lobby') {
-            if (this.app.popups.has('exitLobby')) {
-                this.app.removePopup('exitLobby');
-                history.forward();
-            }
-            else {
-                this.back();
-            }
-        }
     }
 }

@@ -697,8 +697,6 @@
         cardToggles = new Map();
         /** Trying to connect to server. */
         connecting = false;
-        /** Trying to exit. */
-        exiting = false;
         /** Players in this seats. */
         players = [];
         /** Button to toggle spectating. */
@@ -710,68 +708,16 @@
         /** Container of chosen heros. */
         heroDock = this.ui.createElement('dock');
         init() {
-            this.app.arena.node.appendChild(this.node);
+            const arena = this.app.arena;
+            arena.node.appendChild(this.node);
             this.client.listeners.sync.add(this);
-            this.client.listeners.history.add(this);
-            // make android back button function as returning to previous page
-            if (this.client.platform === 'Android') {
-                history.pushState('lobby', '');
-            }
             this.sidebar.ready.then(() => {
-                this.sidebar.setHeader('返回', () => {
-                    if (history.state === 'lobby') {
-                        history.back();
-                    }
-                    else {
-                        this.back();
-                    }
-                });
+                this.sidebar.setHeader('返回', () => arena.back());
                 this.sidebar.setFooter('开始游戏', () => this.return());
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
             this.ui.animate(this.seats, { scale: ['var(--app-splash-transform)', 1], opacity: [0, 1] });
-        }
-        async back() {
-            const ws = this.client.connection;
-            const peers = this.client.peers;
-            if (peers || ws instanceof WebSocket) {
-                // history back posponded
-                if (this.client.platform === 'Android') {
-                    history.forward();
-                }
-                const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-                if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitLobby' })) {
-                    if (this.app.arena && peers && peers.length > 1) {
-                        this.app.arena.faded = true;
-                    }
-                    if (ws instanceof WebSocket) {
-                        ws.send('leave:init');
-                        if (this.app.arena) {
-                            this.client.clear();
-                        }
-                    }
-                    else {
-                        this.ui.app.arena?.remove();
-                        this.freeze();
-                        this.yield(['config', 'online', false]);
-                        this.exiting = true;
-                        // force exit if worker doesn't respond within 0.5s
-                        setTimeout(() => {
-                            if (this.exiting) {
-                                this.close();
-                            }
-                        }, 500);
-                    }
-                    if (history.state === 'lobby') {
-                        this.client.listeners.history.delete(this);
-                        history.back();
-                    }
-                }
-            }
-            else {
-                this.close();
-            }
         }
         $pane(configs) {
             this.sidebar.pane.addSection('选项');
@@ -915,13 +861,8 @@
         }
         sync() {
             const peers = this.client.peers;
-            if (!peers && this.exiting) {
-                // room closed successfully
-                this.close();
-                return;
-            }
+            // callback for online mode toggle
             if (this.owner === this.client.uid) {
-                // callback for online mode toggle
                 this.yield(['sync', null, peers ? true : false]);
                 if (this.connecting && !peers) {
                     this.app.alert('连接失败');
@@ -1012,10 +953,6 @@
         unfreeze() {
             this.sidebar.pane.node.classList.remove('pending');
         }
-        close() {
-            this.client.disconnect();
-            this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' });
-        }
         remove() {
             super.remove(new Promise(resolve => {
                 if (history.state === 'lobby') {
@@ -1030,17 +967,6 @@
                 this.ui.animate(this.sidebar.node, { x: [0, -220] }, { fill: 'forwards' }).onfinish = onfinish;
                 this.ui.animate(this.seats, { opacity: [1, 0] }, { fill: 'forwards' }).onfinish = onfinish;
             }));
-        }
-        async history(state) {
-            if (this.client.platform === 'Android' && state !== 'lobby') {
-                if (this.app.popups.has('exitLobby')) {
-                    this.app.removePopup('exitLobby');
-                    history.forward();
-                }
-                else {
-                    this.back();
-                }
-            }
         }
     }
 
@@ -1086,9 +1012,16 @@
         players = this.ui.createElement('players');
         /** A dialog has been popped before this.remove() is called. */
         faded = false;
+        /** Trying to exit. */
+        exiting = false;
         init() {
             this.app.arena = this;
             this.app.node.appendChild(this.node);
+            // make android back button function as returning to splash screen
+            if (this.client.platform === 'Android') {
+                history.pushState('arena', '');
+                this.client.listeners.history.add(this);
+            }
         }
         /** Update arena layout. */
         resize(ax, ay, width, height) {
@@ -1117,15 +1050,87 @@
         /** Remove arena. */
         remove() {
             super.remove(new Promise(resolve => {
+                if (history.state === 'arena') {
+                    history.back();
+                }
                 this.ui.animate(this.node, {
                     opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
                 }).onfinish = resolve;
             }));
         }
+        /** Back to splash screen. */
+        back() {
+            if (history.state === 'arena') {
+                history.back();
+            }
+            else {
+                this.#confirmBack();
+            }
+        }
+        async history(state) {
+            if (this.client.platform === 'Android' && state !== 'arena') {
+                if (this.app.popups.has('exitArena')) {
+                    // close confirmation dialog when pressing back button twice
+                    this.app.removePopup('exitArena');
+                    history.forward();
+                }
+                else {
+                    this.#confirmBack();
+                }
+            }
+        }
         /** Connection status change. */
         $peers() {
-            // wait until other properties have been updated
-            setTimeout(() => this.client.trigger('sync'));
+            if (!this.client.peers && this.exiting) {
+                // worker notifies that room successfully closed
+                this.client.disconnect();
+            }
+            else {
+                // wait until other properties have been updated
+                setTimeout(() => this.client.trigger('sync'));
+            }
+        }
+        /** Confirm going back to splash screen. */
+        async #confirmBack() {
+            const ws = this.client.connection;
+            const peers = this.client.peers;
+            if (peers || ws instanceof WebSocket) {
+                // postpond history back after user confirmation
+                if (this.client.platform === 'Android') {
+                    history.forward();
+                }
+                const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
+                if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitArena' })) {
+                    if (peers && peers.length > 1) {
+                        this.faded = true;
+                    }
+                    if (ws instanceof WebSocket) {
+                        // leave currently connected room
+                        ws.send('leave:init');
+                        this.client.clear();
+                    }
+                    else {
+                        // tell worker to close the room
+                        this.remove();
+                        this.client.send(-2, null, false);
+                        this.exiting = true;
+                        // force exit if worker doesn't respond within 0.5s
+                        setTimeout(() => {
+                            if (this.exiting) {
+                                this.client.disconnect();
+                            }
+                        }, 500);
+                    }
+                    // reset history.state when back to splash screen
+                    if (history.state === 'arena') {
+                        this.client.listeners.history.delete(this);
+                        history.back();
+                    }
+                }
+            }
+            else {
+                this.client.disconnect();
+            }
         }
     }
 
@@ -3102,10 +3107,14 @@
             }
         }
         /**
-         * Send message to worker.
-         * @param {number} id - Message id.
-         * @param {boolean} err - Whether an error is encountered.
-         * @param {...any[]} args - Message content.
+         * Send component return value to worker.
+         * @param {number} id - ID of component (id > 0).
+         * @param {any} result - Return value of component.
+         * @param {boolean} done - true: component.return(); false: component.yield()
+         * Special ID:
+         * 0: Initialize worker and create worker.#game.
+         * -1: Reload due to UI error.
+         * -2: Tell worker to disconnect from hub
          */
         send(id, result, done) {
             const msg = [this.uid, this.#stageID, id, result, done];

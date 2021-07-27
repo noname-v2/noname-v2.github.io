@@ -765,9 +765,13 @@
                 const [uid, sid, id, result, done] = data;
                 const stage = this.#game.currentStage;
                 const link = this.#game.links.get(id);
-                if (id < 0) {
+                if (id === -1) {
                     // reload UI upon error
                     this.send(uid, this.#game.pack());
+                }
+                else if (id === -2) {
+                    // disconnect from remote hub
+                    this.disconnect();
                 }
                 else if (sid === stage.id && link && link[1].owner === uid) {
                     // send result to listener

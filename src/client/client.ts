@@ -214,10 +214,14 @@ export class Client {
     }
 
     /**
-     * Send message to worker.
-     * @param {number} id - Message id.
-     * @param {boolean} err - Whether an error is encountered.
-     * @param {...any[]} args - Message content.
+     * Send component return value to worker.
+     * @param {number} id - ID of component (id > 0).
+     * @param {any} result - Return value of component.
+     * @param {boolean} done - true: component.return(); false: component.yield()
+     * Special ID:
+     * 0: Initialize worker and create worker.#game.
+     * -1: Reload due to UI error.
+     * -2: Tell worker to disconnect from hub
      */
     send(id: number, result: any, done: boolean) {
         const msg: ClientMessage = [this.uid, this.#stageID, id, result, done];
