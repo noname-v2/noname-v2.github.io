@@ -6,6 +6,9 @@ export class Stage {
     /** Stage ID. */
     id: number;
 
+    /** Path to stage task class. */
+    path: string;
+
     /** Child task triggered by before or after event. */
     trigger: string | null = 'trigger';
 
@@ -58,12 +61,14 @@ export class Stage {
 
     constructor(id: number, path: string, data: Dict, game: Game) {
         this.id = id;
+        this.path = path;
         this.#game = game;
 
         // main task, pre-task and post-task
-        const task = apply(new (game.getTask(path))(this, this.#game), data);
-        const preTask = this.trigger ? new (game.getTask(this.trigger))(this, this.#game) : null;
-        const postTask = this.trigger ? new (game.getTask(this.trigger))(this, this.#game) : null;
+        const create = (p: string, d: Dict) => apply(new (game.getTask(p))(this, this.#game), d);
+        const task = create(path, data);
+        const preTask = this.trigger ? create(this.trigger, {trigger: path}) : null;
+        const postTask = this.trigger ? create(this.trigger, {trigger: path}) : null;
         this.tasks = [preTask, task, postTask];
     }
 

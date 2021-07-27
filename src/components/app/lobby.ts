@@ -112,10 +112,10 @@ export class Lobby extends Component {
         }
     }
 
-    $pane(configs: any) {
+    $pane(configs: {heropacks: Dict<string>, cardpacks: Dict<string>, configs: Dict<Config>}) {
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
-            const config: Config = configs.configs[name];
+            const config = configs.configs[name];
             const toggle = this.sidebar.pane.addToggle(config.name!, result => {
                 this.freeze();
                 if (name === 'online' && result) {
@@ -374,6 +374,9 @@ export class Lobby extends Component {
 
     remove() {
         if (!this.removing) {
+            if (history.state === 'lobby') {
+                history.back();
+            }
             this.removing = true;
             let done = 0;
             const onfinish = () => {

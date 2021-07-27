@@ -190,9 +190,18 @@ function lobby(T) {
     };
 }
 
+function choose(T) {
+    return class ChooseHero extends T {
+        main() {
+            console.log('choose', this.np);
+        }
+        select(key) {
+        }
+    };
+}
+
 function chooseHero(T) {
     return class ChooseHero extends T {
-        np;
         main() {
             console.log('chooseHero', this.np);
         }
@@ -212,7 +221,7 @@ var main = {
         np: 0,
         config,
         tasks: {
-            trigger, loop, lobby, chooseHero, createPlayers
+            trigger, loop, lobby, choose, chooseHero, createPlayers
         }
     }
 };

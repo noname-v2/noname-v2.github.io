@@ -24,6 +24,7 @@ export type CardDict = Dict<{
     intro: string;
     type: string;
     task?: TaskCreator;
+    inherit?: string;
     skills?: string[];
     subtype?: string;
     decoration?: string;
@@ -42,6 +43,7 @@ export type SkillDict = Dict<{
     intro: string;
     type?: string;
     task?: TaskCreator;
+    inherit?: string;
     trigger?: Dict<string>;
     [key: string]: any;
 }>;

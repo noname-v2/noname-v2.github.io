@@ -996,6 +996,9 @@
         }
         remove() {
             if (!this.removing) {
+                if (history.state === 'lobby') {
+                    history.back();
+                }
                 this.removing = true;
                 let done = 0;
                 const onfinish = () => {

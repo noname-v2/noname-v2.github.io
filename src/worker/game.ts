@@ -132,10 +132,11 @@ export class Game {
                 apply(this.mode, mode);
             }
 
-            // delete useless properties
+            // finalize and freez mode object
             delete this.mode.tasks;
             delete this.mode.components;
             this.mode.extension = content[0];
+            freeze(this.mode);
 
             // start game
             this.rootStage = this.currentStage = this.createStage('main');
