@@ -1,6 +1,6 @@
 import type { SGS } from '../sgs/sgs';
 
-export default <SGS>{
+export default {
     mode: {
         name: '战棋',
         np: [4, 6, 8],
@@ -20,4 +20,4 @@ export default <SGS>{
     cardpack: '战棋标准',
     tags: ['autochess!'],
     inherit: 'sgs'
-}
+} as SGS;

@@ -64,7 +64,7 @@ export class Pane extends Component {
 	alignText() {
 		for (const span of this.node.querySelectorAll<HTMLElement>('noname-pane > noname-text > noname-span')) {
 			const dx = (this.width! - span.offsetWidth) / 2;
-			(<HTMLElement>span.parentNode).style.transform = `translateX(${dx}px)`;
+			(span.parentNode as HTMLElement).style.transform = `translateX(${dx}px)`;
 		}
 	}
 }

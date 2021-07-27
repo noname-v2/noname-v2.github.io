@@ -6,7 +6,7 @@ export class Database  {
 	private transact(name: 'settings'|'files', cmd: 'get'|'put'|'delete', key: string, value?: unknown) {
 		return new Promise(resolve => {
 			const mode = cmd === 'get' ? 'readonly' : 'readwrite';
-			const store = (<IDBDatabase>this.db).transaction(name, mode).objectStore(name);
+			const store = this.db!.transaction(name, mode).objectStore(name);
 			const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
 			request.onsuccess = () => resolve(request.result ?? null);
 		});
@@ -53,7 +53,7 @@ export class Database  {
 					const cursor = iterator.result;
 					if (cursor) {
 						// set cache value and go to next entry
-						this.cache.set(<string>cursor.key, cursor.value);
+						this.cache.set(cursor.key as string, cursor.value);
 						cursor.continue();
 					}
 					else {
@@ -112,7 +112,7 @@ export class Database  {
 				const cursor = iterator.result;
 				if (cursor) {
 					// set cache value and go to next entry
-					files.push(<string>cursor.key);
+					files.push(cursor.key as string);
 					cursor.continue();
 				}
 				else {

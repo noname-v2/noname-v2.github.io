@@ -4,8 +4,8 @@ import { card } from './card';
 import { skill } from './skill';
 import { pile } from './pile';
 
-export default <SGS>{
+export default {
     cardpack: '标准',
     heropack: '标准',
     hero, card, skill, pile
-}
+} as SGS;

@@ -1,6 +1,6 @@
 import type { SGS } from '../sgs/sgs';
 
-export default <SGS>{
+export default {
     mode: {
         name: '欢乐',
         np: 4,
@@ -18,4 +18,4 @@ export default <SGS>{
     },
     tags: ['swap'],
     inherit: 'sgs'
-}
+} as SGS;

@@ -1,6 +1,6 @@
 import type { SGS } from '../sgs/sgs';
 
-export default <SGS>{
+export default {
     mode: {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
@@ -33,4 +33,4 @@ export default <SGS>{
         inherit: 'sgs'
     },
     tags: ['guess-side', 'leader']
-}
+} as SGS;

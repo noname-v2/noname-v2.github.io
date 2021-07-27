@@ -3,7 +3,7 @@ import { hero } from './hero';
 import { card } from './card';
 import { skill } from './skill';
 
-export default <SGS>{
+export default {
     mode: {
         name: '国战',
         np: [2, 3, 4, 5, 6, 7, 8],
@@ -13,4 +13,4 @@ export default <SGS>{
     cardpack: '国战标准',
     tags: ['guess-side', 'double-hidden!'],
     hero, card, skill
-}
+} as SGS;

@@ -120,7 +120,7 @@ export class Client {
         for (const id of ids) {
             const cmp = this.components.get(id);
             if (cmp) {
-                peers.push(<Peer>cmp);
+                peers.push(cmp as Peer);
             }
         }
         return peers;

@@ -1,6 +1,6 @@
 import type { SGS } from '../sgs/sgs';
 
-export default <SGS>{
+export default {
     mode: {
         ruleset: 'sgs',
         name: '智斗',
@@ -18,4 +18,4 @@ export default <SGS>{
         }
     },
     inherit: 'sgs'
-}
+} as SGS;

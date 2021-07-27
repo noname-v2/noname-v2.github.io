@@ -1,6 +1,6 @@
 import type { SGS } from '../sgs/sgs';
 
-export default <SGS>{
+export default {
     mode: {
         name: '塔防',
         np: [1, 2, 3, 4],
@@ -18,4 +18,4 @@ export default <SGS>{
     },
     tags: ['autochess!'],
     inherit: 'autochess'
-}
+} as SGS;

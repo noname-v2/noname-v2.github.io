@@ -6,7 +6,7 @@ import { lobby } from './tasks/lobby';
 import { chooseHero } from './tasks/choose-hero';
 import { createPlayers } from './tasks/create-players';
 
-export default <SGS>{
+export default {
     mode: {
         np: 0,
         config,
@@ -14,4 +14,4 @@ export default <SGS>{
             trigger, loop, lobby, chooseHero, createPlayers
         }
     }
-}
+} as SGS;
