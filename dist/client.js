@@ -111,6 +111,22 @@
         }
     }
 
+    /** Deep copy plain object. */
+    /** Split string with `:`. */
+    function split(msg, delimiter = ':') {
+        const idx = msg.indexOf(delimiter);
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
+    }
+    /** Return a promise that resolves after n seconds. */
+    function sleep(n) {
+        return new Promise(resolve => setTimeout(resolve, n * 1000));
+    }
+
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
@@ -193,6 +209,10 @@
                 throw ('element is has no ID');
             }
             this.client.send(this.#id, result, true);
+        }
+        /** Delay for a time period. */
+        sleep(dur) {
+            return sleep(this.ui.app.getTransition(dur) / 1000);
         }
         /** Remove element. */
         remove() {
@@ -1738,22 +1758,6 @@
     */
     const hub2member = ['down', 'msg', 'edit', 'reload', 'num'];
 
-    /** Deep copy plain object. */
-    /** Split string with `:`. */
-    function split(msg, delimiter = ':') {
-        const idx = msg.indexOf(delimiter);
-        if (idx === -1) {
-            return [msg, ''];
-        }
-        else {
-            return [msg.slice(0, idx), msg.slice(idx + 1)];
-        }
-    }
-    /** Return a promise that resolves after n seconds. */
-    function sleep(n) {
-        return new Promise(resolve => setTimeout(resolve, n * 1000));
-    }
-
     class SplashHub extends Popup {
         /** Use tag <noname-popup>. */
         static tag = 'popup';
@@ -3027,7 +3031,7 @@
                         this.clear(false);
                         this.#loaded = Date.now();
                         if (arena) {
-                            await sleep(this.ui.app.getTransition('fast') / 1000);
+                            await this.ui.app.sleep('fast');
                         }
                         break;
                     }

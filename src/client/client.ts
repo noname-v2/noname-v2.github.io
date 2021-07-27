@@ -2,7 +2,6 @@ import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
 import { Component } from './component';
-import { sleep } from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
@@ -234,7 +233,7 @@ export class Client {
                     this.clear(false);
                     this.#loaded = Date.now();
                     if (arena) {
-                        await sleep(this.ui.app.getTransition('fast') / 1000);
+                        await this.ui.app.sleep('fast');
                     }
                     break;
                 }
