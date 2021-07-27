@@ -2,6 +2,7 @@ import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
 import { Component } from './component';
+import { sleep } from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
@@ -226,11 +227,15 @@ export class Client {
             // check if tick is a full UI reload
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    if (this.ui.app.arena) {
-                        this.ui.app.arena.faded = true;
+                    const arena = this.ui.app.arena;
+                    if (arena && this.ui.app.popups.size) {
+                        arena.faded = true;
                     }
                     this.clear(false);
                     this.#loaded = Date.now();
+                    if (arena) {
+                        await sleep(this.ui.app.getTransition('fast') / 1000);
+                    }
                     break;
                 }
             }

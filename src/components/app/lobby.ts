@@ -78,10 +78,12 @@ export class Lobby extends Component {
 
             const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
             if (!peers || Object.keys(peers).length <= 1 || await this.app.confirm('联机模式', {content, id: 'exitLobby'})) {
+                if (this.app.arena && peers && Object.keys(peers).length > 1) {
+                    this.app.arena.faded = true;
+                }
                 if (ws instanceof WebSocket) {
                     ws.send('leave:init');
                     if (this.app.arena) {
-                        this.app.arena.faded = true;
                         this.client.clear();
                     }
                 }
@@ -255,8 +257,10 @@ export class Lobby extends Component {
         if (!peers && this.exiting) {
             // room closed successfully
             this.close();
+            return;
         }
-        else if (this.owner === this.client.uid) {
+        
+        if (this.owner === this.client.uid) {
             // callback for online mode toggle
             this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {

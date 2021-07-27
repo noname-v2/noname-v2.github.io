@@ -63,3 +63,8 @@ export function split<T extends string = string>(msg: string, delimiter=':'): [T
         return [msg.slice(0, idx) as T, msg.slice(idx + 1)];
     }
 }
+
+/** Return a promise that resolves after n seconds. */
+export function sleep(n: number) {
+    return new Promise(resolve => setTimeout(resolve, n * 1000));
+}
