@@ -309,7 +309,7 @@
             // add history
             if (this.client.platform === 'Android') {
                 window.addEventListener('popstate', e => {
-                    this.client.triggerListeners('history', e.state);
+                    this.client.trigger('history', e.state);
                 });
             }
         }
@@ -433,7 +433,7 @@
             this.ui.height = h;
             this.ui.zoom = z;
             // call listeners
-            this.client.triggerListeners('resize');
+            this.client.trigger('resize');
         }
         /** Get the duration of transition.
          * @param {TransitionDuration} type - transition type
@@ -1118,7 +1118,7 @@
         /** Connection status change. */
         $peers() {
             // wait until other properties have been updated
-            setTimeout(() => this.client.triggerListeners('sync'));
+            setTimeout(() => this.client.trigger('sync'));
         }
     }
 
@@ -1530,7 +1530,7 @@
     class Peer extends Component {
         $playing() {
             if (this.client.peer) {
-                this.client.triggerListeners('sync');
+                this.client.trigger('sync');
             }
         }
     }
@@ -2940,8 +2940,6 @@
         debug = false;
         /** Module containing JS utilities. */
         utils = utils;
-        /** Components synced with the worker. */
-        components = new Map();
         /** Event listeners. */
         listeners = {
             // connection status change
@@ -2955,6 +2953,8 @@
             // stage change
             stage: new Set()
         };
+        /** Components synced with the worker. */
+        #components = new Map();
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
@@ -2962,6 +2962,8 @@
         /** Timestamp of the last full UI load. */
         #loaded = 0;
         constructor() {
+            // disallow changing listener keys
+            Object.freeze(this.listeners);
             // get user identifier
             this.db.ready.then(() => {
                 if (!this.db.get('uid')) {
@@ -3009,7 +3011,7 @@
             }
             const peers = [];
             for (const id of ids) {
-                const cmp = this.components.get(id);
+                const cmp = this.#components.get(id);
                 if (cmp) {
                     peers.push(cmp);
                 }
@@ -3058,10 +3060,10 @@
         }
         /** Clear currently connection status without disconnecting. */
         clear(back = true) {
-            for (const cmp of this.components.values()) {
-                this.removeListeners(cmp);
+            for (const cmp of this.#components.values()) {
+                this.#removeListeners(cmp);
             }
-            this.components.clear();
+            this.#components.clear();
             this.ui.app.clearPopups();
             this.ui.app.arena?.remove();
             this.ui.app.arena = null;
@@ -3085,6 +3087,19 @@
                 this.connection.send('resp:' + JSON.stringify(msg));
             }
         }
+        /** Add a UITick to dispatch. */
+        dispatch(data) {
+            this.#ticks.push(data);
+            if (this.#ticks.length === 1) {
+                this.#render();
+            }
+        }
+        /** Trigger a listener. */
+        trigger(event, arg) {
+            for (const cmp of this.listeners[event]) {
+                cmp[event](arg);
+            }
+        }
         /**
          * Call or check the existence of a plugin method.
          * @param {number} id - ID of the method call.
@@ -3093,7 +3108,7 @@
          * @param {any[]} [args] - If args is array, call method with args as arguments,
          * if args is undefined, check the existence of the method instead.
          */
-        async render() {
+        async #render() {
             try {
                 const [sid, tags, props, calls] = this.#ticks[0];
                 // check if tick is a full UI reload
@@ -3116,7 +3131,7 @@
                 }
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
                 if (sid !== this.#stageID) {
-                    this.triggerListeners('stage');
+                    this.trigger('stage');
                     this.listeners.stage.clear();
                     this.#stageID = sid;
                 }
@@ -3126,9 +3141,9 @@
                     const id = parseInt(key);
                     const tag = tags[key];
                     if (typeof tag === 'string') {
-                        this.components.get(id)?.remove();
+                        this.#components.get(id)?.remove();
                         const cmp = this.ui.create(tag, null, id);
-                        this.components.set(id, cmp);
+                        this.#components.set(id, cmp);
                         newComponents.push(cmp.ready);
                     }
                 }
@@ -3136,7 +3151,7 @@
                 // update component properties
                 let hooks = [];
                 for (const key in props) {
-                    hooks = hooks.concat(this.components.get(parseInt(key)).update(props[key], false));
+                    hooks = hooks.concat(this.#components.get(parseInt(key)).update(props[key], false));
                 }
                 for (const [hook, cmp, newVal, oldVal] of hooks) {
                     hook.apply(cmp, [newVal, oldVal]);
@@ -3145,17 +3160,17 @@
                 for (const key in calls) {
                     const id = parseInt(key);
                     for (const [method, arg] of calls[key]) {
-                        this.components.get(id)[method](arg);
+                        this.#components.get(id)[method](arg);
                     }
                 }
                 // delete components
                 for (const key in tags) {
                     const id = parseInt(key);
                     if (tags[key] === null) {
-                        const cmp = this.components.get(id);
+                        const cmp = this.#components.get(id);
                         if (cmp) {
-                            this.removeListeners(cmp);
-                            this.components.delete(id);
+                            this.#removeListeners(cmp);
+                            this.#components.delete(id);
                             cmp.remove();
                         }
                     }
@@ -3183,24 +3198,11 @@
             }
             this.#ticks.shift();
             if (this.#ticks.length) {
-                this.render();
-            }
-        }
-        /** Add a UITick to dispatch. */
-        dispatch(data) {
-            this.#ticks.push(data);
-            if (this.#ticks.length === 1) {
-                this.render();
-            }
-        }
-        /** Trigger a listener. */
-        triggerListeners(event, arg) {
-            for (const cmp of this.listeners[event]) {
-                cmp[event](arg);
+                this.#render();
             }
         }
         /** Remove all listeners. */
-        removeListeners(cmp) {
+        #removeListeners(cmp) {
             for (const key in this.listeners) {
                 this.listeners[key].delete(cmp);
             }

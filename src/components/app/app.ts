@@ -131,7 +131,7 @@ export class App extends Component {
         // add history
         if (this.client.platform === 'Android') {
             window.addEventListener('popstate', e => {
-                this.client.triggerListeners('history', e.state);
+                this.client.trigger('history', e.state);
             });
         }
     }
@@ -284,7 +284,7 @@ export class App extends Component {
         this.ui.zoom = z;
 
         // call listeners
-        this.client.triggerListeners('resize');
+        this.client.trigger('resize');
     }
 
     /** Get the duration of transition.

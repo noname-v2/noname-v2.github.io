@@ -34,9 +34,6 @@ export class Client {
     /** Module containing JS utilities. */
     readonly utils = utils;
 
-    /** Components synced with the worker. */
-    readonly components = new Map<number, Component>();
-
     /** Event listeners. */
     readonly listeners = {
         // connection status change
@@ -51,6 +48,9 @@ export class Client {
         stage: new Set<{key: () => void}>()
     };
 
+    /** Components synced with the worker. */
+    #components = new Map<number, Component>();
+
     /** ID of current stage. */
     #stageID = 0;
 
@@ -61,6 +61,9 @@ export class Client {
     #loaded = 0;
 
     constructor() {
+        // disallow changing listener keys
+        Object.freeze(this.listeners);
+
         // get user identifier
         this.db.ready.then(() => {
             if (!this.db.get('uid')) {
@@ -115,7 +118,7 @@ export class Client {
 
         const peers = [];
         for (const id of ids) {
-            const cmp = this.components.get(id);
+            const cmp = this.#components.get(id);
             if (cmp) {
                 peers.push(cmp as Peer);
             }
@@ -169,11 +172,11 @@ export class Client {
 
     /** Clear currently connection status without disconnecting. */
     clear(back: boolean = true) {
-        for (const cmp of this.components.values()) {
-            this.removeListeners(cmp);
+        for (const cmp of this.#components.values()) {
+            this.#removeListeners(cmp);
         }
 
-        this.components.clear();
+        this.#components.clear();
         this.ui.app.clearPopups();
         this.ui.app.arena?.remove();
         this.ui.app.arena = null;
@@ -200,6 +203,21 @@ export class Client {
         }
     }
 
+    /** Add a UITick to dispatch. */
+    dispatch(data: UITick) {
+        this.#ticks.push(data);
+        if (this.#ticks.length === 1) {
+            this.#render();
+        }
+    }
+
+    /** Trigger a listener. */
+    trigger(event: 'sync' | 'resize' | 'history' | 'key' | 'stage', arg?: any) {
+        for (const cmp of this.listeners[event]) {
+            (cmp as any)[event](arg);
+        }
+    }
+
     /**
      * Call or check the existence of a plugin method.
      * @param {number} id - ID of the method call.
@@ -208,7 +226,7 @@ export class Client {
      * @param {any[]} [args] - If args is array, call method with args as arguments,
      * if args is undefined, check the existence of the method instead.
      */
-    async render() {
+    async #render() {
         try {
             const [sid, tags, props, calls] = this.#ticks[0];
 
@@ -233,7 +251,7 @@ export class Client {
             
             // clear unfinished function calls (e.g. selectCard / selectTarget)
             if (sid !== this.#stageID) {
-                this.triggerListeners('stage');
+                this.trigger('stage');
                 this.listeners.stage.clear();
                 this.#stageID = sid;
             }
@@ -244,9 +262,9 @@ export class Client {
                 const id = parseInt(key);
                 const tag = tags[key]
                 if (typeof tag === 'string') {
-                    this.components.get(id)?.remove();
+                    this.#components.get(id)?.remove();
                     const cmp = this.ui.create(tag, null, id);
-                    this.components.set(id, cmp);
+                    this.#components.set(id, cmp);
                     newComponents.push(cmp.ready);
                 }
             }
@@ -255,7 +273,7 @@ export class Client {
             // update component properties
             let hooks: any[] = [];
             for (const key in props) {
-                hooks = hooks.concat(this.components.get(parseInt(key))!.update(props[key], false));
+                hooks = hooks.concat(this.#components.get(parseInt(key))!.update(props[key], false));
             }
             for (const [hook, cmp, newVal, oldVal] of hooks) {
                 hook.apply(cmp, [newVal, oldVal]);
@@ -265,7 +283,7 @@ export class Client {
             for (const key in calls) {
                 const id = parseInt(key);
                 for (const [method, arg] of calls[key]) {
-                    this.components.get(id)![method as keyof Component](arg);
+                    this.#components.get(id)![method as keyof Component](arg);
                 }
             }
 
@@ -273,10 +291,10 @@ export class Client {
             for (const key in tags) {
                 const id = parseInt(key);
                 if (tags[key] === null) {
-                    const cmp = this.components.get(id);
+                    const cmp = this.#components.get(id);
                     if (cmp) {
-                        this.removeListeners(cmp);
-                        this.components.delete(id);
+                        this.#removeListeners(cmp);
+                        this.#components.delete(id);
                         cmp.remove();
                     }
                 }
@@ -305,27 +323,12 @@ export class Client {
 
         this.#ticks.shift();
         if (this.#ticks.length) {
-            this.render();
-        }
-    }
-
-    /** Add a UITick to dispatch. */
-    dispatch(data: UITick) {
-        this.#ticks.push(data);
-        if (this.#ticks.length === 1) {
-            this.render();
-        }
-    }
-
-    /** Trigger a listener. */
-    triggerListeners(event: 'sync' | 'resize' | 'history' | 'key' | 'stage', arg?: any) {
-        for (const cmp of this.listeners[event]) {
-            (cmp as any)[event](arg);
+            this.#render();
         }
     }
 
     /** Remove all listeners. */
-    removeListeners(cmp: Component) {
+    #removeListeners(cmp: Component) {
         for (const key in this.listeners) {
             (this.listeners as any)[key].delete(cmp);
         }
