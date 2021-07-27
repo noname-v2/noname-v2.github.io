@@ -22,6 +22,7 @@ export interface Config {
 export interface Mode {
     name?: string;
     intro?: string;
+    extension?: string;
     tasks?: Dict<TaskCreator>;
     components?: Dict<ComponentCreator>;
     config?: Dict<Config>;

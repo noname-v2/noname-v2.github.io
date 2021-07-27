@@ -1,10 +1,29 @@
 import { Stage } from './stage';
-import { Link } from './link';
 import { copy, apply, freeze, access, Dict } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
 import type { Worker, UITick } from './worker';
 import type { Extension, Mode } from './extension';
+
+/** A link to client component. */
+export interface Link {
+    /** Component ID. */
+    readonly id: number;
+
+    /** Component tag. */
+    readonly tag: string;
+
+    /** Call a component method. */
+    readonly call: (method: string, arg?: any) => void;
+
+    /** Update multiple properties. */
+    readonly update: (items: Dict) => void;
+
+    /** Remove reference to a component. */
+    readonly unlink: () => void;
+
+    [key: string]: any;
+}
 
 export class Game {
     /** Root game stage. */
@@ -14,7 +33,7 @@ export class Game {
     currentStage!: Stage;
 
     /** Links to components. */
-    links = new Map<number, Link>();
+    links = new Map<number, [Link, Dict]>();
 
     /** Game mode. */
     mode: Mode;
@@ -112,8 +131,11 @@ export class Game {
                 }
                 apply(this.mode, mode);
             }
+
+            // delete useless properties
             delete this.mode.tasks;
             delete this.mode.components;
+            this.mode.extension = content[0];
 
             // start game
             this.rootStage = this.currentStage = this.createStage('main');
@@ -125,8 +147,48 @@ export class Game {
     /** Create a link. */
     create(tag: string) {
         const id = ++this.#linkCount;
-        const link = new Link(id, tag, this.#worker);
-        this.links.set(id, link);
+        const obj: Dict = {};
+
+        // reserved link keys
+        const reserved: Dict = {
+            id, tag,
+            call: (method: string, arg?: any) => {
+                this.#worker.tick(id, [method, arg]);
+            },
+            unlink: () => {
+                this.#worker.tick(id, null);
+            },
+            update: (items: Dict) => {
+                for (const key in items) {
+                    const val = items[key] ?? null;
+                    val === null ? delete obj[key] : obj[key] = val;
+                }
+                this.#worker.tick(id, items);
+            }
+        };
+
+        const link = new Proxy(obj, {
+            get(_, key: string) {
+                if (key in reserved) {
+                    return reserved[key];
+                }
+                else {
+                    return obj[key];
+                }
+            },
+            set(_, key: string, val: any) {
+                if (key in reserved) {
+                    return false;
+                }
+                else {
+                    reserved.update({[key]: val});
+                    return true;
+                }
+            }
+        }) as Link;
+
+        this.links.set(id, [link, obj]);
+        this.#worker.tick(id, tag);
         return link;
     }
 
@@ -187,8 +249,9 @@ export class Game {
     pack(): UITick {
         const tags: Dict<string> = {};
         const props: Dict<Dict> = {};
-        for (const [uid, link] of this.links.entries()) {
-            [tags[uid], props[uid]] = link.flatten();
+        for (const [uid, [link, obj]] of this.links.entries()) {
+            tags[uid] = link.tag;
+            props[uid] = obj;
         }
         return [this.currentStage.id, tags, props, {}];
     }

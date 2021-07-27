@@ -99,7 +99,8 @@ function lobby(T) {
                 this.game.config.np ??= npmax;
             }
             // create lobby
-            lobby.update({ npmax, pane: { heropacks, cardpacks, configs } });
+            lobby.npmax = npmax;
+            lobby.pane = { heropacks, cardpacks, configs };
             this.add('awaitStart');
             this.add('cleanUp');
         }
@@ -107,10 +108,10 @@ function lobby(T) {
             // monitor configuration change and await game start
             const lobby = this.lobby;
             lobby.owner = this.game.owner;
-            lobby.set('mode', this.game.mode);
-            lobby.set('config', this.game.config);
-            lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
-            lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
+            lobby.mode = this.game.mode;
+            lobby.config = this.game.config;
+            lobby.disabledHeropacks = Array.from(this.game.banned.heropacks);
+            lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
             this.monitor(lobby, 'updateLobby');
             this.await(lobby);
         }
@@ -118,7 +119,7 @@ function lobby(T) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
                 this.game.config.online = val;
-                this.lobby.set('config', this.game.config);
+                this.lobby.config = this.game.config;
                 // add callback for client operations
                 const peers = this.game.getPeers();
                 if (peers) {
@@ -147,13 +148,13 @@ function lobby(T) {
                     }
                     // game configuration change
                     this.game.config[key] = val;
-                    this.lobby.set('config', this.game.config);
+                    this.lobby.config = this.game.config;
                     // update seats in the lobby
                     if (key === 'np') {
                         const players = this.game.playerLinks;
                         if (players && players.length > val) {
                             for (let i = val; i < players.length; i++) {
-                                players[i].set('playing', false);
+                                players[i].playing = false;
                             }
                         }
                         this.game.syncRoom();
@@ -163,21 +164,21 @@ function lobby(T) {
             else if (type === 'hero') {
                 // enable or disable a heropack
                 this.game.banned.heropacks[val ? 'delete' : 'add'](key);
-                this.lobby.set('disabledHeropacks', Array.from(this.game.banned.heropacks));
+                this.lobby.disabledHeropacks = Array.from(this.game.banned.heropacks);
             }
             else if (type === 'card') {
                 // enable or disable a cardpack
                 this.game.banned.cardpacks[val ? 'delete' : 'add'](key);
-                this.lobby.set('disabledCardpacks', Array.from(this.game.banned.cardpacks));
+                this.lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
             }
         }
         updatePeer(val, peer) {
-            if (val === 'spectate' && peer.get('playing')) {
-                peer.set('playing', false);
+            if (val === 'spectate' && peer.playing) {
+                peer.playing = false;
                 this.game.syncRoom();
             }
-            else if (val === 'play' && !peer.get('playing') && this.game.playerLinks.length < this.game.config.np) {
-                peer.set('playing', true);
+            else if (val === 'play' && !peer.playing && this.game.playerLinks.length < this.game.config.np) {
+                peer.playing = true;
                 this.game.syncRoom();
             }
         }

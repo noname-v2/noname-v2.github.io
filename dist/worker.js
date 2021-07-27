@@ -120,106 +120,61 @@
          * null: await user input
          */
         async next() {
-            this.#game.currentStage = this;
-            // awaiting user input
-            if (this.awaits.size) {
-                return null;
-            }
-            this.monitors.clear();
-            // skip trigger stage
+            // check if trigger stage is skipped
             if (!this.trigger && [0, 1, 4, 5].includes(this.progress)) {
                 this.progress++;
                 return true;
             }
+            // check if stage is finished
             const task = this.task;
-            if (task) {
-                if (this.progress % 2 === 0) {
-                    // call task.main()
+            if (!task) {
+                return false;
+            }
+            this.#game.currentStage = this;
+            // check if stage is awaiting user input
+            if (this.awaits.size) {
+                return null;
+            }
+            this.monitors.clear();
+            if (this.progress % 2 === 0) {
+                // call task.main()
+                try {
                     await task.main();
                 }
-                else {
-                    // execute child steps of current task
-                    const steps = this.steps.get(task);
-                    for (const step of steps) {
-                        if (Array.isArray(step)) {
-                            // call a task method
-                            if (step[1] === false) {
+                catch (e) {
+                    console.log(e);
+                }
+            }
+            else {
+                // execute child steps of current task
+                const steps = this.steps.get(task);
+                for (const step of steps) {
+                    if (Array.isArray(step)) {
+                        // call a task method
+                        if (step[1] === false) {
+                            try {
                                 await task[step[0]](...step[2]);
-                                step[1] = true;
-                                return true;
                             }
+                            catch (e) {
+                                console.log(e);
+                            }
+                            step[1] = true;
+                            return true;
                         }
-                        else if (step instanceof Stage) {
-                            // execute child stage
-                            const next = await step.next();
-                            if (next !== false) {
-                                return next;
-                            }
-                            this.#game.currentStage = this;
+                    }
+                    else if (step instanceof Stage) {
+                        // execute child stage
+                        // (this.#game.currentStage will not change if next == false)
+                        const next = await step.next();
+                        if (next !== false) {
+                            return next;
                         }
                     }
                 }
-                // increment progress if task.main() is called or all child steps done
-                this.progress++;
-                return true;
             }
-            // stage already done
-            return false;
-        }
-    }
-
-    /** A link to a client-side component. */
-    class Link {
-        /** Component ID. */
-        #id;
-        /** Component tag. */
-        #tag;
-        /** Properties synced with worker. */
-        #props = new Map();
-        /** Reference to Game. */
-        #worker;
-        constructor(id, tag, worker) {
-            this.#id = id;
-            this.#tag = tag;
-            this.#worker = worker;
-            worker.tick(this.#id, tag);
-        }
-        get id() {
-            return this.#id;
-        }
-        get owner() {
-            return this.get('owner');
-        }
-        set owner(uid) {
-            this.set('owner', uid);
-        }
-        /** Property getter. */
-        get(key) {
-            return this.#props.get(key) ?? null;
-        }
-        /** Property setter. */
-        set(key, val) {
-            this.update({ [key]: val });
-        }
-        /** Update properties. */
-        update(items) {
-            for (const key in items) {
-                const val = items[key] ?? null;
-                val === null ? this.#props.delete(key) : this.#props.set(key, val);
-            }
-            this.#worker.tick(this.#id, items);
-        }
-        /** Call a component method. */
-        call(method, arg) {
-            this.#worker.tick(this.#id, [method, arg]);
-        }
-        /** Remove reference to a component. */
-        unlink() {
-            this.#worker.tick(this.#id, null);
-        }
-        /** Get tag and object of all properties. */
-        flatten() {
-            return [this.#tag, Object.fromEntries(this.#props)];
+            // increment progress if task.main() is called or all child steps done
+            this.progress++;
+            return true;
         }
     }
 
@@ -454,8 +409,45 @@
         /** Create a link. */
         create(tag) {
             const id = ++this.#linkCount;
-            const link = new Link(id, tag, this.#worker);
-            this.links.set(id, link);
+            const obj = {};
+            // reserved link keys
+            const reserved = {
+                id, tag,
+                call: (method, arg) => {
+                    this.#worker.tick(id, [method, arg]);
+                },
+                unlink: () => {
+                    this.#worker.tick(id, null);
+                },
+                update: (items) => {
+                    for (const key in items) {
+                        const val = items[key] ?? null;
+                        val === null ? delete obj[key] : obj[key] = val;
+                    }
+                    this.#worker.tick(id, items);
+                }
+            };
+            const link = new Proxy(obj, {
+                get(_, key) {
+                    if (key in reserved) {
+                        return reserved[key];
+                    }
+                    else {
+                        return obj[key];
+                    }
+                },
+                set(_, key, val) {
+                    if (key in reserved) {
+                        return false;
+                    }
+                    else {
+                        reserved.update({ [key]: val });
+                        return true;
+                    }
+                }
+            });
+            this.links.set(id, [link, obj]);
+            this.#worker.tick(id, tag);
             return link;
         }
         /** Create a stage. */
@@ -510,8 +502,9 @@
         pack() {
             const tags = {};
             const props = {};
-            for (const [uid, link] of this.links.entries()) {
-                [tags[uid], props[uid]] = link.flatten();
+            for (const [uid, [link, obj]] of this.links.entries()) {
+                tags[uid] = link.tag;
+                props[uid] = obj;
             }
             return [this.currentStage.id, tags, props, {}];
         }
@@ -694,7 +687,7 @@
             for (const peer of this.peers.values()) {
                 let skip = false;
                 for (const key in filter) {
-                    if (peer.get(key) !== filter[key]) {
+                    if (peer[key] !== filter[key]) {
                         skip = true;
                         continue;
                     }
@@ -755,11 +748,12 @@
             try {
                 const [uid, sid, id, result, done] = data;
                 const stage = this.#game.currentStage;
+                const link = this.#game.links.get(id);
                 if (id < 0) {
                     // reload UI upon error
                     this.send(uid, this.#game.pack());
                 }
-                else if (sid === stage.id && this.#game.links.get(id)?.owner === uid) {
+                else if (sid === stage.id && link && link[1].owner === uid) {
                     // send result to listener
                     if (done && stage.awaits.has(id)) {
                         // results: component.return() -> link.await()
@@ -774,12 +768,8 @@
                     }
                     else if (!done && stage.monitors.has(id)) {
                         // results: component.yield() -> link.monitor()
-                        const task = stage.task;
-                        const link = this.#game.links.get(id);
-                        if (task && link) {
-                            const method = stage.monitors.get(id);
-                            stage.task[method](result, link);
-                        }
+                        const method = stage.monitors.get(id);
+                        stage.task[method](result, link[0]);
                     }
                 }
             }

@@ -1,8 +1,8 @@
 import type { Extension, TaskCreator } from '../../worker/extension';
 import type { Dict } from '../../utils';
 
+export type { Link } from '../../worker/game';
 export type { Config } from '../../worker/extension';
-export type { Link } from '../../worker/link';
 export type { Task } from '../../worker/task';
 export type { Dict } from '../../utils';
 

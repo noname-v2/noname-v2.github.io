@@ -2,7 +2,7 @@ import { version } from '../version';
 import { Game } from './game';
 import { hub2owner } from '../hub/types';
 import { split, Dict } from '../utils';
-import type { Link } from './link';
+import type { Link } from './game';
 
 /** An update to client side. */
 export type UITick = [
@@ -204,7 +204,7 @@ export class Worker {
         for (const peer of this.peers.values()) {
             let skip = false;
             for (const key in filter) {
-                if (peer.get(key) !== filter[key]) {
+                if (peer[key] !== filter[key]) {
                     skip = true;
                     continue;
                 }
@@ -274,11 +274,12 @@ export class Worker {
         try {
             const [uid, sid, id, result, done] = data;
             const stage = this.#game.currentStage;
+            const link = this.#game.links.get(id);
             if (id < 0) {
                 // reload UI upon error
                 this.send(uid, this.#game.pack());
             }
-            else if (sid === stage.id && this.#game.links.get(id)?.owner === uid) {
+            else if (sid === stage.id && link && link[1].owner === uid) {
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
                     // results: component.return() -> link.await()
@@ -293,12 +294,8 @@ export class Worker {
                 }
                 else if (!done && stage.monitors.has(id)) {
                     // results: component.yield() -> link.monitor()
-                    const task = stage.task;
-                    const link = this.#game.links.get(id);
-                    if (task && link) {
-                        const method = stage.monitors.get(id)!;
-                        (stage.task as any)[method](result, link);
-                    }
+                    const method = stage.monitors.get(id)!;
+                    (stage.task as any)[method](result, link[0]);
                 }
             }
         }

@@ -1,7 +1,5 @@
 import type { Stage } from './stage';
-import type { Game } from './game';
-import type { Link } from './link';
-import type { Accessor } from './accessor';
+import type { Game, Link } from './game';
 import type { Dict } from '../utils';
 
 export class Task {

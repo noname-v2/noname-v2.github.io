@@ -74,55 +74,65 @@ export class Stage {
      * null: await user input
      */
     async next(): Promise<boolean | null> {
-        this.#game.currentStage = this;
-
-        // awaiting user input
-        if (this.awaits.size) {
-            return null;
-        }
-        this.monitors.clear();
-
-        // skip trigger stage
+        // check if trigger stage is skipped
         if (!this.trigger && [0, 1, 4, 5].includes(this.progress)) {
             this.progress++;
             return true;
         }
 
+        // check if stage is finished
         const task = this.task;
-        if (task) {
-            if (this.progress % 2 === 0) {
-                // call task.main()
+        if (!task) {
+            return false;
+        }
+        
+        this.#game.currentStage = this;
+
+        // check if stage is awaiting user input
+        if (this.awaits.size) {
+            return null;
+        }
+        this.monitors.clear();
+
+        if (this.progress % 2 === 0) {
+            // call task.main()
+            try {
                 await task.main();
             }
-            else {
-                // execute child steps of current task
-                const steps = this.steps.get(task)!;
-                for (const step of steps) {
-                    if (Array.isArray(step)) {
-                        // call a task method
-                        if (step[1] === false) {
+            catch (e) {
+                console.log(e);
+            }
+        }
+        else {
+            // execute child steps of current task
+            const steps = this.steps.get(task)!;
+            for (const step of steps) {
+                if (Array.isArray(step)) {
+                    // call a task method
+                    if (step[1] === false) {
+                        try {
                             await (task as any)[step[0]](...step[2]);
-                            step[1] = true;
-                            return true;
                         }
+                        catch (e) {
+                            console.log(e);
+                        }
+                        step[1] = true;
+                        return true;
                     }
-                    else if (step instanceof Stage) {
-                        // execute child stage
-                        const next = await step.next();
-                        if (next !== false) {
-                            return next;
-                        }
-                        this.#game.currentStage = this;
+                }
+                else if (step instanceof Stage) {
+                    // execute child stage
+                    // (this.#game.currentStage will not change if next == false)
+                    const next = await step.next();
+                    if (next !== false) {
+                        return next;
                     }
                 }
             }
-            
-            // increment progress if task.main() is called or all child steps done
-            this.progress++;
-            return true;
         }
-
-        // stage already done
-        return false;
+        
+        // increment progress if task.main() is called or all child steps done
+        this.progress++;
+        return true;
     }
 }
