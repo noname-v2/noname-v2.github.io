@@ -30,50 +30,50 @@ export class Gallery extends Component {
     /** Cache of item number per page. */
     private currentSize: [number, number] | null = null;
 
-    /** Device can scroll horizontally. */
-    private horizontal = this.client.mobile;
+    /** Scroll mode.
+     * true: for devices that can scroll horizontally, scroll with CSS snap.
+     * false: for mouse wheels, scroll with transform animation.
+     */
+    private snap = this.client.mobile;
 
-    /** Target page after multiple wheel input. */
-    private targetPage: [number, number] | null = null;
+    /** Listener for wheel event. */
+    private wheelListener = (e: WheelEvent) => this.wheel(e);
 
-    /** Clear target page after 0.5s without input. */
-    private scrollTimeout = 0;
-
-    /** Render page when needed. */
-    private renderPage(i: number) {
-        const page = this.pages.childNodes[i] as HTMLElement;
-
-        if (!page || this.rendered.has(i)) {
-            return;
+    init() {
+        // enable horizontal scroll
+        if (this.snap) {
+            this.switchToSnap();
         }
-        this.rendered.add(i);
-
-        const n = this.getSize();
-        const layer = this.ui.createElement('layer');
-
-        for (let j = 0; j < n; j++) {
-            const item = this.items[i * n + j];
-            if (j && j % this.currentSize![1] === 0) {
-                layer.appendChild(document.createElement('div'));
-            }
-            if (typeof item === 'function') {
-                const container = this.ui.createElement('item');
-                const rendered = item();
-                if (rendered) {
-                    container.appendChild(rendered);
-                }
-                this.items[i * n + j] = container;
-                layer.appendChild(container);
-            }
-            else if (item) {
-                layer.appendChild(item);
-            }
-            else {
-                layer.appendChild(this.ui.createElement('item'));
-            }
+        else {
+            this.node.addEventListener('wheel', this.wheelListener, {passive: true});
         }
 
-        (page as any).replaceChildren(layer);
+        // add callbacks for dynamic item number
+        if (Array.isArray(this.nrows)) {
+            this.node.classList.add('centery');
+            this.client.listeners.resize.add(this);
+        }
+        if (Array.isArray(this.ncols)) {
+            this.node.classList.add('centerx');
+            this.client.listeners.resize.add(this);
+        }
+    }
+
+    /** Add an item or an item constructor. */
+    add(item: GalleryItem) {
+        // wrap item with container
+        if (typeof item === 'function') {
+            this.items.push(item);
+        }
+        else {
+            const container = this.ui.createElement('item');
+            container.appendChild(item);
+            this.items.push(container);
+        }
+
+        // re-render current page
+        this.updatePages();
+        this.rendered.delete(this.pageCount - 1);
     }
 
     /** Get number of items per page. */
@@ -120,72 +120,45 @@ export class Gallery extends Component {
         this.node.classList[this.pageCount > 1 ? 'add' : 'remove']('with-indicator');
     }
 
-    init() {
-        // enable horizontal scroll
+    /** Switch to snap mode. */
+    switchToSnap() {
+        this.node.removeEventListener('wheel', this.wheelListener);
+        this.pages.addEventListener('scroll', () => this.checkPage(), {passive: true});
+
+        // enable scroll snapping
+        this.pages.classList.add('snap');
         this.pages.classList.add('scrollx');
-        this.node.addEventListener('wheel', e => this.wheel(e), {passive: true});
-        if (this.horizontal) {
-            this.pages.classList.add('snap');
-        }
+        this.pages.scrollLeft = this.currentPage * this.pages.offsetWidth;
 
-        // render and update page indicator while scrolling
-        this.pages.addEventListener('scroll', () => {
-            this.checkPage();
-            if (this.targetPage && this.targetPage[0] !== this.targetPage[1]) {
-                const left = this.pages.scrollLeft;
-                const width = this.pages.offsetWidth;
-                const vel1 = this.targetPage[0] * width - left;
-                const vel2 = this.targetPage[1] * width - left;
-
-                // change scrollTo target only if direction changed or scroll speed increased by 1.5x
-                // (in order to avoid unsmooth speed variation)
-                if (vel1 * vel2 < 0 || Math.abs(vel2 / vel1) > 1.5) {
-                    this.targetPage[0] = this.targetPage[1];
-                    this.pages.scrollTo({left: this.targetPage[1] * width, behavior: 'smooth'});
-                }
-            }
-        }, {passive: true});
-
-        // add callbacks for dynamic item number
-        if (Array.isArray(this.nrows)) {
-            this.node.classList.add('centery');
-            this.client.listeners.resize.add(this);
-        }
-        if (Array.isArray(this.ncols)) {
-            this.node.classList.add('centerx');
-            this.client.listeners.resize.add(this);
+        // clear animations
+        for (const anim of this.pages.getAnimations()) {
+            anim.cancel();
         }
     }
 
     /** Enable horizontal scroll with mouse wheel. */
     wheel(e: WheelEvent) {
-        // disable this function if device can scroll horizontally
-        if (e.deltaX !== 0) {
-            if (!this.horizontal) {
-                this.horizontal = true;
-                this.pages.classList.add('snap');
-            }
-            this.targetPage = null;
-        }
-        if (this.horizontal) {
+        // ignore in snap mode
+        if (this.snap) {
             return;
         }
 
-        // reset timeout
-        clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = window.setTimeout(() => {
-            if (this.targetPage) {
-                if (this.currentPage !== this.targetPage[1]) {
-                    this.pages.scrollTo({left: this.targetPage[1] * this.pages.offsetWidth, behavior: 'smooth'});
-                }
-                this.targetPage = null;
+        // switch to snap mode after animation finishes
+        if (e.deltaX !== 0) {
+            this.snap = true;
+            const animations = this.pages.getAnimations();
+            if (animations.length) {
+                animations[animations.length - 1].onfinish = () => this.switchToSnap();
             }
-        }, 500);
+            else {
+                this.switchToSnap();
+            }
+            return;
+        }
 
-        // turn page (used with scroll-snapping and scroll-behavior: smooth)
+        // turn page
         const width = this.pages.offsetWidth;
-        let targetPage = this.targetPage ? this.targetPage[1] : Math.round(this.pages.scrollLeft / width);
-        targetPage += e.deltaY / Math.abs(e.deltaY);;
+        let targetPage = this.currentPage + e.deltaY / Math.abs(e.deltaY);
         if (targetPage < 0) {
             targetPage = 0;
             if (targetPage === this.currentPage) {
@@ -198,37 +171,30 @@ export class Gallery extends Component {
                 return;
             }
         }
-        if (!this.targetPage) {
-            this.targetPage = [targetPage, targetPage];
-            this.pages.scrollTo({left: targetPage * width, behavior: 'smooth'});
-        }
-        else {
-            this.targetPage[1] = targetPage;
-        }
-    }
 
-    /** Add an item or an item constructor. */
-    add(item: GalleryItem) {
-        // wrap item with container
-        if (typeof item === 'function') {
-            this.items.push(item);
-        }
-        else {
-            const container = this.ui.createElement('item');
-            container.appendChild(item);
-            this.items.push(container);
-        }
-
-        // re-render current page
-        this.updatePages();
-        this.rendered.delete(this.pageCount - 1);
+        // start animation
+        this.turnPage(targetPage);
+        this.pages.animate([
+           {transform: getComputedStyle(this.pages).transform},
+           {transform: `translateX(${-targetPage*width}px)`}
+        ], {
+            duration: this.app.getTransition('fast'),
+            fill: 'forwards'
+        });
     }
 
     /** Update current page after reopening. */
     checkPage() {
-        const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
-        if (page !== this.currentPage) {
-            this.turnPage(page);
+        if (this.snap) {
+            const page = Math.round(this.pages.scrollLeft / this.node.offsetWidth);
+            if (page !== this.currentPage) {
+                this.turnPage(page);
+            }
+        }
+        else {
+            this.renderPage(this.currentPage);
+            this.renderPage(this.currentPage + 1);
+            this.renderPage(this.currentPage - 1);
         }
     }
 
@@ -240,9 +206,6 @@ export class Gallery extends Component {
 
         // update current page
         this.currentPage = page;
-        if (this.targetPage && page === this.targetPage[1]) {
-            this.targetPage = null;
-        }
 
         // create current and sibling pages
         this.renderPage(page);
@@ -269,5 +232,41 @@ export class Gallery extends Component {
             }
             this.turnPage(this.currentPage);
         }
+    }
+
+    /** Render page when needed. */
+    private renderPage(i: number) {
+        const page = this.pages.childNodes[i] as HTMLElement;
+        if (!page || this.rendered.has(i)) {
+            return;
+        }
+        this.rendered.add(i);
+
+        const n = this.getSize();
+        const layer = this.ui.createElement('layer');
+
+        for (let j = 0; j < n; j++) {
+            const item = this.items[i * n + j];
+            if (j && j % this.currentSize![1] === 0) {
+                layer.appendChild(document.createElement('div'));
+            }
+            if (typeof item === 'function') {
+                const container = this.ui.createElement('item');
+                const rendered = item();
+                if (rendered) {
+                    container.appendChild(rendered);
+                }
+                this.items[i * n + j] = container;
+                layer.appendChild(container);
+            }
+            else if (item) {
+                layer.appendChild(item);
+            }
+            else {
+                layer.appendChild(this.ui.createElement('item'));
+            }
+        }
+
+        (page as any).replaceChildren(layer);
     }
 }

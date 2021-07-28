@@ -232,6 +232,9 @@ noname-gallery > noname-pages {
   position: absolute;
   scroll-behavior: smooth;
 }
+noname-gallery > noname-pages:not(.scrollx) {
+  overflow: visible;
+}
 noname-gallery > noname-pages.snap {
   scroll-snap-type: x mandatory;
 }

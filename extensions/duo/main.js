@@ -2,20 +2,21 @@ var main = {
     mode: {
         name: '欢乐',
         np: 4,
-        content() {
-            this.add('#game.init/');
-            this.add('createPlayers');
-            this.add('#game.chooseHero/');
-            this.add('#game.loop/');
-        },
-        contents: {
-            createPlayers() {
-                console.log(this.game.packs);
+        tasks: {
+            main(Task) {
+                return class Identity extends Task {
+                    main() {
+                        this.addTask('lobby');
+                        this.addTask('createPlayers');
+                        this.addTask('chooseHero', { np: 7 });
+                        this.addTask('loop');
+                    }
+                };
             }
-        }
+        },
+        inherit: 'sgs'
     },
-    tags: ['swap'],
-    inherit: 'sgs'
+    tags: ['swap']
 };
 
 export default main;

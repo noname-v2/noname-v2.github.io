@@ -120,10 +120,10 @@ export class App extends Component {
         await this.loadTheme();
         this.splash = this.ui.create('splash');
         await this.splash.gallery.ready;
-        this.initAssets();
+        const initAssets = this.initAssets();
 
         // load splash menus
-        Promise.all([this.splash.show(), (document as any).fonts.ready]).then(() => {
+        Promise.all([initAssets, this.splash.show(), (document as any).fonts.ready]).then(() => {
             this.splash.hub.create(this.splash);
             this.splash.settings.create(this.splash);
         });
@@ -255,9 +255,6 @@ export class App extends Component {
         // actual window size
         const width = window.innerWidth;
         const height = window.innerHeight;
-
-        // reduce the number of digits of floating point number
-        const scale = (z: number) => `scale(${Math.ceil(z * 500) / 500})`;
 
         // ideal window size
         let [ax, ay] = [960, 540];

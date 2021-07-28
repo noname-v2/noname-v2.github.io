@@ -16,6 +16,10 @@ noname-gallery {
         position: absolute;
         scroll-behavior: smooth;
 
+        &:not(.scrollx) {
+            overflow: visible;
+        }
+
         &.snap {
             scroll-snap-type: x mandatory;
         }

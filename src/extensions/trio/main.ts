@@ -5,17 +5,19 @@ export default {
         ruleset: 'sgs',
         name: '智斗',
         np: 3,
-        content() {
-            this.add('#game.init/');
-            this.add('createPlayers');
-            this.add('#game.chooseHero/');
-            this.add('#game.loop/');
-        },
-        contents: {
-            createPlayers() {
-                console.log(this.game.packs);
+        tasks: {
+            main(Task) {
+                return class Identity extends Task {
+                    main() {
+                        this.addTask('lobby');
+                        this.addTask('createPlayers');
+                        this.addTask('chooseHero', {np: 7});
+                        this.addTask('loop');
+                    }
+                }
             }
-        }
-    },
-    inherit: 'sgs'
+        },
+        inherit: 'sgs',
+        tags: ['double-hero', 'trio']
+    }
 } as SGS;
