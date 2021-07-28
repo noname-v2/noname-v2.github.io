@@ -40,8 +40,6 @@ export class Client {
         sync: new Set<{sync: () => void}>(),
         // document resize
         resize: new Set<{resize: () => void}>(),
-        // back button pressed (Android)
-        history: new Set<{history: (state: string) => void}>(),
         // keyboard event
         key: new Set<{key: (e: KeyboardEvent) => void}>(),
         // stage change
@@ -242,7 +240,7 @@ export class Client {
     }
 
     /** Trigger a listener. */
-    trigger(event: 'sync' | 'resize' | 'history' | 'key' | 'stage', arg?: any) {
+    trigger(event: 'sync' | 'resize' | 'key' | 'stage', arg?: any) {
         for (const cmp of this.listeners[event]) {
             (cmp as any)[event](arg);
         }

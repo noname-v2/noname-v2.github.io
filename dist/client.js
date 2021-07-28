@@ -315,7 +315,15 @@
             // add history
             if (this.client.platform === 'Android') {
                 window.addEventListener('popstate', e => {
-                    this.client.trigger('history', e.state);
+                    console.log('>', e.state);
+                    const arena = this.app.arena;
+                    if (arena && !arena.exiting) {
+                        console.log('??');
+                        if (e.state === null) {
+                            history.pushState('arena', '');
+                        }
+                        arena.back();
+                    }
                 });
             }
         }
@@ -955,9 +963,6 @@
         }
         remove() {
             super.remove(new Promise(resolve => {
-                if (history.state === 'lobby') {
-                    history.back();
-                }
                 let done = 0;
                 const onfinish = () => {
                     if (++done === 2) {
@@ -1012,15 +1017,16 @@
         players = this.ui.createElement('players');
         /** A dialog has been popped before this.remove() is called. */
         faded = false;
+        /** Confirming exit. */
+        confirming = false;
         /** Trying to exit. */
         exiting = false;
         init() {
             this.app.arena = this;
             this.app.node.appendChild(this.node);
             // make android back button function as returning to splash screen
-            if (this.client.platform === 'Android') {
+            if (this.client.platform === 'Android' && history.state === null) {
                 history.pushState('arena', '');
-                this.client.listeners.history.add(this);
             }
         }
         /** Update arena layout. */
@@ -1049,56 +1055,27 @@
         }
         /** Remove arena. */
         remove() {
-            super.remove(new Promise(resolve => {
-                if (history.state === 'arena') {
+            if (this.app.arena === this) {
+                this.app.arena = null;
+                if (this.client.platform === 'Android' && history.state === 'arena') {
                     history.back();
                 }
+            }
+            super.remove(new Promise(resolve => {
                 this.ui.animate(this.node, {
                     opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
                 }).onfinish = resolve;
             }));
         }
         /** Back to splash screen. */
-        back() {
-            if (history.state === 'arena') {
-                history.back();
+        async back() {
+            if (this.confirming || this.exiting) {
+                return;
             }
-            else {
-                this.#confirmBack();
-            }
-        }
-        async history(state) {
-            if (this.client.platform === 'Android' && state !== 'arena') {
-                if (this.app.popups.has('exitArena')) {
-                    // close confirmation dialog when pressing back button twice
-                    this.app.removePopup('exitArena');
-                    history.forward();
-                }
-                else {
-                    this.#confirmBack();
-                }
-            }
-        }
-        /** Connection status change. */
-        $peers() {
-            if (!this.client.peers && this.exiting) {
-                // worker notifies that room successfully closed
-                this.client.disconnect();
-            }
-            else {
-                // wait until other properties have been updated
-                setTimeout(() => this.client.trigger('sync'));
-            }
-        }
-        /** Confirm going back to splash screen. */
-        async #confirmBack() {
+            this.confirming = true;
             const ws = this.client.connection;
             const peers = this.client.peers;
             if (peers || ws instanceof WebSocket) {
-                // postpond history back after user confirmation
-                if (this.client.platform === 'Android') {
-                    history.forward();
-                }
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
                 if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitArena' })) {
                     if (peers && peers.length > 1) {
@@ -1121,15 +1098,24 @@
                             }
                         }, 500);
                     }
-                    // reset history.state when back to splash screen
-                    if (history.state === 'arena') {
-                        this.client.listeners.history.delete(this);
-                        history.back();
-                    }
+                }
+                else {
+                    this.confirming = false;
                 }
             }
             else {
                 this.client.disconnect();
+            }
+        }
+        /** Connection status change. */
+        $peers() {
+            if (!this.client.peers && this.exiting) {
+                // worker notifies that room successfully closed
+                this.client.disconnect();
+            }
+            else {
+                // wait until other properties have been updated
+                setTimeout(() => this.client.trigger('sync'));
             }
         }
     }
@@ -2961,8 +2947,6 @@
             sync: new Set(),
             // document resize
             resize: new Set(),
-            // back button pressed (Android)
-            history: new Set(),
             // keyboard event
             key: new Set(),
             // stage change

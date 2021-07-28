@@ -131,7 +131,13 @@ export class App extends Component {
         // add history
         if (this.client.platform === 'Android') {
             window.addEventListener('popstate', e => {
-                this.client.trigger('history', e.state);
+                const arena = this.app.arena
+                if (arena && !arena.exiting) {
+                    if (e.state === null) {
+                        history.pushState('arena', '');
+                    }
+                    arena.back();
+                }
             });
         }
     }
