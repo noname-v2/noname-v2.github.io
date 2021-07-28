@@ -124,6 +124,9 @@ export class Gallery extends Component {
         // enable horizontal scroll
         this.pages.classList.add('scrollx');
         this.node.addEventListener('wheel', e => this.wheel(e), {passive: true});
+        if (this.horizontal) {
+            this.pages.classList.add('snap');
+        }
 
         // render and update page indicator while scrolling
         this.pages.addEventListener('scroll', () => {
@@ -158,7 +161,10 @@ export class Gallery extends Component {
     wheel(e: WheelEvent) {
         // disable this function if device can scroll horizontally
         if (e.deltaX !== 0) {
-            this.horizontal = true;
+            if (!this.horizontal) {
+                this.horizontal = true;
+                this.pages.classList.add('snap');
+            }
             this.targetPage = null;
         }
         if (this.horizontal) {

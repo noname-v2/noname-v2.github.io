@@ -14,8 +14,11 @@ noname-gallery {
         width: 100%;
         white-space: nowrap;
         position: absolute;
-        scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
+
+        &.snap {
+            scroll-snap-type: x mandatory;
+        }
         
         > noname-page {
             scroll-snap-align: center;

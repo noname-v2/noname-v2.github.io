@@ -230,8 +230,10 @@ noname-gallery > noname-pages {
   width: 100%;
   white-space: nowrap;
   position: absolute;
-  scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
+}
+noname-gallery > noname-pages.snap {
+  scroll-snap-type: x mandatory;
 }
 noname-gallery > noname-pages > noname-page {
   scroll-snap-align: center;

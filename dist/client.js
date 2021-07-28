@@ -315,10 +315,8 @@
             // add history
             if (this.client.platform === 'Android') {
                 window.addEventListener('popstate', e => {
-                    console.log('>', e.state);
                     const arena = this.app.arena;
                     if (arena && !arena.exiting) {
-                        console.log('??');
                         if (e.state === null) {
                             history.pushState('arena', '');
                         }
@@ -1271,6 +1269,9 @@
             // enable horizontal scroll
             this.pages.classList.add('scrollx');
             this.node.addEventListener('wheel', e => this.wheel(e), { passive: true });
+            if (this.horizontal) {
+                this.pages.classList.add('snap');
+            }
             // render and update page indicator while scrolling
             this.pages.addEventListener('scroll', () => {
                 this.checkPage();
@@ -1301,7 +1302,10 @@
         wheel(e) {
             // disable this function if device can scroll horizontally
             if (e.deltaX !== 0) {
-                this.horizontal = true;
+                if (!this.horizontal) {
+                    this.horizontal = true;
+                    this.pages.classList.add('snap');
+                }
                 this.targetPage = null;
             }
             if (this.horizontal) {
