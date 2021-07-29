@@ -230,7 +230,7 @@ noname-gallery > noname-pages {
   width: 100%;
   white-space: nowrap;
   position: absolute;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 noname-gallery > noname-pages:not(.scrollx) {
   overflow: visible;

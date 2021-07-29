@@ -4,10 +4,10 @@ type GalleryItem = HTMLElement | (() => HTMLElement | null);
 
 export class Gallery extends Component {
     /** Page container. */
-    pages: HTMLElement = this.ui.createElement('pages', this.node);
+    pages: HTMLElement = this.ui.createElement('pages');
 
     /** Page indicator */
-    indicator: HTMLElement = this.ui.createElement('indicator', this.node);
+    indicator: HTMLElement = this.ui.createElement('indicator');
 
     /** Number of rows. */
     nrows!: number | [number, number, number, number];
@@ -34,7 +34,7 @@ export class Gallery extends Component {
      * true: for devices that can scroll horizontally, scroll with CSS snap.
      * false: for mouse wheels, scroll with transform animation.
      */
-    private snap = this.client.mobile;
+    private snap = this.client.mobile || this.db.get('snap') || false;
 
     /** Listener for wheel event. */
     private wheelListener = (e: WheelEvent) => this.wheel(e);
@@ -47,6 +47,8 @@ export class Gallery extends Component {
         else {
             this.node.addEventListener('wheel', this.wheelListener, {passive: true});
         }
+        this.node.appendChild(this.pages);
+        this.node.appendChild(this.indicator);
 
         // add callbacks for dynamic item number
         if (Array.isArray(this.nrows)) {
@@ -122,18 +124,11 @@ export class Gallery extends Component {
 
     /** Switch to snap mode. */
     switchToSnap() {
-        this.node.removeEventListener('wheel', this.wheelListener);
         this.pages.addEventListener('scroll', () => this.checkPage(), {passive: true});
 
         // enable scroll snapping
         this.pages.classList.add('snap');
         this.pages.classList.add('scrollx');
-        this.pages.scrollLeft = this.currentPage * this.pages.offsetWidth;
-
-        // clear animations
-        for (const anim of this.pages.getAnimations()) {
-            anim.cancel();
-        }
     }
 
     /** Enable horizontal scroll with mouse wheel. */
@@ -146,13 +141,15 @@ export class Gallery extends Component {
         // switch to snap mode after animation finishes
         if (e.deltaX !== 0) {
             this.snap = true;
-            const animations = this.pages.getAnimations();
-            if (animations.length) {
-                animations[animations.length - 1].onfinish = () => this.switchToSnap();
-            }
-            else {
+            this.db.set('snap', true);
+            this.node.removeEventListener('wheel', this.wheelListener);
+            setTimeout(() => {
+                for (const anim of this.pages.getAnimations()) {
+                    anim.cancel();
+                }
                 this.switchToSnap();
-            }
+                this.pages.scrollLeft = this.currentPage * this.pages.offsetWidth;
+            }, this.app.getTransition());
             return;
         }
 
@@ -191,10 +188,8 @@ export class Gallery extends Component {
                 this.turnPage(page);
             }
         }
-        else {
-            this.renderPage(this.currentPage);
-            this.renderPage(this.currentPage + 1);
-            this.renderPage(this.currentPage - 1);
+        else if (this.currentPage < 0) {
+            this.turnPage(0);
         }
     }
 

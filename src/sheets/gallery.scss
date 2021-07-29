@@ -14,7 +14,7 @@ noname-gallery {
         width: 100%;
         white-space: nowrap;
         position: absolute;
-        scroll-behavior: smooth;
+        scroll-behavior: auto;
 
         &:not(.scrollx) {
             overflow: visible;
