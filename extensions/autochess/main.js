@@ -1,7 +1,7 @@
 var main = {
     mode: {
         name: '战棋',
-        np: [4, 6, 8],
+        np: 8,
         tasks: {
             main(Task) {
                 return class Identity extends Task {
@@ -16,8 +16,6 @@ var main = {
         },
         inherit: 'auto'
     },
-    heropack: '战棋标准',
-    cardpack: '战棋标准',
     tags: ['auto!']
 };
 

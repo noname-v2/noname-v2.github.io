@@ -1641,11 +1641,10 @@
             super.init();
             // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
-            const extensions = this.extensions = await this.client.utils.readJSON('extensions/extensions.json');
-            const modes = [];
+            this.extensions = await this.client.utils.readJSON('extensions/extensions.json');
             // udpate extension index
             let write = false;
-            await Promise.all(extensions.map(async (name) => {
+            await Promise.all(this.extensions.map(async (name) => {
                 if (!this.index[name]) {
                     await this.#loadExtension(name);
                     if (this.index[name]) {
@@ -1657,14 +1656,10 @@
                 await this.db.writeFile('extensions/index.json', this.index);
             }
             // add mode entries
-            for (const name of extensions) {
+            for (const name of this.extensions) {
                 if (this.index[name]?.mode) {
-                    this.index[name].mode;
-                    modes.push(name);
+                    this.add(() => this.addMode(name));
                 }
-            }
-            for (const name of modes) {
-                this.add(() => this.addMode(name));
             }
         }
         /** Add a mode to gallery. */

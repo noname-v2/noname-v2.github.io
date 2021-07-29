@@ -35,13 +35,11 @@ export class SplashGallery extends Gallery {
 
 		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
-		const extensions = this.extensions = await this.client.utils.readJSON<string[]>('extensions/extensions.json');
-		const modeNames: Dict<string> ={};
-		const modes: string[] = [];
+		this.extensions = await this.client.utils.readJSON<string[]>('extensions/extensions.json');
 
 		// udpate extension index
 		let write = false;
-		await Promise.all(extensions.map(async name => {
+		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
 				await this.#loadExtension(name);
 				if (this.index[name]) {
@@ -54,14 +52,10 @@ export class SplashGallery extends Gallery {
 		}
 
 		// add mode entries
-		for (const name of extensions) {
+		for (const name of this.extensions) {
 			if (this.index[name]?.mode) {
-				modeNames[name] = this.index[name].mode;
-				modes.push(name);
+				this.add(() => this.addMode(name));
 			}
-		}
-		for (const name of modes) {
-			this.add(() => this.addMode(name));
 		}
     }
 

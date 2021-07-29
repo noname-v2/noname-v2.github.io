@@ -2,8 +2,8 @@ import type { SGS } from '../sgs/sgs';
 
 export default {
     mode: {
-        name: '运筹',
-        np: [2, 4, 6, 8],
+        name: '塔防',
+        np: 6,
         tasks: {
             main(Task) {
                 return class Identity extends Task {
@@ -18,5 +18,5 @@ export default {
         },
         inherit: 'auto'
     },
-    tags: ['auto!', 'rts']
+    tags: ['auto!']
 } as SGS;

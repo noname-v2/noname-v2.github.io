@@ -1,22 +1,22 @@
-import type { SGS } from '../sgs/sgs';
-
-export default {
+var main = {
     mode: {
-        name: '塔防',
-        np: [1, 2, 3, 4],
+        name: '攻城',
+        np: 2,
         tasks: {
             main(Task) {
                 return class Identity extends Task {
                     main() {
                         this.addTask('lobby');
                         this.addTask('createPlayers');
-                        this.addTask('chooseHero', {np: 7});
+                        this.addTask('chooseHero', { np: 7 });
                         this.addTask('loop');
                     }
-                }
+                };
             }
         },
-        inherit: 'autorts'
+        inherit: 'auto'
     },
-    tags: ['auto!', 'rts']
-} as SGS;
+    tags: ['auto!']
+};
+
+export default main;

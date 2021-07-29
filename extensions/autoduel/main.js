@@ -1,7 +1,7 @@
 var main = {
     mode: {
-        name: '运筹',
-        np: [2, 4, 6, 8],
+        name: '对弈',
+        np: 2,
         tasks: {
             main(Task) {
                 return class Identity extends Task {
@@ -16,7 +16,7 @@ var main = {
         },
         inherit: 'auto'
     },
-    tags: ['auto!', 'rts']
+    tags: ['auto!']
 };
 
 export default main;

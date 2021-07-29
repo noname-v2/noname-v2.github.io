@@ -5,14 +5,16 @@
     "commander",
     "competitive",
     "trio",
-    "autorts",
     "autochess",
-    "autoduo",
-    "autodefense",
+    "autoduel",
+    "automoba",
+    "autotower",
     "standard",
     "maneuver",
     "myth",
     "contest",
     "meteor",
-    "conqueror"
+    "conqueror",
+    "auto",
+    "moba"
 ]

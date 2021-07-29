@@ -1,6 +1,8 @@
-var main = {
+import type { SGS } from '../sgs/sgs';
+
+export default {
     mode: {
-        name: '对弈',
+        name: '攻城',
         np: 2,
         tasks: {
             main(Task) {
@@ -8,15 +10,13 @@ var main = {
                     main() {
                         this.addTask('lobby');
                         this.addTask('createPlayers');
-                        this.addTask('chooseHero', { np: 7 });
+                        this.addTask('chooseHero', {np: 7});
                         this.addTask('loop');
                     }
-                };
+                }
             }
         },
-        inherit: 'autochess'
+        inherit: 'auto'
     },
-    tags: ['auto!'],
-};
-
-export default main;
+    tags: ['auto!']
+} as SGS;
