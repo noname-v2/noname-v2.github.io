@@ -36,148 +36,57 @@ export class SplashSettings extends Popup {
 		};
 
         // add main content
-        this.#addThemes();
-        this.#addBackgrounds();
-        this.#addMusic();
+        this.#addGallery('theme', '主题',  '⊕ 添加背景', () => this.#addTheme());
+        this.#addGallery('bg', '背景', '⊕ 添加背景', () => this.#addBackground());
+        this.#addGallery('bgm', '音乐', '+', () => this.#addMusic());
 
 		// enable button click after creation finish
 		splash.bar.buttons.get('settings')!.node.classList.remove('disabled');
     }
 
-    // #addGalery(section: string, caption: string) {
-    //     this.pane.addSection(caption);
-    //     const items = Array.from(Object.keys(this.app.assets[section]));
-    //     const gallery = this.pane.addGallery(1, this.ncols);
+    #addGallery(section: string, caption: string, add: string, onadd: () => void) {
+        this.pane.addSection(caption);
+        const items = Array.from(Object.keys(this.app.assets[section]));
 
-    //     for (const item of items) {
-    //         gallery.add(() => {
-    //             const node = this.ui.createElement('widget.sharp');
-    //             const src = `assets/theme/${item}` + (item === 'theme' ? '/theme' : '');
-    //             this.ui.setBackground(this.ui.createElement('image', node), src);
-    //         });
-    //     }
-    // }
+        let gallery;
+        if (section === 'bgm') {
+            //  6-column music gallery with volume sliders
+            this.#addSliders();
+            gallery = this.pane.addGallery(1, this.ncols * 2);
+            gallery.node.classList.add('music');
+        }
+        else {
+            // 3-column theme / background gallery
+            gallery = this.pane.addGallery(1, this.ncols);
 
-    #addThemes() {
-        this.pane.addSection('主题');
+        }
+        this.galleries.add(gallery);
 
-		const themes = Array.from(Object.keys(this.app.assets.theme));
-		const themeGallery = this.pane.addGallery(1, this.ncols);
-        this.galleries.add(themeGallery);
-
-        for (const theme of themes) {
-            themeGallery.add(() => {
-                const node = this.ui.createElement('widget.sharp');
-                this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
-
-                if (theme === this.db.get('theme')) {
-                    node.classList.add('active')
-                }
-
-                this.ui.bindClick(node, () => {
-                    if (theme !== this.db.get('theme')) {
-                        node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                        node.classList.add('active');
-                        this.db.set('theme', theme);
-                        this.app.loadTheme();
-                    }
-                });
-
-                return node;
-            });
+        // add gallery items
+        for (const item of items) {
+            gallery.add(() => this.#addItem(item, section));
         }
 
-        themeGallery.add(() => {
+        // add button
+        gallery.add(() => {
             const node = this.ui.createElement('widget.sharp');
             const content = this.ui.createElement('content', node);
-            this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
+            this.ui.createElement('caption', content).innerHTML = add;
+            this.ui.bindClick(node, onadd);
             return node;
         });
     }
 
-    #addBackgrounds() {
-        this.pane.addSection('背景');
-
-		const bgs = Array.from(Object.keys(this.app.assets.bg));
-		const bgGallery = this.pane.addGallery(1, this.ncols);
-        this.galleries.add(bgGallery);
-
-        for (const bg of bgs) {
-            bgGallery.add(() => {
-                const node = this.ui.createElement('widget.sharp');
-                this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
-
-                if (bg === this.db.get('bg')) {
-                    node.classList.add('active')
-                }
-
-                this.ui.bindClick(node, () => {
-                    if (bg !== this.db.get('bg')) {
-                        node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                        node.classList.add('active');
-                        this.db.set('bg', bg);
-                        this.app.loadBackground();
-                    }
-                    else {
-                        node.classList.remove('active');
-                        this.db.set('bg', null);
-                        this.app.loadBackground();
-                    }
-                });
-
-                return node;
-            });
-        }
-
-        bgGallery.add(() => {
-            const node = this.ui.createElement('widget.sharp');
-            const content = this.ui.createElement('content', node);
-            this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
-            return node;
-        });
-    }
-
-    #addMusic() {
-        this.pane.addSection('音乐');
-
+    /** Add volume sliders. */
+    #addSliders() {
 		const volGallery = this.pane.addGallery(1, 2);
 		volGallery.node.classList.add('volume');
         volGallery.add(this.#createSlider('音乐音量：', 'music-volume'));
         volGallery.add(this.#createSlider('音效音量：', 'audio-volume'));
         this.galleries.add(volGallery);
-
-		const bgms = Array.from(Object.keys(this.app.assets.bgm));
-		const bgmGallery = this.pane.addGallery(1, this.ncols * 2);
-		bgmGallery.node.classList.add('music');
-        this.galleries.add(bgmGallery);
-
-        for (const bgm of bgms) {
-            bgmGallery.add(() => {
-                const node = this.ui.createElement('widget.sharp');
-                this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
-
-                if (bgm === this.db.get('bgm-splash')) {
-                    this.#rotating = node;
-                }
-
-                if (bgm === this.db.get('bgm')) {
-                    node.classList.add('active');
-                }
-
-                this.ui.bindClick(node, e => this.#musicMenu(node, bgm, e));
-
-                return node;
-            });
-        }
-
-        bgmGallery.add(() => {
-            const node = this.ui.createElement('widget.sharp');
-            const content = this.ui.createElement('content.plus', node);
-            this.ui.createElement('caption', content).innerHTML = '+';
-            return node;
-        });
     }
 
+    /** Create a volume slider. */
     #createSlider(caption: string, key: string) {
         const node = this.ui.createElement('widget.sharp');
         const img = this.ui.createElement('image', node);
@@ -228,12 +137,56 @@ export class SplashSettings extends Popup {
         return node;
     }
 
+    /** Add a gallery item. */
+    #addItem(item: string, section: string) {
+        const node = this.ui.createElement('widget.sharp');
+        const src = `assets/${section}/${item}` + (section === 'theme' ? '/theme' : '');
+        this.ui.setBackground(this.ui.createElement('image', node), src);
+
+        // border for current active option
+        if (item === this.db.get(section)) {
+            node.classList.add('active');
+        }
+        
+        if (section === 'bgm') {
+            // set background music
+            if (item === this.db.get('bgm-splash')) {
+                this.#rotating = node;
+            }
+            this.ui.bindClick(node, e => this.#musicMenu(node, item, e));
+        }
+        else {
+            this.ui.bindClick(node, () => this.#clickItem(node, item, section));
+        }
+
+        return node;
+    }
+
+    /** Callback when clicking theme or background entry. */
+    #clickItem(node: HTMLElement, item: string, section: string) {
+        if (item !== this.db.get(section)) {
+            // change theme or background
+            node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+            node.classList.add('active');
+            this.db.set(section, item);
+            this.app[section === 'bg' ? 'loadBackground' : 'loadTheme']();
+        }
+        else if (section === 'bg') {
+            // unset background
+            node.classList.remove('active');
+            this.db.set('bg', null);
+            this.app.loadBackground();
+        }
+    }
+
+    /** Open menu when clicking on music gallery. */
     #musicMenu(node: HTMLElement, bgm: string, e: Point) {
         const rotating_bak: [HTMLElement | null, Animation | null] = [this.#rotating, this.#rotatingAnimation];
         this.app.switchMusic(bgm);
         const menu = this.ui.create('popup');
         this.#rotate(node);
 
+        // restore rotation animation of previous splash music
         const restore = () => {
             if (rotating_bak[0] && rotating_bak[0] !== node) {
                 this.#rotating = rotating_bak[0];
@@ -248,26 +201,16 @@ export class SplashSettings extends Popup {
             this.app.playMusic();
         }
         
-        menu.pane.addOption('等待音乐', () => {
-            this.#rotateMusic(node, bgm, true, false);
+        // callback for clicking on menu entry
+        const clickOption = (splash: boolean, game: boolean) => {
+            this.#rotateMusic(node, bgm, splash, game);
             menu.onclose = null;
             menu.close();
-        });
-        menu.pane.addOption('游戏音乐', () => {
-            this.#rotateMusic(node, bgm, false, true);
-            restore();
-            menu.onclose = null;
-            menu.close();
-        });
-        menu.pane.addOption('全部应用', () => {
-            this.#rotateMusic(node, bgm, true, true);
-            menu.onclose = null;
-            menu.close();
-        });
-        menu.onclose = () => {
-            this.#rotateMusic(node, bgm, false, false);
-            restore();
-        };
+        }
+        menu.pane.addOption('等待音乐', () => clickOption(true, false));
+        menu.pane.addOption('游戏音乐', () => {clickOption(false, true); restore()});
+        menu.pane.addOption('全部应用', () => clickOption(true, true));
+        menu.onclose = () => {this.#rotateMusic(node, bgm, false, false); restore()};
         menu.location = e;
         menu.open();
     }
@@ -278,14 +221,17 @@ export class SplashSettings extends Popup {
             this.#rotatingAnimation?.pause();
         }
 
+        // current node animation
         const animation = this.#rotating === node ? this.#rotatingAnimation : node.getAnimations()[0];
         this.#rotating = node;
 
         if (animation) {
+            // start current animation
             this.#rotatingAnimation = animation;
             animation.play();
         }
         else {
+            // create new animation
             this.#rotatingAnimation = node.animate([
                 {transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}
             ], {
@@ -295,12 +241,15 @@ export class SplashSettings extends Popup {
         }
     }
 
+    /** Rotate / highlight music gallery item. */
     #rotateMusic(node: HTMLElement, bgm: string, splash: boolean, game: boolean) {
         if (splash) {
+            // set as splash bgm
             this.#rotate(node);
             this.db.set('bgm-splash', bgm);
         }
         else {
+            // unset splash bgm
             if (this.#rotating === node) {
                 this.#rotatingAnimation?.pause();
                 this.#rotating = null;
@@ -312,15 +261,21 @@ export class SplashSettings extends Popup {
         }
 
         if (game) {
+            // set as game bgm
             node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
             node.classList.add('active');
             this.db.set('bgm', bgm);
         }
         else {
+            // unset game bgm
             node.classList.remove('active');
             if (this.db.get('bgm') === bgm) {								
                 this.db.set('bgm', 'none');
             }
         }
     }
+
+    #addTheme() {}
+    #addBackground() {}
+    #addMusic() {}
 }

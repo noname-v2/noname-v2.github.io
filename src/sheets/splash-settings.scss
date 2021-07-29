@@ -41,6 +41,11 @@ noname-popup.splash-settings > noname-pane {
                     > noname-image {
                         border-radius: 50px;
                     }
+
+                    > noname-content > noname-caption {
+                        font-size: 36px;
+                        margin-bottom: 1px;
+                    }
                 }
             }
 

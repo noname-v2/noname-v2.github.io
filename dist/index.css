@@ -1106,6 +1106,10 @@ noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > 
 noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp > noname-image {
   border-radius: 50px;
 }
+noname-popup.splash-settings > noname-pane > noname-gallery.music noname-item > noname-widget.sharp > noname-content > noname-caption {
+  font-size: 36px;
+  margin-bottom: 1px;
+}
 noname-popup.splash-settings > noname-pane > noname-gallery.music noname-page > noname-layer {
   width: calc(100% - 20px);
   left: 10px;

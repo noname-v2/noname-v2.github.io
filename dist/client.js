@@ -950,48 +950,11 @@
             if (peer) {
                 this.seats.classList.remove('offline');
                 this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-                this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
-                this.checkSpectate();
+                this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+                this.#checkSpectate();
             }
             else {
                 this.seats.classList.add('offline');
-            }
-        }
-        /** Calculate the location of spectators and specified heros. */
-        alignAvatars(dock, names) {
-            const frag = document.createDocumentFragment();
-            const n = names.length;
-            for (let i = 0; i < n; i++) {
-                const img = this.ui.createElement('image.avatar');
-                if (n < 4) {
-                    img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
-                }
-                else if (n === 4) {
-                    const left = (230 - n * 40 - (n - 1) * 15) / 2;
-                    img.style.left = `${left + i * 55}px`;
-                }
-                else {
-                    img.style.left = `${190 / (n - 1) * i}px`;
-                }
-                this.ui.setImage(img, names[i]);
-                frag.appendChild(img);
-            }
-            dock.replaceChildren(frag);
-        }
-        /** Enable or disable spectate button. */
-        checkSpectate() {
-            if (!this.spectateButton.dataset.fill) {
-                this.spectateButton.classList.remove('disabled');
-            }
-            else {
-                const np = this.get('config').np;
-                let n = 0;
-                for (const player of this.players) {
-                    if (player.get('heroName')) {
-                        n++;
-                    }
-                }
-                this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
             }
         }
         /** Disable all toggles until command received from worker. */
@@ -1016,6 +979,7 @@
             }));
         }
         $pane(configs) {
+            // mode options
             this.sidebar.pane.addSection('选项');
             for (const name in configs.configs) {
                 const config = configs.configs[name];
@@ -1039,6 +1003,7 @@
                 }
                 this.configToggles.set(name, toggle);
             }
+            // heropacks
             this.sidebar.pane.addSection('武将');
             for (const name in configs.heropacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
@@ -1047,6 +1012,7 @@
                 });
                 this.heroToggles.set(name, toggle);
             }
+            // cardpacks
             this.sidebar.pane.addSection('卡牌');
             for (const name in configs.cardpacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
@@ -1085,7 +1051,7 @@
                     for (let i = 0; i < this.get('npmax'); i++) {
                         this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                     }
-                    this.checkSpectate();
+                    this.#checkSpectate();
                 });
             }
         }
@@ -1122,8 +1088,16 @@
                     if (this.owner !== this.client.uid) {
                         return;
                     }
-                    const delta = player.node.classList.contains('blurred') ? 1 : -1;
-                    this.yield(['config', 'np', this.get('config').np + delta]);
+                    const toggle = this.configToggles.get('np');
+                    if (toggle) {
+                        const nps = Array.from(toggle.choices.keys());
+                        const idx = nps.indexOf(this.get('config').np);
+                        const delta = player.node.classList.contains('blurred') ? 1 : -1;
+                        const np = nps[idx + delta];
+                        if (typeof np === 'number') {
+                            this.yield(['config', 'np', np]);
+                        }
+                    }
                 });
             }
             if (npmax > 4) {
@@ -1154,6 +1128,43 @@
                     this.client.peer.yield('spectate');
                 }
             });
+        }
+        /** Calculate the location of spectators and specified heros. */
+        #alignAvatars(dock, names) {
+            const frag = document.createDocumentFragment();
+            const n = names.length;
+            for (let i = 0; i < n; i++) {
+                const img = this.ui.createElement('image.avatar');
+                if (n < 4) {
+                    img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
+                }
+                else if (n === 4) {
+                    const left = (230 - n * 40 - (n - 1) * 15) / 2;
+                    img.style.left = `${left + i * 55}px`;
+                }
+                else {
+                    img.style.left = `${190 / (n - 1) * i}px`;
+                }
+                this.ui.setImage(img, names[i]);
+                frag.appendChild(img);
+            }
+            dock.replaceChildren(frag);
+        }
+        /** Enable or disable spectate button. */
+        #checkSpectate() {
+            if (!this.spectateButton.dataset.fill) {
+                this.spectateButton.classList.remove('disabled');
+            }
+            else {
+                const np = this.get('config').np;
+                let n = 0;
+                for (const player of this.players) {
+                    if (player.get('heroName')) {
+                        n++;
+                    }
+                }
+                this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
+            }
         }
     }
 
@@ -2071,26 +2082,6 @@
         }
     }
 
-    class SplashRoom extends Component {
-        /** Use <noname-widget> as tag */
-        static tag = 'widget';
-        /** Avatar image. */
-        avatar = this.ui.createElement('image.avatar', this.node);
-        /** Mode name. */
-        caption = this.ui.createElement('caption', this.node);
-        /** Status text. */
-        status = this.ui.createElement('span', this.node);
-        /** Nickname text. */
-        nickname = this.ui.createElement('span.nickname', this.node);
-        setup([name, np, npmax, [nickname, avatar], state]) {
-            this.ui.setImage(this.avatar, avatar);
-            this.caption.innerHTML = name;
-            const stateText = state ? '游戏中' : '等待中';
-            this.status.innerHTML = `<noname-status data-state="${state}"></noname-status> ${stateText} ${Math.min(np, npmax)} / ${npmax}`;
-            this.nickname.innerHTML = `<noname-image></noname-image>${nickname}`;
-        }
-    }
-
     class SplashSettings extends Popup {
         /** Portrait sized popup. */
         size = 'portrait';
@@ -2119,121 +2110,49 @@
                 this.#rotatingAnimation?.pause();
             };
             // add main content
-            this.#addThemes();
-            this.#addBackgrounds();
-            this.#addMusic();
+            this.#addGallery('theme', '主题', '⊕ 添加背景', () => this.#addTheme());
+            this.#addGallery('bg', '背景', '⊕ 添加背景', () => this.#addBackground());
+            this.#addGallery('bgm', '音乐', '+', () => this.#addMusic());
             // enable button click after creation finish
             splash.bar.buttons.get('settings').node.classList.remove('disabled');
         }
-        // #addGalery(section: string, caption: string) {
-        //     this.pane.addSection(caption);
-        //     const items = Array.from(Object.keys(this.app.assets[section]));
-        //     const gallery = this.pane.addGallery(1, this.ncols);
-        //     for (const item of items) {
-        //         gallery.add(() => {
-        //             const node = this.ui.createElement('widget.sharp');
-        //             const src = `assets/theme/${item}` + (item === 'theme' ? '/theme' : '');
-        //             this.ui.setBackground(this.ui.createElement('image', node), src);
-        //         });
-        //     }
-        // }
-        #addThemes() {
-            this.pane.addSection('主题');
-            const themes = Array.from(Object.keys(this.app.assets.theme));
-            const themeGallery = this.pane.addGallery(1, this.ncols);
-            this.galleries.add(themeGallery);
-            for (const theme of themes) {
-                themeGallery.add(() => {
-                    const node = this.ui.createElement('widget.sharp');
-                    this.ui.setBackground(this.ui.createElement('image', node), `assets/theme/${theme}/theme`);
-                    if (theme === this.db.get('theme')) {
-                        node.classList.add('active');
-                    }
-                    this.ui.bindClick(node, () => {
-                        if (theme !== this.db.get('theme')) {
-                            node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                            node.classList.add('active');
-                            this.db.set('theme', theme);
-                            this.app.loadTheme();
-                        }
-                    });
-                    return node;
-                });
+        #addGallery(section, caption, add, onadd) {
+            this.pane.addSection(caption);
+            const items = Array.from(Object.keys(this.app.assets[section]));
+            let gallery;
+            if (section === 'bgm') {
+                //  6-column music gallery with volume sliders
+                this.#addSliders();
+                gallery = this.pane.addGallery(1, this.ncols * 2);
+                gallery.node.classList.add('music');
             }
-            themeGallery.add(() => {
+            else {
+                // 3-column theme / background gallery
+                gallery = this.pane.addGallery(1, this.ncols);
+            }
+            this.galleries.add(gallery);
+            // add gallery items
+            for (const item of items) {
+                gallery.add(() => this.#addItem(item, section));
+            }
+            // add button
+            gallery.add(() => {
                 const node = this.ui.createElement('widget.sharp');
                 const content = this.ui.createElement('content', node);
-                this.ui.createElement('caption', content).innerHTML = '⊕ 创建主题';
+                this.ui.createElement('caption', content).innerHTML = add;
+                this.ui.bindClick(node, onadd);
                 return node;
             });
         }
-        #addBackgrounds() {
-            this.pane.addSection('背景');
-            const bgs = Array.from(Object.keys(this.app.assets.bg));
-            const bgGallery = this.pane.addGallery(1, this.ncols);
-            this.galleries.add(bgGallery);
-            for (const bg of bgs) {
-                bgGallery.add(() => {
-                    const node = this.ui.createElement('widget.sharp');
-                    this.ui.setBackground(this.ui.createElement('image', node), 'assets/bg/', bg);
-                    if (bg === this.db.get('bg')) {
-                        node.classList.add('active');
-                    }
-                    this.ui.bindClick(node, () => {
-                        if (bg !== this.db.get('bg')) {
-                            node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
-                            node.classList.add('active');
-                            this.db.set('bg', bg);
-                            this.app.loadBackground();
-                        }
-                        else {
-                            node.classList.remove('active');
-                            this.db.set('bg', null);
-                            this.app.loadBackground();
-                        }
-                    });
-                    return node;
-                });
-            }
-            bgGallery.add(() => {
-                const node = this.ui.createElement('widget.sharp');
-                const content = this.ui.createElement('content', node);
-                this.ui.createElement('caption', content).innerHTML = '⊕ 添加背景';
-                return node;
-            });
-        }
-        #addMusic() {
-            this.pane.addSection('音乐');
+        /** Add volume sliders. */
+        #addSliders() {
             const volGallery = this.pane.addGallery(1, 2);
             volGallery.node.classList.add('volume');
             volGallery.add(this.#createSlider('音乐音量：', 'music-volume'));
             volGallery.add(this.#createSlider('音效音量：', 'audio-volume'));
             this.galleries.add(volGallery);
-            const bgms = Array.from(Object.keys(this.app.assets.bgm));
-            const bgmGallery = this.pane.addGallery(1, this.ncols * 2);
-            bgmGallery.node.classList.add('music');
-            this.galleries.add(bgmGallery);
-            for (const bgm of bgms) {
-                bgmGallery.add(() => {
-                    const node = this.ui.createElement('widget.sharp');
-                    this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
-                    if (bgm === this.db.get('bgm-splash')) {
-                        this.#rotating = node;
-                    }
-                    if (bgm === this.db.get('bgm')) {
-                        node.classList.add('active');
-                    }
-                    this.ui.bindClick(node, e => this.#musicMenu(node, bgm, e));
-                    return node;
-                });
-            }
-            bgmGallery.add(() => {
-                const node = this.ui.createElement('widget.sharp');
-                const content = this.ui.createElement('content.plus', node);
-                this.ui.createElement('caption', content).innerHTML = '+';
-                return node;
-            });
         }
+        /** Create a volume slider. */
         #createSlider(caption, key) {
             const node = this.ui.createElement('widget.sharp');
             const img = this.ui.createElement('image', node);
@@ -2275,11 +2194,50 @@
             updatetVolume(this.db.get(key));
             return node;
         }
+        /** Add a gallery item. */
+        #addItem(item, section) {
+            const node = this.ui.createElement('widget.sharp');
+            const src = `assets/${section}/${item}` + (section === 'theme' ? '/theme' : '');
+            this.ui.setBackground(this.ui.createElement('image', node), src);
+            // border for current active option
+            if (item === this.db.get(section)) {
+                node.classList.add('active');
+            }
+            if (section === 'bgm') {
+                // set background music
+                if (item === this.db.get('bgm-splash')) {
+                    this.#rotating = node;
+                }
+                this.ui.bindClick(node, e => this.#musicMenu(node, item, e));
+            }
+            else {
+                this.ui.bindClick(node, () => this.#clickItem(node, item, section));
+            }
+            return node;
+        }
+        /** Callback when clicking theme or background entry. */
+        #clickItem(node, item, section) {
+            if (item !== this.db.get(section)) {
+                // change theme or background
+                node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
+                node.classList.add('active');
+                this.db.set(section, item);
+                this.app[section === 'bg' ? 'loadBackground' : 'loadTheme']();
+            }
+            else if (section === 'bg') {
+                // unset background
+                node.classList.remove('active');
+                this.db.set('bg', null);
+                this.app.loadBackground();
+            }
+        }
+        /** Open menu when clicking on music gallery. */
         #musicMenu(node, bgm, e) {
             const rotating_bak = [this.#rotating, this.#rotatingAnimation];
             this.app.switchMusic(bgm);
             const menu = this.ui.create('popup');
             this.#rotate(node);
+            // restore rotation animation of previous splash music
             const restore = () => {
                 if (rotating_bak[0] && rotating_bak[0] !== node) {
                     this.#rotating = rotating_bak[0];
@@ -2293,26 +2251,16 @@
                 }
                 this.app.playMusic();
             };
-            menu.pane.addOption('等待音乐', () => {
-                this.#rotateMusic(node, bgm, true, false);
+            // callback for clicking on menu entry
+            const clickOption = (splash, game) => {
+                this.#rotateMusic(node, bgm, splash, game);
                 menu.onclose = null;
                 menu.close();
-            });
-            menu.pane.addOption('游戏音乐', () => {
-                this.#rotateMusic(node, bgm, false, true);
-                restore();
-                menu.onclose = null;
-                menu.close();
-            });
-            menu.pane.addOption('全部应用', () => {
-                this.#rotateMusic(node, bgm, true, true);
-                menu.onclose = null;
-                menu.close();
-            });
-            menu.onclose = () => {
-                this.#rotateMusic(node, bgm, false, false);
-                restore();
             };
+            menu.pane.addOption('等待音乐', () => clickOption(true, false));
+            menu.pane.addOption('游戏音乐', () => { clickOption(false, true); restore(); });
+            menu.pane.addOption('全部应用', () => clickOption(true, true));
+            menu.onclose = () => { this.#rotateMusic(node, bgm, false, false); restore(); };
             menu.location = e;
             menu.open();
         }
@@ -2321,13 +2269,16 @@
             if (this.#rotating !== node) {
                 this.#rotatingAnimation?.pause();
             }
+            // current node animation
             const animation = this.#rotating === node ? this.#rotatingAnimation : node.getAnimations()[0];
             this.#rotating = node;
             if (animation) {
+                // start current animation
                 this.#rotatingAnimation = animation;
                 animation.play();
             }
             else {
+                // create new animation
                 this.#rotatingAnimation = node.animate([
                     { transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }
                 ], {
@@ -2336,12 +2287,15 @@
                 });
             }
         }
+        /** Rotate / highlight music gallery item. */
         #rotateMusic(node, bgm, splash, game) {
             if (splash) {
+                // set as splash bgm
                 this.#rotate(node);
                 this.db.set('bgm-splash', bgm);
             }
             else {
+                // unset splash bgm
                 if (this.#rotating === node) {
                     this.#rotatingAnimation?.pause();
                     this.#rotating = null;
@@ -2352,17 +2306,22 @@
                 }
             }
             if (game) {
+                // set as game bgm
                 node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
                 node.classList.add('active');
                 this.db.set('bgm', bgm);
             }
             else {
+                // unset game bgm
                 node.classList.remove('active');
                 if (this.db.get('bgm') === bgm) {
                     this.db.set('bgm', 'none');
                 }
             }
         }
+        #addTheme() { }
+        #addBackground() { }
+        #addMusic() { }
     }
 
     class Splash extends Component {
@@ -2506,7 +2465,6 @@
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);
     componentClasses.set('splash-hub', SplashHub);
-    componentClasses.set('splash-room', SplashRoom);
     componentClasses.set('splash-settings', SplashSettings);
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);

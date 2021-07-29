@@ -3,7 +3,7 @@ import type { SGS } from '../sgs/sgs';
 export default {
     mode: {
         name: '战棋',
-        np: 8,
+        np: [2, 4, 6, 8],
         tasks: {
             main(Task) {
                 return class Identity extends Task {

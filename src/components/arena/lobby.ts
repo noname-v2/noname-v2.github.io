@@ -103,50 +103,11 @@ export class Lobby extends Component {
         if (peer) {
             this.seats.classList.remove('offline');
             this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-            this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
-            this.checkSpectate();
+            this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+            this.#checkSpectate();
         }
         else {
             this.seats.classList.add('offline');
-        }
-    }
-
-    /** Calculate the location of spectators and specified heros. */
-    alignAvatars(dock: HTMLElement, names: string[]) {
-        const frag = document.createDocumentFragment();
-        const n = names.length;
-        for (let i = 0; i < n; i++) {
-            const img = this.ui.createElement('image.avatar');
-            if (n < 4) {
-                img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
-            }
-            else if (n === 4) {
-                const left = (230 - n * 40 - (n - 1) * 15) / 2;
-                img.style.left = `${left + i * 55}px`;
-            }
-            else {
-                img.style.left = `${190 / (n - 1) * i}px`;
-            }
-            this.ui.setImage(img, names[i]);
-            frag.appendChild(img);
-        }
-        (dock as any).replaceChildren(frag);
-    }
-
-    /** Enable or disable spectate button. */
-    checkSpectate() {
-        if (!this.spectateButton.dataset.fill) {
-            this.spectateButton.classList.remove('disabled');
-        }
-        else {
-            const np = this.get('config').np;
-            let n = 0;
-            for (const player of this.players) {
-                if (player.get('heroName')) {
-                    n++;
-                }
-            }
-            this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
         }
     }
 
@@ -175,6 +136,7 @@ export class Lobby extends Component {
     }
 
     $pane(configs: {heropacks: Dict<string>, cardpacks: Dict<string>, configs: Dict<Config>}) {
+        // mode options
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
             const config = configs.configs[name];
@@ -198,6 +160,8 @@ export class Lobby extends Component {
             }
             this.configToggles.set(name, toggle);
         }
+
+        // heropacks
         this.sidebar.pane.addSection('武将');
         for (const name in configs.heropacks) {
             const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
@@ -206,6 +170,8 @@ export class Lobby extends Component {
             });
             this.heroToggles.set(name, toggle);
         }
+        
+        // cardpacks
         this.sidebar.pane.addSection('卡牌');
         for (const name in configs.cardpacks) {
             const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
@@ -246,7 +212,7 @@ export class Lobby extends Component {
                 for (let i = 0; i < this.get('npmax'); i++) {
                     this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                 }
-                this.checkSpectate();
+                this.#checkSpectate();
             });
         }
     }
@@ -286,8 +252,16 @@ export class Lobby extends Component {
                 if (this.owner !== this.client.uid) {
                     return;
                 }
-                const delta = player.node.classList.contains('blurred') ? 1 : -1;
-                this.yield(['config', 'np', this.get('config').np + delta]);
+                const toggle = this.configToggles.get('np');
+                if (toggle) {
+                    const nps = Array.from(toggle.choices!.keys());
+                    const idx = nps.indexOf(this.get('config').np);
+                    const delta = player.node.classList.contains('blurred') ? 1 : -1;
+                    const np = nps[idx + delta];
+                    if (typeof np === 'number') {
+                        this.yield(['config', 'np', np]);
+                    }
+                }
             });
         }
         if (npmax > 4) {
@@ -320,5 +294,44 @@ export class Lobby extends Component {
                 this.client.peer!.yield('spectate');
             }
         });
+    }
+
+    /** Calculate the location of spectators and specified heros. */
+    #alignAvatars(dock: HTMLElement, names: string[]) {
+        const frag = document.createDocumentFragment();
+        const n = names.length;
+        for (let i = 0; i < n; i++) {
+            const img = this.ui.createElement('image.avatar');
+            if (n < 4) {
+                img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
+            }
+            else if (n === 4) {
+                const left = (230 - n * 40 - (n - 1) * 15) / 2;
+                img.style.left = `${left + i * 55}px`;
+            }
+            else {
+                img.style.left = `${190 / (n - 1) * i}px`;
+            }
+            this.ui.setImage(img, names[i]);
+            frag.appendChild(img);
+        }
+        (dock as any).replaceChildren(frag);
+    }
+
+    /** Enable or disable spectate button. */
+    #checkSpectate() {
+        if (!this.spectateButton.dataset.fill) {
+            this.spectateButton.classList.remove('disabled');
+        }
+        else {
+            const np = this.get('config').np;
+            let n = 0;
+            for (const player of this.players) {
+                if (player.get('heroName')) {
+                    n++;
+                }
+            }
+            this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
+        }
     }
 }
