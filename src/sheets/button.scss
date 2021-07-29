@@ -28,6 +28,7 @@ noname-button {
 			@include layer;
 			opacity: var(--button-image-opacity);
 			transition: opacity var(--app-transition-fast);
+			background-size: cover;
 
 			// fix text rendereing problem in transition
 			transform: translateZ(0px);
@@ -37,41 +38,6 @@ noname-button {
 	// hover effect of background image
 	&:hover > noname-background > noname-image {
 		opacity: 1;
-	}
-
-	// yellow background image
-	&[data-background='blue'] > noname-background > noname-image {
-		background: var(--button-blue-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='green'] > noname-background > noname-image {
-		background: var(--button-green-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='grey'] > noname-background > noname-image {
-		background: var(--button-grey-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='orange'] > noname-background > noname-image {
-		background: var(--button-orange-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='purple'] > noname-background > noname-image {
-		background: var(--button-purple-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='red'] > noname-background > noname-image {
-		background: var(--button-red-image) center/cover;
-	}
-
-	// yellow background image
-	&[data-background='yellow'] > noname-background > noname-image {
-		background: var(--button-yellow-image) center/cover;
 	}
 
 	// caption text

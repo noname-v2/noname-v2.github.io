@@ -153,15 +153,15 @@ export class App extends Component {
 
         // add rules for dataset
         const dataset: Dict = {
+            buttonicon: 'background-image',
             fill: 'background',
             text: 'text-color',
             shadow: 'text-shadow',
             glow: 'text-shadow'
         };
-
+        
         for (const section in dataset) {
             for (const name in this.css[section]) {
-                console.log(section, this.css[section])
                 const propName = dataset[section];
                 const propValue = this.css[section][name];
                 sheet.insertRule(`[data-${section}="${name}"] {${propName}: ${propValue}}`, sheet.rules.length);

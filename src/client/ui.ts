@@ -16,15 +16,6 @@ export type MoveState = unknown;
 /** Transition duration names. */
 export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
 
-/** Background color names. */
-export type FillColor = 'red' | 'blue' | 'green' | 'cyan' | 'yellow' | 'gray';
-
-/** Text color names. */
-export type TextColor = 'red' | 'blue' | 'green' | 'orange' | 'yellow' | 'brown' | 'purple' | 'darkred' | 'honey' | 'peach' | 'black';
-
-/** Text shadow color. */
-export type ShadowColor = 'red' | 'blue' | 'green' | 'yellow' | 'brown' | 'purple';
-
 /** Type for event point location. */
 type EventPoint = {clientX: number, clientY: number}
 

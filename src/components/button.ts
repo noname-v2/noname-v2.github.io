@@ -1,13 +1,13 @@
-import { Component } from '../components';
+import { Component, ButtonColor } from '../components';
 
 export class Button extends Component {
-	// background circle image
+	/** Background circle image. */
 	background = this.ui.createElement('background', this.node);
 
-	// background colored image
+	/** Background colored image. */
 	image = this.ui.createElement('image', this.background);
 
-	// text container
+	/** Text container. */
 	content = this.ui.createElement('content', this.node);
 
 	$caption(caption: string) {
@@ -20,7 +20,7 @@ export class Button extends Component {
 		this.content.appendChild(str2);
 	}
 
-	$color(color: string) {
-		this.node.dataset.background = color;
+	$color(color: ButtonColor) {
+		this.image.dataset.buttonicon = color;
 	}
 }

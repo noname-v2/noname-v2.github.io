@@ -334,6 +334,7 @@
             sheet.insertRule(`noname-app {${rules}}`, sheet.rules.length);
             // add rules for dataset
             const dataset = {
+                buttonicon: 'background-image',
                 fill: 'background',
                 text: 'text-color',
                 shadow: 'text-shadow',
@@ -341,13 +342,10 @@
             };
             for (const section in dataset) {
                 for (const name in this.css[section]) {
-                    console.log(section, this.css[section]);
                     const propName = dataset[section];
                     const propValue = this.css[section][name];
                     sheet.insertRule(`[data-${section}="${name}"] {${propName}: ${propValue}}`, sheet.rules.length);
                 }
-            }
-            for (const section of ['fill', 'text', 'shadow', 'glow']) {
             }
         }
         /** Add styles for background and font. */
@@ -1216,7 +1214,7 @@
             this.content.appendChild(str2);
         }
         $color(color) {
-            this.node.dataset.background = color;
+            this.image.dataset.buttonicon = color;
         }
     }
 

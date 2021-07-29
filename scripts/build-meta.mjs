@@ -10,6 +10,22 @@ fs.writeFileSync('build/version.ts',
     `export const homepage = '${pack.homepage}';\n` + 
     `export const config = ${JSON.stringify(pack.config, null, 4)};\n`);
 
+// get color literal types
+const css = JSON.parse(fs.readFileSync('assets/theme/default/theme.json'));
+const names = {
+    buttonicon: 'ButtonColor',
+    fill: 'FillColor',
+    text: 'TextColor',
+    shadow: 'TextShadow',
+    glow: 'TextGlow'
+}
+let literals = '';
+for (const name in names) {
+    const vals = Object.keys(css[name]).map(val => `'${val}'`);
+    literals += `export type ${names[name]} = ${vals.join(' | ')};\n`;
+}
+fs.writeFileSync('build/literals.ts', literals);
+
 // index components and stylesheets for src
 buildClasses();
 buildSheets();

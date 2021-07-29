@@ -29,13 +29,6 @@
 		"radius": "100%",
 		"background": "@(button.webp)",
 		"image-opacity": "0.5",
-		"blue-image": "@(button-blue.webp)",
-		"green-image": "@(button-green.webp)",
-		"grey-image": "@(button-grey.webp)",
-		"orange-image": "@(button-orange.webp)",
-		"purple-image": "@(button-purple.webp)",
-		"red-image": "@(button-red.webp)",
-		"yellow-image": "@(button-yellow.webp)",
 		"shadow": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
 		"fill-shadow": "rgba(0, 0, 0, 0.6) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
 	},
@@ -145,7 +138,13 @@
 	},
 
 	"buttonicon": {
-
+		"blue": "@(button-blue.webp)",
+		"green": "@(button-green.webp)",
+		"grey": "@(button-grey.webp)",
+		"orange": "@(button-orange.webp)",
+		"purple": "@(button-purple.webp)",
+		"red": "@(button-red.webp)",
+		"yellow": "@(button-yellow.webp)"
 	},
 
 	"fill": {

@@ -60,31 +60,11 @@ noname-button > noname-background > noname-image {
   position: absolute;
   opacity: var(--button-image-opacity);
   transition: opacity var(--app-transition-fast);
+  background-size: cover;
   transform: translateZ(0px);
 }
 noname-button:hover > noname-background > noname-image {
   opacity: 1;
-}
-noname-button[data-background=blue] > noname-background > noname-image {
-  background: var(--button-blue-image) center/cover;
-}
-noname-button[data-background=green] > noname-background > noname-image {
-  background: var(--button-green-image) center/cover;
-}
-noname-button[data-background=grey] > noname-background > noname-image {
-  background: var(--button-grey-image) center/cover;
-}
-noname-button[data-background=orange] > noname-background > noname-image {
-  background: var(--button-orange-image) center/cover;
-}
-noname-button[data-background=purple] > noname-background > noname-image {
-  background: var(--button-purple-image) center/cover;
-}
-noname-button[data-background=red] > noname-background > noname-image {
-  background: var(--button-red-image) center/cover;
-}
-noname-button[data-background=yellow] > noname-background > noname-image {
-  background: var(--button-yellow-image) center/cover;
 }
 noname-button > noname-content > noname-caption {
   font-size: 38px;
