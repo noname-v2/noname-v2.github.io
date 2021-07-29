@@ -362,7 +362,7 @@
         }
         /** Play background music. */
         playMusic() {
-            const bgm = this.db.get(this.arena ? 'game-music' : 'splash-music');
+            const bgm = this.db.get(this.arena ? 'bgm' : 'bgm-splash');
             if (bgm && bgm !== 'none' && this.db.get('music-volume') > 0) {
                 this.#bgmNode.src = `assets/bgm/${bgm}.mp3`;
                 if (this.#audio.state === 'suspended') {
@@ -532,11 +532,11 @@
         /** Initialize volume settings. */
         #initAudio() {
             // add default settings
-            if (this.db.get('game-music') === null) {
-                this.db.set('game-music', 'default-game');
+            if (this.db.get('bgm') === null) {
+                this.db.set('bgm', 'default-game');
             }
-            if (this.db.get('splash-music') === null) {
-                this.db.set('splash-music', 'default-splash');
+            if (this.db.get('bgm-splash') === null) {
+                this.db.set('bgm-splash', 'default-splash');
             }
             if (this.db.get('music-volume') === null) {
                 this.db.set('music-volume', 50);
@@ -2108,6 +2108,18 @@
             // enable button click after creation finish
             splash.bar.buttons.get('settings').node.classList.remove('disabled');
         }
+        // #addGalery(section: string, caption: string) {
+        //     this.pane.addSection(caption);
+        //     const items = Array.from(Object.keys(this.app.assets[section]));
+        //     const gallery = this.pane.addGallery(1, this.ncols);
+        //     for (const item of items) {
+        //         gallery.add(() => {
+        //             const node = this.ui.createElement('widget.sharp');
+        //             const src = `assets/theme/${item}` + (item === 'theme' ? '/theme' : '');
+        //             this.ui.setBackground(this.ui.createElement('image', node), src);
+        //         });
+        //     }
+        // }
         #addThemes() {
             this.pane.addSection('主题');
             const themes = Array.from(Object.keys(this.app.assets.theme));
@@ -2188,10 +2200,10 @@
                 bgmGallery.add(() => {
                     const node = this.ui.createElement('widget.sharp');
                     this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
-                    if (bgm === this.db.get('splash-music')) {
+                    if (bgm === this.db.get('bgm-splash')) {
                         this.#rotating = node;
                     }
-                    if (bgm === this.db.get('game-music')) {
+                    if (bgm === this.db.get('bgm')) {
                         node.classList.add('active');
                     }
                     this.ui.bindClick(node, e => this.#musicMenu(node, bgm, e));
@@ -2310,7 +2322,7 @@
         #rotateMusic(node, bgm, splash, game) {
             if (splash) {
                 this.#rotate(node);
-                this.db.set('splash-music', bgm);
+                this.db.set('bgm-splash', bgm);
             }
             else {
                 if (this.#rotating === node) {
@@ -2318,19 +2330,19 @@
                     this.#rotating = null;
                     this.#rotatingAnimation = null;
                 }
-                if (this.db.get('splash-music') === bgm) {
-                    this.db.set('splash-music', 'none');
+                if (this.db.get('bgm-splash') === bgm) {
+                    this.db.set('bgm-splash', 'none');
                 }
             }
             if (game) {
                 node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
                 node.classList.add('active');
-                this.db.set('game-music', bgm);
+                this.db.set('bgm', bgm);
             }
             else {
                 node.classList.remove('active');
-                if (this.db.get('game-music') === bgm) {
-                    this.db.set('game-music', 'none');
+                if (this.db.get('bgm') === bgm) {
+                    this.db.set('bgm', 'none');
                 }
             }
         }

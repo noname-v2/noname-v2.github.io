@@ -44,6 +44,20 @@ export class SplashSettings extends Popup {
 		splash.bar.buttons.get('settings')!.node.classList.remove('disabled');
     }
 
+    // #addGalery(section: string, caption: string) {
+    //     this.pane.addSection(caption);
+    //     const items = Array.from(Object.keys(this.app.assets[section]));
+    //     const gallery = this.pane.addGallery(1, this.ncols);
+
+    //     for (const item of items) {
+    //         gallery.add(() => {
+    //             const node = this.ui.createElement('widget.sharp');
+    //             const src = `assets/theme/${item}` + (item === 'theme' ? '/theme' : '');
+    //             this.ui.setBackground(this.ui.createElement('image', node), src);
+    //         });
+    //     }
+    // }
+
     #addThemes() {
         this.pane.addSection('主题');
 
@@ -142,11 +156,11 @@ export class SplashSettings extends Popup {
                 const node = this.ui.createElement('widget.sharp');
                 this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
 
-                if (bgm === this.db.get('splash-music')) {
+                if (bgm === this.db.get('bgm-splash')) {
                     this.#rotating = node;
                 }
 
-                if (bgm === this.db.get('game-music')) {
+                if (bgm === this.db.get('bgm')) {
                     node.classList.add('active');
                 }
 
@@ -284,7 +298,7 @@ export class SplashSettings extends Popup {
     #rotateMusic(node: HTMLElement, bgm: string, splash: boolean, game: boolean) {
         if (splash) {
             this.#rotate(node);
-            this.db.set('splash-music', bgm);
+            this.db.set('bgm-splash', bgm);
         }
         else {
             if (this.#rotating === node) {
@@ -292,20 +306,20 @@ export class SplashSettings extends Popup {
                 this.#rotating = null;
                 this.#rotatingAnimation = null;
             }
-            if (this.db.get('splash-music') === bgm) {								
-                this.db.set('splash-music', 'none');
+            if (this.db.get('bgm-splash') === bgm) {								
+                this.db.set('bgm-splash', 'none');
             }
         }
 
         if (game) {
             node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
             node.classList.add('active');
-            this.db.set('game-music', bgm);
+            this.db.set('bgm', bgm);
         }
         else {
             node.classList.remove('active');
-            if (this.db.get('game-music') === bgm) {								
-                this.db.set('game-music', 'none');
+            if (this.db.get('bgm') === bgm) {								
+                this.db.set('bgm', 'none');
             }
         }
     }

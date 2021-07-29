@@ -184,7 +184,7 @@ export class App extends Component {
 
     /** Play background music. */
     playMusic() {
-        const bgm = this.db.get(this.arena ? 'game-music' : 'splash-music');
+        const bgm = this.db.get(this.arena ? 'bgm' : 'bgm-splash');
 
         if (bgm && bgm !== 'none' && this.db.get('music-volume') > 0) {
             this.#bgmNode.src = `assets/bgm/${bgm}.mp3`;
@@ -381,12 +381,12 @@ export class App extends Component {
     /** Initialize volume settings. */
     #initAudio() {
         // add default settings
-        if (this.db.get('game-music') === null) {
-            this.db.set('game-music', 'default-game');
+        if (this.db.get('bgm') === null) {
+            this.db.set('bgm', 'default-game');
         }
 
-        if (this.db.get('splash-music') === null) {
-            this.db.set('splash-music', 'default-splash');
+        if (this.db.get('bgm-splash') === null) {
+            this.db.set('bgm-splash', 'default-splash');
         }
 
         if (this.db.get('music-volume') === null) {
