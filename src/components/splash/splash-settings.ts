@@ -2,9 +2,6 @@ import { Popup } from '../popup';
 import { Splash, Point, Gallery } from '../../components';
 
 export class SplashSettings extends Popup {
-    /** Use tag <noname-popup>. */
-    static tag = 'popup';
-
     /** Portrait sized popup. */
     size = 'portrait' as const;
 

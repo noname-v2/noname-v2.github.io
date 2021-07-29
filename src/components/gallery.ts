@@ -3,6 +3,9 @@ import { Component } from '../components';
 type GalleryItem = HTMLElement | (() => HTMLElement | null);
 
 export class Gallery extends Component {
+    /** Child classes use tag <noname-gallery> by default. */
+    static tag = 'gallery';
+
     /** Page container. */
     pages: HTMLElement = this.ui.createElement('pages');
 

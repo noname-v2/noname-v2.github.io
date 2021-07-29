@@ -1,9 +1,6 @@
 import { Popup } from '../popup';
 
 export class Dialog extends Popup {
-    /** Use <noname-popup> as tag. */
-    static tag = 'popup';
-
     /** Locate at center. */
     center = true;
 

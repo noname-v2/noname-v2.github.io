@@ -1172,6 +1172,8 @@
     }
 
     class Gallery extends Component {
+        /** Use tag <noname-gallery>. */
+        static tag = 'gallery';
         /** Page container. */
         pages = this.ui.createElement('pages');
         /** Page indicator */
@@ -1335,7 +1337,6 @@
         }
         /** Update indicator and render nearby pages. */
         turnPage(page) {
-            console.log(page);
             if (page >= this.pageCount || page < 0) {
                 return;
             }
@@ -1608,8 +1609,6 @@
     }
 
     class SplashGallery extends Gallery {
-        /** Use tag <noname-gallery>. */
-        static tag = 'gallery';
         /** Reference to Splash. */
         splash;
         /** Gallery has no boundary. */

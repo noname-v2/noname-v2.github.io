@@ -15,9 +15,6 @@ interface ExtensionIndex {
 }
 
 export class SplashGallery extends Gallery {
-    /** Use tag <noname-gallery>. */
-    static tag = 'gallery';
-
     /** Reference to Splash. */
     splash!: Splash;
 

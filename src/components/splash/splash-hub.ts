@@ -4,9 +4,6 @@ import { config } from '../../version';
 import { hub2member } from '../../hub/types';
 
 export class SplashHub extends Popup {
-    /** Use tag <noname-popup>. */
-    static tag = 'popup';
-
     /** Portrait sized popup. */
     size = 'portrait' as const;
 

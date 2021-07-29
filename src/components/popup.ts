@@ -1,6 +1,9 @@
 import { Component, TransitionDuration, Point } from '../components';
 
 export class Popup extends Component {
+    /** Child classes use tag <noname-popup> by default. */
+    static tag = 'popup';
+
     /** Main content. */
     pane = this.ui.create('pane', this.node);
 
