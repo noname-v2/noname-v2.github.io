@@ -54,162 +54,35 @@ export class UI {
     /** Current zoom level. */
 	zoom = 1;
 
+	/** Resolved when ready. */
+	readonly ready: Promise<unknown>;
+
+    /** Root component. */
+    readonly app!: App;
+
     /** Client object. */
     #client: Client;
 
     /** Database object. */
     #db: Database;
 
-	/** Resolved when ready. */
-	ready: Promise<unknown>;
-
-    /** Root component. */
-    app!: App;
-
 	// temperoary disable event trigger after pointerup to prevent unintended clicks
-	private dispatched = false;
+	#dispatched = false;
 
     /** Bindings for DOM events. */
-    private bindings = new Map<HTMLElement, Binding>();
+	#bindings = new Map<HTMLElement, Binding>();
 
 	// clicking[0]: element that is clicked
 	// clicking[1]: location of pointerdown
 	// clicking[2]: started by a touch event
-	private clicking: [HTMLElement, Point, boolean] | null = null;
+	#clicking: [HTMLElement, Point, boolean] | null = null;
 
 	// moving[0]: element that is moved
 	// moving[1]: location of pointerdown
 	// moving[2]: initial transform of target element when pointerdown is fired
 	// moving[3]: return value of the binding.onmove
 	// moving[4]: started by a touch event
-	private moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
-
-	// get the location of mouse or touch event
-	private locate(e: EventPoint) {
-		return {
-			x: Math.round(e.clientX / this.zoom),
-			y: Math.round(e.clientY / this.zoom)
-		}
-	}
-
-	// register pointerdown for click or move
-	private register(node: HTMLElement) {
-		// event callback
-		const binding = new Binding();
-		this.bindings.set(node, binding);
-
-		// register event
-		const dispatchDown = (e: EventPoint, touch: boolean) => {
-			const origin = this.locate(e);
-
-			// initialize click event
-			if (binding.onclick && !this.clicking) {
-				node.classList.add('clickdown');
-				this.clicking = [node, origin, touch];
-			}
-
-			// initialize move event
-			if (binding.movable && !this.moving) {
-				this.moving = [node, origin, binding.offset || {x: 0, y: 0}, null, touch];
-
-				// fire ondown event
-				if (binding.ondown) {
-					binding.ondown(origin);
-				}
-			}
-		};
-
-		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
-
-		if (this.#client.platform !== 'Android') {
-			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
-		}
-
-		return binding;
-	}
-
-	// cancel click callback for current pointerdown
-	private resetClick(node: HTMLElement) {
-		if (this.clicking && this.clicking[0] === node) {
-			this.clicking = null;
-		}
-		node.classList.remove('clickdown');
-	}
-
-	// cancel move callback for current pointerdown
-	private resetMove(node: HTMLElement) {
-		if (this.moving && this.moving[0] === node) {
-			this.moving = null;
-		}
-	}
-
-	// callback for mousemove or touchmove
-	private pointerMove(e: EventPoint, touch: boolean) {
-		const {x, y} = this.locate(e);
-
-		// not a click event if move distance > 5px
-		if (this.clicking && this.clicking[2] === touch) {
-			const [node, origin] = this.clicking;
-			const dx = origin.x - x;
-			const dz = origin.y - y;
-			
-			if (dx * dx + dz * dz > 25) {
-				this.resetClick(node);
-			}
-		}
-
-		// get offset and trigger move event
-		if (this.moving && this.moving[4] === touch) {
-			const [node, origin, offset] = this.moving;
-			this.dispatchMove(node, {
-				x: x - origin.x + offset.x,
-				y: y - origin.y + offset.y
-			});
-		}
-	}
-
-	// callback for mouseup or touchend
-	private pointerEnd(touch: boolean) {
-		if (this.dispatched === false) {
-			// dispatch events
-			if (this.clicking && this.clicking[2] === touch) {
-				this.dispatched = true;
-				this.dispatchClick(this.clicking[0]);
-			}
-
-			if (this.moving && this.moving[4] === touch) {
-				this.dispatched = true;
-				this.dispatchMoveEnd(this.moving[0]);
-			}
-
-			// re-enable event trigger after 200ms
-			if (this.dispatched) {
-				window.setTimeout(() => this.dispatched = false, 200);
-			}
-		}
-
-		if (this.clicking && this.clicking[2] === touch) {
-			this.clicking = null;
-		}
-		
-		if (this.moving && this.moving[4] === touch) {
-			this.moving = null;
-		}
-	}
-
-	// callback for mouseleave or touchcancel
-	private pointerCancel(touch: boolean) {
-		if (this.clicking && this.clicking[2] === touch) {
-			this.clicking[0].classList.remove('clickdown');
-		}
-
-		if (this.moving && this.moving[4] === touch) {
-			this.dispatchMoveEnd(this.moving[0]);
-		}
-
-		this.clicking = null;
-		this.moving = null;
-	}
+	#moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
 
     constructor(client: Client, db: Database) {
 		this.#client = client;
@@ -226,17 +99,17 @@ export class UI {
 		}
         
 		this.ready.then(() => {
-			document.body.addEventListener('touchmove', e => this.pointerMove(e.touches[0], true), {passive: true});
-			document.body.addEventListener('touchend', () => this.pointerEnd(true), {passive: true});
-			document.body.addEventListener('touchcancel', () => this.pointerCancel(true), {passive: true});
+			document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), {passive: true});
+			document.body.addEventListener('touchend', () => this.#pointerEnd(true), {passive: true});
+			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
 
 			if (this.#client.platform !== 'Android') {
-				document.body.addEventListener('mousemove', e => this.pointerMove(e, false), {passive: true});
-				document.body.addEventListener('mouseup', () => this.pointerEnd(false), {passive: true});
-				document.body.addEventListener('mouseleave', () => this.pointerCancel(false), {passive: true});
+				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
+				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
+				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
 			}
 
-			this.app = this.create('app');
+			(this as any).app = this.create('app');
 		});
     }
 
@@ -300,15 +173,10 @@ export class UI {
 		}
 	}
 
-    /** Register component constructor. */
-    registerComponent(key: string, cls: ComponentClass) {
-        componentClasses.set(key, cls);
-    }
-
     /** Set binding for ClickEvent. */
 	bindClick(node: HTMLElement, onclick: (e: Point) => void) {
 		// get or create registry for node
-		const binding = this.bindings.get(node) || this.register(node);
+		const binding = this.#bindings.get(node) || this.#register(node);
 
 		// bind click event
 		binding.onclick = onclick;
@@ -324,7 +192,7 @@ export class UI {
 		offset?: Point
 	}) {
 		// get or create registry for node
-		const binding = this.bindings.get(node) || this.register(node);
+		const binding = this.#bindings.get(node) || this.#register(node);
 
 		// set move area
 		binding.movable = config.movable;
@@ -348,12 +216,12 @@ export class UI {
 	/** Fire click event. */
 	dispatchClick(node: HTMLElement) {
 		// onclick
-		const binding = this.bindings.get(node);
+		const binding = this.#bindings.get(node);
 
 		if (binding && binding.onclick) {
-			if (this.clicking && this.clicking[0] === node) {
-				// use the location of this.clicking if applicable
-				binding.onclick.call(node, this.clicking[1]);
+			if (this.#clicking && this.#clicking[0] === node) {
+				// use the location of this.#clicking if applicable
+				binding.onclick.call(node, this.#clicking[1]);
 			}
 			else {
 				// a pseudo click event without location info
@@ -362,13 +230,13 @@ export class UI {
 		}
 
 		// avoid duplicate trigger
-		this.resetClick(node);
-		this.resetMove(node);
+		this.#resetClick(node);
+		this.#resetMove(node);
 	}
 
 	/** Fire move event. */
 	dispatchMove(node: HTMLElement, location: Point) {
-		const binding = this.bindings.get(node);
+		const binding = this.#bindings.get(node);
 
 		if (binding && binding.movable) {
 			// get offset of node
@@ -391,9 +259,9 @@ export class UI {
 			if (binding.onmove) {
 				const state = binding.onmove(binding.offset);
 
-				// save move state to this.moving if applicable
-				if (this.moving && this.moving[0] === node) {
-					this.moving[3] = state;
+				// save move state to this.#moving if applicable
+				if (this.#moving && this.#moving[0] === node) {
+					this.#moving[3] = state;
 				}
 			}
 		}
@@ -402,12 +270,12 @@ export class UI {
 	/** Fire moveend event. */
 	dispatchMoveEnd(node: HTMLElement) {
 		// onmoveend
-		const binding = this.bindings.get(node);
+		const binding = this.#bindings.get(node);
 
 		if (binding && binding.onmoveend) {
-			if (this.moving && this.moving[0] === node) {
-				// pass the state of this.moving if applicable
-				binding.onmoveend(this.moving[3]);
+			if (this.#moving && this.#moving[0] === node) {
+				// pass the state of this.#moving if applicable
+				binding.onmoveend(this.#moving[3]);
 			}
 			else {
 				// a pseudo moveend event without current state
@@ -416,8 +284,8 @@ export class UI {
 		}
 
 		// avoid duplicate trigger
-		this.resetClick(node);
-		this.resetMove(node);
+		this.#resetClick(node);
+		this.#resetMove(node);
 	}
 
 	/** Wrapper of HTMLElement.animate(). */
@@ -483,5 +351,132 @@ export class UI {
 		}
 
 		return node.animate(keyframes, config);
+	}
+
+	// get the location of mouse or touch event
+	#locate(e: EventPoint) {
+		return {
+			x: Math.round(e.clientX / this.zoom),
+			y: Math.round(e.clientY / this.zoom)
+		}
+	}
+
+	// register pointerdown for click or move
+	#register(node: HTMLElement) {
+		// event callback
+		const binding = new Binding();
+		this.#bindings.set(node, binding);
+
+		// register event
+		const dispatchDown = (e: EventPoint, touch: boolean) => {
+			const origin = this.#locate(e);
+
+			// initialize click event
+			if (binding.onclick && !this.#clicking) {
+				node.classList.add('clickdown');
+				this.#clicking = [node, origin, touch];
+			}
+
+			// initialize move event
+			if (binding.movable && !this.#moving) {
+				this.#moving = [node, origin, binding.offset || {x: 0, y: 0}, null, touch];
+
+				// fire ondown event
+				if (binding.ondown) {
+					binding.ondown(origin);
+				}
+			}
+		};
+
+		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
+
+		if (this.#client.platform !== 'Android') {
+			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
+		}
+
+		return binding;
+	}
+
+	// cancel click callback for current pointerdown
+	#resetClick(node: HTMLElement) {
+		if (this.#clicking && this.#clicking[0] === node) {
+			this.#clicking = null;
+		}
+		node.classList.remove('clickdown');
+	}
+
+	// cancel move callback for current pointerdown
+	#resetMove(node: HTMLElement) {
+		if (this.#moving && this.#moving[0] === node) {
+			this.#moving = null;
+		}
+	}
+
+	// callback for mousemove or touchmove
+	#pointerMove(e: EventPoint, touch: boolean) {
+		const {x, y} = this.#locate(e);
+
+		// not a click event if move distance > 5px
+		if (this.#clicking && this.#clicking[2] === touch) {
+			const [node, origin] = this.#clicking;
+			const dx = origin.x - x;
+			const dz = origin.y - y;
+			
+			if (dx * dx + dz * dz > 25) {
+				this.#resetClick(node);
+			}
+		}
+
+		// get offset and trigger move event
+		if (this.#moving && this.#moving[4] === touch) {
+			const [node, origin, offset] = this.#moving;
+			this.dispatchMove(node, {
+				x: x - origin.x + offset.x,
+				y: y - origin.y + offset.y
+			});
+		}
+	}
+
+	// callback for mouseup or touchend
+	#pointerEnd(touch: boolean) {
+		if (this.#dispatched === false) {
+			// dispatch events
+			if (this.#clicking && this.#clicking[2] === touch) {
+				this.#dispatched = true;
+				this.dispatchClick(this.#clicking[0]);
+			}
+
+			if (this.#moving && this.#moving[4] === touch) {
+				this.#dispatched = true;
+				this.dispatchMoveEnd(this.#moving[0]);
+			}
+
+			// re-enable event trigger after 200ms
+			if (this.#dispatched) {
+				window.setTimeout(() => this.#dispatched = false, 200);
+			}
+		}
+
+		if (this.#clicking && this.#clicking[2] === touch) {
+			this.#clicking = null;
+		}
+		
+		if (this.#moving && this.#moving[4] === touch) {
+			this.#moving = null;
+		}
+	}
+
+	// callback for mouseleave or touchcancel
+	#pointerCancel(touch: boolean) {
+		if (this.#clicking && this.#clicking[2] === touch) {
+			this.#clicking[0].classList.remove('clickdown');
+		}
+
+		if (this.#moving && this.#moving[4] === touch) {
+			this.dispatchMoveEnd(this.#moving[0]);
+		}
+
+		this.#clicking = null;
+		this.#moving = null;
 	}
 }
