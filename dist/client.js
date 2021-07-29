@@ -244,52 +244,7 @@
         /** Popup components cleared when arena close. */
         popups = new Map();
         /** Count dialog for dialog ID */
-        dialogCount = 0;
-        /** Initialize volume settings. */
-        initAudio() {
-            // add default settings
-            if (this.db.get('game-music') === null) {
-                this.db.set('game-music', 'default-game');
-            }
-            if (this.db.get('splash-music') === null) {
-                this.db.set('splash-music', 'default-splash');
-            }
-            if (this.db.get('music-volume') === null) {
-                this.db.set('music-volume', 50);
-            }
-            if (this.db.get('audio-volume') === null) {
-                this.db.set('audio-volume', 50);
-            }
-            if (this.db.get('theme') === null) {
-                this.db.set('theme', 'default');
-            }
-            // play background music
-            const vol = this.db.get('music-volume');
-            this.bgmNode.loop = true;
-            this.node.appendChild(this.bgmNode);
-            const track = this.audio.createMediaElementSource(this.bgmNode);
-            const gainNode = this.audio.createGain();
-            track.connect(gainNode).connect(this.audio.destination);
-            gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-            this.bgmGain = gainNode.gain;
-            this.playMusic();
-        }
-        /** Index assets and load fonts. */
-        async initAssets() {
-            this.assets = await this.client.utils.readJSON('assets/index.json');
-            // add fonts
-            for (const font in this.assets['font']) {
-                const fontPath = 'assets/font/' + font + '.woff2';
-                const fontFace = new window.FontFace(font, `url(${fontPath})`);
-                document.fonts.add(fontFace);
-                if (font === this.css.app['caption-font']) {
-                    fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
-                }
-                else if (font === this.css.app['label-font']) {
-                    fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
-                }
-            }
-        }
+        #dialogCount = 0;
         async init() {
             document.head.appendChild(this.themeNode);
             // setup triggers
@@ -301,12 +256,12 @@
             // wait for indexedDB
             await this.db.ready;
             this.loadBackground();
-            this.initAudio();
+            this.#initAudio();
             // load styles and fonts
             await this.loadTheme();
             this.splash = this.ui.create('splash');
             await this.splash.gallery.ready;
-            const initAssets = this.initAssets();
+            const initAssets = this.#initAssets();
             // load splash menus
             Promise.all([initAssets, this.splash.show(), document.fonts.ready]).then(() => {
                 this.splash.hub.create(this.splash);
@@ -358,7 +313,6 @@
                 return prop;
             };
             // add rules
-            this.css = {};
             for (const section in defaultTheme) {
                 this.css[section] = {};
                 for (const entry in defaultTheme[section]) {
@@ -496,7 +450,7 @@
         }
         /** Displa a popup. */
         popup(dialog, id) {
-            const dialogID = id ?? ++this.dialogCount;
+            const dialogID = id ?? ++this.#dialogCount;
             this.popups.get(dialogID)?.close();
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
@@ -544,6 +498,51 @@
                 popup.close();
             }
             this.popups.clear();
+        }
+        /** Initialize volume settings. */
+        #initAudio() {
+            // add default settings
+            if (this.db.get('game-music') === null) {
+                this.db.set('game-music', 'default-game');
+            }
+            if (this.db.get('splash-music') === null) {
+                this.db.set('splash-music', 'default-splash');
+            }
+            if (this.db.get('music-volume') === null) {
+                this.db.set('music-volume', 50);
+            }
+            if (this.db.get('audio-volume') === null) {
+                this.db.set('audio-volume', 50);
+            }
+            if (this.db.get('theme') === null) {
+                this.db.set('theme', 'default');
+            }
+            // play background music
+            const vol = this.db.get('music-volume');
+            this.bgmNode.loop = true;
+            this.node.appendChild(this.bgmNode);
+            const track = this.audio.createMediaElementSource(this.bgmNode);
+            const gainNode = this.audio.createGain();
+            track.connect(gainNode).connect(this.audio.destination);
+            gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
+            this.bgmGain = gainNode.gain;
+            this.playMusic();
+        }
+        /** Index assets and load fonts. */
+        async #initAssets() {
+            this.assets = await this.client.utils.readJSON('assets/index.json');
+            // add fonts
+            for (const font in this.assets['font']) {
+                const fontPath = 'assets/font/' + font + '.woff2';
+                const fontFace = new window.FontFace(font, `url(${fontPath})`);
+                document.fonts.add(fontFace);
+                if (font === this.css.app['caption-font']) {
+                    fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
+                }
+                else if (font === this.css.app['label-font']) {
+                    fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
+                }
+            }
         }
     }
 
@@ -2502,110 +2501,6 @@
         // moving[3]: return value of the binding.onmove
         // moving[4]: started by a touch event
         #moving = null;
-        // get the location of mouse or touch event
-        #locate(e) {
-            return {
-                x: Math.round(e.clientX / this.zoom),
-                y: Math.round(e.clientY / this.zoom)
-            };
-        }
-        // register pointerdown for click or move
-        #register(node) {
-            // event callback
-            const binding = new Binding();
-            this.#bindings.set(node, binding);
-            // register event
-            const dispatchDown = (e, touch) => {
-                const origin = this.#locate(e);
-                // initialize click event
-                if (binding.onclick && !this.#clicking) {
-                    node.classList.add('clickdown');
-                    this.#clicking = [node, origin, touch];
-                }
-                // initialize move event
-                if (binding.movable && !this.#moving) {
-                    this.#moving = [node, origin, binding.offset || { x: 0, y: 0 }, null, touch];
-                    // fire ondown event
-                    if (binding.ondown) {
-                        binding.ondown(origin);
-                    }
-                }
-            };
-            node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (this.#client.platform !== 'Android') {
-                node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
-            }
-            return binding;
-        }
-        // cancel click callback for current pointerdown
-        #resetClick(node) {
-            if (this.#clicking && this.#clicking[0] === node) {
-                this.#clicking = null;
-            }
-            node.classList.remove('clickdown');
-        }
-        // cancel move callback for current pointerdown
-        #resetMove(node) {
-            if (this.#moving && this.#moving[0] === node) {
-                this.#moving = null;
-            }
-        }
-        // callback for mousemove or touchmove
-        #pointerMove(e, touch) {
-            const { x, y } = this.#locate(e);
-            // not a click event if move distance > 5px
-            if (this.#clicking && this.#clicking[2] === touch) {
-                const [node, origin] = this.#clicking;
-                const dx = origin.x - x;
-                const dz = origin.y - y;
-                if (dx * dx + dz * dz > 25) {
-                    this.#resetClick(node);
-                }
-            }
-            // get offset and trigger move event
-            if (this.#moving && this.#moving[4] === touch) {
-                const [node, origin, offset] = this.#moving;
-                this.dispatchMove(node, {
-                    x: x - origin.x + offset.x,
-                    y: y - origin.y + offset.y
-                });
-            }
-        }
-        // callback for mouseup or touchend
-        #pointerEnd(touch) {
-            if (this.#dispatched === false) {
-                // dispatch events
-                if (this.#clicking && this.#clicking[2] === touch) {
-                    this.#dispatched = true;
-                    this.dispatchClick(this.#clicking[0]);
-                }
-                if (this.#moving && this.#moving[4] === touch) {
-                    this.#dispatched = true;
-                    this.dispatchMoveEnd(this.#moving[0]);
-                }
-                // re-enable event trigger after 200ms
-                if (this.#dispatched) {
-                    window.setTimeout(() => this.#dispatched = false, 200);
-                }
-            }
-            if (this.#clicking && this.#clicking[2] === touch) {
-                this.#clicking = null;
-            }
-            if (this.#moving && this.#moving[4] === touch) {
-                this.#moving = null;
-            }
-        }
-        // callback for mouseleave or touchcancel
-        #pointerCancel(touch) {
-            if (this.#clicking && this.#clicking[2] === touch) {
-                this.#clicking[0].classList.remove('clickdown');
-            }
-            if (this.#moving && this.#moving[4] === touch) {
-                this.dispatchMoveEnd(this.#moving[0]);
-            }
-            this.#clicking = null;
-            this.#moving = null;
-        }
         constructor(client, db) {
             this.#client = client;
             this.#db = db;
@@ -2678,10 +2573,6 @@
             else {
                 this.setBackground(node, url);
             }
-        }
-        /** Register component constructor. */
-        registerComponent(key, cls) {
-            componentClasses.set(key, cls);
         }
         /** Set binding for ClickEvent. */
         bindClick(node, onclick) {
@@ -2821,6 +2712,110 @@
                 }
             }
             return node.animate(keyframes, config);
+        }
+        // get the location of mouse or touch event
+        #locate(e) {
+            return {
+                x: Math.round(e.clientX / this.zoom),
+                y: Math.round(e.clientY / this.zoom)
+            };
+        }
+        // register pointerdown for click or move
+        #register(node) {
+            // event callback
+            const binding = new Binding();
+            this.#bindings.set(node, binding);
+            // register event
+            const dispatchDown = (e, touch) => {
+                const origin = this.#locate(e);
+                // initialize click event
+                if (binding.onclick && !this.#clicking) {
+                    node.classList.add('clickdown');
+                    this.#clicking = [node, origin, touch];
+                }
+                // initialize move event
+                if (binding.movable && !this.#moving) {
+                    this.#moving = [node, origin, binding.offset || { x: 0, y: 0 }, null, touch];
+                    // fire ondown event
+                    if (binding.ondown) {
+                        binding.ondown(origin);
+                    }
+                }
+            };
+            node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
+            if (this.#client.platform !== 'Android') {
+                node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
+            }
+            return binding;
+        }
+        // cancel click callback for current pointerdown
+        #resetClick(node) {
+            if (this.#clicking && this.#clicking[0] === node) {
+                this.#clicking = null;
+            }
+            node.classList.remove('clickdown');
+        }
+        // cancel move callback for current pointerdown
+        #resetMove(node) {
+            if (this.#moving && this.#moving[0] === node) {
+                this.#moving = null;
+            }
+        }
+        // callback for mousemove or touchmove
+        #pointerMove(e, touch) {
+            const { x, y } = this.#locate(e);
+            // not a click event if move distance > 5px
+            if (this.#clicking && this.#clicking[2] === touch) {
+                const [node, origin] = this.#clicking;
+                const dx = origin.x - x;
+                const dz = origin.y - y;
+                if (dx * dx + dz * dz > 25) {
+                    this.#resetClick(node);
+                }
+            }
+            // get offset and trigger move event
+            if (this.#moving && this.#moving[4] === touch) {
+                const [node, origin, offset] = this.#moving;
+                this.dispatchMove(node, {
+                    x: x - origin.x + offset.x,
+                    y: y - origin.y + offset.y
+                });
+            }
+        }
+        // callback for mouseup or touchend
+        #pointerEnd(touch) {
+            if (this.#dispatched === false) {
+                // dispatch events
+                if (this.#clicking && this.#clicking[2] === touch) {
+                    this.#dispatched = true;
+                    this.dispatchClick(this.#clicking[0]);
+                }
+                if (this.#moving && this.#moving[4] === touch) {
+                    this.#dispatched = true;
+                    this.dispatchMoveEnd(this.#moving[0]);
+                }
+                // re-enable event trigger after 200ms
+                if (this.#dispatched) {
+                    window.setTimeout(() => this.#dispatched = false, 200);
+                }
+            }
+            if (this.#clicking && this.#clicking[2] === touch) {
+                this.#clicking = null;
+            }
+            if (this.#moving && this.#moving[4] === touch) {
+                this.#moving = null;
+            }
+        }
+        // callback for mouseleave or touchcancel
+        #pointerCancel(touch) {
+            if (this.#clicking && this.#clicking[2] === touch) {
+                this.#clicking[0].classList.remove('clickdown');
+            }
+            if (this.#moving && this.#moving[4] === touch) {
+                this.dispatchMoveEnd(this.#moving[0]);
+            }
+            this.#clicking = null;
+            this.#moving = null;
         }
     }
 

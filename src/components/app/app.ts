@@ -18,88 +18,34 @@ export class App extends Component {
     arena: Arena | null = null;
 
     /** Splash component. */
-    splash!: Splash;
+    readonly splash!: Splash;
 
     /** Transition durations. */
-    css: Dict<Dict<string>> = {};
+    readonly css: Dict<Dict<string>> = {};
 
     /** Index of assets. */
-    assets!: Dict<Dict<string>>;
+    readonly assets!: Dict<Dict<string>>;
 
     /** Stylesheet for theme. */
-    themeNode = document.createElement('style');
+    readonly themeNode = document.createElement('style');
 
     /** Node for displaying background. */
-    bgNode = this.ui.createElement('background', this.node);
+    readonly bgNode = this.ui.createElement('background', this.node);
 
     /** Node for playing background music. */
-    bgmNode = document.createElement('audio');
+    readonly bgmNode = document.createElement('audio');
 
     /** Background music volume control. */
-    bgmGain!: AudioParam;
+    readonly bgmGain!: AudioParam;
 
     /** Audio context. */
-    audio = new (window.AudioContext || (window as any).webkitAudioContext)();
+    readonly audio = new (window.AudioContext || (window as any).webkitAudioContext)();
 
     /** Popup components cleared when arena close. */
-    popups = new Map<string | number, Popup>();
+    readonly popups = new Map<string | number, Popup>();
 
     /** Count dialog for dialog ID */
-    private dialogCount = 0;
-
-    /** Initialize volume settings. */
-    private initAudio() {
-        // add default settings
-        if (this.db.get('game-music') === null) {
-            this.db.set('game-music', 'default-game');
-        }
-
-        if (this.db.get('splash-music') === null) {
-            this.db.set('splash-music', 'default-splash');
-        }
-
-        if (this.db.get('music-volume') === null) {
-            this.db.set('music-volume', 50);
-        }
-
-        if (this.db.get('audio-volume') === null) {
-            this.db.set('audio-volume', 50);
-        }
-
-        if (this.db.get('theme') === null) {
-            this.db.set('theme', 'default');
-        }
-
-        // play background music
-        const vol = this.db.get('music-volume');
-        this.bgmNode.loop = true;
-        this.node.appendChild(this.bgmNode);
-        const track = this.audio.createMediaElementSource(this.bgmNode);
-        const gainNode = this.audio.createGain();
-        track.connect(gainNode).connect(this.audio.destination);
-        gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-        this.bgmGain = gainNode.gain;
-        this.playMusic();
-    }
-
-    /** Index assets and load fonts. */
-    private async initAssets() {
-        this.assets = await this.client.utils.readJSON('assets/index.json');
-
-        // add fonts
-        for (const font in this.assets['font']) {
-            const fontPath = 'assets/font/' + font + '.woff2';
-            const fontFace = new (window as any).FontFace(font, `url(${fontPath})`);
-            (document as any).fonts.add(fontFace);
-
-            if (font === this.css.app['caption-font']) {
-                fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
-            }
-            else if (font === this.css.app['label-font']) {
-                fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
-            }
-        }
-    }
+    #dialogCount = 0;
 
     async init() {
         document.head.appendChild(this.themeNode);
@@ -114,13 +60,13 @@ export class App extends Component {
         // wait for indexedDB
         await this.db.ready;
         this.loadBackground();
-        this.initAudio();
+        this.#initAudio();
 
         // load styles and fonts
         await this.loadTheme();
-        this.splash = this.ui.create('splash');
+        (this as any).splash = this.ui.create('splash');
         await this.splash.gallery.ready;
-        const initAssets = this.initAssets();
+        const initAssets = this.#initAssets();
 
         // load splash menus
         Promise.all([initAssets, this.splash.show(), (document as any).fonts.ready]).then(() => {
@@ -182,8 +128,6 @@ export class App extends Component {
         };
 
         // add rules
-        this.css = {};
-
         for (const section in defaultTheme) {
             this.css[section] = {};
 
@@ -343,7 +287,7 @@ export class App extends Component {
 
     /** Displa a popup. */
     popup(dialog: Popup, id?: string) {
-        const dialogID = id ?? ++this.dialogCount;
+        const dialogID = id ?? ++this.#dialogCount;
         this.popups.get(dialogID)?.close();
         const onopen = dialog.onopen;
         const onclose = dialog.onclose;
@@ -399,5 +343,59 @@ export class App extends Component {
             popup.close();
         }
         this.popups.clear();
+    }
+
+    /** Initialize volume settings. */
+    #initAudio() {
+        // add default settings
+        if (this.db.get('game-music') === null) {
+            this.db.set('game-music', 'default-game');
+        }
+
+        if (this.db.get('splash-music') === null) {
+            this.db.set('splash-music', 'default-splash');
+        }
+
+        if (this.db.get('music-volume') === null) {
+            this.db.set('music-volume', 50);
+        }
+
+        if (this.db.get('audio-volume') === null) {
+            this.db.set('audio-volume', 50);
+        }
+
+        if (this.db.get('theme') === null) {
+            this.db.set('theme', 'default');
+        }
+
+        // play background music
+        const vol = this.db.get('music-volume');
+        this.bgmNode.loop = true;
+        this.node.appendChild(this.bgmNode);
+        const track = this.audio.createMediaElementSource(this.bgmNode);
+        const gainNode = this.audio.createGain();
+        track.connect(gainNode).connect(this.audio.destination);
+        gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
+        (this as any).bgmGain = gainNode.gain;
+        this.playMusic();
+    }
+
+    /** Index assets and load fonts. */
+    async #initAssets() {
+        (this as any).assets = await this.client.utils.readJSON('assets/index.json');
+
+        // add fonts
+        for (const font in this.assets['font']) {
+            const fontPath = 'assets/font/' + font + '.woff2';
+            const fontFace = new (window as any).FontFace(font, `url(${fontPath})`);
+            (document as any).fonts.add(fontFace);
+
+            if (font === this.css.app['caption-font']) {
+                fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
+            }
+            else if (font === this.css.app['label-font']) {
+                fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
+            }
+        }
     }
 }
