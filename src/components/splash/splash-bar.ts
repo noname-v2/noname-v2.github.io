@@ -8,7 +8,7 @@ export class SplashBar extends Component {
     splash!: Splash;
 
     /** Button names and components. */
-    readonly buttons = new Map<string, Button>();
+    buttons = new Map<string, Button>();
 
     init() {
         // add buttons

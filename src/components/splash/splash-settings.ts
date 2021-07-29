@@ -5,65 +5,46 @@ export class SplashSettings extends Popup {
     /** Portrait sized popup. */
     size = 'portrait' as const;
 
-    /** Currently rotating music nodes. */
-	rotating: HTMLElement | null = null;
-
-    /** Animation of this.rotating. */
-    rotatingAnimation: Animation | null = null;
-
     /** Gallery column number. */
     ncols = 3;
 
     /** All galleries. */
     galleries = new Set<Gallery>();
 
+    /** Currently rotating music nodes. */
+	#rotating: HTMLElement | null = null;
+
+    /** Animation of this.rotating. */
+    #rotatingAnimation: Animation | null = null;
+
+    /** Called by app after UI loaded. */
     create(splash: Splash) {
+        // blur or unblur splash
         this.onopen = () => {
             for (const gallery of this.galleries) {
                 gallery.checkPage();
             }
 			splash.node.classList.add('blurred');
-			if (this.rotating) {
-				this.rotate(this.rotating);
+			if (this.#rotating) {
+				this.#rotate(this.#rotating);
 			}
 		};
 
 		this.onclose = () => {
 			splash.node.classList.remove('blurred');
-            this.rotatingAnimation?.pause();
+            this.#rotatingAnimation?.pause();
 		};
 
-        this.addThemes();
-        this.addBackgrounds();
-        this.addMusic();
+        // add main content
+        this.#addThemes();
+        this.#addBackgrounds();
+        this.#addMusic();
 
 		// enable button click after creation finish
 		splash.bar.buttons.get('settings')!.node.classList.remove('disabled');
     }
 
-    rotate(node: HTMLElement) {
-        if (this.rotating !== node) {
-            this.rotatingAnimation?.pause();
-        }
-
-        const animation = this.rotating === node ? this.rotatingAnimation : node.getAnimations()[0];
-        this.rotating = node;
-
-        if (animation) {
-            this.rotatingAnimation = animation;
-            animation.play();
-        }
-        else {
-            this.rotatingAnimation = node.animate([
-                {transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}
-            ], {
-                duration: 10000,
-                iterations: Infinity
-            });
-        }
-    }
-
-    addThemes() {
+    #addThemes() {
         this.pane.addSection('主题');
 
 		const themes = Array.from(Object.keys(this.app.assets.theme));
@@ -100,7 +81,7 @@ export class SplashSettings extends Popup {
         });
     }
 
-    addBackgrounds() {
+    #addBackgrounds() {
         this.pane.addSection('背景');
 
 		const bgs = Array.from(Object.keys(this.app.assets.bg));
@@ -142,13 +123,13 @@ export class SplashSettings extends Popup {
         });
     }
 
-    addMusic() {
+    #addMusic() {
         this.pane.addSection('音乐');
 
 		const volGallery = this.pane.addGallery(1, 2);
 		volGallery.node.classList.add('volume');
-        volGallery.add(this.createSlider('音乐音量：', 'music-volume'));
-        volGallery.add(this.createSlider('音效音量：', 'audio-volume'));
+        volGallery.add(this.#createSlider('音乐音量：', 'music-volume'));
+        volGallery.add(this.#createSlider('音效音量：', 'audio-volume'));
         this.galleries.add(volGallery);
 
 		const bgms = Array.from(Object.keys(this.app.assets.bgm));
@@ -162,14 +143,14 @@ export class SplashSettings extends Popup {
                 this.ui.setBackground(this.ui.createElement('image', node), 'assets/bgm', bgm);
 
                 if (bgm === this.db.get('splash-music')) {
-                    this.rotating = node;
+                    this.#rotating = node;
                 }
 
                 if (bgm === this.db.get('game-music')) {
                     node.classList.add('active');
                 }
 
-                this.ui.bindClick(node, e => this.musicMenu(node, bgm, e));
+                this.ui.bindClick(node, e => this.#musicMenu(node, bgm, e));
 
                 return node;
             });
@@ -183,7 +164,7 @@ export class SplashSettings extends Popup {
         });
     }
 
-    createSlider(caption: string, key: string) {
+    #createSlider(caption: string, key: string) {
         const node = this.ui.createElement('widget.sharp');
         const img = this.ui.createElement('image', node);
         const slider = this.ui.createElement('slider', img);
@@ -233,60 +214,83 @@ export class SplashSettings extends Popup {
         return node;
     }
 
-    musicMenu(node: HTMLElement, bgm: string, e: Point) {
-        const rotating_bak: [HTMLElement | null, Animation | null] = [this.rotating, this.rotatingAnimation];
+    #musicMenu(node: HTMLElement, bgm: string, e: Point) {
+        const rotating_bak: [HTMLElement | null, Animation | null] = [this.#rotating, this.#rotatingAnimation];
         this.app.switchMusic(bgm);
         const menu = this.ui.create('popup');
-        this.rotate(node);
+        this.#rotate(node);
 
         const restore = () => {
             if (rotating_bak[0] && rotating_bak[0] !== node) {
-                this.rotating = rotating_bak[0];
-                this.rotatingAnimation = rotating_bak[1];
-                if (this.rotatingAnimation) {
-                    this.rotatingAnimation.play();
+                this.#rotating = rotating_bak[0];
+                this.#rotatingAnimation = rotating_bak[1];
+                if (this.#rotatingAnimation) {
+                    this.#rotatingAnimation.play();
                 }
                 else {
-                    this.rotate(this.rotating);
+                    this.#rotate(this.#rotating);
                 }
             }
             this.app.playMusic();
         }
         
         menu.pane.addOption('等待音乐', () => {
-            this.rotateMusic(node, bgm, true, false);
+            this.#rotateMusic(node, bgm, true, false);
             menu.onclose = null;
             menu.close();
         });
         menu.pane.addOption('游戏音乐', () => {
-            this.rotateMusic(node, bgm, false, true);
+            this.#rotateMusic(node, bgm, false, true);
             restore();
             menu.onclose = null;
             menu.close();
         });
         menu.pane.addOption('全部应用', () => {
-            this.rotateMusic(node, bgm, true, true);
+            this.#rotateMusic(node, bgm, true, true);
             menu.onclose = null;
             menu.close();
         });
         menu.onclose = () => {
-            this.rotateMusic(node, bgm, false, false);
+            this.#rotateMusic(node, bgm, false, false);
             restore();
         };
         menu.location = e;
         menu.open();
     }
 
-    rotateMusic(node: HTMLElement, bgm: string, splash: boolean, game: boolean) {
+    /** Create rotation animation for music selector. */
+    #rotate(node: HTMLElement) {
+        if (this.#rotating !== node) {
+            this.#rotatingAnimation?.pause();
+        }
+
+        const animation = this.#rotating === node ? this.#rotatingAnimation : node.getAnimations()[0];
+        this.#rotating = node;
+
+        if (animation) {
+            this.#rotatingAnimation = animation;
+            animation.play();
+        }
+        else {
+            this.#rotatingAnimation = node.animate([
+                {transform: 'rotate(0deg)'}, {transform: 'rotate(360deg)'}
+            ], {
+                duration: 10000,
+                iterations: Infinity
+            });
+        }
+    }
+
+    #rotateMusic(node: HTMLElement, bgm: string, splash: boolean, game: boolean) {
         if (splash) {
-            this.rotate(node);
+            this.#rotate(node);
             this.db.set('splash-music', bgm);
         }
         else {
-            if (this.rotating === node) {
-                this.rotatingAnimation?.pause();
-                this.rotating = null;
-                this.rotatingAnimation = null;
+            if (this.#rotating === node) {
+                this.#rotatingAnimation?.pause();
+                this.#rotating = null;
+                this.#rotatingAnimation = null;
             }
             if (this.db.get('splash-music') === bgm) {								
                 this.db.set('splash-music', 'none');
