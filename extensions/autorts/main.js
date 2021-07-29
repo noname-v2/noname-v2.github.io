@@ -1,7 +1,7 @@
 var main = {
     mode: {
-        name: '对弈',
-        np: 2,
+        name: '运筹',
+        np: [2, 4, 6, 8],
         tasks: {
             main(Task) {
                 return class Identity extends Task {
@@ -14,9 +14,9 @@ var main = {
                 };
             }
         },
-        inherit: 'autochess'
+        inherit: 'auto'
     },
-    tags: ['auto!'],
+    tags: ['auto!', 'rts']
 };
 
 export default main;

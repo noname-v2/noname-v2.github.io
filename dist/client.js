@@ -1632,6 +1632,8 @@
         nrows = 1;
         /** Extension index. */
         index;
+        /** Ordered extension list. */
+        extensions;
         async init() {
             // determine gallery column number
             const margin = parseInt(this.app.css.app['splash-margin']);
@@ -1639,7 +1641,7 @@
             super.init();
             // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
-            const extensions = await this.client.utils.readJSON('extensions/extensions.json');
+            const extensions = this.extensions = await this.client.utils.readJSON('extensions/extensions.json');
             const modes = [];
             // udpate extension index
             let write = false;
@@ -1689,7 +1691,7 @@
         /** Get hero / card packages from target mode. */
         #getPacks(mode) {
             const packs = [];
-            for (const name in this.index) {
+            for (const name of this.extensions) {
                 if (!this.index[name].pack) {
                     continue;
                 }
@@ -1720,27 +1722,28 @@
         }
         /** Get mode information from extensions. */
         async #loadExtension(name) {
-            if (!this.index[name]) {
-                try {
-                    const idx = {};
-                    const ext = (await import(`../extensions/${name}/main.js`)).default;
-                    if (ext.heropack || ext.cardpack) {
-                        idx.pack = true;
-                    }
-                    if (ext.mode?.name) {
-                        idx.mode = ext.mode.name;
-                    }
-                    if (ext.tags) {
-                        idx.tags = ext.tags;
-                    }
-                    if (ext.hero) {
-                        idx.images = Object.keys(ext.hero);
-                    }
-                    this.index[name] = idx;
+            if (this.index[name]) {
+                return;
+            }
+            try {
+                const idx = {};
+                const ext = (await import(`../extensions/${name}/main.js`)).default;
+                if (ext.heropack || ext.cardpack) {
+                    idx.pack = true;
                 }
-                catch (e) {
-                    console.log(e, name);
+                if (ext.mode?.name) {
+                    idx.mode = ext.mode.name;
                 }
+                if (ext.tags) {
+                    idx.tags = ext.tags;
+                }
+                if (ext.hero) {
+                    idx.images = Object.keys(ext.hero);
+                }
+                this.index[name] = idx;
+            }
+            catch (e) {
+                console.log(e, name);
             }
         }
     }

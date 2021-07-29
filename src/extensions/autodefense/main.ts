@@ -4,18 +4,19 @@ export default {
     mode: {
         name: '塔防',
         np: [1, 2, 3, 4],
-        content() {
-            this.add('#game.init/');
-            this.add('createPlayers');
-            this.add('#game.chooseHero/');
-            this.add('#game.loop/');
-        },
-        contents: {
-            createPlayers() {
-                console.log(this.game.packs);
+        tasks: {
+            main(Task) {
+                return class Identity extends Task {
+                    main() {
+                        this.addTask('lobby');
+                        this.addTask('createPlayers');
+                        this.addTask('chooseHero', {np: 7});
+                        this.addTask('loop');
+                    }
+                }
             }
-        }
+        },
+        inherit: 'autorts'
     },
-    tags: ['autochess!'],
-    inherit: 'autochess'
+    tags: ['auto!', 'rts']
 } as SGS;

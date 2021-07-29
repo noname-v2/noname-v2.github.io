@@ -23,6 +23,6 @@ export default {
     },
     heropack: '国战标准',
     cardpack: '国战标准',
-    tags: ['guess-side', 'hero-hidden', 'double-hero!'],
+    tags: ['guess-side', 'hero-hidden!', 'double-hero!'],
     hero, card, skill
 } as SGS;

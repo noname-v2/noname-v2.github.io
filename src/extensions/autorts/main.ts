@@ -1,22 +1,22 @@
-var main = {
+import type { SGS } from '../sgs/sgs';
+
+export default {
     mode: {
-        name: '对弈',
-        np: 2,
+        name: '运筹',
+        np: [2, 4, 6, 8],
         tasks: {
             main(Task) {
                 return class Identity extends Task {
                     main() {
                         this.addTask('lobby');
                         this.addTask('createPlayers');
-                        this.addTask('chooseHero', { np: 7 });
+                        this.addTask('chooseHero', {np: 7});
                         this.addTask('loop');
                     }
-                };
+                }
             }
         },
-        inherit: 'autochess'
+        inherit: 'auto'
     },
-    tags: ['auto!'],
-};
-
-export default main;
+    tags: ['auto!', 'rts']
+} as SGS;
