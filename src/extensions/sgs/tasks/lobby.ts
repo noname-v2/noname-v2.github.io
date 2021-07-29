@@ -24,6 +24,11 @@ export function lobby(T: typeof Task) {
                 }
             }
 
+            // set default configuration
+            for (const name in configs) {
+                this.game.config[name] ??= configs[name].init;
+            }
+
             // configuration for player number
             const np = this.game.mode.np!;
             let npmax: number;
@@ -55,7 +60,7 @@ export function lobby(T: typeof Task) {
             // monitor configuration change and await game start
             const lobby = this.lobby;
             lobby.owner = this.game.owner;
-            lobby.mode = this.game.mode;
+            lobby.mode = this.game.mode.extension;
             lobby.config = this.game.config;
             lobby.disabledHeropacks = Array.from(this.game.banned.heropacks);
             lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
