@@ -231,6 +231,8 @@
         css = {};
         /** Index of assets. */
         assets;
+        /** Popup components cleared when arena close. */
+        popups = new Map();
         /** Stylesheet for theme. */
         #themeNode = document.createElement('style');
         /** Node for displaying background. */
@@ -241,8 +243,6 @@
         #bgmGain;
         /** Audio context. */
         #audio = new (window.AudioContext || window.webkitAudioContext)();
-        /** Popup components cleared when arena close. */
-        #popups = new Map();
         /** Count dialog for dialog ID */
         #dialogCount = 0;
         async init() {
@@ -481,7 +481,7 @@
         /** Displa a popup. */
         popup(dialog, id) {
             const dialogID = id ?? ++this.#dialogCount;
-            this.#popups.get(dialogID)?.close();
+            this.popups.get(dialogID)?.close();
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
             // other popups that are blurred by dialog.open()
@@ -489,7 +489,7 @@
             dialog.onopen = () => {
                 // blur arena, splash and other popups
                 this.node.classList.add('popped');
-                for (const [id, popup] of this.#popups.entries()) {
+                for (const [id, popup] of this.popups.entries()) {
                     if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                         popup.node.classList.add('blurred');
                         blurred.push(id);
@@ -501,41 +501,33 @@
             };
             dialog.onclose = () => {
                 // unblur
-                this.#popups.delete(dialogID);
-                if (this.#popups.size === 0) {
+                this.popups.delete(dialogID);
+                if (this.popups.size === 0) {
                     this.node.classList.remove('popped');
                 }
                 for (const id of blurred) {
-                    this.#popups.get(id)?.node.classList.remove('blurred');
+                    this.popups.get(id)?.node.classList.remove('blurred');
                 }
                 blurred.length = 0;
                 if (typeof onclose === 'function') {
                     onclose();
                 }
             };
-            this.#popups.set(dialogID, dialog);
+            this.popups.set(dialogID, dialog);
             dialog.ready.then(() => dialog.open());
-        }
-        /** Has at least 1 popup. */
-        hasPopup() {
-            return this.#popups.size > 0;
-        }
-        /** Get a popup. */
-        getPopup(id) {
-            return this.#popups.get(id);
         }
         /** Remove a popup. */
         removePopup(id) {
-            const popup = this.#popups.get(id);
+            const popup = this.popups.get(id);
             popup?.close();
-            this.#popups.delete(id);
+            this.popups.delete(id);
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
-            for (const popup of this.#popups.values()) {
+            for (const popup of this.popups.values()) {
                 popup.close();
             }
-            this.#popups.clear();
+            this.popups.clear();
         }
         /** Initialize volume settings. */
         #initAudio() {
@@ -1198,12 +1190,21 @@
     }
 
     class Button extends Component {
-        // background circle image
+        /** Background circle image. */
         background = this.ui.createElement('background', this.node);
-        // background colored image
+        /** Background colored image. */
         image = this.ui.createElement('image', this.background);
-        // text container
+        /** Text container. */
         content = this.ui.createElement('content', this.node);
+        /** Click callback. */
+        onclick = null;
+        init() {
+            this.ui.bindClick(this.node, () => {
+                if (this.onclick) {
+                    this.onclick();
+                }
+            });
+        }
         $caption(caption) {
             this.content.innerHTML = '';
             const str1 = this.ui.createElement('caption');
@@ -1587,54 +1588,30 @@
         /** Reference to Splash. */
         splash;
         /** Button names and components. */
-        // buttons = new Map<string, Button>();
-        buttons = {
-            /** Clear cached files and reload. */
-            reset: this.ui.create('button'),
-            /** Refresh page. */
-            refresh: this.ui.create('button'),
-            /** Workshop button. */
-            workshop: this.ui.create('button'),
-            /** Hub button. */
-            hub: this.ui.create('button'),
-            /** Settings button. */
-            settings: this.ui.create('button')
-        };
+        buttons = new Map();
         init() {
-            // update button styles
-            const buttons = [
-                ['reset', '重置', 'red'],
-                ['refresh', '刷新', 'purple'],
-                ['workshop', '扩展', 'yellow'],
-                ['hub', '联机', 'green'],
-                ['settings', '选项', 'orange']
-            ];
-            for (const [name, caption, color] of buttons) {
-                const button = this.buttons[name];
-                button.update({ caption, color });
-                this.ui.bindClick(button.node, () => this[name]());
-                button.node.classList.add('disabled');
-                this.node.appendChild(button.node);
-            }
-            // hide reset button outside dev mode
-            if (!this.client.debug) {
-                this.buttons.reset.node.style.display = 'none';
-                this.buttons.refresh.node.style.display = 'none';
-            }
-            else {
-                this.buttons.reset.node.classList.remove('disabled');
-                this.buttons.refresh.node.classList.remove('disabled');
+            // add buttons
+            if (this.client.debug) {
+                this.addButton('reset', '重置', 'red', () => this.#resetGame());
                 if (this.client.mobile) {
-                    this.buttons.refresh.node.style.display = '';
-                }
-                else {
-                    this.buttons.refresh.node.style.display = 'none';
+                    this.addButton('refresh', '刷新', 'purple', () => window.location.reload());
                 }
             }
+            this.addButton('workshop', '扩展', 'yellow', () => { });
+            this.addButton('hub', '联机', 'green', () => this.splash?.hub.open());
+            this.addButton('settings', '选项', 'orange', () => this.splash?.settings.open());
         }
         /** Add a button. */
-        // addButton(id: string, name: string, color: 'string', )
-        async reset() {
+        addButton(id, caption, color, onclick) {
+            const button = this.ui.create('button');
+            button.update({ caption, color });
+            button.onclick = onclick;
+            button.node.classList.add('disabled');
+            this.buttons.set(id, button);
+            this.node.appendChild(button.node);
+            return button;
+        }
+        async #resetGame() {
             this.app.node.style.opacity = '0.5';
             if (window['caches']) {
                 await window['caches'].delete(this.client.version);
@@ -1646,31 +1623,17 @@
             }
             window.location.reload();
         }
-        refresh() {
-            window.location.reload();
-        }
-        workshop() {
-        }
-        hub() {
-            this.splash?.hub.open();
-        }
-        settings() {
-            this.splash?.settings.open();
-        }
     }
 
     class SplashGallery extends Gallery {
         /** Reference to Splash. */
         splash;
-        /** Gallery has no boundary. */
-        overflow = true;
         /** Single row. */
         nrows = 1;
-        /** Default window width. */
-        width = 900;
         /** Extension index. */
         index;
         async init() {
+            // determine gallery column number
             const margin = parseInt(this.app.css.app['splash-margin']);
             this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
             super.init();
@@ -1678,7 +1641,7 @@
             this.index = await this.db.readFile('extensions/index.json') || {};
             const extensions = await this.client.utils.readJSON('extensions/extensions.json');
             const modes = [];
-            // udpate index.json
+            // udpate extension index
             let write = false;
             await Promise.all(extensions.map(async (name) => {
                 if (!this.index[name]) {
@@ -1688,14 +1651,15 @@
                     }
                 }
             }));
+            if (write) {
+                await this.db.writeFile('extensions/index.json', this.index);
+            }
+            // add mode entries
             for (const name of extensions) {
                 if (this.index[name]?.mode) {
                     this.index[name].mode;
                     modes.push(name);
                 }
-            }
-            if (write) {
-                await this.db.writeFile('extensions/index.json', this.index);
             }
             for (const name of modes) {
                 this.add(() => this.addMode(name));
@@ -1845,7 +1809,7 @@
                 splash.node.classList.remove('blurred');
             };
             // enable button click after creation finish
-            splash.bar.buttons.hub.node.classList.remove('disabled');
+            splash.bar.buttons.get('hub').node.classList.remove('disabled');
             this.gallery = splash.gallery;
         }
         clearRooms() {
@@ -2017,7 +1981,7 @@
             // room owner disconnected
             const ws = this.client.connection;
             const promise = this.app.alert('房主连接断开', { ok: '退出房间', id: 'down' });
-            const dialog = this.app.getPopup('down');
+            const dialog = this.app.popups.get('down');
             const update = () => {
                 const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
                 dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
@@ -2125,7 +2089,7 @@
             this.addBackgrounds();
             this.addMusic();
             // enable button click after creation finish
-            splash.bar.buttons.settings.node.classList.remove('disabled');
+            splash.bar.buttons.get('settings').node.classList.remove('disabled');
         }
         rotate(node) {
             if (this.rotating !== node) {
@@ -2976,6 +2940,16 @@
         #ui;
         /** Module containing JS utilities. */
         #utils = utils;
+        /** Components synced with the worker. */
+        #components = new Map();
+        /** ID of current stage. */
+        #stageID = 0;
+        /**  UITicks waiting for dispatch. */
+        #ticks = [];
+        /** Timestamp of the last full UI load. */
+        #loaded = 0;
+        /** This.#loop is not running. */
+        #paused = true;
         /** Event listeners. */
         #listeners = Object.freeze({
             // connection status change
@@ -2987,16 +2961,6 @@
             // stage change
             stage: new Set()
         });
-        /** Components synced with the worker. */
-        #components = new Map();
-        /** ID of current stage. */
-        #stageID = 0;
-        /**  UITicks waiting for dispatch. */
-        #ticks = [];
-        /** Timestamp of the last full UI load. */
-        #loaded = 0;
-        /** This.#loop is not running. */
-        #paused = true;
         get version() {
             return this.#version;
         }
@@ -3168,7 +3132,7 @@
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
                         const arena = this.#ui.app.arena;
-                        if (arena && this.#ui.app.hasPopup()) {
+                        if (arena && this.#ui.app.popups.size) {
                             arena.faded = true;
                         }
                         this.clear(false);

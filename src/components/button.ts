@@ -10,6 +10,17 @@ export class Button extends Component {
 	/** Text container. */
 	content = this.ui.createElement('content', this.node);
 
+	/** Click callback. */
+	onclick: (() => void) | null = null;
+
+	init() {
+		this.ui.bindClick(this.node, () => {
+			if (this.onclick) {
+				this.onclick();
+			}
+		});
+	}
+
 	$caption(caption: string) {
 		this.content.innerHTML = '';
 		const str1 = this.ui.createElement('caption');

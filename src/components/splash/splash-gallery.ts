@@ -18,19 +18,14 @@ export class SplashGallery extends Gallery {
     /** Reference to Splash. */
     splash!: Splash;
 
-    /** Gallery has no boundary. */
-    overflow = true;
-
     /** Single row. */
     nrows = 1;
-
-    /** Default window width. */
-    width = 900;
 
 	/** Extension index. */
 	index!: ExtensionIndex;
 
     async init() {
+		// determine gallery column number
 		const margin = parseInt(this.app.css.app['splash-margin']);
 		this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
         super.init();
@@ -41,7 +36,7 @@ export class SplashGallery extends Gallery {
 		const modeNames: Dict<string> ={};
 		const modes: string[] = [];
 
-		// udpate index.json
+		// udpate extension index
 		let write = false;
 		await Promise.all(extensions.map(async name => {
 			if (!this.index[name]) {
@@ -51,18 +46,17 @@ export class SplashGallery extends Gallery {
 				}
 			}
 		}));
+		if (write) {
+			await this.db.writeFile('extensions/index.json', this.index);
+		}
 
+		// add mode entries
 		for (const name of extensions) {
 			if (this.index[name]?.mode) {
 				modeNames[name] = this.index[name].mode;
 				modes.push(name);
 			}
 		}
-
-		if (write) {
-			await this.db.writeFile('extensions/index.json', this.index);
-		}
-
 		for (const name of modes) {
 			this.add(() => this.addMode(name));
 		}

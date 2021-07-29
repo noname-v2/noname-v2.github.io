@@ -64,7 +64,7 @@ export class SplashHub extends Popup {
 		};
 
 		// enable button click after creation finish
-		splash.bar.buttons.hub.node.classList.remove('disabled');
+		splash.bar.buttons.get('hub')!.node.classList.remove('disabled');
         this.gallery = splash.gallery;
     }
 
@@ -254,7 +254,7 @@ export class SplashHub extends Popup {
         // room owner disconnected
         const ws = this.client.connection;
         const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
-        const dialog = this.app.getPopup('down') as Dialog;
+        const dialog = this.app.popups.get('down') as Dialog;
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
             dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);

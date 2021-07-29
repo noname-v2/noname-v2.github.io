@@ -34,18 +34,6 @@ export class Client {
     /** Module containing JS utilities. */
     #utils = utils;
 
-    /** Event listeners. */
-    #listeners = Object.freeze({
-        // connection status change
-        sync: new Set<{sync: () => void}>(),
-        // document resize
-        resize: new Set<{resize: () => void}>(),
-        // keyboard event
-        key: new Set<{key: (e: KeyboardEvent) => void}>(),
-        // stage change
-        stage: new Set<{key: () => void}>()
-    });
-
     /** Components synced with the worker. */
     #components = new Map<number, Component>();
 
@@ -60,6 +48,18 @@ export class Client {
 
     /** This.#loop is not running. */
     #paused = true;
+
+    /** Event listeners. */
+    #listeners = Object.freeze({
+        // connection status change
+        sync: new Set<{sync: () => void}>(),
+        // document resize
+        resize: new Set<{resize: () => void}>(),
+        // keyboard event
+        key: new Set<{key: (e: KeyboardEvent) => void}>(),
+        // stage change
+        stage: new Set<{key: () => void}>()
+    });
 
     get version() {
         return this.#version;
@@ -258,7 +258,7 @@ export class Client {
             for (const key in tags) {
                 if (tags[key] === 'arena') {
                     const arena = this.#ui.app.arena;
-                    if (arena && this.#ui.app.hasPopup()) {
+                    if (arena && this.#ui.app.popups.size) {
                         arena.faded = true;
                     }
                     this.clear(false);

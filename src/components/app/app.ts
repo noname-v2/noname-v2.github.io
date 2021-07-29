@@ -26,6 +26,9 @@ export class App extends Component {
     /** Index of assets. */
     readonly assets!: Dict<Dict<string>>;
 
+    /** Popup components cleared when arena close. */
+    readonly popups = new Map<string | number, Popup>();
+
     /** Stylesheet for theme. */
     #themeNode = document.createElement('style');
 
@@ -40,9 +43,6 @@ export class App extends Component {
 
     /** Audio context. */
     #audio = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-    /** Popup components cleared when arena close. */
-    #popups = new Map<string | number, Popup>();
 
     /** Count dialog for dialog ID */
     #dialogCount = 0;
@@ -321,7 +321,7 @@ export class App extends Component {
     /** Displa a popup. */
     popup(dialog: Popup, id?: string) {
         const dialogID = id ?? ++this.#dialogCount;
-        this.#popups.get(dialogID)?.close();
+        this.popups.get(dialogID)?.close();
         const onopen = dialog.onopen;
         const onclose = dialog.onclose;
 
@@ -331,7 +331,7 @@ export class App extends Component {
         dialog.onopen = () => {
             // blur arena, splash and other popups
             this.node.classList.add('popped');
-            for (const [id, popup] of this.#popups.entries()) {
+            for (const [id, popup] of this.popups.entries()) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
                     blurred.push(id);
@@ -345,12 +345,12 @@ export class App extends Component {
 
         dialog.onclose = () => {
             // unblur
-            this.#popups.delete(dialogID);
-            if (this.#popups.size === 0) {
+            this.popups.delete(dialogID);
+            if (this.popups.size === 0) {
                 this.node.classList.remove('popped');
             }
             for (const id of blurred) {
-                this.#popups.get(id)?.node.classList.remove('blurred');
+                this.popups.get(id)?.node.classList.remove('blurred');
             }
             blurred.length = 0;
 
@@ -359,33 +359,23 @@ export class App extends Component {
             }
         };
 
-        this.#popups.set(dialogID, dialog);
+        this.popups.set(dialogID, dialog);
         dialog.ready.then(() => dialog.open());
-    }
-
-    /** Has at least 1 popup. */
-    hasPopup() {
-        return this.#popups.size > 0;
-    }
-
-    /** Get a popup. */
-    getPopup(id: string) {
-        return this.#popups.get(id);
     }
 
     /** Remove a popup. */
     removePopup(id: string) {
-        const popup = this.#popups.get(id);
+        const popup = this.popups.get(id);
         popup?.close();
-        this.#popups.delete(id);
+        this.popups.delete(id);
     }
 
     /** Clear alert and confirm dialogs. */
     clearPopups() {
-        for (const popup of this.#popups.values()) {
+        for (const popup of this.popups.values()) {
             popup.close();
         }
-        this.#popups.clear();
+        this.popups.clear();
     }
 
     /** Initialize volume settings. */
