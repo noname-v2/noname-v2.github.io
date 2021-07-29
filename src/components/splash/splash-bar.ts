@@ -7,6 +7,9 @@ export class SplashBar extends Component {
     /** Reference to Splash. */
     splash!: Splash;
 
+    /** Button names and components. */
+    // buttons = new Map<string, Button>();
+
     buttons = {
         /** Clear cached files and reload. */
         reset: this.ui.create('button'),
@@ -58,6 +61,9 @@ export class SplashBar extends Component {
             }
         }
     }
+
+    /** Add a button. */
+    // addButton(id: string, name: string, color: 'string', )
 
     async reset() {
         this.app.node.style.opacity = '0.5';

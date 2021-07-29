@@ -36,7 +36,8 @@
 		"purple-image": "@(button-purple.webp)",
 		"red-image": "@(button-red.webp)",
 		"yellow-image": "@(button-yellow.webp)",
-		"shadow": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
+		"shadow": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
+		"fill-shadow": "rgba(0, 0, 0, 0.6) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px"
 	},
 
 	"player": {
@@ -118,17 +119,6 @@
 		"footer-background-down": "linear-gradient(rgb(210, 106, 47), rgb(210, 98, 43))"
 	},
 
-	"fill": {
-		"shadow": "rgba(0, 0, 0, 0.3) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px inset",
-		"button-shadow": "rgba(0, 0, 0, 0.6) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 3px 10px",
-		"red": "linear-gradient(rgba(150, 47, 47, 1), rgba(132, 43, 43, 1))",
-		"blue": "linear-gradient(rgba(47, 101, 150, 1), rgba(43, 90, 132, 1))",
-		"green": "linear-gradient(rgb(89, 161, 81), rgb(73, 136, 70))",
-		"cyan": "linear-gradient(rgb(45, 155, 255), rgb(0, 135, 255))",
-		"yellow": "linear-gradient(rgb(255, 178, 0), rgb(255, 156, 0))",
-		"gray": "linear-gradient(#4b4b4b, #464646)"
-	},
-
 	"gallery": {
 		"indicator-background": "rgba(0, 0, 0, 0.4)",
 		"indicator-background-current": "rgba(255, 255, 255, 0.8)"
@@ -152,5 +142,50 @@
 		"erase": "@(icon-erase.svg)",
 		"up": "@(icon-up.svg)",
 		"ok": "@(icon-ok.svg)"
+	},
+
+	"buttonicon": {
+
+	},
+
+	"fill": {
+		"red": "linear-gradient(rgba(150, 47, 47, 1), rgba(132, 43, 43, 1))",
+		"blue": "linear-gradient(rgba(47, 101, 150, 1), rgba(43, 90, 132, 1))",
+		"green": "linear-gradient(rgb(89, 161, 81), rgb(73, 136, 70))",
+		"cyan": "linear-gradient(rgb(45, 155, 255), rgb(0, 135, 255))",
+		"yellow": "linear-gradient(rgb(255, 178, 0), rgb(255, 156, 0))",
+		"gray": "linear-gradient(#4b4b4b, #464646)"
+	},
+
+	"text": {
+		"blue": "rgb(117, 186, 255)",
+		"red": "rgb(242, 37, 0)",
+		"orange": "rgb(255, 119, 63)",
+		"yellow": "rgb(255, 239, 105)",
+		"green": "rgb(104, 221, 127)",
+		"brown": "rgb(180, 150, 85)",
+		"purple": "rgb(233, 131, 255)",
+		"darkred": "rgb(128, 0, 0)",
+		"honey": "rgb(235, 175, 76)",
+		"peach": "rgb(255, 170, 170)",
+		"black": "rgb(0, 0, 0)"
+	},
+
+	"shadow": {
+		"blue": "rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 2px, rgba(78, 117, 140,1) 0 0 2px,black 0 0 1px",
+		"red": "black 0 0 1px,rgba(191, 0, 0,0.2) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px, black 0 0 1px",
+		"yellow": "black 0 0 1px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 2px, rgba(255, 203, 0,1) 0 0 2px,black 0 0 1px",
+		"green": "rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 2px, rgba(57, 123, 4,1) 0 0 2px,black 0 0 1px",
+		"brown": "rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 2px, rgba(128, 59, 2,1) 0 0 2px,black 0 0 1px",
+		"purple": "rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 2px, rgba(100, 74, 139,1) 0 0 2px,black 0 0 1px"
+	},
+
+	"glow": {
+		"blue": "rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 5px,rgba(78, 117, 140,1) 0 0 10px, rgba(78, 117, 140,1) 0 0 10px,rgba(78, 117, 140,1) 0 0 20px,rgba(78, 117, 140,1) 0 0 20px,black 0 0 1px",
+		"red": "black 0 0 1px,rgba(232, 53, 53,1) 0 0 2px,rgba(232, 53, 53,1) 0 0 5px,rgba(232, 53, 53,1) 0 0 10px, rgba(232, 53, 53,1) 0 0 10px,rgba(232, 53, 53,1) 0 0 20px,rgba(232, 53, 53,1) 0 0 20px",
+		"yellow": "black 0 0 1px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 5px,rgba(255, 203, 0,1) 0 0 10px, rgba(255, 203, 0,1) 0 0 10px",
+		"green": "rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 5px,rgba(57, 123, 4,1) 0 0 10px, rgba(57, 123, 4,1) 0 0 10px,rgba(57, 123, 4,1) 0 0 20px,rgba(57, 123, 4,1) 0 0 20px,black 0 0 1px",
+		"brown": "rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 5px,rgba(128, 59, 2,1) 0 0 10px, rgba(128, 59, 2,1) 0 0 10px,rgba(128, 59, 2,1) 0 0 20px,rgba(128, 59, 2,1) 0 0 20px,black 0 0 1px",
+		"purple": "rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 5px,rgba(100, 74, 139,1) 0 0 10px,rgba(100, 74, 139,1) 0 0 10px,rgba(100, 74, 139,1) 0 0 20px,rgba(100, 74, 139,1) 0 0 20px,black 0 0 1px"
 	}
 }

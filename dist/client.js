@@ -332,6 +332,23 @@
             }
             // insert rule
             sheet.insertRule(`noname-app {${rules}}`, sheet.rules.length);
+            // add rules for dataset
+            const dataset = {
+                fill: 'background',
+                text: 'text-color',
+                shadow: 'text-shadow',
+                glow: 'text-shadow'
+            };
+            for (const section in dataset) {
+                for (const name in this.css[section]) {
+                    console.log(section, this.css[section]);
+                    const propName = dataset[section];
+                    const propValue = this.css[section][name];
+                    sheet.insertRule(`[data-${section}="${name}"] {${propName}: ${propValue}}`, sheet.rules.length);
+                }
+            }
+            for (const section of ['fill', 'text', 'shadow', 'glow']) {
+            }
         }
         /** Add styles for background and font. */
         async loadBackground() {
@@ -725,17 +742,21 @@
             this.ui.createElement('image', this.header);
             this.ui.createElement('span', this.footer);
         }
+        /** Button at the top. */
         setHeader(caption, onclick) {
             this.ui.bindClick(this.header, onclick);
             this.header.firstChild.innerHTML = caption;
         }
+        /** Button at the bottom. */
         setFooter(caption, onclick) {
             this.ui.bindClick(this.footer, onclick);
             this.footer.firstChild.innerHTML = caption;
         }
+        /** Show button at the bottom. */
         showFooter() {
             this.node.classList.add('with-footer');
         }
+        /** Hide button at the bottom. */
         hideFooter() {
             this.node.classList.remove('with-footer');
         }
@@ -788,7 +809,7 @@
             }
             return [ax, ay];
         }
-        /** Remove arena. */
+        /** Remove with fade out animation. */
         remove() {
             if (this.app.arena === this) {
                 this.app.arena = null;
@@ -1567,6 +1588,8 @@
         static tag = 'bar';
         /** Reference to Splash. */
         splash;
+        /** Button names and components. */
+        // buttons = new Map<string, Button>();
         buttons = {
             /** Clear cached files and reload. */
             reset: this.ui.create('button'),
@@ -1611,6 +1634,8 @@
                 }
             }
         }
+        /** Add a button. */
+        // addButton(id: string, name: string, color: 'string', )
         async reset() {
             this.app.node.style.opacity = '0.5';
             if (window['caches']) {

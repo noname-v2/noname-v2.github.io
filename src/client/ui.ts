@@ -4,19 +4,28 @@ import type { ComponentClass } from './component';
 import type { Database } from './database';
 import { componentClasses, ComponentTagMap } from '../classes';
 
-// type for point location
+/** Type for point location */
 export type Point = {x: number, y: number};
 
-// type for region range
+/** Type for region range */
 export type Region = {x: [number, number], y: [number, number]};
 
-// return value of onmove
+/** Return value of onmove */
 export type MoveState = unknown;
 
-// transition duration names
+/** Transition duration names. */
 export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
 
-// type for event point location
+/** Background color names. */
+export type FillColor = 'red' | 'blue' | 'green' | 'cyan' | 'yellow' | 'gray';
+
+/** Text color names. */
+export type TextColor = 'red' | 'blue' | 'green' | 'orange' | 'yellow' | 'brown' | 'purple' | 'darkred' | 'honey' | 'peach' | 'black';
+
+/** Text shadow color. */
+export type ShadowColor = 'red' | 'blue' | 'green' | 'yellow' | 'brown' | 'purple';
+
+/** Type for event point location. */
 type EventPoint = {clientX: number, clientY: number}
 
 
