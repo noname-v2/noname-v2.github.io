@@ -1,22 +1,22 @@
 export class Database  {
     /** indexedDB object. */
-	private db?: IDBDatabase;
+	#db?: IDBDatabase;
 
 	/** Get, set or delete database entry. */
-	private transact(name: 'settings'|'files', cmd: 'get'|'put'|'delete', key: string, value?: unknown) {
+	#transact(name: 'settings'|'files', cmd: 'get'|'put'|'delete', key: string, value?: unknown) {
 		return new Promise(resolve => {
 			const mode = cmd === 'get' ? 'readonly' : 'readwrite';
-			const store = this.db!.transaction(name, mode).objectStore(name);
+			const store = this.#db!.transaction(name, mode).objectStore(name);
 			const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
 			request.onsuccess = () => resolve(request.result ?? null);
 		});
 	}
 
 	/** Cache for synthronous database. */
-	private cache = new Map<string, unknown>();
+	#cache = new Map<string, unknown>();
 
 	/** Resolved when ready. */
-	ready: Promise<void>;
+	readonly ready: Promise<void>;
 
 	constructor() {
 		// open database
@@ -42,10 +42,10 @@ export class Database  {
 				clearTimeout(timeout);
 				
 				// save database
-				this.db = request.result;
+				this.#db = request.result;
 
 				// cache synchronous database
-				const store = this.db.transaction('settings', 'readonly').objectStore('settings');
+				const store = this.#db.transaction('settings', 'readonly').objectStore('settings');
 				const iterator = store.openCursor();
 				
 				// iterate through database and save to this.cache
@@ -53,7 +53,7 @@ export class Database  {
 					const cursor = iterator.result;
 					if (cursor) {
 						// set cache value and go to next entry
-						this.cache.set(cursor.key as string, cursor.value);
+						this.#cache.set(cursor.key as string, cursor.value);
 						cursor.continue();
 					}
 					else {
@@ -67,43 +67,43 @@ export class Database  {
 
 	/** Get value of synchronous database entry. */
 	get(key: string): any {
-		return this.cache.get(key) ?? null;
+		return this.#cache.get(key) ?? null;
 	}
 
 	/** Set value of synchronous database entry. */
 	set(key: string, value?: unknown) {
 		if (value === null || value === undefined) {
 			// delete entry
-			this.cache.delete(key);
-			this.transact('settings', 'delete', key);
+			this.#cache.delete(key);
+			this.#transact('settings', 'delete', key);
 		}
 		else {
 			// modify entry
-			this.cache.set(key, value);
-			this.transact('settings', 'put', key, value);
+			this.#cache.set(key, value);
+			this.#transact('settings', 'put', key, value);
 		}
 	}
 
 	/** Get value from asynchronous database. */
 	readFile(key: string): any {
-		return this.transact('files', 'get', key);
+		return this.#transact('files', 'get', key);
 	}
 
 	/** Set value to asynchronous database. */
 	writeFile(key: string, value?: unknown) {
 		if (value === null || value === undefined) {
 			// delete entry
-			return this.transact('files', 'delete', key);
+			return this.#transact('files', 'delete', key);
 		}
 		else {
 			// modify entry
-			return this.transact('files', 'put', key, value);
+			return this.#transact('files', 'put', key, value);
 		}
 	}
 
 	/** List all files. */
 	readdir() {
-		const store = this.db!.transaction('files', 'readonly').objectStore('files');
+		const store = this.#db!.transaction('files', 'readonly').objectStore('files');
 		const iterator = store.openCursor();
 		const files: string[] = [];
 		
