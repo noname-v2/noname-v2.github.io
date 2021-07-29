@@ -258,7 +258,7 @@ export class Client {
             for (const key in tags) {
                 if (tags[key] === 'arena') {
                     const arena = this.#ui.app.arena;
-                    if (arena && this.#ui.app.popups.size) {
+                    if (arena && this.#ui.app.hasPopup()) {
                         arena.faded = true;
                     }
                     this.clear(false);

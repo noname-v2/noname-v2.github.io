@@ -59,7 +59,7 @@ export class Arena extends Component {
         return [ax, ay];
     }
 
-    /** Remove arena. */
+    /** Remove with fade out animation. */
     remove() {
         if (this.app.arena === this) {
             this.app.arena = null;

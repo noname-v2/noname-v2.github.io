@@ -53,6 +53,127 @@ export class Lobby extends Component {
         this.ui.animate(this.seats, {scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]});
     }
 
+    /** Update connected players. */
+    sync() {
+        const peers = this.client.peers;
+        
+        // callback for online mode toggle
+        if (this.owner === this.client.uid) {
+            this.yield(['sync', null, peers ? true : false]);
+            if (this.connecting && !peers) {
+                this.app.alert('连接失败');
+            }
+            this.connecting = false;
+            const toggle = this.configToggles.get('online');
+            if (toggle) {
+                if (peers && peers.length > 1) {
+                    toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
+                }
+                else {
+                    toggle.confirm.delete(false);
+                }
+            }
+        }
+
+        // update seats
+        const players = [];
+        const spectators = [];
+        for (const peer of peers || []) {
+            if (peer.get('playing')) {
+                players.push(peer);
+            }
+            else {
+                spectators.push(peer);
+            }
+        }
+        for (let i = 0; i < this.players.length; i++) {
+            if (i < players.length) {
+                const peer = players[i]!;
+                this.players[i].set('heroImage', peer.get('avatar'));
+                this.players[i].set('heroName', peer.get('nickname'));
+            }
+            else {
+                this.players[i].set('heroImage', null);
+                this.players[i].set('heroName', null);
+            }
+        }
+
+        // update spectate button
+        const peer = this.client.peer;
+        if (peer) {
+            this.seats.classList.remove('offline');
+            this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
+            this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+            this.checkSpectate();
+        }
+        else {
+            this.seats.classList.add('offline');
+        }
+    }
+
+    /** Calculate the location of spectators and specified heros. */
+    alignAvatars(dock: HTMLElement, names: string[]) {
+        const frag = document.createDocumentFragment();
+        const n = names.length;
+        for (let i = 0; i < n; i++) {
+            const img = this.ui.createElement('image.avatar');
+            if (n < 4) {
+                img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
+            }
+            else if (n === 4) {
+                const left = (230 - n * 40 - (n - 1) * 15) / 2;
+                img.style.left = `${left + i * 55}px`;
+            }
+            else {
+                img.style.left = `${190 / (n - 1) * i}px`;
+            }
+            this.ui.setImage(img, names[i]);
+            frag.appendChild(img);
+        }
+        (dock as any).replaceChildren(frag);
+    }
+
+    /** Enable or disable spectate button. */
+    checkSpectate() {
+        if (!this.spectateButton.dataset.fill) {
+            this.spectateButton.classList.remove('disabled');
+        }
+        else {
+            const np = this.get('config').np;
+            let n = 0;
+            for (const player of this.players) {
+                if (player.get('heroName')) {
+                    n++;
+                }
+            }
+            this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
+        }
+    }
+
+    /** Disable all toggles until command received from worker. */
+    freeze() {
+        this.sidebar.pane.node.classList.add('pending');
+    }
+
+    /** Re-enable toggles. */
+    unfreeze() {
+        this.sidebar.pane.node.classList.remove('pending');
+    }
+
+    /** Remove with fade and slide animation. */
+    remove() {
+        super.remove(new Promise<void>(resolve => {
+            let done = 0;
+            const onfinish = () => {
+                if (++done === 2) {
+                    resolve();
+                }
+            }
+            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
+            this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
+        }));
+    }
+
     $pane(configs: {heropacks: Dict<string>, cardpacks: Dict<string>, configs: Dict<Config>}) {
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
@@ -199,120 +320,5 @@ export class Lobby extends Component {
                 this.client.peer!.yield('spectate');
             }
         });
-    }
-
-    sync() {
-        const peers = this.client.peers;
-        
-        // callback for online mode toggle
-        if (this.owner === this.client.uid) {
-            this.yield(['sync', null, peers ? true : false]);
-            if (this.connecting && !peers) {
-                this.app.alert('连接失败');
-            }
-            this.connecting = false;
-            const toggle = this.configToggles.get('online');
-            if (toggle) {
-                if (peers && peers.length > 1) {
-                    toggle.confirm.set(false, ['联机模式', '当前房间有其他玩家，关闭后将断开连接并请出所有其他玩家，确定关闭联机模式？']);
-                }
-                else {
-                    toggle.confirm.delete(false);
-                }
-            }
-        }
-
-        // update seats
-        const players = [];
-        const spectators = [];
-        for (const peer of peers || []) {
-            if (peer.get('playing')) {
-                players.push(peer);
-            }
-            else {
-                spectators.push(peer);
-            }
-        }
-        for (let i = 0; i < this.players.length; i++) {
-            if (i < players.length) {
-                const peer = players[i]!;
-                this.players[i].set('heroImage', peer.get('avatar'));
-                this.players[i].set('heroName', peer.get('nickname'));
-            }
-            else {
-                this.players[i].set('heroImage', null);
-                this.players[i].set('heroName', null);
-            }
-        }
-
-        // update spectate button
-        const peer = this.client.peer;
-        if (peer) {
-            this.seats.classList.remove('offline');
-            this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-            this.alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
-            this.checkSpectate();
-        }
-        else {
-            this.seats.classList.add('offline');
-        }
-    }
-
-    alignAvatars(dock: HTMLElement, names: string[]) {
-        const frag = document.createDocumentFragment();
-        const n = names.length;
-        for (let i = 0; i < n; i++) {
-            const img = this.ui.createElement('image.avatar');
-            if (n < 4) {
-                img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
-            }
-            else if (n === 4) {
-                const left = (230 - n * 40 - (n - 1) * 15) / 2;
-                img.style.left = `${left + i * 55}px`;
-            }
-            else {
-                img.style.left = `${190 / (n - 1) * i}px`;
-            }
-            this.ui.setImage(img, names[i]);
-            frag.appendChild(img);
-        }
-        (dock as any).replaceChildren(frag);
-    }
-
-    checkSpectate() {
-        if (!this.spectateButton.dataset.fill) {
-            this.spectateButton.classList.remove('disabled');
-        }
-        else {
-            const np = this.get('config').np;
-            let n = 0;
-            for (const player of this.players) {
-                if (player.get('heroName')) {
-                    n++;
-                }
-            }
-            this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
-        }
-    }
-
-    freeze() {
-        this.sidebar.pane.node.classList.add('pending');
-    }
-
-    unfreeze() {
-        this.sidebar.pane.node.classList.remove('pending');
-    }
-
-    remove() {
-        super.remove(new Promise<void>(resolve => {
-            let done = 0;
-            const onfinish = () => {
-                if (++done === 2) {
-                    resolve();
-                }
-            }
-            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
-            this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
-        }));
     }
 }

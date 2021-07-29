@@ -18,20 +18,24 @@ export class Sidebar extends Component {
 		this.ui.createElement('span', this.footer);
     }
 
+    /** Button at the top. */
     setHeader(caption: string, onclick: () => void) {
         this.ui.bindClick(this.header, onclick);
         (this.header.firstChild as HTMLElement).innerHTML = caption;
     }
 
+    /** Button at the bottom. */
     setFooter(caption: string, onclick: () => void) {
         this.ui.bindClick(this.footer, onclick);
         (this.footer.firstChild as HTMLElement).innerHTML = caption;
     }
 
+    /** Show button at the bottom. */
     showFooter() {
         this.node.classList.add('with-footer');
     }
 
+    /** Hide button at the bottom. */
     hideFooter() {
         this.node.classList.remove('with-footer');
     }

@@ -27,28 +27,28 @@ export class App extends Component {
     readonly assets!: Dict<Dict<string>>;
 
     /** Stylesheet for theme. */
-    readonly themeNode = document.createElement('style');
+    #themeNode = document.createElement('style');
 
     /** Node for displaying background. */
-    readonly bgNode = this.ui.createElement('background', this.node);
+    #bgNode = this.ui.createElement('background', this.node);
 
     /** Node for playing background music. */
-    readonly bgmNode = document.createElement('audio');
+    #bgmNode = document.createElement('audio');
 
     /** Background music volume control. */
-    readonly bgmGain!: AudioParam;
+    #bgmGain!: AudioParam;
 
     /** Audio context. */
-    readonly audio = new (window.AudioContext || (window as any).webkitAudioContext)();
+    #audio = new (window.AudioContext || (window as any).webkitAudioContext)();
 
     /** Popup components cleared when arena close. */
-    readonly popups = new Map<string | number, Popup>();
+    #popups = new Map<string | number, Popup>();
 
     /** Count dialog for dialog ID */
     #dialogCount = 0;
 
     async init() {
-        document.head.appendChild(this.themeNode);
+        document.head.appendChild(this.#themeNode);
         
         // setup triggers
         this.resize();
@@ -74,7 +74,7 @@ export class App extends Component {
             this.splash.settings.create(this.splash);
         });
 
-        // add history
+        // add handler for android back button
         if (this.client.platform === 'Android') {
             window.addEventListener('popstate', e => {
                 const arena = this.app.arena
@@ -98,7 +98,7 @@ export class App extends Component {
         const defaultTheme = await this.client.utils.readJSON<any>('assets/theme', 'default', 'theme.json');
 
         // theme stylesheet
-        const sheet = this.themeNode.sheet!;
+        const sheet = this.#themeNode.sheet!;
         
         // get css rules from theme.json (fallback to default any entry not exist)
         let rules = '';
@@ -155,14 +155,13 @@ export class App extends Component {
     /** Add styles for background and font. */
     async loadBackground() {
         const bg = this.db.get('bg');
-        
         if (bg) {
             // use custom background
-            this.ui.setBackground(this.bgNode, 'assets/bg', bg);
+            this.ui.setBackground(this.#bgNode, 'assets/bg', bg);
         }
         else {
             // use default background
-            this.bgNode.style.background = '';
+            this.#bgNode.style.background = '';
         }
     }
 
@@ -171,14 +170,14 @@ export class App extends Component {
         const bgm = this.db.get(this.arena ? 'game-music' : 'splash-music');
 
         if (bgm && bgm !== 'none' && this.db.get('music-volume') > 0) {
-            this.bgmNode.src = `assets/bgm/${bgm}.mp3`;
+            this.#bgmNode.src = `assets/bgm/${bgm}.mp3`;
 
-            if (this.audio.state === 'suspended') {
+            if (this.#audio.state === 'suspended') {
                 const interact = () => {
-                    this.audio.resume()
+                    this.#audio.resume()
                     
-                    if (this.bgmNode.paused && this.db.get('music-volume') > 0) {
-                        this.bgmNode.play();
+                    if (this.#bgmNode.paused && this.db.get('music-volume') > 0) {
+                        this.#bgmNode.play();
                     }
                     
                     this.node.removeEventListener('pointerup', interact);
@@ -186,11 +185,28 @@ export class App extends Component {
                 this.node.addEventListener('pointerup', interact);
             }
             else {
-                this.bgmNode.play();
+                this.#bgmNode.play();
             }
         }
         else {
-            this.bgmNode.src = '';
+            this.#bgmNode.src = '';
+        }
+    }
+
+    /** Swith background music. */
+    switchMusic(bgm: string) {
+        this.#bgmNode.src = `assets/bgm/${bgm}.mp3`;
+        this.#bgmNode.play();
+    }
+
+    /** Change background music volume. */
+    changeVolume(vol: number) {
+        this.#bgmGain.value = vol / 100;
+        if (vol && this.#bgmNode.paused) {
+            setTimeout(() => this.app.playMusic());
+        }
+        else if (vol == 0) {
+            this.#bgmNode.pause();
         }
     }
 
@@ -288,7 +304,7 @@ export class App extends Component {
     /** Displa a popup. */
     popup(dialog: Popup, id?: string) {
         const dialogID = id ?? ++this.#dialogCount;
-        this.popups.get(dialogID)?.close();
+        this.#popups.get(dialogID)?.close();
         const onopen = dialog.onopen;
         const onclose = dialog.onclose;
 
@@ -298,7 +314,7 @@ export class App extends Component {
         dialog.onopen = () => {
             // blur arena, splash and other popups
             this.node.classList.add('popped');
-            for (const [id, popup] of this.popups.entries()) {
+            for (const [id, popup] of this.#popups.entries()) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
                     blurred.push(id);
@@ -312,12 +328,12 @@ export class App extends Component {
 
         dialog.onclose = () => {
             // unblur
-            this.popups.delete(dialogID);
-            if (this.popups.size === 0) {
+            this.#popups.delete(dialogID);
+            if (this.#popups.size === 0) {
                 this.node.classList.remove('popped');
             }
             for (const id of blurred) {
-                this.popups.get(id)?.node.classList.remove('blurred');
+                this.#popups.get(id)?.node.classList.remove('blurred');
             }
             blurred.length = 0;
 
@@ -326,23 +342,33 @@ export class App extends Component {
             }
         };
 
-        this.popups.set(dialogID, dialog);
+        this.#popups.set(dialogID, dialog);
         dialog.ready.then(() => dialog.open());
+    }
+
+    /** Has at least 1 popup. */
+    hasPopup() {
+        return this.#popups.size > 0;
+    }
+
+    /** Get a popup. */
+    getPopup(id: string) {
+        return this.#popups.get(id);
     }
 
     /** Remove a popup. */
     removePopup(id: string) {
-        const popup = this.popups.get(id);
+        const popup = this.#popups.get(id);
         popup?.close();
-        this.popups.delete(id);
+        this.#popups.delete(id);
     }
 
     /** Clear alert and confirm dialogs. */
     clearPopups() {
-        for (const popup of this.popups.values()) {
+        for (const popup of this.#popups.values()) {
             popup.close();
         }
-        this.popups.clear();
+        this.#popups.clear();
     }
 
     /** Initialize volume settings. */
@@ -370,13 +396,13 @@ export class App extends Component {
 
         // play background music
         const vol = this.db.get('music-volume');
-        this.bgmNode.loop = true;
-        this.node.appendChild(this.bgmNode);
-        const track = this.audio.createMediaElementSource(this.bgmNode);
-        const gainNode = this.audio.createGain();
-        track.connect(gainNode).connect(this.audio.destination);
+        this.#bgmNode.loop = true;
+        this.node.appendChild(this.#bgmNode);
+        const track = this.#audio.createMediaElementSource(this.#bgmNode);
+        const gainNode = this.#audio.createGain();
+        track.connect(gainNode).connect(this.#audio.destination);
         gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-        (this as any).bgmGain = gainNode.gain;
+        (this as any).#bgmGain = gainNode.gain;
         this.playMusic();
     }
 

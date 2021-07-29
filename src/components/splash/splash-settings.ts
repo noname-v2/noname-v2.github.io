@@ -212,13 +212,7 @@ export class SplashSettings extends Popup {
                 this.db.set(key, vol);
     
                 if (key === 'music-volume') {
-                    this.app.bgmGain.value = vol / 100;
-                    if (vol && this.app.bgmNode.paused) {
-                        setTimeout(() => this.app.playMusic());
-                    }
-                    else if (vol == 0) {
-                        this.app.bgmNode.pause();
-                    }
+                    this.app.changeVolume(vol);
                 }
             }
         });
@@ -241,8 +235,7 @@ export class SplashSettings extends Popup {
 
     musicMenu(node: HTMLElement, bgm: string, e: Point) {
         const rotating_bak: [HTMLElement | null, Animation | null] = [this.rotating, this.rotatingAnimation];
-        this.app.bgmNode.src = `assets/bgm/${bgm}.mp3`;
-        this.app.bgmNode.play();
+        this.app.switchMusic(bgm);
         const menu = this.ui.create('popup');
         this.rotate(node);
 
