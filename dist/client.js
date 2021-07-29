@@ -1645,7 +1645,7 @@
             let write = false;
             await Promise.all(extensions.map(async (name) => {
                 if (!this.index[name]) {
-                    await this.loadExtension(name);
+                    await this.#loadExtension(name);
                     if (this.index[name]) {
                         write = true;
                     }
@@ -1665,7 +1665,61 @@
                 this.add(() => this.addMode(name));
             }
         }
-        async loadExtension(name) {
+        /** Add a mode to gallery. */
+        addMode(mode) {
+            const ui = this.ui;
+            const entry = ui.createElement('widget');
+            const name = this.index[mode].mode;
+            // set mode backgrround
+            const bg = ui.createElement('image', entry);
+            ui.setBackground(bg, 'extensions', mode, 'mode');
+            // set caption
+            const caption = ui.createElement('caption', entry);
+            caption.innerHTML = name;
+            // bind click
+            ui.bindClick(entry, () => {
+                if (this.splash.hidden) {
+                    return;
+                }
+                this.client.connect([mode, this.#getPacks(mode)]);
+                this.splash.hide();
+            });
+            return entry;
+        }
+        /** Get hero / card packages from target mode. */
+        #getPacks(mode) {
+            const packs = [];
+            for (const name in this.index) {
+                if (!this.index[name].pack) {
+                    continue;
+                }
+                const modeTags = this.index[mode].tags;
+                const packTags = this.index[name].tags;
+                if (this.#checkTags(modeTags, packTags) && this.#checkTags(packTags, modeTags)) {
+                    packs.push(name);
+                }
+            }
+            return packs;
+        }
+        /** Check if tags2 has all required tags of tags1. */
+        #checkTags(tags1, tags2) {
+            if (!tags1) {
+                return true;
+            }
+            for (const tag of tags1) {
+                if (tag.endsWith('!')) {
+                    if (!tags2) {
+                        return false;
+                    }
+                    if (!tags2.includes(tag) && !tags2.includes(tag.slice(0, -1))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        /** Get mode information from extensions. */
+        async #loadExtension(name) {
             if (!this.index[name]) {
                 try {
                     const idx = {};
@@ -1688,56 +1742,6 @@
                     console.log(e, name);
                 }
             }
-        }
-        addMode(mode) {
-            const ui = this.ui;
-            const entry = ui.createElement('widget');
-            const name = this.index[mode].mode;
-            // set mode backgrround
-            const bg = ui.createElement('image', entry);
-            ui.setBackground(bg, 'extensions', mode, 'mode');
-            // set caption
-            const caption = ui.createElement('caption', entry);
-            caption.innerHTML = name;
-            // bind click
-            ui.bindClick(entry, () => {
-                if (this.splash.hidden) {
-                    return;
-                }
-                const packs = [];
-                for (const name in this.index) {
-                    let add = true;
-                    if (!this.index[name].pack) {
-                        continue;
-                    }
-                    if (this.index[mode].tags) {
-                        for (const tag of this.index[mode].tags) {
-                            if (tag[tag.length - 1] === '!') {
-                                if (!(this.index[name].tags?.includes(tag))) {
-                                    add = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (add && this.index[name].tags) {
-                        for (const tag of this.index[name].tags) {
-                            if (tag[tag.length - 1] === '!') {
-                                if (!(this.index[mode].tags?.includes(tag))) {
-                                    add = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (add) {
-                        packs.push(name);
-                    }
-                }
-                this.client.connect([mode, packs]);
-                this.splash.hide();
-            });
-            return entry;
         }
     }
 
