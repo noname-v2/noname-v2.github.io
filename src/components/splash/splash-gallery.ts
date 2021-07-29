@@ -100,7 +100,6 @@ export class SplashGallery extends Gallery {
 
 			const modeTags = this.index[mode].tags;
 			const packTags = this.index[name].tags;
-
 			if (this.#checkTags(modeTags, packTags) && this.#checkTags(packTags, modeTags)) {
 				packs.push(name);
 			}

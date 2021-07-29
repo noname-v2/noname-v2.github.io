@@ -113,7 +113,7 @@ export abstract class Component {
     }
 
     /** Send return value to worker (component must be monitored). */
-    return(result?: any) {
+    respond(result?: any) {
         if (this.#id === null) {
             throw('element is has no ID');
         }
@@ -127,8 +127,8 @@ export abstract class Component {
 
     /** Remove element. */
     remove(promise?: Promise<any>) {
-        if (!this.#removing) {
-            this.return;
+        if (this.#removing) {
+            return;
         }
 
         if (promise) {

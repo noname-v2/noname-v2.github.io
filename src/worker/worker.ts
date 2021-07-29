@@ -26,8 +26,8 @@ type TickEntry = [number, number, TickItem];
  * 0: uid
  * 1: stage ID
  * 2: component ID
- * 3: component return value (from yield() or return())
- * 4: component return type (true: result from return(), false: result from yield())
+ * 3: component return value (from yield() or respond())
+ * 4: component return type (true: result from respond(), false: result from yield())
  */
 export type ClientMessage = [string, number, number, any, boolean];
 
@@ -284,7 +284,7 @@ export class Worker {
             else if (sid === stage.id && link && link[1].owner === uid) {
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
-                    // results: component.return() -> link.await()
+                    // results: component.respond() -> link.await()
                     const key = stage.awaits.get(id);
                     if (key) {
                         stage.results[key] = result;

@@ -215,7 +215,7 @@ export class Client {
      * Send component return value to worker.
      * @param {number} id - ID of component (id > 0).
      * @param {any} result - Return value of component.
-     * @param {boolean} done - true: component.return(); false: component.yield()
+     * @param {boolean} done - true: component.respond(); false: component.yield()
      * Special ID:
      * 0: Initialize worker and create worker.#game.
      * -1: Reload due to UI error.

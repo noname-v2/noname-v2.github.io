@@ -40,10 +40,10 @@ export class Stage {
     /** Handler of component.yield(). */
     readonly monitors = new Map<number, string>();
 
-    /** Awaiting values from component.return(). */
+    /** Awaiting values from component.respond(). */
     readonly awaits = new Map<number, string | null>();
 
-    /** Values from component.return(). */
+    /** Values from component.respond(). */
     readonly results: Dict = {};
 
     /** Reference to game object. */

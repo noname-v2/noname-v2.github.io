@@ -13,9 +13,9 @@ export class SplashBar extends Component {
     init() {
         // add buttons
         if (this.client.debug) {
-            this.addButton('reset', '重置', 'red', () => this.#resetGame());
+            this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
             if (this.client.mobile) {
-                this.addButton('refresh', '刷新', 'purple', () => window.location.reload());
+                this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
             }
         }
         this.addButton('workshop', '扩展', 'yellow', () => {});

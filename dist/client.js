@@ -194,7 +194,7 @@
             this.client.send(this.#id, result, false);
         }
         /** Send return value to worker (component must be monitored). */
-        return(result) {
+        respond(result) {
             if (this.#id === null) {
                 throw ('element is has no ID');
             }
@@ -206,8 +206,8 @@
         }
         /** Remove element. */
         remove(promise) {
-            if (!this.#removing) {
-                this.return;
+            if (this.#removing) {
+                return;
             }
             if (promise) {
                 this.#removing = true;
@@ -897,7 +897,7 @@
             this.client.listeners.sync.add(this);
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
-                this.sidebar.setFooter('开始游戏', () => this.return());
+                this.sidebar.setFooter('开始游戏', () => this.respond());
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
@@ -1592,9 +1592,9 @@
         init() {
             // add buttons
             if (this.client.debug) {
-                this.addButton('reset', '重置', 'red', () => this.#resetGame());
+                this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
                 if (this.client.mobile) {
-                    this.addButton('refresh', '刷新', 'purple', () => window.location.reload());
+                    this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
                 }
             }
             this.addButton('workshop', '扩展', 'yellow', () => { });
@@ -3097,7 +3097,7 @@
          * Send component return value to worker.
          * @param {number} id - ID of component (id > 0).
          * @param {any} result - Return value of component.
-         * @param {boolean} done - true: component.return(); false: component.yield()
+         * @param {boolean} done - true: component.respond(); false: component.yield()
          * Special ID:
          * 0: Initialize worker and create worker.#game.
          * -1: Reload due to UI error.

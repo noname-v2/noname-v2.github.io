@@ -6,6 +6,6 @@ import { skill } from './skill';
 export default {
     cardpack: '君临天下',
     heropack: '君临天下',
-    tags: ['double-hidden!'],
+    tags: ['hero-hidden!', 'double-hero!'],
     hero, card, skill
 } as SGS;

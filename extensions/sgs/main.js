@@ -84,7 +84,7 @@ function lobby(T) {
                     cardpacks[name] = cardpack;
                 }
             }
-            // set default configuration
+            // set default configurations
             for (const name in configs) {
                 this.game.config[name] ??= configs[name].init;
             }

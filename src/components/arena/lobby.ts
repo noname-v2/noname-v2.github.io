@@ -45,7 +45,7 @@ export class Lobby extends Component {
         this.client.listeners.sync.add(this);
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
-            this.sidebar.setFooter('开始游戏', () => this.return());
+            this.sidebar.setFooter('开始游戏', () => this.respond());
         });
 
         this.sidebar.pane.node.classList.add('fixed');

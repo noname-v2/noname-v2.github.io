@@ -92,9 +92,9 @@
         skipped = false;
         /** Handler of component.yield(). */
         monitors = new Map();
-        /** Awaiting values from component.return(). */
+        /** Awaiting values from component.respond(). */
         awaits = new Map();
-        /** Values from component.return(). */
+        /** Values from component.respond(). */
         results = {};
         /** Reference to game object. */
         #game;
@@ -776,7 +776,7 @@
                 else if (sid === stage.id && link && link[1].owner === uid) {
                     // send result to listener
                     if (done && stage.awaits.has(id)) {
-                        // results: component.return() -> link.await()
+                        // results: component.respond() -> link.await()
                         const key = stage.awaits.get(id);
                         if (key) {
                             stage.results[key] = result;
