@@ -1786,9 +1786,10 @@
         gallery;
         /** Popup for avatar selection. */
         avatarSelector = null;
+        /** Called by app after UI loaded. */
         create(splash) {
             // nickname, avatar and this address
-            this.addInfo();
+            this.#addInfo();
             // room list in this menu
             this.numSection = this.pane.addSection('');
             this.numSection.classList.add('hidden');
@@ -1802,7 +1803,7 @@
                 this.address.input.disabled = true;
                 setTimeout(async () => {
                     if (!this.client.connection) {
-                        await this.connect();
+                        await this.#connect();
                         this.address.input.disabled = false;
                     }
                 }, 500);
@@ -1814,115 +1815,10 @@
             splash.bar.buttons.get('hub').node.classList.remove('disabled');
             this.gallery = splash.gallery;
         }
-        clearRooms() {
-            for (const room of this.rooms.values()) {
-                room.remove();
-            }
-            this.rooms.clear();
-        }
-        setCaption(caption) {
-            this.numSection.classList.add('hidden');
-            this.roomGroup.classList.add('hidden');
-            if (caption) {
-                this.caption.innerHTML = caption;
-            }
-            this.caption.classList[caption ? 'remove' : 'add']('hidden');
-        }
-        connect() {
-            try {
-                if (!this.address.input.value) {
-                    this.db.set('ws', null);
-                    return;
-                }
-                this.client.connect('wss://' + this.address.input.value);
-                this.address.set('icon', 'clear');
-                const ws = this.client.connection;
-                this.setCaption('正在连接');
-                return new Promise(resolve => {
-                    this.address.onicon = () => {
-                        ws.close();
-                    };
-                    ws.onclose = () => {
-                        this.disconnect(this.client.connection === ws);
-                        setTimeout(resolve, 100);
-                    };
-                    ws.onopen = () => {
-                        this.address.set('icon', 'ok');
-                        this.setCaption('');
-                        ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
-                        if (this.address.input.value !== config.ws) {
-                            this.db.set('ws', this.address.input.value);
-                        }
-                    };
-                    ws.onmessage = ({ data }) => {
-                        try {
-                            const [method, arg] = this.client.utils.split(data);
-                            if (hub2member.includes(method)) {
-                                this[method](arg);
-                            }
-                        }
-                        catch (e) {
-                            console.log(e);
-                            ws.close();
-                        }
-                    };
-                });
-            }
-            catch (e) {
-                console.log(e);
-                this.disconnect(true);
-            }
-        }
-        disconnect(client) {
-            if (client) {
-                this.client.disconnect();
-            }
-            this.clearRooms();
-            this.address.set('icon', null);
-            this.address.onicon = null;
-            this.setCaption('已断开');
-        }
-        addInfo() {
-            const group = this.pane.add('group');
-            // avatar
-            const avatarNode = this.ui.createElement('widget', group);
-            const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
-            const url = this.db.get('avatar') ?? config.avatar;
-            this.ui.setImage(img, url);
-            this.ui.bindClick(avatarNode, e => {
-                if (!this.avatarSelector) {
-                    this.createSelector();
-                }
-                this.avatarSelector.open();
-            });
-            // nickname input
-            this.ui.createElement('span.nickname', group).innerHTML = '昵称';
-            const nickname = this.nickname = this.ui.create('input', group);
-            nickname.node.classList.add('nickname');
-            nickname.ready.then(() => {
-                nickname.input.value = this.db.get('nickname') || config.nickname;
-            });
-            nickname.callback = async (val) => {
-                if (val) {
-                    this.db.set('nickname', val);
-                    nickname.set('icon', 'emote');
-                    await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
-                    nickname.set('icon', null);
-                    this.sendInfo();
-                }
-            };
-            // address input
-            this.ui.createElement('span.address', group).innerHTML = '地址';
-            const address = this.address = this.ui.create('input', group);
-            address.node.classList.add('address');
-            address.ready.then(() => {
-                address.input.value = this.client.url;
-            });
-            address.callback = () => this.connect();
-        }
+        /** Disconnected or kicked out of room. */
         async reload(msg) {
             const [reason, content] = this.client.utils.split(msg);
-            this.clearRooms();
+            this.#clearRooms();
             this.edit(content);
             if (this.app.arena) {
                 if (reason === 'kick') {
@@ -1937,6 +1833,7 @@
             this.roomGroup.classList.remove('entering');
             this.roomGroup.classList.remove('hidden');
         }
+        /** Room info update. */
         edit(msg) {
             const ws = this.client.connection;
             if (!(ws instanceof WebSocket)) {
@@ -1968,10 +1865,12 @@
                 }
             }
         }
+        /** Online client number update. */
         num(msg) {
             this.numSection.classList.remove('hidden');
             this.numSection.firstChild.innerHTML = '在线：' + msg;
         }
+        /** Message received from the owner of joined room. */
         msg(msg) {
             this.client.dispatch(JSON.parse(msg));
             if (!this.app.splash.hidden) {
@@ -1979,8 +1878,8 @@
                 this.close();
             }
         }
+        /** Owner of joined room disconnected. */
         down(msg) {
-            // room owner disconnected
             const ws = this.client.connection;
             const promise = this.app.alert('房主连接断开', { ok: '退出房间', id: 'down' });
             const dialog = this.app.popups.get('down');
@@ -2001,12 +1900,86 @@
                 }
             });
         }
-        sendInfo() {
+        /** Connect to hub. */
+        #connect() {
+            try {
+                if (!this.address.input.value) {
+                    this.db.set('ws', null);
+                    return;
+                }
+                this.client.connect('wss://' + this.address.input.value);
+                this.address.set('icon', 'clear');
+                const ws = this.client.connection;
+                this.#setCaption('正在连接');
+                return new Promise(resolve => {
+                    this.address.onicon = () => {
+                        ws.close();
+                    };
+                    ws.onclose = () => {
+                        this.#disconnect(this.client.connection === ws);
+                        setTimeout(resolve, 100);
+                    };
+                    ws.onopen = () => {
+                        this.address.set('icon', 'ok');
+                        this.#setCaption('');
+                        ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
+                        if (this.address.input.value !== config.ws) {
+                            this.db.set('ws', this.address.input.value);
+                        }
+                    };
+                    ws.onmessage = ({ data }) => {
+                        try {
+                            const [method, arg] = this.client.utils.split(data);
+                            if (hub2member.includes(method)) {
+                                this[method](arg);
+                            }
+                        }
+                        catch (e) {
+                            console.log(e);
+                            ws.close();
+                        }
+                    };
+                });
+            }
+            catch (e) {
+                console.log(e);
+                this.#disconnect(true);
+            }
+        }
+        /** Disconnect from hub. */
+        #disconnect(client) {
+            if (client) {
+                this.client.disconnect();
+            }
+            this.#clearRooms();
+            this.address.set('icon', null);
+            this.address.onicon = null;
+            this.#setCaption('已断开');
+        }
+        /** Remove room list. */
+        #clearRooms() {
+            for (const room of this.rooms.values()) {
+                room.remove();
+            }
+            this.rooms.clear();
+        }
+        /** Show current connection status. */
+        #setCaption(caption) {
+            this.numSection.classList.add('hidden');
+            this.roomGroup.classList.add('hidden');
+            if (caption) {
+                this.caption.innerHTML = caption;
+            }
+            this.caption.classList[caption ? 'remove' : 'add']('hidden');
+        }
+        /** Update nickname or avatar. */
+        #sendInfo() {
             if (this.client.connection instanceof WebSocket) {
                 this.client.connection.send('set:' + JSON.stringify(this.client.info));
             }
         }
-        createSelector() {
+        /** Select avatar. */
+        #createSelector() {
             const popup = this.avatarSelector = this.ui.create('popup');
             popup.node.classList.add('splash-avatar');
             popup.onopen = () => {
@@ -2033,12 +2006,51 @@
                     this.ui.bindClick(node, () => {
                         this.ui.setImage(this.avatarImage, img);
                         this.db.set('avatar', img);
-                        this.sendInfo();
+                        this.#sendInfo();
                         popup.close();
                     });
                     return node;
                 });
             }
+        }
+        /** Add avatar and input. */
+        #addInfo() {
+            const group = this.pane.add('group');
+            // avatar
+            const avatarNode = this.ui.createElement('widget', group);
+            const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
+            const url = this.db.get('avatar') ?? config.avatar;
+            this.ui.setImage(img, url);
+            this.ui.bindClick(avatarNode, e => {
+                if (!this.avatarSelector) {
+                    this.#createSelector();
+                }
+                this.avatarSelector.open();
+            });
+            // nickname input
+            this.ui.createElement('span.nickname', group).innerHTML = '昵称';
+            const nickname = this.nickname = this.ui.create('input', group);
+            nickname.node.classList.add('nickname');
+            nickname.ready.then(() => {
+                nickname.input.value = this.db.get('nickname') || config.nickname;
+            });
+            nickname.callback = async (val) => {
+                if (val) {
+                    this.db.set('nickname', val);
+                    nickname.set('icon', 'emote');
+                    await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
+                    nickname.set('icon', null);
+                    this.#sendInfo();
+                }
+            };
+            // address input
+            this.ui.createElement('span.address', group).innerHTML = '地址';
+            const address = this.address = this.ui.create('input', group);
+            address.node.classList.add('address');
+            address.ready.then(() => {
+                address.input.value = this.client.url;
+            });
+            address.callback = () => this.#connect();
         }
     }
 
