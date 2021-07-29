@@ -1844,16 +1844,15 @@
                 this.rooms.get(uid)?.remove();
                 if (rooms[uid] !== 'close') {
                     try {
-                        const room = this.ui.create('splash-room');
-                        room.setup(JSON.parse(rooms[uid]));
+                        const room = this.#createRoom(JSON.parse(rooms[uid]));
                         this.rooms.set(uid, room);
-                        this.ui.bindClick(room.node, () => {
+                        this.ui.bindClick(room, () => {
                             if (!this.roomGroup.classList.contains('entering')) {
                                 this.roomGroup.classList.add('entering');
                                 ws.send('join:' + uid);
                             }
                         });
-                        this.roomGroup.appendChild(room.node);
+                        this.roomGroup.appendChild(room);
                     }
                     catch (e) {
                         console.log(e);
@@ -1977,6 +1976,24 @@
             if (this.client.connection instanceof WebSocket) {
                 this.client.connection.send('set:' + JSON.stringify(this.client.info));
             }
+        }
+        /** Create a room entry. */
+        #createRoom([name, np, npmax, [nickname, avatar], state]) {
+            const room = this.ui.createElement('widget');
+            /** Avatar image. */
+            const avatarNode = this.ui.createElement('image.avatar', room);
+            this.ui.setImage(avatarNode, avatar);
+            /** Mode name. */
+            const captionNode = this.ui.createElement('caption', room);
+            captionNode.innerHTML = name;
+            /** Status text. */
+            const statusNode = this.ui.createElement('span', room);
+            const stateText = state ? '游戏中' : '等待中';
+            statusNode.innerHTML = `<noname-status data-state="${state}"></noname-status> ${stateText} ${Math.min(np, npmax)} / ${npmax}`;
+            /** Nickname text. */
+            const nicknameNode = this.ui.createElement('span.nickname', room);
+            nicknameNode.innerHTML = `<noname-image></noname-image>${nickname}`;
+            return room;
         }
         /** Select avatar. */
         #createSelector() {
