@@ -18,11 +18,14 @@ export class Input extends Component {
 		this.node.appendChild(this.input);
 		this.node.appendChild(this.icon);
 
+		// select all on focus
 		this.input.onfocus = () => {
 			if (!this.input.disabled && this.input.value.length) {
 				this.input.setSelectionRange(0, this.input.value.length);
 			}
 		};
+
+		// clear selection and trigger callback on blur
 		this.input.onblur = async () => {
 			if (this.callback && !this.input.disabled) {
 				getSelection()?.removeAllRanges();
@@ -31,12 +34,15 @@ export class Input extends Component {
 				this.input.disabled = false;
 			}
 		};
+
+		// blur when pressing enter
 		this.input.onkeyup = e => {
 			if (e.key === 'Enter') {
 				this.input.blur();
 			}
 		};
 
+		// user native input in touch devices
 		this.input.ontouchstart = () => {
 			if (this.input.disabled) {
 				return;
@@ -55,6 +61,7 @@ export class Input extends Component {
 			]).then(() => this.input.disabled = false);
 		};
 
+		// callback when clicking icon
 		this.ui.bindClick(this.icon, e => {
 			if (this.onicon) {
 				this.onicon(e);

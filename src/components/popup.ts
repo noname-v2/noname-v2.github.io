@@ -17,7 +17,7 @@ export class Popup extends Component {
     temp: boolean = true;
 
 	/** Whether popup appears at the center. */
-	location: Point | null = null;
+	position: Point | null = null;
 
 	/** Built-in sizes. */
 	size: 'portrait' | 'landscape' | null = null;
@@ -63,8 +63,7 @@ export class Popup extends Component {
 		}
 		this.hidden = false;
 
-		
-		if (this.location === null) {
+		if (this.position === null) {
 			this.node.classList.add('center');
 		}
 
@@ -75,13 +74,13 @@ export class Popup extends Component {
 		this.node.classList.add('hidden');
         this.app.node.appendChild(this.node);
 
-		if (this.location) {
-			// determine location of the menu
+		if (this.position) {
+			// determine position of the menu
 			if (this.transition === null) {
 				this.transition = 'fast';
 			}
 
-			let {x, y} = this.location;
+			let {x, y} = this.position;
 			const rect1 = this.pane.node.getBoundingClientRect();
 			const rect2 = this.app.node.getBoundingClientRect();
 			const zoom = this.ui.zoom;

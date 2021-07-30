@@ -591,7 +591,7 @@
         /** Whether popup is closed when clicking on background layer. */
         temp = true;
         /** Whether popup appears at the center. */
-        location = null;
+        position = null;
         /** Built-in sizes. */
         size = null;
         /** Animation speed of open and close. */
@@ -628,7 +628,7 @@
                 return;
             }
             this.hidden = false;
-            if (this.location === null) {
+            if (this.position === null) {
                 this.node.classList.add('center');
             }
             if (typeof this.size === 'string') {
@@ -636,12 +636,12 @@
             }
             this.node.classList.add('hidden');
             this.app.node.appendChild(this.node);
-            if (this.location) {
-                // determine location of the menu
+            if (this.position) {
+                // determine position of the menu
                 if (this.transition === null) {
                     this.transition = 'fast';
                 }
-                let { x, y } = this.location;
+                let { x, y } = this.position;
                 const rect1 = this.pane.node.getBoundingClientRect();
                 const rect2 = this.app.node.getBoundingClientRect();
                 const zoom = this.ui.zoom;
@@ -1472,11 +1472,13 @@
             this.input = document.createElement('input');
             this.node.appendChild(this.input);
             this.node.appendChild(this.icon);
+            // select all on focus
             this.input.onfocus = () => {
                 if (!this.input.disabled && this.input.value.length) {
                     this.input.setSelectionRange(0, this.input.value.length);
                 }
             };
+            // clear selection and trigger callback on blur
             this.input.onblur = async () => {
                 if (this.callback && !this.input.disabled) {
                     getSelection()?.removeAllRanges();
@@ -1485,11 +1487,13 @@
                     this.input.disabled = false;
                 }
             };
+            // blur when pressing enter
             this.input.onkeyup = e => {
                 if (e.key === 'Enter') {
                     this.input.blur();
                 }
             };
+            // user native input in touch devices
             this.input.ontouchstart = () => {
                 if (this.input.disabled) {
                     return;
@@ -1507,6 +1511,7 @@
                     })
                 ]).then(() => this.input.disabled = false);
             };
+            // callback when clicking icon
             this.ui.bindClick(this.icon, e => {
                 if (this.onicon) {
                     this.onicon(e);
@@ -1821,6 +1826,7 @@
             };
             this.onclose = () => {
                 splash.node.classList.remove('blurred');
+                this.avatarSelector?.close();
             };
             // enable button click after creation finish
             splash.bar.buttons.get('hub').node.classList.remove('disabled');
@@ -1922,9 +1928,6 @@
                 const ws = this.client.connection;
                 this.#setCaption('正在连接');
                 return new Promise(resolve => {
-                    this.address.onicon = () => {
-                        ws.close();
-                    };
                     ws.onclose = () => {
                         this.#disconnect(this.client.connection === ws);
                         setTimeout(resolve, 100);
@@ -1963,7 +1966,6 @@
             }
             this.#clearRooms();
             this.address.set('icon', null);
-            this.address.onicon = null;
             this.#setCaption('已断开');
         }
         /** Remove room list. */
@@ -2049,7 +2051,10 @@
             const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
             const url = this.db.get('avatar') ?? config.avatar;
             this.ui.setImage(img, url);
-            this.ui.bindClick(avatarNode, e => {
+            this.ui.bindClick(avatarNode, () => {
+                if (this.hidden) {
+                    return;
+                }
                 if (!this.avatarSelector) {
                     this.#createSelector();
                 }
@@ -2079,6 +2084,22 @@
                 address.input.value = this.client.url;
             });
             address.callback = () => this.#connect();
+            this.ui.bindClick(address.node, e => {
+                const ws = this.client.connection;
+                if (address.input.disabled && ws instanceof WebSocket) {
+                    const menu = this.ui.create('popup');
+                    menu.position = e;
+                    menu.pane.addOption('断开', () => {
+                        if (ws === this.client.connection) {
+                            ws.close();
+                        }
+                        menu.close();
+                    });
+                    menu.onclose = () => address.node.classList.remove('defer');
+                    address.node.classList.add('defer');
+                    menu.open();
+                }
+            });
         }
     }
 
@@ -2261,7 +2282,7 @@
             menu.pane.addOption('游戏音乐', () => { clickOption(false, true); restore(); });
             menu.pane.addOption('全部应用', () => clickOption(true, true));
             menu.onclose = () => { this.#rotateMusic(node, bgm, false, false); restore(); };
-            menu.location = e;
+            menu.position = e;
             menu.open();
         }
         /** Create rotation animation for music selector. */
@@ -2411,7 +2432,7 @@
                             menu.close();
                         });
                     }
-                    menu.location = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
+                    menu.position = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
                     menu.open();
                 });
                 // save captions corresponding to option values

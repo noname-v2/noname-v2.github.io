@@ -29,6 +29,11 @@ noname-popup.splash-hub > noname-pane {
             position: absolute;
             left: 197px;
             width: 40%;
+            transition: opacity var(--app-transition);
+
+            > noname-icon {
+                pointer-events: none;
+            }
         }
 
         > .nickname {

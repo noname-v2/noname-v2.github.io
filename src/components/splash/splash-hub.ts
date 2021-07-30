@@ -62,6 +62,7 @@ export class SplashHub extends Popup {
 
 		this.onclose = () => {
 			splash.node.classList.remove('blurred');
+            this.avatarSelector?.close();
 		};
 
 		// enable button click after creation finish
@@ -172,10 +173,6 @@ export class SplashHub extends Popup {
             this.#setCaption('正在连接');
 
             return new Promise<void>(resolve => {
-                this.address.onicon = () => {
-                    ws.close();
-                };
-
                 ws.onclose = () => {
                     this.#disconnect(this.client.connection === ws);
                     setTimeout(resolve, 100);
@@ -217,7 +214,6 @@ export class SplashHub extends Popup {
         }
         this.#clearRooms();
         this.address.set('icon', null);
-        this.address.onicon = null;
         this.#setCaption('已断开');
     }
 
@@ -316,7 +312,10 @@ export class SplashHub extends Popup {
 		const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
 		const url = this.db.get('avatar') ?? config.avatar;
         this.ui.setImage(img, url);
-        this.ui.bindClick(avatarNode, e => {
+        this.ui.bindClick(avatarNode, () => {
+            if (this.hidden) {
+                return;
+            }
             if (!this.avatarSelector) {
                 this.#createSelector();
             }
@@ -348,5 +347,21 @@ export class SplashHub extends Popup {
 			address.input.value = this.client.url;
 		});
         address.callback = () => this.#connect();
+        this.ui.bindClick(address.node, e => {
+            const ws = this.client.connection;
+            if (address.input.disabled && ws instanceof WebSocket) {
+                const menu = this.ui.create('popup');
+                menu.position = e;
+                menu.pane.addOption('断开', () => {
+                    if (ws === this.client.connection) {
+                        ws.close();
+                    }
+                    menu.close();
+                });
+                menu.onclose = () => address.node.classList.remove('defer');
+                address.node.classList.add('defer');
+                menu.open();
+            }
+        });
     }
 }

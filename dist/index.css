@@ -221,6 +221,10 @@ noname-image.avatar {
   opacity: var(--app-blurred-opacity) !important;
 }
 
+.defer:not(.hidden) {
+  opacity: var(--app-defer-opacity) !important;
+}
+
 .scrollx {
   overflow-x: scroll;
   overflow-y: hidden;
@@ -267,6 +271,7 @@ noname-input > input {
 }
 noname-input > input:disabled {
   opacity: 1;
+  pointer-events: none;
 }
 noname-input > noname-icon {
   position: absolute;
@@ -966,6 +971,10 @@ noname-popup.splash-hub > noname-pane > noname-group > noname-input {
   position: absolute;
   left: 197px;
   width: 40%;
+  transition: opacity var(--app-transition);
+}
+noname-popup.splash-hub > noname-pane > noname-group > noname-input > noname-icon {
+  pointer-events: none;
 }
 noname-popup.splash-hub > noname-pane > noname-group > .nickname {
   top: 7px;
@@ -1385,5 +1394,5 @@ noname-widget.button.blurred {
 noname-widget.button.disabled {
   cursor: default;
   pointer-events: none;
-  opacity: var(--app-select-opacity);
+  opacity: var(--app-defer-opacity);
 }

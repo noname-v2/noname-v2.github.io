@@ -32,6 +32,10 @@ noname-image.avatar {
 	opacity: var(--app-blurred-opacity) !important;
 }
 
+.defer:not(.hidden) {
+	opacity: var(--app-defer-opacity) !important;
+}
+
 .scrollx {
 	overflow-x: scroll;
 	overflow-y: hidden;

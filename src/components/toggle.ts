@@ -40,7 +40,7 @@ export class Toggle extends Component {
                         menu.close();
                     })
                 }
-                menu.location = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
+                menu.position = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
                 menu.open();
             });
 
