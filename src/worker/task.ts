@@ -1,8 +1,9 @@
 import type { Stage } from './stage';
 import type { Game, Link } from './game';
+import type { Accessor } from './accessor';
 import type { Dict } from '../utils';
 
-export class Task {
+export class Task<T extends Accessor = Accessor> {
     /** Game stage that task belongs to. */
     #stage: Stage;
 
@@ -12,11 +13,11 @@ export class Task {
     /** Leave annotation for subclass. */
     [key: string]: any;
 
-    get game() {
-        return this.#game.accessor;
+    get game(): T {
+        return this.#game.accessor as T;
     }
 
-    get path() {
+    get path(): string {
         return this.#stage.path;
     }
 
@@ -24,7 +25,7 @@ export class Task {
         return this.#stage.parent?.task ?? null;
     }
 
-    get results() {
+    get results(): Dict {
         return this.#stage.results;
     }
     
@@ -37,7 +38,7 @@ export class Task {
     main(): void | Promise<void> {}
 
     /** Create a link. */
-    create(tag: string) {
+    create(tag: string): Link {
         return this.#game.create(tag);
     }
 
@@ -47,19 +48,19 @@ export class Task {
     }
 
     /** Add a child stage in current stage. */
-    addTask(path: string, data?: Dict) {
+    addTask<T extends Task>(this: T, path: string, data?: Dict): T {
         const stage = this.#game.createStage(path, data, this.#stage);
         this.#stage.steps.push(stage);
-        return stage.task;
+        return stage.task as T;
     }
 
     /** Add a sibline stage next to current stage. */
-    addSiblingTask(path: string, data?: Dict) {
+    addSiblingTask<T extends Task>(this: T, path: string, data?: Dict): T {
         const stage = this.#game.createStage(path, data, this.#stage.parent!);
         const idx = this.#stage.steps.indexOf(this.#stage.parent!);
         if (idx !== -1) {
             this.#stage.steps.splice(idx + 1, 0, stage);
-            return stage.task;
+            return stage.task as T;
         }
         throw('failed to add sibling to ' + path);
     }

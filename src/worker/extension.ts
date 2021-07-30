@@ -3,10 +3,9 @@ import type { Task } from './task';
 import type { Dict } from '../utils';
 
 /** Creates a subclass of Task. */
-export type TaskCreator = (cls: typeof Task) => typeof Task;
-
-/** Creates a subclass of Componenbt. */
-export type ComponentCreator = (cls: typeof Component) => typeof Component;
+export interface Class<T=any> {
+    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
+};
 
 /** Mode configuration entry. */
 export interface Config {
@@ -19,12 +18,13 @@ export interface Config {
 }
 
 /** Mode information. */
-export interface Mode {
+export interface Mode<T extends Task = Task> {
     name?: string;
     intro?: string;
     extension?: string;
-    tasks?: Dict<TaskCreator>;
-    components?: Dict<ComponentCreator>;
+    tasks?: Dict<Class<T>>;
+    components?: Dict<Class<Component>>;
+    classes?: Dict<Class>;
     config?: Dict<Config>;
     inherit?: string;
     np?: number | number[];
@@ -32,8 +32,8 @@ export interface Mode {
 }
 
 /** Basic extension structure. */
-export interface Extension {
-    mode?: Mode;
+export interface Extension<T extends Task = Task> {
+    mode?: Mode<T>;
     hero?: Dict;
     card?: Dict;
     skill?: Dict;

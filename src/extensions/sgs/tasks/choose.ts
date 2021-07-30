@@ -1,7 +1,7 @@
-import type { Task, Link, Config, Dict } from '../sgs';
+import type { TaskClass, Link, Config, Dict } from '../types';
 
-export function choose(T: typeof Task) {
-    return class ChooseHero extends T {
+export function choose(T: TaskClass) {
+    return class Choose extends T {
         main() {
             console.log('choose', this.np);
         }

@@ -1,6 +1,6 @@
-import type { Task, Link, Config, Dict } from '../sgs';
+import type { TaskClass, Link, Config, Dict } from '../types';
 
-export function createPlayers(T: typeof Task) {
+export function createPlayers(T: TaskClass) {
     return class ChoosePlayer extends T {
         main() {
             console.log('createPlayers');

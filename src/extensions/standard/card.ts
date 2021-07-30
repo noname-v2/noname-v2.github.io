@@ -1,4 +1,4 @@
-import type { CardDict } from '../sgs/sgs';
+import type { CardDict } from '../sgs/types';
 
 export const card = {
     sha: {

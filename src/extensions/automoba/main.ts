@@ -1,4 +1,4 @@
-import type { SGS } from '../sgs/sgs';
+import type { SGS } from '../sgs/types';
 
 export default {
     mode: {

@@ -1,11 +1,13 @@
-import type { Task, Link, Config, Dict } from '../sgs';
+import type { TaskClass, Link, Config, Dict } from '../types';
 
-export function lobby(T: typeof Task) {
+export function lobby(T: TaskClass) {
     return class Lobby extends T {
         lobby!: Link;
 
         main() {
             const lobby = this.lobby = this.create('lobby');
+            this.test();
+            this.game.test2();
 
             // get names of hero packs and card packs
             const heropacks: Dict<string> = {};

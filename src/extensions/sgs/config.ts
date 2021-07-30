@@ -1,4 +1,4 @@
-import type { Config, Dict } from './sgs';
+import type { Config, Dict } from './types';
 
 export const config = {
     online: {

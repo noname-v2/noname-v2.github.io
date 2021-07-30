@@ -3,7 +3,7 @@ import type { Worker } from './worker';
 import type { Dict } from '../utils';
 
 /** Accessor of game and worker properties and methods. */
-export class Accessor {
+export abstract class Accessor {
     /** Original game object. */
     #game: Game;
 
@@ -77,4 +77,10 @@ export class Accessor {
     over() {
         this.#game.over();
     }
+
+    /** Backup game state. */
+    abstract backup(): void;
+
+    /** Restore game state. */
+    abstract restore(): void;
 }

@@ -1,4 +1,4 @@
-import type { SGS } from '../sgs/sgs';
+import type { SGS } from '../sgs/types';
 import { card } from './card';
 import { skill } from './skill';
 

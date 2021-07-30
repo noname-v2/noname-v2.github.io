@@ -64,11 +64,25 @@ function loop(T) {
     };
 }
 
+function setup(T) {
+    return class Setup extends T {
+        main() {
+            console.log(this, this.game, this.game.test2);
+        }
+        createPlayers() {
+        }
+        createCards() {
+        }
+    };
+}
+
 function lobby(T) {
     return class Lobby extends T {
         lobby;
         main() {
             const lobby = this.lobby = this.create('lobby');
+            this.test();
+            this.game.test2();
             // get names of hero packs and card packs
             const heropacks = {};
             const cardpacks = {};
@@ -200,7 +214,7 @@ function lobby(T) {
 }
 
 function choose(T) {
-    return class ChooseHero extends T {
+    return class Choose extends T {
         main() {
             console.log('choose', this.np);
         }
@@ -212,7 +226,7 @@ function choose(T) {
 function chooseHero(T) {
     return class ChooseHero extends T {
         main() {
-            console.log('chooseHero', this.np);
+            console.log('chooseHero', this.np, this.select);
         }
     };
 }
@@ -225,12 +239,50 @@ function createPlayers(T) {
     };
 }
 
+function game(A) {
+    return class Game extends A {
+        players = [];
+        cards = [];
+        skills = [];
+        backup() {
+        }
+        restore() {
+        }
+        test2() {
+            console.log('test2');
+        }
+    };
+}
+
+function task(T) {
+    return class Task extends T {
+        test() {
+            console.log('test1');
+        }
+    };
+}
+
+class Player {
+}
+const player = () => Player;
+
+class Card {
+}
+const card = () => Card;
+
+class Skill {
+}
+const skill = () => Skill;
+
 var main = {
     mode: {
         np: 0,
         config,
         tasks: {
-            trigger, loop, lobby, choose, chooseHero, createPlayers
+            trigger, loop, lobby, setup, choose, chooseHero, createPlayers
+        },
+        classes: {
+            game, task, player, card, skill
         }
     }
 };

@@ -1,6 +1,6 @@
-import type { Task, Link, Config, Dict } from '../sgs';
+import type { TaskClass, Link, Config, Dict } from '../types';
 
-export function trigger(T: typeof Task) {
+export function trigger(T: TaskClass) {
     return class Trigger extends T {
         /** Event name. */
         event!: string;

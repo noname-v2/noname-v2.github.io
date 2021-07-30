@@ -1,4 +1,4 @@
-import type { HeroDict } from '../sgs/sgs';
+import type { HeroDict } from '../sgs/types';
 
 export const hero = {
     dengai: {

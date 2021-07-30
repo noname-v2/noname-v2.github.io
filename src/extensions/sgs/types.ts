@@ -1,10 +1,20 @@
-import type { Extension, TaskCreator } from '../../worker/extension';
+import type { Extension, Class } from '../../worker/extension';
 import type { Dict } from '../../utils';
+import type { task } from './core/task';
+import type { game } from './core/game';
 
+/** Built-in types that may be used by extensions. */
 export type { Link } from '../../worker/game';
 export type { Config } from '../../worker/extension';
-export type { Task } from '../../worker/task';
-export type { Dict } from '../../utils';
+export type { Dict }
+
+/** Type for SGS Game. */
+export type GameClass = ReturnType<typeof game>;
+export type Game = InstanceType<GameClass>;
+
+/** Type for SGS Task. */
+export type TaskClass = ReturnType<typeof task>;
+export type Task = InstanceType<TaskClass>;
 
 /** SGS hero definition. */
 export type HeroDict = Dict<{
@@ -23,7 +33,7 @@ export type CardDict = Dict<{
     name: string;
     intro: string;
     type: string;
-    task?: TaskCreator;
+    task?: Class<Task>;
     inherit?: string;
     skills?: string[];
     subtype?: string;
@@ -42,7 +52,7 @@ export type SkillDict = Dict<{
     name: string;
     intro: string;
     type?: string;
-    task?: TaskCreator;
+    task?: Class<Task>;
     inherit?: string;
     trigger?: Dict<string>;
     [key: string]: any;
@@ -52,7 +62,7 @@ export type SkillDict = Dict<{
 export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
 
 /** Basic SGS extension structure. */
-export interface SGS extends Extension {
+export interface SGS extends Extension<Task> {
     hero?: HeroDict;
     card?: CardDict;
     skill?: SkillDict;

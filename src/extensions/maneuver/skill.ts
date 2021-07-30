@@ -1,4 +1,4 @@
-import type { SkillDict } from '../sgs/sgs';
+import type { SkillDict } from '../sgs/types';
 
 export const skill = {
 

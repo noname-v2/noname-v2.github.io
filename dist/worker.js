@@ -369,6 +369,8 @@
         #ruleset = [];
         /** Map of task classes. */
         #taskClasses = new Map();
+        /** Base game classes. */
+        #gameClasses = new Map([['game', Accessor], ['task', Task]]);
         /** Number of links created. */
         #linkCount = 0;
         /** Number of stages created. */
@@ -382,7 +384,7 @@
             this.banned.cardpacks = new Set(content[3]);
             this.config = content[4];
             this.#worker.info = content[5];
-            this.accessor = new Accessor(this, worker);
+            // this.accessor = new Accessor(this, worker);
             // load extensions
             const load = async (pack) => {
                 const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
@@ -401,21 +403,32 @@
                     this.#ruleset.unshift(mode);
                     mode = this.#extensions.get(mode).mode?.inherit;
                 }
-                // merge mode objects from extensions and create task constructors
+                // merge mode objects and game classes from extensions
+                const modeTasks = [];
                 for (const name of this.#ruleset) {
                     const mode = copy(this.#extensions.get(name)?.mode ?? {});
-                    for (const task in mode.tasks) {
-                        const cls = this.#taskClasses.get(task) ?? Task;
-                        this.#taskClasses.set(task, mode.tasks[task](cls));
+                    for (const name in mode.classes) {
+                        const cls = this.#gameClasses.get(name);
+                        this.#gameClasses.set(name, mode.classes[name](cls));
                     }
+                    modeTasks.push(mode.tasks);
                     apply(this.mode, mode);
                 }
+                // update task classes
+                for (const tasks of modeTasks) {
+                    for (const task in tasks) {
+                        const cls = this.#taskClasses.get(task) ?? this.getClass('task');
+                        this.#taskClasses.set(task, tasks[task](cls));
+                    }
+                }
                 // finalize and freez mode object
+                delete this.mode.game;
                 delete this.mode.tasks;
                 delete this.mode.components;
                 this.mode.extension = content[0];
                 freeze(this.mode);
                 // start game
+                this.accessor = new (this.getClass('game'))(this, worker);
                 this.rootStage = this.currentStage = this.createStage('main');
                 this.arena = this.create('arena');
                 this.loop();
@@ -488,6 +501,10 @@
             }
             return this.#taskClasses.get(path);
         }
+        /** Get a game class. */
+        getClass(path) {
+            return this.#gameClasses.get(path);
+        }
         /** Update room info for idle clients. */
         syncRoom(push = true) {
             const room = JSON.stringify([
@@ -506,13 +523,6 @@
                 this.#worker.connection?.send('edit:' + room);
             }
             return room;
-        }
-        /** Backup game progress. */
-        backup() {
-            //////
-            return new Promise(resolve => {
-                resolve();
-            });
         }
         /** Get a UITick of all links. */
         pack() {
