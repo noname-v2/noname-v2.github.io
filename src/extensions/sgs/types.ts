@@ -4,7 +4,7 @@ import type { task } from './core/task';
 import type { game } from './core/game';
 
 /** Built-in types that may be used by extensions. */
-export type { Link } from '../../worker/game';
+export type { Link } from '../../worker/link';
 export type { Config } from '../../worker/extension';
 export type { Dict }
 

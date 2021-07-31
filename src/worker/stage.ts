@@ -49,9 +49,6 @@ export class Stage {
     /** Reference to game object. */
     #game: Game;
 
-    /** Stage may trigger before and after event. */
-    #trigger: boolean = true;
-
     constructor(id: number, path: string, data: Dict, parent: Stage | null, game: Game) {
         this.id = id;
         this.path = path;
@@ -75,7 +72,7 @@ export class Stage {
         // check if current step is skipped
         this.#game.currentStage = this;
         if ((this.skipped && this.progress < 4) ||
-            (!this.#trigger && [0, 1, 4, 5].includes(this.progress))) {
+            (this.task.silent && [0, 1, 4, 5].includes(this.progress))) {
             this.progress++;
             return true;
         }
@@ -137,7 +134,7 @@ export class Stage {
     /** Trigger an event. */
     trigger(event: string | null = null) {
         const stage = this.#game.createStage('trigger', {event}, this);
-        stage.#trigger = false;
+        stage.task.silent = true;
         this.steps.push(stage);
     }
 }

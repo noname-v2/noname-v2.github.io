@@ -42,6 +42,14 @@ export abstract class Accessor {
         return this.#worker.getPeers({playing: false});
     }
 
+    /** Hub related functions. */
+    get hub() {
+        const connect = (url: string) => this.#worker.connect(url);
+        const disconnect = () => this.#worker.disconnect();
+        const syncRoom = () => this.#game.syncRoom();
+        return { connect, disconnect, syncRoom };
+    }
+
     constructor(game: Game, worker: Worker) {
         this.#game = game;
         this.#worker = worker;
@@ -57,16 +65,6 @@ export abstract class Accessor {
         return new (this.#game.getClass(name))(...args);
     }
 
-    /** Connect to remote hub. */
-    connect(url: string) {
-        this.#worker.connect(url);
-    }
-
-    /** Disconnect from remote hub. */
-    disconnect() {
-        this.#worker.disconnect();
-    }
-
     /** Access extension content. */
     getExtension(path: string) {
         return this.#game.getExtension(path);
@@ -75,11 +73,6 @@ export abstract class Accessor {
     /** Get links to peers. */
     getPeers(filter?: Dict) {
         return this.#worker.getPeers(filter);
-    }
-
-    /** Send room info to hub. */
-    syncRoom() {
-        this.#game.syncRoom();
     }
 
     /** Mark game as started. */

@@ -88,10 +88,10 @@ export function lobby(T: TaskClass) {
                 if (key === 'online') {
                     // enable or disable multiplayer mode
                     if (val) {
-                        this.game.connect(val);
+                        this.game.hub.connect(val);
                     }
                     else {
-                        this.game.disconnect();
+                        this.game.hub.disconnect();
                     }
                 }
                 else {
@@ -115,7 +115,7 @@ export function lobby(T: TaskClass) {
                                 players[i].playing = false;
                             }
                         }
-                        this.game.syncRoom();
+                        this.game.hub.syncRoom();
                     }
                 }
             }
@@ -135,11 +135,11 @@ export function lobby(T: TaskClass) {
         updatePeer(val: string, peer: Link) {
             if (val === 'spectate' && peer.playing) {
                 peer.playing = false;
-                this.game.syncRoom();
+                this.game.hub.syncRoom();
             }
             else if (val === 'play' && !peer.playing && this.game.playerLinks!.length < this.game.config.np) {
                 peer.playing = true;
-                this.game.syncRoom();
+                this.game.hub.syncRoom();
             }
         }
 

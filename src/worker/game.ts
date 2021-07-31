@@ -2,28 +2,10 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access, Dict } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
+import { Link } from './link';
 import type { Worker, UITick } from './worker';
 import type { Extension, Mode } from './extension';
 
-/** A link to client component. */
-export interface Link {
-    /** Component ID. */
-    readonly id: number;
-
-    /** Component tag. */
-    readonly tag: string;
-
-    /** Call a component method. */
-    readonly call: (method: string, arg?: any) => void;
-
-    /** Update multiple properties. */
-    readonly update: (items: Dict) => void;
-
-    /** Remove reference to a component. */
-    readonly unlink: () => void;
-
-    [key: string]: any;
-}
 
 export class Game {
     /** Root game stage. */
@@ -99,62 +81,9 @@ export class Game {
         this.banned.cardpacks = new Set(content[3]);
         this.config = content[4];
         (this.#worker as any).info = content[5];
-        // this.accessor = new Accessor(this, worker);
 
         // load extensions
-        const load = async (pack: string) => {
-            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-            this.#extensions.set(pack, ext);
-        };
-
-        Promise.all(content[1].map(load)).then(async () => {
-            // index packages that define mode tasks
-            let mode = content[0];
-            while (mode) {
-                if (this.#ruleset.includes(mode)) {
-                    break;
-                }
-                if (!this.#extensions.has(mode)) {
-                    await load(mode);
-                }
-                this.#ruleset.unshift(mode);
-                mode = this.#extensions.get(mode)!.mode?.inherit as string;
-            }
-
-            // merge mode objects and game classes from extensions
-            const modeTasks = [];
-            for (const name of this.#ruleset) {
-                const mode: Mode = copy(this.#extensions.get(name)?.mode ?? {});
-                for (const name in mode.classes) {
-                    const cls = this.#gameClasses.get(name);
-                    this.#gameClasses.set(name, mode.classes[name](cls));
-                }
-                modeTasks.push(mode.tasks);
-                
-                apply(this.mode, mode);
-            }
-
-            // update task classes
-            for (const tasks of modeTasks) {
-                for (const task in tasks) {
-                    const cls = this.#taskClasses.get(task) ?? this.getClass('task');
-                    this.#taskClasses.set(task, (tasks[task] as any)(cls));
-                }
-            }
-
-            // finalize and freez mode object
-            delete this.mode.game;
-            delete this.mode.tasks;
-            delete this.mode.components;
-            this.mode.extension = content[0];
-            freeze(this.mode);
-            
-            // start game
-            (this as any).accessor = new (this.getClass('game'))(this, worker);
-            (this as any).rootStage = this.currentStage = this.createStage('main');
-            (this as any).arena = this.create('arena');
-            this.loop();
-        });
+        Promise.all(content[1].map(mode => this.#loadExtension(mode))).then(() => this.#loadMode(content[0]));
     }
 
     /** Create a link. */
@@ -290,5 +219,60 @@ export class Game {
             while (this.progress !== 2 && await this.rootStage.next());
             this.#paused = true;
         }
+    }
+
+    /** Load extension. */
+    async #loadExtension(pack: string) {
+        const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+        this.#extensions.set(pack, ext);
+    }
+
+    /** Load mode. */
+    async #loadMode(mode: string) {
+        // Get list of packages that define game classes
+        let pack = mode;
+        while (pack) {
+            if (this.#ruleset.includes(pack)) {
+                break;
+            }
+            if (!this.#extensions.has(pack)) {
+                await this.#loadExtension(pack);
+            }
+            this.#ruleset.unshift(pack);
+            pack = this.#extensions.get(pack)!.mode?.inherit as string;
+        }
+
+        // merge mode objects and game classes from extensions
+        const modeTasks = [];
+        for (const pack of this.#ruleset) {
+            const mode: Mode = copy(this.#extensions.get(pack)?.mode ?? {});
+            for (const name in mode.classes) {
+                const cls = this.#gameClasses.get(name);
+                this.#gameClasses.set(name, mode.classes[name](cls));
+            }
+            modeTasks.push(mode.tasks);            
+            apply(this.mode, mode);
+        }
+
+        // update task classes
+        for (const tasks of modeTasks) {
+            for (const task in tasks) {
+                const cls = this.#taskClasses.get(task) ?? this.getClass('task');
+                this.#taskClasses.set(task, (tasks[task] as any)(cls));
+            }
+        }
+
+        // finalize and freez mode object
+        delete this.mode.game;
+        delete this.mode.tasks;
+        delete this.mode.components;
+        this.mode.extension = mode;
+        freeze(this.mode);
+        
+        // start game
+        (this as any).accessor = new (this.getClass('game'))(this, this.#worker);
+        (this as any).rootStage = this.currentStage = this.createStage('main');
+        (this as any).arena = this.create('arena');
+        this.loop();
     }
 }

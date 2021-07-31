@@ -171,10 +171,10 @@ function lobby(T) {
                 if (key === 'online') {
                     // enable or disable multiplayer mode
                     if (val) {
-                        this.game.connect(val);
+                        this.game.hub.connect(val);
                     }
                     else {
-                        this.game.disconnect();
+                        this.game.hub.disconnect();
                     }
                 }
                 else {
@@ -196,7 +196,7 @@ function lobby(T) {
                                 players[i].playing = false;
                             }
                         }
-                        this.game.syncRoom();
+                        this.game.hub.syncRoom();
                     }
                 }
             }
@@ -215,11 +215,11 @@ function lobby(T) {
         updatePeer(val, peer) {
             if (val === 'spectate' && peer.playing) {
                 peer.playing = false;
-                this.game.syncRoom();
+                this.game.hub.syncRoom();
             }
             else if (val === 'play' && !peer.playing && this.game.playerLinks.length < this.game.config.np) {
                 peer.playing = true;
-                this.game.syncRoom();
+                this.game.hub.syncRoom();
             }
         }
         /** Remove lobby and start game. */

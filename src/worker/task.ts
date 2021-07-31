@@ -1,5 +1,6 @@
 import type { Stage } from './stage';
-import type { Game, Link } from './game';
+import type { Game } from './game';
+import type { Link } from './link';
 import type { Accessor } from './accessor';
 import type { Dict } from '../utils';
 
@@ -9,6 +10,9 @@ export class Task<T extends Accessor = Accessor> {
 
     /** Accessor of game objects. */
     #game: Game;
+
+    /** Do not trigger before / after / skip event. */
+    silent: boolean = false;
 
     /** Leave annotation for subclass. */
     [key: string]: any;
