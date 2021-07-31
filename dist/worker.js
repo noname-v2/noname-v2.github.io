@@ -207,10 +207,6 @@
         }
         /** Main function. */
         main() { }
-        /** Create a link. */
-        create(tag) {
-            return this.#game.create(tag);
-        }
         /** Add a step in current stage. */
         add(step, ...args) {
             this.#stage.steps.push([step, false, args]);
@@ -298,6 +294,10 @@
         constructor(game, worker) {
             this.#game = game;
             this.#worker = worker;
+        }
+        /** Create a link. */
+        create(tag) {
+            return this.#game.create(tag);
         }
         /** Connect to remote hub. */
         connect(url) {

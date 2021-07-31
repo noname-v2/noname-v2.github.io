@@ -14,6 +14,10 @@ export abstract class Accessor {
         return this.#worker.uid;
     }
 
+    get arena() {
+        return this.#game.arena;
+    }
+
     get mode() {
         return this.#game.mode;
     }
@@ -41,6 +45,16 @@ export abstract class Accessor {
     constructor(game: Game, worker: Worker) {
         this.#game = game;
         this.#worker = worker;
+    }
+
+    /** Create a link. */
+    create(tag: string) {
+        return this.#game.create(tag);
+    }
+
+    /** Creata a class in game.#gameClasses. */
+    createInstance(name: string, ...args: any[]) {
+        return new (this.#game.getClass(name))(...args);
     }
 
     /** Connect to remote hub. */

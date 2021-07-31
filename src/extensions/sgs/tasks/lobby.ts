@@ -5,9 +5,7 @@ export function lobby(T: TaskClass) {
         lobby!: Link;
 
         main() {
-            const lobby = this.lobby = this.create('lobby');
-            this.test();
-            this.game.test2();
+            const lobby = this.lobby = this.game.create('lobby');
 
             // get names of hero packs and card packs
             const heropacks: Dict<string> = {};
@@ -58,6 +56,7 @@ export function lobby(T: TaskClass) {
             this.add('cleanUp');
         }
 
+        /** Listen to configuration changes while awaiting game start. */
         awaitStart() {
             // monitor configuration change and await game start
             const lobby = this.lobby;
@@ -70,6 +69,7 @@ export function lobby(T: TaskClass) {
             this.await(lobby);
         }
 
+        /** Update game configuration. */
         updateLobby([type, key, val]: [string, string, any]) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
@@ -131,6 +131,7 @@ export function lobby(T: TaskClass) {
             }
         }
 
+        /** Update info about joined players. */
         updatePeer(val: string, peer: Link) {
             if (val === 'spectate' && peer.playing) {
                 peer.playing = false;
@@ -142,6 +143,7 @@ export function lobby(T: TaskClass) {
             }
         }
 
+        /** Remove lobby and start game. */
         cleanUp() {
             // remove lobby and disable further configuration change
             this.lobby.unlink();

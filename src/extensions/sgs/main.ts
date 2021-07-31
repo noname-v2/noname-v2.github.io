@@ -1,14 +1,15 @@
 import type { SGS } from './types';
 import { config } from './config';
 
+// task classes
 import { trigger } from './tasks/trigger';
-import { loop } from './tasks/loop';
 import { setup } from './tasks/setup';
+import { loop } from './tasks/loop';
 import { lobby } from './tasks/lobby';
 import { choose } from './tasks/choose';
 import { chooseHero } from './tasks/choose-hero';
-import { createPlayers } from './tasks/create-players';
 
+// game classes
 import { game } from './core/game';
 import { task } from './core/task';
 import { player } from './core/player';
@@ -20,7 +21,7 @@ export default {
         np: 0,
         config,
         tasks: {
-            trigger, loop, lobby, setup, choose, chooseHero, createPlayers
+            trigger, setup, loop, lobby, choose, chooseHero
         },
         classes: {
             game, task, player, card, skill

@@ -1,7 +1,7 @@
 import type { Accessor } from '../../../worker/accessor';
-import { Card } from './card';
-import { Player } from './player';
-import { Skill } from './skill';
+import type { Card } from './card';
+import type { Player } from './player';
+import type { Skill } from './skill';
 
 export function game(A: typeof Accessor) {
     return class Game extends A {
@@ -17,8 +17,12 @@ export function game(A: typeof Accessor) {
 
         }
 
-        test2() {
-            console.log('test2')
+        createPlayer() {
+            return this.createInstance('player') as Player;
+        }
+
+        createCard() {
+            return this.createInstance('card') as Card;
         }
     } 
 }
