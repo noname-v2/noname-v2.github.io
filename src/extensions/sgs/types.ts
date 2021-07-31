@@ -1,11 +1,10 @@
-import type { Extension, Class } from '../../worker/extension';
+import type { Extension, Class } from '../../worker/types';
 import type { Dict } from '../../utils';
 import type { task } from './core/task';
 import type { game } from './core/game';
 
 /** Built-in types that may be used by extensions. */
-export type { Link } from '../../worker/link';
-export type { Config } from '../../worker/extension';
+export type { Config, Link } from '../../worker/types';
 export type { Dict }
 
 /** Type for SGS Game. */

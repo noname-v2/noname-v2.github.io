@@ -1,7 +1,6 @@
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
-import type { Extension } from '../../worker/extension';
-import type { Dict } from '../../utils';
+import type { Extension } from '../../worker/types';
 
 interface ExtensionMeta {
 	mode: string;

@@ -1,6 +1,6 @@
 import type { Stage } from './stage';
 import type { Game } from './game';
-import type { Link } from './link';
+import type { Link } from './types';
 import type { Accessor } from './accessor';
 import type { Dict } from '../utils';
 

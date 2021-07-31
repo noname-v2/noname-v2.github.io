@@ -2,9 +2,8 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access, Dict } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
-import { Link } from './link';
 import type { Worker, UITick } from './worker';
-import type { Extension, Mode } from './extension';
+import type { Extension, Mode, Link } from './types';
 
 
 export class Game {
