@@ -246,6 +246,11 @@ export class Client {
         }
     }
 
+    /** Get component by ID. */
+    get(id: number) {
+        return this.#components.get(id);
+    }
+
     /**
      * Render the next UITick.
      */

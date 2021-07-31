@@ -18,11 +18,11 @@ export function game(A: typeof Accessor) {
         }
 
         createPlayer() {
-            return this.createInstance('player') as Player;
+            return this.createInstance('player', this) as Player;
         }
 
         createCard() {
-            return this.createInstance('card') as Card;
+            return this.createInstance('card', this) as Card;
         }
     } 
 }

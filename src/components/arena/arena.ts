@@ -5,7 +5,7 @@ export class Arena extends Component {
     layout = 0;
 
     /** Player that is under control. */
-    viewport = 0;
+    perspective = 0;
 
     /** Card container. */
     cards = this.ui.createElement('cards');
@@ -125,6 +125,34 @@ export class Arena extends Component {
         else {
             // wait until other properties have been updated
             setTimeout(() => this.client.trigger('sync'));
+        }
+    }
+
+    $players(ids: number[]) {
+        const nodes = new Set<HTMLElement>();
+
+        // append players
+        for (const id of ids) {
+            const player = this.client.get(id)!;
+            nodes.add(player.node);
+            if (player.node.parentNode !== this.players) {
+                this.players.appendChild(player.node);
+            }
+            if (player.owner === this.client.uid) {
+                this.perspective = player.get('seat');
+            }
+        }
+
+        // remove players that no longer exist
+        for (const node of this.players.childNodes) {
+            if (!nodes.has(node as HTMLElement)) {
+                node.remove();
+            }
+        }
+
+        // append player region
+        if (!this.players.parentNode) {
+            this.node.appendChild(this.players);
         }
     }
 }

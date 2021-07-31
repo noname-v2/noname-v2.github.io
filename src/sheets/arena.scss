@@ -1,4 +1,12 @@
 noname-arena {
     @include layer;
 	@include transit;
+
+    > noname-players {
+        @include layer;
+        
+        > noname-player {
+            position: absolute;
+        }
+    }
 }

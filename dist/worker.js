@@ -207,6 +207,10 @@
         }
         /** Main function. */
         main() { }
+        /** Create a link. */
+        create(tag) {
+            return this.#game.create(tag);
+        }
         /** Add a step in current stage. */
         add(step, ...args) {
             this.#stage.steps.push([step, false, args]);
@@ -273,6 +277,9 @@
         get owner() {
             return this.#worker.uid;
         }
+        get arena() {
+            return this.#game.arena;
+        }
         get mode() {
             return this.#game.mode;
         }
@@ -298,6 +305,10 @@
         /** Create a link. */
         create(tag) {
             return this.#game.create(tag);
+        }
+        /** Creata a class in game.#gameClasses. */
+        createInstance(name, ...args) {
+            return new (this.#game.getClass(name))(...args);
         }
         /** Connect to remote hub. */
         connect(url) {

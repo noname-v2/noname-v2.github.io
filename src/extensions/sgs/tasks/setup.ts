@@ -11,8 +11,14 @@ export function setup(T: TaskClass) {
         /** Create all players and add to arena. */
         createPlayers() {
             // set total player number for arena
-            this.game.arena.np = this.game.config.np;
-            console.log(this.game.config)
+            const np = this.game.arena.np = this.game.config.np;
+            const ids = [];
+            for (let i = 0; i < np; i++) {
+                const player = this.game.createPlayer();
+                player.link.seat = i;
+                ids.push(player.id);
+            }
+            this.game.arena.players = ids;
         }
 
         /** Assign clients to players. */

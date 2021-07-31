@@ -756,7 +756,7 @@
         /** Layout mode. */
         layout = 0;
         /** Player that is under control. */
-        viewport = 0;
+        perspective = 0;
         /** Card container. */
         cards = this.ui.createElement('cards');
         /** Player container. */
@@ -862,6 +862,30 @@
             else {
                 // wait until other properties have been updated
                 setTimeout(() => this.client.trigger('sync'));
+            }
+        }
+        $players(ids) {
+            const nodes = new Set();
+            // append players
+            for (const id of ids) {
+                const player = this.client.get(id);
+                nodes.add(player.node);
+                if (player.node.parentNode !== this.players) {
+                    this.players.appendChild(player.node);
+                }
+                if (player.owner === this.client.uid) {
+                    this.perspective = player.get('seat');
+                }
+            }
+            // remove players that no longer exist
+            for (const node of this.players.childNodes) {
+                if (!nodes.has(node)) {
+                    node.remove();
+                }
+            }
+            // append player region
+            if (!this.players.parentNode) {
+                this.node.appendChild(this.players);
             }
         }
     }
@@ -3146,6 +3170,10 @@
             for (const cmp of this.listeners[event]) {
                 cmp[event](arg);
             }
+        }
+        /** Get component by ID. */
+        get(id) {
+            return this.#components.get(id);
         }
         /**
          * Render the next UITick.

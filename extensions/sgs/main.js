@@ -60,11 +60,25 @@ function setup(T) {
     return class Setup extends T {
         main() {
             this.add('createPlayers');
+            this.add('assignPeers');
             this.add('createCards');
         }
+        /** Create all players and add to arena. */
         createPlayers() {
-            console.log(this.game.config);
+            // set total player number for arena
+            const np = this.game.arena.np = this.game.config.np;
+            const ids = [];
+            for (let i = 0; i < np; i++) {
+                const player = this.game.createPlayer();
+                player.link.seat = i;
+                ids.push(player.id);
+            }
+            this.game.arena.players = ids;
         }
+        /** Assign clients to players. */
+        assignPeers() {
+        }
+        /** Create card pile. */
         createCards() {
         }
     };
@@ -127,6 +141,7 @@ function lobby(T) {
             this.add('awaitStart');
             this.add('cleanUp');
         }
+        /** Listen to configuration changes while awaiting game start. */
         awaitStart() {
             // monitor configuration change and await game start
             const lobby = this.lobby;
@@ -138,6 +153,7 @@ function lobby(T) {
             this.monitor(lobby, 'updateLobby');
             this.await(lobby);
         }
+        /** Update game configuration. */
         updateLobby([type, key, val]) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
@@ -195,6 +211,7 @@ function lobby(T) {
                 this.lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
             }
         }
+        /** Update info about joined players. */
         updatePeer(val, peer) {
             if (val === 'spectate' && peer.playing) {
                 peer.playing = false;
@@ -205,6 +222,7 @@ function lobby(T) {
                 this.game.syncRoom();
             }
         }
+        /** Remove lobby and start game. */
         cleanUp() {
             // remove lobby and disable further configuration change
             this.lobby.unlink();
@@ -241,8 +259,10 @@ function game(A) {
         restore() {
         }
         createPlayer() {
+            return this.createInstance('player', this);
         }
         createCard() {
+            return this.createInstance('card', this);
         }
     };
 }
@@ -256,6 +276,20 @@ function task(T) {
 }
 
 class Player {
+    /** Game object. */
+    game;
+    /** Link to player component. */
+    link;
+    get id() {
+        return this.link.id;
+    }
+    get owner() {
+        return this.link.owner;
+    }
+    constructor(game) {
+        this.game = game;
+        this.link = game.create('player');
+    }
 }
 const player = () => Player;
 

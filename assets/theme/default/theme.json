@@ -35,6 +35,7 @@
 
 	"player": {
 		"width": "150px",
+		"ratio": "1 / 1.4",
 		"background": "rgba(0, 0, 0, 0.4)",
 		"back-background": "rgba(0, 0, 0, 0.4)",
 		"radius": "8px",
@@ -55,6 +56,8 @@
 	},
 
 	"card": {
+		"width": "105px",
+		"ratio": "1 / 1.4",
 		"background": "@(card.webp)",
 		"back-background": "@(cardback.webp)",
 		"entry-background": "@(wood.webp)",
