@@ -1,5 +1,5 @@
 import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
-import type { Dict } from '../../utils';
+import type { Dict } from '../../types';
 
 interface DialogOptions {
     buttons?: [string, string, string?][];

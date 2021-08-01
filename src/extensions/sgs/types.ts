@@ -1,5 +1,4 @@
-import type { Extension, Class } from '../../types';
-import type { Dict } from '../../utils';
+import type { Extension, Class, Dict } from '../../types';
 import type { task } from './core/task';
 import type { game } from './core/game';
 

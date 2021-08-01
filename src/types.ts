@@ -1,6 +1,8 @@
 import type { Component } from './client/component';
 import type { Task } from './worker/task';
-import type { Dict } from './utils';
+
+/** Plain object. */
+export type Dict<T=any> = {[key: string]: T};
 
 /** A link to client component. */
 export interface Link {
@@ -20,6 +22,14 @@ export interface Link {
     readonly unlink: () => void;
 
     [key: string]: any;
+}
+
+/** Format of extension meta data. */
+export interface ExtensionMeta {
+	mode: string;
+	pack: boolean;
+	tags: string[];
+	images: string[];
 }
 
 /** Creator of a subclass. */

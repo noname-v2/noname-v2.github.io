@@ -1,6 +1,6 @@
 import type { Game } from './game';
 import type { Worker } from './worker';
-import type { Dict } from '../utils';
+import type { Dict } from '../types';
 
 /** Accessor of game and worker properties and methods. */
 export abstract class Accessor {

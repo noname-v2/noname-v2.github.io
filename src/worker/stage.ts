@@ -1,6 +1,7 @@
 import type { Game } from './game';
 import type { Task } from './task';
-import { apply, Dict } from '../utils';
+import type { Dict } from '../types';
+import { apply } from '../utils';
 
 export class Stage {
     /** Stage ID. */

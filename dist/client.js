@@ -1680,8 +1680,9 @@
             let write = false;
             await Promise.all(this.extensions.map(async (name) => {
                 if (!this.index[name]) {
-                    await this.#loadExtension(name);
-                    if (this.index[name]) {
+                    const meta = await this.client.getMeta(name);
+                    if (meta) {
+                        this.index[name] = meta;
                         write = true;
                     }
                 }
@@ -3174,6 +3175,30 @@
         get(id) {
             return this.#components.get(id);
         }
+        /** Get extension meta data. */
+        async getMeta(pack, full = false) {
+            try {
+                const meta = {};
+                const ext = await this.#loadExtension(pack);
+                if (ext.heropack || ext.cardpack) {
+                    meta.pack = true;
+                }
+                if (ext.mode?.name) {
+                    meta.mode = ext.mode.name;
+                }
+                if (ext.tags) {
+                    meta.tags = ext.tags;
+                }
+                if (ext.hero) {
+                    meta.images = Object.keys(ext.hero);
+                }
+                return meta;
+            }
+            catch (e) {
+                console.log(e, name);
+                return null;
+            }
+        }
         /** Overwrite components defined by mode. */
         #load() {
         }
@@ -3183,8 +3208,11 @@
         }
         /** Load extension. */
         async #loadExtension(pack) {
-            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-            this.#extensions.set(pack, ext);
+            if (!this.#extensions.has(pack)) {
+                const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+                this.#extensions.set(pack, ext);
+            }
+            return this.#extensions.get(pack);
         }
         /**
          * Render the next UITick.

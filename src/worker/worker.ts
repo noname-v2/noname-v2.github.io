@@ -1,8 +1,8 @@
 import { version } from '../version';
 import { Game } from './game';
 import { hub2owner } from '../hub/types';
-import { split, Dict } from '../utils';
-import type { Link } from '../types';
+import { split } from '../utils';
+import type { Link, Dict } from '../types';
 
 /** An update to client side. */
 export type UITick = [

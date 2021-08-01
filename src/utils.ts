@@ -1,5 +1,4 @@
-/** Plain object. */
-export type Dict<T=any> = {[key: string]: T};
+import type { Dict } from './types';
 
 /** Deep copy plain object. */
 export function copy(from: Dict) {

@@ -1,8 +1,7 @@
 import type { Stage } from './stage';
 import type { Game } from './game';
 import type { Accessor } from './accessor';
-import type { Link } from '../types';
-import type { Dict } from '../utils';
+import type { Link, Dict } from '../types';
 
 export class Task<T extends Accessor = Accessor> {
     /** Game stage that task belongs to. */

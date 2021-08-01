@@ -5,7 +5,7 @@ import { Component } from './component';
 import * as utils from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
-import type { Extension } from '../types';
+import type { Extension, ExtensionMeta } from '../types';
 
 /**
  * Executor of worker commands.
@@ -255,6 +255,31 @@ export class Client {
         return this.#components.get(id);
     }
 
+    /** Get extension meta data. */
+    async getMeta(pack: string, full: boolean = false) {
+        try {
+            const meta = {} as ExtensionMeta;
+            const ext = await this.#loadExtension(pack);
+			if (ext.heropack || ext.cardpack) {
+				meta.pack = true;
+			}
+			if (ext.mode?.name) {
+				meta.mode = ext.mode.name
+			}
+			if (ext.tags) {
+				meta.tags = ext.tags;
+			}
+			if (ext.hero) {
+				meta.images = Object.keys(ext.hero);
+			}
+			return meta;
+		}
+		catch (e) {
+			console.log(e, name);
+            return null;
+		}
+    }
+
     /** Overwrite components defined by mode. */
     #load() {
 
@@ -267,8 +292,11 @@ export class Client {
 
     /** Load extension. */
     async #loadExtension(pack: string) {
-        const ext = utils.freeze((await import(`../extensions/${pack}/main.js`)).default);
-        this.#extensions.set(pack, ext);
+        if (!this.#extensions.has(pack)) {
+            const ext = utils.freeze((await import(`../extensions/${pack}/main.js`)).default);
+            this.#extensions.set(pack, ext);
+        }
+        return this.#extensions.get(pack)!;
     }
 
     /**

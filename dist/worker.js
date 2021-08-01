@@ -518,8 +518,11 @@
         }
         /** Load extension. */
         async #loadExtension(pack) {
-            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-            this.#extensions.set(pack, ext);
+            if (!this.#extensions.has(pack)) {
+                const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+                this.#extensions.set(pack, ext);
+            }
+            return this.#extensions.get(pack);
         }
         /** Load mode. */
         async #loadMode(mode) {
@@ -529,11 +532,8 @@
                 if (this.#ruleset.includes(pack)) {
                     break;
                 }
-                if (!this.#extensions.has(pack)) {
-                    await this.#loadExtension(pack);
-                }
                 this.#ruleset.unshift(pack);
-                pack = this.#extensions.get(pack).mode?.inherit;
+                pack = (await this.#loadExtension(pack)).mode?.inherit;
             }
             // merge mode objects and game classes from extensions
             const modeTasks = [];

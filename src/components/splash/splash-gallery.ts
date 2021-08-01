@@ -1,17 +1,6 @@
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
-import type { Extension } from '../../types';
-
-interface ExtensionMeta {
-	mode: string;
-	pack: boolean;
-	tags: string[];
-	images: string[];
-}
-
-interface ExtensionIndex {
-	[key: string]: ExtensionMeta
-}
+import type { Extension, ExtensionMeta, Dict } from '../../types';
 
 export class SplashGallery extends Gallery {
     /** Reference to Splash. */
@@ -21,7 +10,7 @@ export class SplashGallery extends Gallery {
     nrows = 1;
 
 	/** Extension index. */
-	index!: ExtensionIndex;
+	index!: Dict<ExtensionMeta>;
 
 	/** Ordered extension list. */
 	extensions!: string[];
@@ -40,8 +29,9 @@ export class SplashGallery extends Gallery {
 		let write = false;
 		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
-				await this.#loadExtension(name);
-				if (this.index[name]) {
+				const meta = await this.client.getMeta(name);
+				if (meta) {
+					this.index[name] = meta;
 					write = true;
 				}
 			}

@@ -1,5 +1,5 @@
 import type { Client } from './client';
-import type { Dict } from '../utils';
+import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
 import type { Database } from './database';
 import type { UI } from './ui';

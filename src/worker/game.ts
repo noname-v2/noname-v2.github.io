@@ -1,9 +1,9 @@
 import { Stage } from './stage';
-import { copy, apply, freeze, access, Dict } from '../utils';
+import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
 import type { Worker, UITick } from './worker';
-import type { Extension, Mode, Link } from '../types';
+import type { Extension, Mode, Link, Dict } from '../types';
 
 
 export class Game {
@@ -222,8 +222,11 @@ export class Game {
 
     /** Load extension. */
     async #loadExtension(pack: string) {
-        const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-        this.#extensions.set(pack, ext);
+        if (!this.#extensions.has(pack)) {
+            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+            this.#extensions.set(pack, ext);
+        }
+        return this.#extensions.get(pack)!;
     }
 
     /** Load mode. */
@@ -234,11 +237,8 @@ export class Game {
             if (this.#ruleset.includes(pack)) {
                 break;
             }
-            if (!this.#extensions.has(pack)) {
-                await this.#loadExtension(pack);
-            }
             this.#ruleset.unshift(pack);
-            pack = this.#extensions.get(pack)!.mode?.inherit as string;
+            pack = (await this.#loadExtension(pack))!.mode?.inherit as string;
         }
 
         // merge mode objects and game classes from extensions

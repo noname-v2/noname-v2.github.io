@@ -1,6 +1,5 @@
 import { Component, Toggle, Player } from '../../components';
-import type { Config } from '../../types';
-import type { Dict } from '../../utils';
+import type { Config, Dict } from '../../types';
 
 export class Lobby extends Component {
     /** Sidebar for configurations. */
