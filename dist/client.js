@@ -1416,10 +1416,8 @@
                 this.db.set('snap', true);
                 this.node.removeEventListener('wheel', this.#wheelListener);
                 setTimeout(() => {
-                    for (const anim of this.pages.getAnimations()) {
-                        anim.cancel();
-                    }
                     this.switchToSnap();
+                    this.pages.style.transform = '';
                     this.pages.scrollLeft = this.#currentPage * this.pages.offsetWidth;
                 }, this.app.getTransition());
                 return;
@@ -1441,13 +1439,9 @@
             }
             // start animation
             this.turnPage(targetPage);
-            this.pages.animate([
-                { transform: getComputedStyle(this.pages).transform },
-                { transform: `translateX(${-targetPage * width}px)` }
-            ], {
-                duration: this.app.getTransition('fast'),
-                fill: 'forwards'
-            });
+            this.ui.animate(this.pages, {
+                x: [-targetPage * width], auto: true, forward: true
+            }, this.app.getTransition('fast'));
         }
         /** Render page when needed. */
         #renderPage(i) {
@@ -2546,10 +2540,12 @@
         #client;
         /** Database object. */
         #db;
-        // temperoary disable event trigger after pointerup to prevent unintended clicks
+        /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
         #dispatched = false;
         /** Bindings for DOM events. */
         #bindings = new Map();
+        /** Map that stores component constructors. */
+        #componentClasses = new Map(componentClasses);
         // clicking[0]: element that is clicked
         // clicking[1]: location of pointerdown
         // clicking[2]: started by a touch event
@@ -2572,6 +2568,7 @@
             else {
                 this.ready = Promise.resolve();
             }
+            // add bindings for drag operations
             this.ready.then(() => {
                 document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), { passive: true });
                 document.body.addEventListener('touchend', () => this.#pointerEnd(true), { passive: true });
@@ -2586,7 +2583,7 @@
         }
         /** Create new component. */
         create(tag, parent = null, id = null) {
-            const cls = componentClasses.get(tag);
+            const cls = this.#componentClasses.get(tag);
             const cmp = new cls(this.#client, this.#db, this, cls.tag || tag, id);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
@@ -2647,15 +2644,15 @@
             // set move area
             binding.movable = config.movable;
             // bind pointerdown event
-            binding.ondown = config.ondown || null;
+            binding.ondown = config.ondown ?? null;
             // bind move event
-            binding.onmove = config.onmove || null;
+            binding.onmove = config.onmove ?? null;
             // bind moveend event
-            binding.onmoveend = config.onmoveend || null;
+            binding.onmoveend = config.onmoveend ?? null;
             // bind onoff event
-            binding.onoff = config.onoff || null;
+            binding.onoff = config.onoff ?? null;
             // initial offset
-            binding.offset = config.offset || null;
+            binding.offset = config.offset ?? null;
         }
         /** Fire click event. */
         dispatchClick(node) {
@@ -2723,12 +2720,14 @@
         /** Wrapper of HTMLElement.animate(). */
         animate(node, animation, config) {
             const keyframes = [];
+            // get number of keyframes
             let length = 0;
             for (const key in animation) {
                 if (Array.isArray(animation[key])) {
                     length = Math.max(length, animation[key].length);
                 }
             }
+            // create keyframes
             for (let i = 0; i < length; i++) {
                 const frame = {};
                 if (animation.x) {
@@ -2745,6 +2744,7 @@
                 }
                 keyframes.push(frame);
             }
+            // use current style as starting frame
             if (animation.auto) {
                 const frame = {};
                 for (const key in keyframes[0]) {
@@ -2752,34 +2752,31 @@
                 }
                 keyframes.unshift(frame);
             }
-            if (!config) {
-                config = {};
-            }
-            else if (typeof config === 'number') {
+            // fill animation configurations
+            if (typeof config === 'number') {
                 config = { duration: config };
             }
-            if (!config.easing) {
-                config.easing = 'ease';
-            }
-            if (!config.duration) {
-                config.duration = this.app.getTransition();
-            }
+            config ??= {};
+            config.easing ??= 'ease';
+            config.duration ??= this.app.getTransition();
+            const anim = node.animate(keyframes, config);
+            // use last frame as final style
             if (animation.forward) {
                 const frame = keyframes[keyframes.length - 1];
                 for (const key in frame) {
                     node.style[key] = frame[key];
                 }
             }
-            return node.animate(keyframes, config);
+            return anim;
         }
-        // get the location of mouse or touch event
+        /** Get the location of mouse or touch event. */
         #locate(e) {
             return {
                 x: Math.round(e.clientX / this.zoom),
                 y: Math.round(e.clientY / this.zoom)
             };
         }
-        // register pointerdown for click or move
+        /** Register pointerdown for click or move. */
         #register(node) {
             // event callback
             const binding = new Binding();
@@ -2807,20 +2804,20 @@
             }
             return binding;
         }
-        // cancel click callback for current pointerdown
+        /** Cancel click callback for current pointerdown. */
         #resetClick(node) {
             if (this.#clicking && this.#clicking[0] === node) {
                 this.#clicking = null;
             }
             node.classList.remove('clickdown');
         }
-        // cancel move callback for current pointerdown
+        /** Cancel move callback for current pointerdown. */
         #resetMove(node) {
             if (this.#moving && this.#moving[0] === node) {
                 this.#moving = null;
             }
         }
-        // callback for mousemove or touchmove
+        /** Callback for mousemove or touchmove. */
         #pointerMove(e, touch) {
             const { x, y } = this.#locate(e);
             // not a click event if move distance > 5px
@@ -2841,7 +2838,7 @@
                 });
             }
         }
-        // callback for mouseup or touchend
+        /** Ccallback for mouseup or touchend. */
         #pointerEnd(touch) {
             if (this.#dispatched === false) {
                 // dispatch events
@@ -2865,7 +2862,7 @@
                 this.#moving = null;
             }
         }
-        // callback for mouseleave or touchcancel
+        /** Callback for mouseleave or touchcancel. */
         #pointerCancel(touch) {
             if (this.#clicking && this.#clicking[2] === touch) {
                 this.#clicking[0].classList.remove('clickdown');
@@ -2992,6 +2989,8 @@
         #utils = utils;
         /** Components synced with the worker. */
         #components = new Map();
+        /** Loaded extensions. */
+        #extensions = new Map();
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
@@ -3174,6 +3173,18 @@
         /** Get component by ID. */
         get(id) {
             return this.#components.get(id);
+        }
+        /** Overwrite components defined by mode. */
+        #load() {
+        }
+        /** Clear loaded components. */
+        #unload() {
+            // this.#componentClasses = new Map(componentClasses);
+        }
+        /** Load extension. */
+        async #loadExtension(pack) {
+            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
+            this.#extensions.set(pack, ext);
         }
         /**
          * Render the next UITick.

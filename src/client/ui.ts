@@ -1,6 +1,5 @@
 import type { Client } from './client';
 import type { App } from '../components';
-import type { ComponentClass } from './component';
 import type { Database } from './database';
 import { componentClasses, ComponentTagMap } from '../classes';
 
@@ -66,11 +65,14 @@ export class UI {
     /** Database object. */
     #db: Database;
 
-	// temperoary disable event trigger after pointerup to prevent unintended clicks
+	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
 	#dispatched = false;
 
     /** Bindings for DOM events. */
 	#bindings = new Map<HTMLElement, Binding>();
+
+	/** Map that stores component constructors. */
+	#componentClasses = new Map(componentClasses);
 
 	// clicking[0]: element that is clicked
 	// clicking[1]: location of pointerdown
@@ -98,6 +100,7 @@ export class UI {
 			this.ready = Promise.resolve();
 		}
         
+		// add bindings for drag operations
 		this.ready.then(() => {
 			document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), {passive: true});
 			document.body.addEventListener('touchend', () => this.#pointerEnd(true), {passive: true});
@@ -115,7 +118,7 @@ export class UI {
 
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
-		const cls = componentClasses.get(tag as string)!;
+		const cls = this.#componentClasses.get(tag as string)!;
         const cmp = new cls(this.#client, this.#db, this, cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
@@ -142,11 +145,9 @@ export class UI {
 
 		// create and append to parent
 		const node = document.createElement(tagName);
-
 		for (let i = 1; i < tags.length; i++) {
 			node.classList.add(tags[i]);
 		}
-		
 		if (parent) {
 			parent.appendChild(node);
 		}
@@ -198,19 +199,19 @@ export class UI {
 		binding.movable = config.movable;
 
 		// bind pointerdown event
-		binding.ondown = config.ondown || null;
+		binding.ondown = config.ondown ?? null;
 
 		// bind move event
-		binding.onmove = config.onmove || null;
+		binding.onmove = config.onmove ?? null;
 
 		// bind moveend event
-		binding.onmoveend = config.onmoveend || null;
+		binding.onmoveend = config.onmoveend ?? null;
 
 		// bind onoff event
-		binding.onoff = config.onoff || null;
+		binding.onoff = config.onoff ?? null;
 
 		// initial offset
-		binding.offset = config.offset || null;
+		binding.offset = config.offset ?? null;
 	}
 
 	/** Fire click event. */
@@ -299,6 +300,7 @@ export class UI {
 		}, config?: KeyframeAnimationOptions | number) {
 		const keyframes = [];
 		
+		// get number of keyframes
 		let length = 0;
 		for (const key in animation) {
 			if (Array.isArray((animation as any)[key])) {
@@ -306,6 +308,7 @@ export class UI {
 			}
 		}
 
+		// create keyframes
 		for (let i = 0; i < length; i++) {
 			const frame: Keyframe = {};
 			if (animation.x) {
@@ -323,6 +326,7 @@ export class UI {
 			keyframes.push(frame);
 		}
 
+		// use current style as starting frame
 		if (animation.auto) {
 			const frame = {} as any;
 			for (const key in keyframes[0]) {
@@ -331,18 +335,17 @@ export class UI {
 			keyframes.unshift(frame);
 		}
 
-		if (!config) {
-			config = {};
-		}
-		else if (typeof config === 'number') {
+		// fill animation configurations
+		if (typeof config === 'number') {
 			config = {duration: config};
 		}
-		if (!config.easing) {
-			config.easing = 'ease';
-		}
-		if (!config.duration) {
-			config.duration = this.app.getTransition();
-		}
+		config ??= {};
+		config.easing ??= 'ease';
+		config.duration ??= this.app.getTransition();
+		
+		const anim = node.animate(keyframes, config);
+
+		// use last frame as final style
 		if (animation.forward) {
 			const frame = keyframes[keyframes.length - 1];
 			for (const key in frame) {
@@ -350,10 +353,10 @@ export class UI {
 			}
 		}
 
-		return node.animate(keyframes, config);
+		return anim;
 	}
 
-	// get the location of mouse or touch event
+	/** Get the location of mouse or touch event. */
 	#locate(e: EventPoint) {
 		return {
 			x: Math.round(e.clientX / this.zoom),
@@ -361,7 +364,7 @@ export class UI {
 		}
 	}
 
-	// register pointerdown for click or move
+	/** Register pointerdown for click or move. */
 	#register(node: HTMLElement) {
 		// event callback
 		const binding = new Binding();
@@ -397,7 +400,7 @@ export class UI {
 		return binding;
 	}
 
-	// cancel click callback for current pointerdown
+	/** Cancel click callback for current pointerdown. */
 	#resetClick(node: HTMLElement) {
 		if (this.#clicking && this.#clicking[0] === node) {
 			this.#clicking = null;
@@ -405,14 +408,14 @@ export class UI {
 		node.classList.remove('clickdown');
 	}
 
-	// cancel move callback for current pointerdown
+	/** Cancel move callback for current pointerdown. */
 	#resetMove(node: HTMLElement) {
 		if (this.#moving && this.#moving[0] === node) {
 			this.#moving = null;
 		}
 	}
 
-	// callback for mousemove or touchmove
+	/** Callback for mousemove or touchmove. */
 	#pointerMove(e: EventPoint, touch: boolean) {
 		const {x, y} = this.#locate(e);
 
@@ -437,7 +440,7 @@ export class UI {
 		}
 	}
 
-	// callback for mouseup or touchend
+	/** Ccallback for mouseup or touchend. */
 	#pointerEnd(touch: boolean) {
 		if (this.#dispatched === false) {
 			// dispatch events
@@ -466,7 +469,7 @@ export class UI {
 		}
 	}
 
-	// callback for mouseleave or touchcancel
+	/** Callback for mouseleave or touchcancel. */
 	#pointerCancel(touch: boolean) {
 		if (this.#clicking && this.#clicking[2] === touch) {
 			this.#clicking[0].classList.remove('clickdown');

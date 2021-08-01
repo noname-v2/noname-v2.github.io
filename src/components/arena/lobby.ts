@@ -1,5 +1,5 @@
 import { Component, Toggle, Player } from '../../components';
-import type { Config } from '../../worker/types';
+import type { Config } from '../../types';
 import type { Dict } from '../../utils';
 
 export class Lobby extends Component {

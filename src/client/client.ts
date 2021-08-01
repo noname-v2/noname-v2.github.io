@@ -5,6 +5,7 @@ import { Component } from './component';
 import * as utils from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
+import type { Extension } from '../types';
 
 /**
  * Executor of worker commands.
@@ -36,6 +37,9 @@ export class Client {
 
     /** Components synced with the worker. */
     #components = new Map<number, Component>();
+
+    /** Loaded extensions. */
+    #extensions = new Map<string, Extension>();
 
     /** ID of current stage. */
     #stageID = 0;
@@ -249,6 +253,22 @@ export class Client {
     /** Get component by ID. */
     get(id: number) {
         return this.#components.get(id);
+    }
+
+    /** Overwrite components defined by mode. */
+    #load() {
+
+    }
+
+	/** Clear loaded components. */
+	#unload() {
+		// this.#componentClasses = new Map(componentClasses);
+	}
+
+    /** Load extension. */
+    async #loadExtension(pack: string) {
+        const ext = utils.freeze((await import(`../extensions/${pack}/main.js`)).default);
+        this.#extensions.set(pack, ext);
     }
 
     /**

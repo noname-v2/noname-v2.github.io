@@ -117,7 +117,7 @@
     const db = new Database();
     /** Base URL */
     const scope = self.registration.scope;
-    /** Read-only system files. */
+    /** Essential files to be saved to cache. */
     const src = [
         '',
         'index.css',
@@ -131,6 +131,7 @@
             return cache.addAll(src);
         }));
     });
+    /** Remove cached files from older versions. */
     self.addEventListener('activate', (e) => {
         e.waitUntil(caches.keys().then(async (keys) => {
             for (const key of keys) {
@@ -141,15 +142,20 @@
         }));
     });
     self.addEventListener('fetch', (e) => {
-        let url = e.request.url;
-        if (url.startsWith(scope)) {
-            url = url.slice(scope.length);
+        // access remote content directly without saving
+        if (!e.request.url.startsWith(scope)) {
+            e.respondWith(fetch(e.request));
+            return;
         }
+        // relative path as IDB key
+        const url = e.request.url.slice(scope.length);
         if (src.includes(url)) {
+            // retrieve file from cache
             e.respondWith(caches.match(e.request).then(async (response) => {
                 if (response) {
                     return response;
                 }
+                // save to cache
                 const fetched = await fetch(e.request);
                 if (fetched.ok) {
                     const clone = fetched.clone();
@@ -161,12 +167,27 @@
             }));
         }
         else {
+            // retrieve file from indexedDB
             e.respondWith(db.ready.then(async () => {
                 const data = await db.readFile(url);
                 if (data) {
                     return new Response(data);
                 }
-                const fetched = await fetch(e.request);
+                let fetched = await fetch(e.request);
+                // attempt to fetch from extension URL if local file is not found
+                if (!fetched.ok && url.startsWith('extension/')) {
+                    try {
+                        const redirect = await db.readFile('redirect');
+                        const path = url.split('/');
+                        const extension = path[1];
+                        if (redirect instanceof Map && redirect.has(extension)) {
+                            path[0] = redirect.get(extension);
+                            fetched = await fetch(new Request(path.join('/')));
+                        }
+                    }
+                    catch { }
+                }
+                // save to indexedDB
                 if (fetched.ok) {
                     fetched.clone().blob().then(blob => {
                         db.writeFile(url, blob);

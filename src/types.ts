@@ -1,6 +1,6 @@
-import type { Component } from '../client/component';
-import type { Task } from './task';
-import type { Dict } from '../utils';
+import type { Component } from './client/component';
+import type { Task } from './worker/task';
+import type { Dict } from './utils';
 
 /** A link to client component. */
 export interface Link {

@@ -3,7 +3,7 @@ import { copy, apply, freeze, access, Dict } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
 import type { Worker, UITick } from './worker';
-import type { Extension, Mode, Link } from './types';
+import type { Extension, Mode, Link } from '../types';
 
 
 export class Game {

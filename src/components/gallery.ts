@@ -196,10 +196,8 @@ export class Gallery extends Component {
             this.db.set('snap', true);
             this.node.removeEventListener('wheel', this.#wheelListener);
             setTimeout(() => {
-                for (const anim of this.pages.getAnimations()) {
-                    anim.cancel();
-                }
                 this.switchToSnap();
+                this.pages.style.transform = '';
                 this.pages.scrollLeft = this.#currentPage * this.pages.offsetWidth;
             }, this.app.getTransition());
             return;
@@ -223,13 +221,9 @@ export class Gallery extends Component {
 
         // start animation
         this.turnPage(targetPage);
-        this.pages.animate([
-           {transform: getComputedStyle(this.pages).transform},
-           {transform: `translateX(${-targetPage*width}px)`}
-        ], {
-            duration: this.app.getTransition('fast'),
-            fill: 'forwards'
-        });
+        this.ui.animate(this.pages, {
+            x: [-targetPage*width], auto: true, forward: true
+        }, this.app.getTransition('fast'));
     }
 
     /** Render page when needed. */
