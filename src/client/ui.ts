@@ -156,7 +156,7 @@ export class UI {
 	
 	/** Set background image and set background position/size to center/cover. */
 	setBackground(node: HTMLElement, ...args: string[]) {
-		if (!args[args.length - 1].includes('.')) {
+		if (!args[args.length - 1].split('/').pop()!.includes('.')) {
 			args[args.length - 1] += '.webp';
 		}
 		node.style.background = `url(${args.join('/')}) center/cover`;

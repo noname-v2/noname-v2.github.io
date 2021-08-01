@@ -562,7 +562,8 @@
             // start game
             this.accessor = new (this.getClass('game'))(this, this.#worker);
             this.rootStage = this.currentStage = this.createStage('main');
-            this.arena = this.create('arena');
+            const arena = this.arena = this.create('arena');
+            arena.ruleset = this.#ruleset;
             this.loop();
         }
     }

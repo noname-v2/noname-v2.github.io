@@ -271,7 +271,8 @@ export class Game {
         // start game
         (this as any).accessor = new (this.getClass('game'))(this, this.#worker);
         (this as any).rootStage = this.currentStage = this.createStage('main');
-        (this as any).arena = this.create('arena');
+        const arena = (this as any).arena = this.create('arena');
+        arena.ruleset = this.#ruleset;
         this.loop();
     }
 }

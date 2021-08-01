@@ -25,15 +25,13 @@ self.addEventListener('install', (e: any) => {
 });
 
 self.addEventListener('activate', (e: any) => {
-    e.waitUntil(
-        caches.keys().then(async keys => {
-            for (const key of keys) {
-                if (key !== version) {
-                    await caches.delete(key);
-                }
+    e.waitUntil(caches.keys().then(async keys => {
+        for (const key of keys) {
+            if (key !== version) {
+                await caches.delete(key);
             }
-        })
-    );
+        }
+    }));
 });
 
 self.addEventListener('fetch', (e: any) => {

@@ -1681,7 +1681,7 @@
             super.init();
             // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
-            this.extensions = await this.client.utils.readJSON('extensions/extensions.json');
+            this.extensions = await this.client.utils.readJSON('extensions/arrange.json');
             // udpate extension index
             let write = false;
             await Promise.all(this.extensions.map(async (name) => {
@@ -2618,7 +2618,7 @@
         }
         /** Set background image and set background position/size to center/cover. */
         setBackground(node, ...args) {
-            if (!args[args.length - 1].includes('.')) {
+            if (!args[args.length - 1].split('/').pop().includes('.')) {
                 args[args.length - 1] += '.webp';
             }
             node.style.background = `url(${args.join('/')}) center/cover`;

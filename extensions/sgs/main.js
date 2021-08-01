@@ -231,24 +231,6 @@ function lobby(T) {
     };
 }
 
-function choose(T) {
-    return class Choose extends T {
-        main() {
-            console.log('choose', this.np);
-        }
-        select(key) {
-        }
-    };
-}
-
-function chooseHero(T) {
-    return class ChooseHero extends T {
-        main() {
-            console.log('chooseHero', this.np, this.select);
-        }
-    };
-}
-
 function game(A) {
     return class Game extends A {
         players = [];
@@ -275,6 +257,10 @@ function task(T) {
     };
 }
 
+class Skill {
+}
+const skill = () => Skill;
+
 class Player {
     /** Game object. */
     game;
@@ -297,16 +283,40 @@ class Card {
 }
 const card = () => Card;
 
-class Skill {
+function choose(T) {
+    return class Choose extends T {
+        main() {
+            console.log('choose', this.np);
+        }
+        select(key) {
+        }
+    };
 }
-const skill = () => Skill;
+
+function chooseHero(T) {
+    return class ChooseHero extends T {
+        main() {
+            console.log('chooseHero', this.np, this.select);
+        }
+    };
+}
+
+function moveTo(T) {
+    return class MoveTo extends T {
+        main() {
+            console.log('moveTo', this.np);
+        }
+    };
+}
 
 var main = {
     mode: {
         np: 0,
         config,
         tasks: {
-            trigger, setup, loop, lobby, choose, chooseHero
+            trigger, setup, loop, lobby,
+            choose, chooseHero,
+            moveTo
         },
         classes: {
             game, task, player, card, skill

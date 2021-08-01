@@ -34,7 +34,7 @@ export class SplashGallery extends Gallery {
 
 		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
-		this.extensions = await this.client.utils.readJSON<string[]>('extensions/extensions.json');
+		this.extensions = await this.client.utils.readJSON<string[]>('extensions/arrange.json');
 
 		// udpate extension index
 		let write = false;
