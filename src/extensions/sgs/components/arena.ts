@@ -1,12 +1,19 @@
 import type { Arena } from '../../../components';
 
-export function loop(T: typeof Arena) {
+export function arena(T: typeof Arena) {
     return class ArenaSGS extends T {
         /** Layout mode. */
         layout = 0;
     
         /** Player that is under control. */
         perspective = 0;
+        
+        /** Card container. */
+        cards = this.ui.createElement('cards');
+    
+        /** Player container. */
+        players = this.ui.createElement('players');
+    
 
         /** Update arena layout. */
         resize(ax: number, ay: number, width: number, height: number) {

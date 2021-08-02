@@ -1,12 +1,6 @@
 import { Component } from '../../components';
 
 export class Arena extends Component {
-    /** Card container. */
-    cards = this.ui.createElement('cards');
-
-    /** Player container. */
-    players = this.ui.createElement('players');
-
     /** A dialog has been popped before this.remove() is called. */
     faded = false;
 
@@ -27,7 +21,9 @@ export class Arena extends Component {
     }
 
     /** Update arena layout (intended to be inherited by mode). */
-    resize(ax: number, ay: number, width: number, height: number) {};
+    resize(ax: number, ay: number, width: number, height: number) {
+        return [ax, ay];
+    };
 
     /** Remove with fade out animation. */
     remove() {

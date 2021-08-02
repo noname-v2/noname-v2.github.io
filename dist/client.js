@@ -405,7 +405,7 @@
             const height = window.innerHeight;
             // ideal window size
             let [ax, ay] = [960, 540];
-            // determine ideal size based on player number
+            // let current mode determine ideal size
             if (this.arena) {
                 [ax, ay] = this.arena.resize(ax, ay, width, height);
             }
@@ -753,10 +753,6 @@
     }
 
     class Arena extends Component {
-        /** Layout mode. */
-        layout = 0;
-        /** Player that is under control. */
-        perspective = 0;
         /** Card container. */
         cards = this.ui.createElement('cards');
         /** Player container. */
@@ -775,30 +771,11 @@
                 history.pushState('arena', '');
             }
         }
-        /** Update arena layout. */
+        /** Update arena layout (intended to be inherited by mode). */
         resize(ax, ay, width, height) {
-            // future: -> app.css['player-width'], etc.
-            const np = this.get('np');
-            if (np) {
-                if (np >= 7 && width / height < (18 + (np - 1) * 168) / 720) {
-                    // wide 2-row layout
-                    [ax, ay] = [900, 755];
-                    this.layout = 1;
-                }
-                else {
-                    // normal 3-row layout
-                    if (np === 8) {
-                        ax = 1194;
-                    }
-                    else {
-                        ax = 1026;
-                    }
-                    ay = 620;
-                    this.layout = 0;
-                }
-            }
             return [ax, ay];
         }
+        ;
         /** Remove with fade out animation. */
         remove() {
             if (this.app.arena === this) {
@@ -862,30 +839,6 @@
             else {
                 // wait until other properties have been updated
                 setTimeout(() => this.client.trigger('sync'));
-            }
-        }
-        $players(ids) {
-            const nodes = new Set();
-            // append players
-            for (const id of ids) {
-                const player = this.client.get(id);
-                nodes.add(player.node);
-                if (player.node.parentNode !== this.players) {
-                    this.players.appendChild(player.node);
-                }
-                if (player.owner === this.client.uid) {
-                    this.perspective = player.get('seat');
-                }
-            }
-            // remove players that no longer exist
-            for (const node of this.players.childNodes) {
-                if (!nodes.has(node)) {
-                    node.remove();
-                }
-            }
-            // append player region
-            if (!this.players.parentNode) {
-                this.node.appendChild(this.players);
             }
         }
     }
@@ -1750,32 +1703,6 @@
             }
             return true;
         }
-        /** Get mode information from extensions. */
-        async #loadExtension(name) {
-            if (this.index[name]) {
-                return;
-            }
-            try {
-                const idx = {};
-                const ext = (await import(`../extensions/${name}/main.js`)).default;
-                if (ext.heropack || ext.cardpack) {
-                    idx.pack = true;
-                }
-                if (ext.mode?.name) {
-                    idx.mode = ext.mode.name;
-                }
-                if (ext.tags) {
-                    idx.tags = ext.tags;
-                }
-                if (ext.hero) {
-                    idx.images = Object.keys(ext.hero);
-                }
-                this.index[name] = idx;
-            }
-            catch (e) {
-                console.log(e, name);
-            }
-        }
     }
 
     const version = '2.0.0dev1';
@@ -2545,8 +2472,6 @@
         #dispatched = false;
         /** Bindings for DOM events. */
         #bindings = new Map();
-        /** Map that stores component constructors. */
-        #componentClasses = new Map(componentClasses);
         // clicking[0]: element that is clicked
         // clicking[1]: location of pointerdown
         // clicking[2]: started by a touch event
@@ -2584,7 +2509,7 @@
         }
         /** Create new component. */
         create(tag, parent = null, id = null) {
-            const cls = this.#componentClasses.get(tag);
+            const cls = componentClasses.get(tag);
             const cmp = new cls(this.#client, this.#db, this, cls.tag || tag, id);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
@@ -2968,6 +2893,17 @@
         readJSON: readJSON
     });
 
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+
     /**
      * Executor of worker commands.
      */
@@ -2990,8 +2926,6 @@
         #utils = utils;
         /** Components synced with the worker. */
         #components = new Map();
-        /** Loaded extensions. */
-        #extensions = new Map();
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
@@ -3000,6 +2934,8 @@
         #loaded = 0;
         /** This.#loop is not running. */
         #paused = true;
+        /** A copy of origional component classes. */
+        #componentClasses = new Map(componentClasses);
         /** Event listeners. */
         #listeners = Object.freeze({
             // connection status change
@@ -3133,7 +3069,7 @@
             this.#components.clear();
             this.#ui.app.clearPopups();
             this.#ui.app.arena?.remove();
-            this.#ui.app.arena = null;
+            this.#unload();
             if (back) {
                 this.#ui.app.splash.show();
                 this.#stageID = 0;
@@ -3179,7 +3115,7 @@
         async getMeta(pack, full = false) {
             try {
                 const meta = {};
-                const ext = await this.#loadExtension(pack);
+                const ext = await importExtension(pack);
                 if (ext.heropack || ext.cardpack) {
                     meta.pack = true;
                 }
@@ -3199,20 +3135,23 @@
                 return null;
             }
         }
-        /** Overwrite components defined by mode. */
-        #load() {
-        }
-        /** Clear loaded components. */
-        #unload() {
-            // this.#componentClasses = new Map(componentClasses);
-        }
-        /** Load extension. */
-        async #loadExtension(pack) {
-            if (!this.#extensions.has(pack)) {
-                const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-                this.#extensions.set(pack, ext);
+        /** Overwrite components by mode. */
+        async #load(ruleset) {
+            for (const pack of ruleset) {
+                const ext = await importExtension(pack);
+                for (const tag in ext.mode?.components) {
+                    const cls = componentClasses.get(tag) ?? Component;
+                    console.log('>>>', tag, cls);
+                    componentClasses.set(tag, ext.mode.components[tag](cls));
+                }
             }
-            return this.#extensions.get(pack);
+        }
+        /** Clear loaded mode components. */
+        #unload() {
+            componentClasses.clear();
+            for (const [key, val] of this.#componentClasses.entries()) {
+                componentClasses.set(key, val);
+            }
         }
         /**
          * Render the next UITick.
@@ -3233,6 +3172,7 @@
                         if (arena) {
                             await this.#ui.app.sleep('fast');
                         }
+                        await this.#load(props[key].ruleset);
                         break;
                     }
                 }

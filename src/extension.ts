@@ -12,3 +12,8 @@ export async function importExtension(extname: string) {
     }
     return extensions.get(extname)!;
 }
+
+/** Get imported extension. */
+export function getExtension(extname: string) {
+    return extensions.get(extname);
+}

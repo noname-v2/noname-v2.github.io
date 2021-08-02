@@ -236,7 +236,7 @@ export class App extends Component {
         // ideal window size
         let [ax, ay] = [960, 540];
 
-        // determine ideal size based on player number
+        // let current mode determine ideal size
         if (this.arena) {
             [ax, ay] = this.arena.resize(ax, ay, width, height);
         }

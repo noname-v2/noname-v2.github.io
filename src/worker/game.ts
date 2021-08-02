@@ -2,9 +2,9 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
-import { importExtension } from '../extension';
+import { importExtension, getExtension } from '../extension';
 import type { Worker, UITick } from './worker';
-import type { Extension, Mode, Link, Dict } from '../types';
+import type { Mode, Link, Dict } from '../types';
 
 
 export class Game {
@@ -52,9 +52,6 @@ export class Game {
 
     /** All created stages. */
     #stages = new Map<number, Stage>();
-
-    /** Loaded extensions. */
-    #extensions = new Map<string, Extension>();
 
     /** Array of packages that define mode tasks (priority: high -> low). */
     #ruleset: string[] = [];
@@ -146,7 +143,7 @@ export class Game {
     /** Access extension content. */
     getExtension(path: string): any {
         const [ext, keys] = path.split(':');
-        return access(this.#extensions.get(ext)!, keys) ?? null;
+        return access(getExtension(ext)!, keys) ?? null;
     }
 
     /** Get or create task constructor. */
@@ -236,7 +233,7 @@ export class Game {
         // merge mode objects and game classes from extensions
         const modeTasks = [];
         for (const pack of this.#ruleset) {
-            const mode: Mode = copy(this.#extensions.get(pack)?.mode ?? {});
+            const mode: Mode = copy(getExtension(pack)?.mode ?? {});
             for (const name in mode.classes) {
                 const cls = this.#gameClasses.get(name);
                 this.#gameClasses.set(name, mode.classes[name](cls));

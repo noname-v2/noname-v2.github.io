@@ -209,7 +209,7 @@ export class Client {
         this.#components.clear();
         this.#ui.app.clearPopups();
         this.#ui.app.arena?.remove();
-        this.#ui.app.arena = null;
+        this.#unload();
 
         if (back) {
             this.#ui.app.splash.show();
@@ -282,19 +282,18 @@ export class Client {
 		}
     }
 
-    /** Overwrite components  by mode. */
+    /** Overwrite components by mode. */
     async #load(ruleset: string[]) {
         for (const pack of ruleset) {
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
-                const cls = componentClasses.get(tag) ?? Component;
-                console.log('>>>', tag, cls)
+                const cls = componentClasses.get(tag) ?? (Component as ComponentClass);
                 componentClasses.set(tag, ext.mode!.components[tag](cls));
             }
         }
     }
 
-	/** Clear loaded components. */
+	/** Clear loaded mode components. */
 	#unload() {
         componentClasses.clear();
         for (const [key, val] of this.#componentClasses.entries()) {
@@ -322,6 +321,7 @@ export class Client {
                     if (arena) {
                         await this.#ui.app.sleep('fast');
                     }
+                    await this.#load(props[key].ruleset);
                     break;
                 }
             }

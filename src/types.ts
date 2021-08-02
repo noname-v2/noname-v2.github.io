@@ -1,4 +1,4 @@
-import type { Component } from './client/component';
+import type {Component, ComponentClass } from './client/component';
 import type { Task } from './worker/task';
 
 /** Plain object. */
@@ -34,7 +34,7 @@ export interface ExtensionMeta {
 
 /** Creator of a subclass. */
 export interface Class<T=any> {
-    (cls: ThisType<T>): {new(...args: any[]): T};
+    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
 };
 
 /** Mode configuration entry. */
@@ -53,7 +53,7 @@ export interface Mode<T extends Task = Task> {
     intro?: string;
     extension?: string;
     tasks?: Dict<Class<T>>;
-    components?: Dict<Class<Component>>;
+    components?: Dict<(cls: any) => ComponentClass>;
     classes?: Dict<Class>;
     config?: Dict<Config>;
     inherit?: string;

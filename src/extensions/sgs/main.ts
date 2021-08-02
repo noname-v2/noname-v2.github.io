@@ -21,6 +21,9 @@ import { chooseHero } from './player/choose-hero';
 // card tasks
 import { moveTo } from './card/move-to';
 
+// client-side component classes
+import { arena } from './components/arena';
+
 export default {
     mode: {
         np: 0,
@@ -34,7 +37,7 @@ export default {
             game, task, player, card, skill
         },
         components: {
-            
+            arena   
         }
     }
 } as SGS;

@@ -335,6 +335,21 @@
         }
     }
 
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+    /** Get imported extension. */
+    function getExtension(extname) {
+        return extensions.get(extname);
+    }
+
     class Game {
         /** Root game stage. */
         rootStage;
@@ -369,8 +384,6 @@
         #worker;
         /** All created stages. */
         #stages = new Map();
-        /** Loaded extensions. */
-        #extensions = new Map();
         /** Array of packages that define mode tasks (priority: high -> low). */
         #ruleset = [];
         /** Map of task classes. */
@@ -391,7 +404,7 @@
             this.config = content[4];
             this.#worker.info = content[5];
             // load extensions
-            Promise.all(content[1].map(mode => this.#loadExtension(mode))).then(() => this.#loadMode(content[0]));
+            Promise.all(content[1].map(mode => importExtension(mode))).then(() => this.#loadMode(content[0]));
         }
         /** Create a link. */
         create(tag) {
@@ -448,7 +461,7 @@
         /** Access extension content. */
         getExtension(path) {
             const [ext, keys] = path.split(':');
-            return access(this.#extensions.get(ext), keys) ?? null;
+            return access(getExtension(ext), keys) ?? null;
         }
         /** Get or create task constructor. */
         getTask(path) {
@@ -516,14 +529,6 @@
                 this.#paused = true;
             }
         }
-        /** Load extension. */
-        async #loadExtension(pack) {
-            if (!this.#extensions.has(pack)) {
-                const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-                this.#extensions.set(pack, ext);
-            }
-            return this.#extensions.get(pack);
-        }
         /** Load mode. */
         async #loadMode(mode) {
             // Get list of packages that define game classes
@@ -533,12 +538,12 @@
                     break;
                 }
                 this.#ruleset.unshift(pack);
-                pack = (await this.#loadExtension(pack)).mode?.inherit;
+                pack = (await importExtension(pack)).mode?.inherit;
             }
             // merge mode objects and game classes from extensions
             const modeTasks = [];
             for (const pack of this.#ruleset) {
-                const mode = copy(this.#extensions.get(pack)?.mode ?? {});
+                const mode = copy(getExtension(pack)?.mode ?? {});
                 for (const name in mode.classes) {
                     const cls = this.#gameClasses.get(name);
                     this.#gameClasses.set(name, mode.classes[name](cls));
