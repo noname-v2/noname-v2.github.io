@@ -1,5 +1,6 @@
 import { Database } from './database';
 import { UI } from './ui';
+import { globals } from './globals';
 import { version, config } from '../version';
 import { Component, ComponentClass } from './component';
 import { componentClasses } from '../classes';
@@ -27,12 +28,6 @@ export class Client {
 
     /** User identifier. */
     #uid!: string;
-
-    /** IndexedDB manager. */
-    #db: Database = new Database();
-
-    /** Component manager. */
-    #ui: UI;
 
     /** Module containing JS utilities. */
     #utils = utils;
@@ -112,19 +107,19 @@ export class Client {
     /** Initialization message. */
     get info(): [string, string] {
         return [
-            this.#db.get('nickname') || config.nickname,
-            this.#db.get('avatar') || config.avatar
+            globals.db.get('nickname') || config.nickname,
+            globals.db.get('avatar') || config.avatar
         ];
     }
 
     /** WebSocket address. */
     get url() {
-        return this.#db.get('ws') || config.ws;
+        return globals.db.get('ws') || config.ws;
     }
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
-        const ids = this.#ui.app?.arena?.get('peers');
+        const ids = globals.ui.app?.arena?.get('peers');
         if (!ids) {
             return null;
         }
@@ -150,14 +145,16 @@ export class Client {
     }
 
     constructor() {
-        this.#ui = new UI(this, this.#db);
+        globals.client = this;
+        const db = globals.db = new Database();
+        globals.ui = new UI();
 
         // get user identifier
-        this.#db.ready.then(() => {
-            if (!this.#db.get('uid')) {
-                this.#db.set('uid', this.utils.uid());
+        db.ready.then(() => {
+            if (!db.get('uid')) {
+                db.set('uid', this.utils.uid());
             }
-            this.#uid = this.#db.get('uid');
+            this.#uid = db.get('uid');
         });
 
         // register service worker for PWA
@@ -175,9 +172,9 @@ export class Client {
             worker.onmessage = ({data}) => {
                 if (data === 'ready') {
                     worker.onmessage = ({data}) => this.dispatch(data);
-                    config.push(this.#db.get(config[0] + ':disabledHeropacks') || []);
-                    config.push(this.#db.get(config[0] + ':disabledCardpacks') || []);
-                    config.push(this.#db.get(config[0] + ':config') || {});
+                    config.push(globals.db.get(config[0] + ':disabledHeropacks') || []);
+                    config.push(globals.db.get(config[0] + ':disabledCardpacks') || []);
+                    config.push(globals.db.get(config[0] + ':config') || {});
                     config.push(this.info);
                     this.send(0, config, true);
                 }
@@ -207,12 +204,12 @@ export class Client {
         }
 
         this.#components.clear();
-        this.#ui.app.clearPopups();
-        this.#ui.app.arena?.remove();
+        globals.ui.app.clearPopups();
+        globals.ui.app.arena?.remove();
         this.#unload();
 
         if (back) {
-            this.#ui.app.splash.show();
+            globals.ui.app.splash.show();
             this.#stageID = 0;
         }
     }
@@ -312,14 +309,14 @@ export class Client {
             const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    const arena = this.#ui.app.arena;
-                    if (arena && this.#ui.app.popups.size) {
+                    const arena = globals.ui.app.arena;
+                    if (arena && globals.ui.app.popups.size) {
                         arena.faded = true;
                     }
                     this.clear(false);
                     this.#loaded = Date.now();
                     if (arena) {
-                        await this.#ui.app.sleep('fast');
+                        await globals.ui.app.sleep('fast');
                     }
                     await this.#load(props[key].ruleset);
                     break;
@@ -343,7 +340,7 @@ export class Client {
                 const tag = tags[key]
                 if (typeof tag === 'string') {
                     this.#components.get(id)?.remove();
-                    const cmp = this.#ui.create(tag, null, id);
+                    const cmp = globals.ui.create(tag, null, id);
                     this.#components.set(id, cmp);
                     newComponents.push(cmp.ready);
                 }
@@ -385,7 +382,7 @@ export class Client {
             if (Date.now() - this.#loaded < 500) {
                 // prompt reload if error occus within 0.5s after reload
                 this.#loaded = 0;
-                this.#ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
+                globals.ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
                     if (reload === true) {
                         window.location.reload();
                     }

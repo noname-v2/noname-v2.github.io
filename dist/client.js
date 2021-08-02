@@ -111,6 +111,11 @@
         }
     }
 
+    /** Internal context. */
+    const globals = {};
+    ////// debug
+    globalThis.globals = globals;
+
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
@@ -753,10 +758,6 @@
     }
 
     class Arena extends Component {
-        /** Card container. */
-        cards = this.ui.createElement('cards');
-        /** Player container. */
-        players = this.ui.createElement('players');
         /** A dialog has been popped before this.remove() is called. */
         faded = false;
         /** Confirming exit. */
@@ -2464,10 +2465,6 @@
         ready;
         /** Root component. */
         app;
-        /** Client object. */
-        #client;
-        /** Database object. */
-        #db;
         /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
         #dispatched = false;
         /** Bindings for DOM events. */
@@ -2482,9 +2479,7 @@
         // moving[3]: return value of the binding.onmove
         // moving[4]: started by a touch event
         #moving = null;
-        constructor(client, db) {
-            this.#client = client;
-            this.#db = db;
+        constructor() {
             // wait for document.body to load
             if (document.readyState === 'loading') {
                 this.ready = new Promise(resolve => {
@@ -2499,7 +2494,7 @@
                 document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), { passive: true });
                 document.body.addEventListener('touchend', () => this.#pointerEnd(true), { passive: true });
                 document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), { passive: true });
-                if (this.#client.platform !== 'Android') {
+                if (globals.client.platform !== 'Android') {
                     document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), { passive: true });
                     document.body.addEventListener('mouseup', () => this.#pointerEnd(false), { passive: true });
                     document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), { passive: true });
@@ -2510,7 +2505,7 @@
         /** Create new component. */
         create(tag, parent = null, id = null) {
             const cls = componentClasses.get(tag);
-            const cmp = new cls(this.#client, this.#db, this, cls.tag || tag, id);
+            const cmp = new cls(globals.client, globals.db, this, cls.tag || tag, id);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
                 cmp.node.classList.add(tag);
@@ -2725,7 +2720,7 @@
                 }
             };
             node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (this.#client.platform !== 'Android') {
+            if (globals.client.platform !== 'Android') {
                 node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
             }
             return binding;
@@ -2918,10 +2913,6 @@
         #registration = null;
         /** User identifier. */
         #uid;
-        /** IndexedDB manager. */
-        #db = new Database();
-        /** Component manager. */
-        #ui;
         /** Module containing JS utilities. */
         #utils = utils;
         /** Components synced with the worker. */
@@ -2984,17 +2975,17 @@
         /** Initialization message. */
         get info() {
             return [
-                this.#db.get('nickname') || config.nickname,
-                this.#db.get('avatar') || config.avatar
+                globals.db.get('nickname') || config.nickname,
+                globals.db.get('avatar') || config.avatar
             ];
         }
         /** WebSocket address. */
         get url() {
-            return this.#db.get('ws') || config.ws;
+            return globals.db.get('ws') || config.ws;
         }
         /** Connected remote clients. */
         get peers() {
-            const ids = this.#ui.app?.arena?.get('peers');
+            const ids = globals.ui.app?.arena?.get('peers');
             if (!ids) {
                 return null;
             }
@@ -3017,13 +3008,15 @@
             return null;
         }
         constructor() {
-            this.#ui = new UI(this, this.#db);
+            globals.client = this;
+            const db = globals.db = new Database();
+            globals.ui = new UI();
             // get user identifier
-            this.#db.ready.then(() => {
-                if (!this.#db.get('uid')) {
-                    this.#db.set('uid', this.utils.uid());
+            db.ready.then(() => {
+                if (!db.get('uid')) {
+                    db.set('uid', this.utils.uid());
                 }
-                this.#uid = this.#db.get('uid');
+                this.#uid = db.get('uid');
             });
             // register service worker for PWA
             navigator.serviceWorker?.register('/service.js').then(reg => {
@@ -3038,9 +3031,9 @@
                 worker.onmessage = ({ data }) => {
                     if (data === 'ready') {
                         worker.onmessage = ({ data }) => this.dispatch(data);
-                        config.push(this.#db.get(config[0] + ':disabledHeropacks') || []);
-                        config.push(this.#db.get(config[0] + ':disabledCardpacks') || []);
-                        config.push(this.#db.get(config[0] + ':config') || {});
+                        config.push(globals.db.get(config[0] + ':disabledHeropacks') || []);
+                        config.push(globals.db.get(config[0] + ':disabledCardpacks') || []);
+                        config.push(globals.db.get(config[0] + ':config') || {});
                         config.push(this.info);
                         this.send(0, config, true);
                     }
@@ -3067,11 +3060,11 @@
                 this.#removeListeners(cmp);
             }
             this.#components.clear();
-            this.#ui.app.clearPopups();
-            this.#ui.app.arena?.remove();
+            globals.ui.app.clearPopups();
+            globals.ui.app.arena?.remove();
             this.#unload();
             if (back) {
-                this.#ui.app.splash.show();
+                globals.ui.app.splash.show();
                 this.#stageID = 0;
             }
         }
@@ -3141,7 +3134,6 @@
                 const ext = await importExtension(pack);
                 for (const tag in ext.mode?.components) {
                     const cls = componentClasses.get(tag) ?? Component;
-                    console.log('>>>', tag, cls);
                     componentClasses.set(tag, ext.mode.components[tag](cls));
                 }
             }
@@ -3163,14 +3155,14 @@
                 const [sid, tags, props, calls] = tick;
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
-                        const arena = this.#ui.app.arena;
-                        if (arena && this.#ui.app.popups.size) {
+                        const arena = globals.ui.app.arena;
+                        if (arena && globals.ui.app.popups.size) {
                             arena.faded = true;
                         }
                         this.clear(false);
                         this.#loaded = Date.now();
                         if (arena) {
-                            await this.#ui.app.sleep('fast');
+                            await globals.ui.app.sleep('fast');
                         }
                         await this.#load(props[key].ruleset);
                         break;
@@ -3192,7 +3184,7 @@
                     const tag = tags[key];
                     if (typeof tag === 'string') {
                         this.#components.get(id)?.remove();
-                        const cmp = this.#ui.create(tag, null, id);
+                        const cmp = globals.ui.create(tag, null, id);
                         this.#components.set(id, cmp);
                         newComponents.push(cmp.ready);
                     }
@@ -3231,7 +3223,7 @@
                 if (Date.now() - this.#loaded < 500) {
                     // prompt reload if error occus within 0.5s after reload
                     this.#loaded = 0;
-                    this.#ui.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
+                    globals.ui.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
                         if (reload === true) {
                             window.location.reload();
                         }
@@ -3267,6 +3259,5 @@
 
     const client = new Client();
     client.debug = true;
-    globalThis.client = client;
 
 }());

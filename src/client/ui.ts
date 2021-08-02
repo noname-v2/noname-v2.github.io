@@ -1,6 +1,7 @@
 import type { Client } from './client';
 import type { App } from '../components';
 import type { Database } from './database';
+import { globals } from './globals';
 import { componentClasses, ComponentTagMap } from '../classes';
 
 /** Type for point location */
@@ -59,12 +60,6 @@ export class UI {
     /** Root component. */
     readonly app!: App;
 
-    /** Client object. */
-    #client: Client;
-
-    /** Database object. */
-    #db: Database;
-
 	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
 	#dispatched = false;
 
@@ -83,10 +78,7 @@ export class UI {
 	// moving[4]: started by a touch event
 	#moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
 
-    constructor(client: Client, db: Database) {
-		this.#client = client;
-		this.#db = db;
-
+    constructor() {
 		// wait for document.body to load
         if (document.readyState === 'loading') {
 			this.ready = new Promise(resolve => {
@@ -103,7 +95,7 @@ export class UI {
 			document.body.addEventListener('touchend', () => this.#pointerEnd(true), {passive: true});
 			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
 
-			if (this.#client.platform !== 'Android') {
+			if (globals.client.platform !== 'Android') {
 				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
 				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
 				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
@@ -116,7 +108,7 @@ export class UI {
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
 		const cls = componentClasses.get(tag as string)!;
-        const cmp = new cls(this.#client, this.#db, this, cls.tag || tag as string, id);
+        const cmp = new cls(globals.client, globals.db, this, cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
 		if (cls.tag) {
@@ -390,7 +382,7 @@ export class UI {
 
 		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-		if (this.#client.platform !== 'Android') {
+		if (globals.client.platform !== 'Android') {
 			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
 		}
 

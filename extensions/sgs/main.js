@@ -315,6 +315,10 @@ function arena(T) {
         layout = 0;
         /** Player that is under control. */
         perspective = 0;
+        /** Card container. */
+        cards = this.ui.createElement('cards');
+        /** Player container. */
+        players = this.ui.createElement('players');
         /** Update arena layout. */
         resize(ax, ay, width, height) {
             // future: -> app.css['player-width'], etc.
