@@ -1,27 +1,27 @@
-import type { Game } from './game';
+import { globals } from './globals';
+import { apply } from '../utils';
 import type { Task } from './task';
 import type { Dict } from '../types';
-import { apply } from '../utils';
 
 export class Stage {
     /** Stage ID. */
-    readonly id: number;
+    id: number;
 
     /** Path to main task constructor. */
-    readonly path: string;
+    path: string;
 
     /** Main task object. */
-    readonly task: Task;
+    task: Task;
 
     /** Child steps of task objects.
      * Stage: child stage
      * array: [function name, executed, function arguments]
      * Dict: 
      */
-    readonly steps: (Stage | [string, boolean, any[]])[] = [];
+    steps: (Stage | [string, boolean, any[]])[] = [];
 
     /** Parent stage. */
-    readonly parent: Stage | null;
+    parent: Stage | null;
 
     /** Current state of execution.
      * -1: no action (cancelled)
@@ -39,23 +39,20 @@ export class Stage {
     skipped = false;
 
     /** Handler of component.yield(). */
-    readonly monitors = new Map<number, string>();
+    monitors = new Map<number, string>();
 
     /** Awaiting values from component.respond(). */
-    readonly awaits = new Map<number, string | null>();
+    awaits = new Map<number, string | null>();
 
     /** Values from component.respond(). */
-    readonly results: Dict = {};
+    results: Dict = {};
 
-    /** Reference to game object. */
-    #game: Game;
-
-    constructor(id: number, path: string, data: Dict, parent: Stage | null, game: Game) {
+    constructor(id: number, path: string, data: Dict, parent: Stage | null) {
         this.id = id;
         this.path = path;
         this.parent = parent;
-        this.task = apply(new (game.getTask(path))(this, game), data);
-        this.#game = game;
+        this.task = apply(new (globals.game.getTask(path))(), data);
+        globals.taskStage.set(this.task, this);
     }
 
     /** Execute the next step.
@@ -71,7 +68,7 @@ export class Stage {
         }
 
         // check if current step is skipped
-        this.#game.currentStage = this;
+        globals.game.currentStage = this;
         if ((this.skipped && this.progress < 4) ||
             (this.task.silent && [0, 1, 4, 5].includes(this.progress))) {
             this.progress++;
@@ -134,7 +131,7 @@ export class Stage {
 
     /** Trigger an event. */
     trigger(event: string | null = null) {
-        const stage = this.#game.createStage('trigger', {event}, this);
+        const stage = globals.game.createStage('trigger', {event}, this);
         stage.task.silent = true;
         this.steps.push(stage);
     }

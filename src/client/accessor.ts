@@ -1,4 +1,5 @@
 import { globals } from './globals';
+import { config } from '../version';
 import { importExtension } from '../extension';
 import type { ExtensionMeta } from '../types';
 
@@ -27,17 +28,22 @@ export class Accessor {
         return globals.client.uid;
     }
 
-    get url() {
-        return globals.client.url;
-    }
-
-    get info() {
-        return globals.client.info;
-    }
-
 	get assets() {
 		return globals.app.assets;
 	}
+
+    /** Initialization message. */
+    get info(): [string, string] {
+        return [
+            globals.db.get('nickname') || config.nickname,
+            globals.db.get('avatar') || config.avatar
+        ];
+    }
+
+    /** WebSocket address. */
+    get url() {
+        return globals.db.get('ws') || config.ws;
+    }
 
     constructor() {
         if (navigator.userAgent.includes('Android')) {

@@ -182,7 +182,7 @@ export class SplashHub extends Popup {
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.#setCaption('');
-                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
+                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.accessor.info]));
                     if (this.address.input.value !== config.ws) {
                         this.db.set('ws', this.address.input.value);
                     }
@@ -239,7 +239,7 @@ export class SplashHub extends Popup {
     /** Update nickname or avatar. */
     #sendInfo() {
         if (globals.client.connection instanceof WebSocket) {
-            globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
+            globals.client.connection.send('set:' + JSON.stringify(globals.accessor.info));
         }
     }
 
@@ -345,7 +345,7 @@ export class SplashHub extends Popup {
 		const address = this.address = this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
-			address.input.value = globals.client.url;
+			address.input.value = globals.accessor.url;
 		});
         address.callback = () => this.#connect();
         this.ui.bindClick(address.node, e => {

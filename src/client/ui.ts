@@ -139,7 +139,7 @@ export class UI {
 
 	/** Get a component by ID. */
 	get(id: number) {
-		return globals.client.components.get(id);
+		return globals.components.get(id);
 	}
 
     /** Create new component. */

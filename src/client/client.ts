@@ -1,5 +1,5 @@
 import { globals } from './globals';
-import { version, config } from '../version';
+import { version } from '../version';
 import { Component, ComponentClass } from './component';
 import { componentClasses } from '../classes';
 import { importExtension } from '../extension';
@@ -25,21 +25,6 @@ export class Client {
     /** User identifier. */
     uid!: string;
 
-    /** Components synced with the worker. */
-    components = new Map<number, Component>();
-
-    /** Event listeners. */
-    listeners = Object.freeze({
-        // connection status change
-        sync: new Set<{sync: () => void}>(),
-        // document resize
-        resize: new Set<{resize: () => void}>(),
-        // keyboard event
-        key: new Set<{key: (e: KeyboardEvent) => void}>(),
-        // stage change
-        stage: new Set<{key: () => void}>()
-    });
-
     /** ID of current stage. */
     #stageID = 0;
 
@@ -51,19 +36,6 @@ export class Client {
 
     /** This.#loop is not running. */
     #paused = true;
-
-    /** Initialization message. */
-    get info(): [string, string] {
-        return [
-            globals.db.get('nickname') || config.nickname,
-            globals.db.get('avatar') || config.avatar
-        ];
-    }
-
-    /** WebSocket address. */
-    get url() {
-        return globals.db.get('ws') || config.ws;
-    }
 
     constructor() {
         this.#unload();
@@ -95,7 +67,7 @@ export class Client {
                     config.push(globals.db.get(config[0] + ':disabledHeropacks') || []);
                     config.push(globals.db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(globals.db.get(config[0] + ':config') || {});
-                    config.push(this.info);
+                    config.push(globals.accessor.info);
                     this.send(0, config, true);
                 }
             }
@@ -119,11 +91,11 @@ export class Client {
 
     /** Clear currently connection status without disconnecting. */
     clear(back: boolean = true) {
-        for (const cmp of this.components.values()) {
+        for (const cmp of globals.components.values()) {
             this.#removeListeners(cmp);
         }
 
-        this.components.clear();
+        globals.components.clear();
         globals.ui.clearPopups();
         globals.arena?.remove();
         this.#unload();
@@ -164,7 +136,7 @@ export class Client {
 
     /** Trigger a listener. */
     trigger(event: 'sync' | 'resize' | 'key' | 'stage', arg?: any) {
-        for (const cmp of this.listeners[event]) {
+        for (const cmp of globals.listeners[event]) {
             (cmp as any)[event](arg);
         }
     }
@@ -190,6 +162,7 @@ export class Client {
      */
     async #render() {
         const tick = this.#ticks.shift()!;
+        const components = globals.components;
 
         try {
             // check if tick is a full UI reload
@@ -216,7 +189,7 @@ export class Client {
             // clear unfinished function calls (e.g. selectCard / selectTarget)
             if (sid !== this.#stageID) {
                 this.trigger('stage');
-                this.listeners.stage.clear();
+                globals.listeners.stage.clear();
                 this.#stageID = sid;
             }
 
@@ -226,9 +199,9 @@ export class Client {
                 const id = parseInt(key);
                 const tag = tags[key]
                 if (typeof tag === 'string') {
-                    this.components.get(id)?.remove();
+                    components.get(id)?.remove();
                     const cmp = globals.ui.create(tag, null, id);
-                    this.components.set(id, cmp);
+                    components.set(id, cmp);
                     newComponents.push(cmp.ready);
                 }
             }
@@ -237,7 +210,7 @@ export class Client {
             // update component properties
             let hooks: any[] = [];
             for (const key in props) {
-                hooks = hooks.concat(this.components.get(parseInt(key))!.update(props[key], false));
+                hooks = hooks.concat(components.get(parseInt(key))!.update(props[key], false));
             }
             for (const [hook, cmp, newVal, oldVal] of hooks) {
                 hook.apply(cmp, [newVal, oldVal]);
@@ -247,7 +220,7 @@ export class Client {
             for (const key in calls) {
                 const id = parseInt(key);
                 for (const [method, arg] of calls[key]) {
-                    this.components.get(id)![method as keyof Component](arg);
+                    components.get(id)![method as keyof Component](arg);
                 }
             }
 
@@ -255,10 +228,10 @@ export class Client {
             for (const key in tags) {
                 const id = parseInt(key);
                 if (tags[key] === null) {
-                    const cmp = this.components.get(id);
+                    const cmp = components.get(id);
                     if (cmp) {
                         this.#removeListeners(cmp);
-                        this.components.delete(id);
+                        components.delete(id);
                         cmp.remove();
                     }
                 }
@@ -299,8 +272,8 @@ export class Client {
 
     /** Remove all listeners. */
     #removeListeners(cmp: Component) {
-        for (const key in this.listeners) {
-            (this.listeners as any)[key].delete(cmp);
+        for (const key in globals.listeners) {
+            (globals.listeners as any)[key].delete(cmp);
         }
     }
 }

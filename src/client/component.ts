@@ -57,7 +57,7 @@ export abstract class Component {
     }
 
     get listeners() {
-        return globals.client.listeners;
+        return globals.listeners;
     }
 
     get owner() {

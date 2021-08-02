@@ -15,7 +15,7 @@ export abstract class Accessor {
     }
 
     get arena() {
-        return globals.game.arena;
+        return globals.arena;
     }
 
     get mode() {
@@ -48,7 +48,7 @@ export abstract class Accessor {
 
     /** Get a link. */
     get(id: number) {
-        return globals.game.links.get(id);
+        return globals.links.get(id);
     }
 
     /** Create a link. */

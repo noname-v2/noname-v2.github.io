@@ -1,16 +1,8 @@
 import { globals } from './globals';
-import type { Stage } from './stage';
-import type { Game } from './game';
 import type { Accessor } from './accessor';
 import type { Link, Dict } from '../types';
 
 export class Task<T extends Accessor = Accessor> {
-    /** Game stage that task belongs to. */
-    #stage: Stage;
-
-    /** Accessor of game objects. */
-    #game: Game;
-
     /** Do not trigger before / after / skip event. */
     silent: boolean = false;
 
@@ -22,20 +14,15 @@ export class Task<T extends Accessor = Accessor> {
     }
 
     get path(): string {
-        return this.#stage.path;
+        return globals.taskStage.get(this)!.path;
     }
 
     get parent(): Task | null {
-        return this.#stage.parent?.task ?? null;
+        return globals.taskStage.get(this)!.parent?.task ?? null;
     }
 
     get results(): Dict {
-        return this.#stage.results;
-    }
-    
-    constructor(stage: Stage, game: Game) {
-        this.#stage = stage;
-        this.#game = game;
+        return globals.taskStage.get(this)!.results;
     }
 
     /** Main function. */
@@ -43,27 +30,29 @@ export class Task<T extends Accessor = Accessor> {
 
     /** Create a link. */
     create(tag: string): Link {
-        return this.#game.create(tag);
+        return globals.game.create(tag);
     }
 
     /** Add a step in current stage. */
     add(step: string, ...args: any[]) {
-        this.#stage.steps.push([step, false, args]);
+        globals.taskStage.get(this)!.steps.push([step, false, args]);
     }
 
     /** Add a child stage in current stage. */
     addTask<T extends Task>(this: T, path: string, data?: Dict): T {
-        const stage = this.#game.createStage(path, data, this.#stage);
-        this.#stage.steps.push(stage);
+        const self = globals.taskStage.get(this)!;
+        const stage = globals.game.createStage(path, data, self);
+        self.steps.push(stage);
         return stage.task as T;
     }
 
     /** Add a sibline stage next to current stage. */
     addSiblingTask<T extends Task>(this: T, path: string, data?: Dict): T {
-        const stage = this.#game.createStage(path, data, this.#stage.parent!);
-        const idx = this.#stage.steps.indexOf(this.#stage.parent!);
+        const self = globals.taskStage.get(this)!;
+        const stage = globals.game.createStage(path, data, self.parent!);
+        const idx = self.steps.indexOf(self.parent!);
         if (idx !== -1) {
-            this.#stage.steps.splice(idx + 1, 0, stage);
+            self.steps.splice(idx + 1, 0, stage);
             return stage.task as T;
         }
         throw('failed to add sibling to ' + path);
@@ -71,20 +60,21 @@ export class Task<T extends Accessor = Accessor> {
 
     /** Add a callback for component function call. */
     monitor(link: Link, callback: string) {
-        this.#stage.monitors.set(link.id, callback);
+        globals.taskStage.get(this)!.monitors.set(link.id, callback);
     }
 
     /** Pause step 2 until a return value is received. */
     await(link: Link, tag?: string) {
-        this.#stage.awaits.set(link.id, tag ?? null);
+        globals.taskStage.get(this)!.awaits.set(link.id, tag ?? null);
     }
 
     /** Skip stage (may trigger skip event). */
     skip() {
-        if (this.#stage.progress < 2) {
-            this.#stage.skipped = true;
-            this.#stage.awaits.clear();
-            this.#stage.monitors.clear();
+        const self = globals.taskStage.get(this)!;
+        if (self.progress < 2) {
+            self.skipped = true;
+            self.awaits.clear();
+            self.monitors.clear();
             return true;
         }
         return false;
@@ -92,9 +82,10 @@ export class Task<T extends Accessor = Accessor> {
 
     /** Force stage to finish (without triggering skip event). */
     cancel() {
-        this.#stage.progress = -1;
-        this.#stage.awaits.clear();
-        this.#stage.monitors.clear();
+        const self = globals.taskStage.get(this)!;
+        self.progress = -1;
+        self.awaits.clear();
+        self.monitors.clear();
     }
 
     /** Trigger an event. Reserved names:
@@ -106,6 +97,6 @@ export class Task<T extends Accessor = Accessor> {
         if (name === 'before' || name === 'after' || name === 'skip') {
             throw('reserved event name: ' + name);
         }
-        return this.#stage.trigger(name);
+        globals.taskStage.get(this)!.trigger(name);
     }
 }

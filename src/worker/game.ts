@@ -14,9 +14,6 @@ export class Game {
     /** Current game stage. */
     currentStage!: Stage;
 
-    /** Links to components. */
-    links = new Map<number, [Link, Dict]>();
-
     /** Game mode. */
     mode: Mode = {};
 
@@ -27,15 +24,12 @@ export class Game {
     packs!: Set<string>;
 
     /** Banned packages. */
-    readonly banned = {
+    banned = {
         heropacks: new Set<string>(),
         cardpacks: new Set<string>(),
         heros: new Set<string>(),
         cards: new Set<string>(),
     };
-
-    /** Arena link. */
-    arena!: Link;
 
     /** Game progress.
      * 0: waiting
@@ -89,7 +83,7 @@ export class Game {
             },
             unlink: () => {
                 globals.worker.tick(id, null);
-                this.links.delete(id);
+                globals.links.delete(id);
             },
             update: (items: Dict) => {
                 for (const key in items) {
@@ -120,7 +114,7 @@ export class Game {
             }
         }) as Link;
 
-        this.links.set(id, [link, obj]);
+        globals.links.set(id, [link, obj]);
         globals.worker.tick(id, tag);
         return link;
     }
@@ -128,7 +122,7 @@ export class Game {
     /** Create a stage. */
     createStage(path: string, data?: Dict, parent?: Stage) {
         const id = ++this.#stageCount;
-        const stage = new Stage(id, path, data ?? {}, parent ?? null, this);
+        const stage = new Stage(id, path, data ?? {}, parent ?? null);
         this.#stages.set(id, stage);
         return stage;
     }
@@ -179,7 +173,7 @@ export class Game {
     pack(): UITick {
         const tags: Dict<string> = {};
         const props: Dict<Dict> = {};
-        for (const [uid, [link, obj]] of this.links.entries()) {
+        for (const [uid, [link, obj]] of globals.links.entries()) {
             tags[uid] = link.tag;
             props[uid] = obj;
         }
@@ -253,8 +247,8 @@ export class Game {
         // start game
         globals.accessor = new (this.getClass('game'))(this, globals.worker);
         this.rootStage = this.currentStage = this.createStage('main');
-        const arena = this.arena = this.create('arena');
-        arena.ruleset = this.#ruleset;
+        globals.arena = this.create('arena');
+        globals.arena.ruleset = this.#ruleset;
         this.loop();
     }
 }

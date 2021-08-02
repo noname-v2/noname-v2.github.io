@@ -1,8 +1,21 @@
 (function () {
     'use strict';
 
+    /** Components synced with the worker. */
+    const components = new Map();
+    /** Event listeners. */
+    const listeners = Object.freeze({
+        // connection status change
+        sync: new Set(),
+        // document resize
+        resize: new Set(),
+        // keyboard event
+        key: new Set(),
+        // stage change
+        stage: new Set()
+    });
     /** Internal context. */
-    const globals = {};
+    const globals = { components, listeners };
     ////// debug
     globalThis.globals = globals;
 
@@ -140,7 +153,7 @@
             return globals.arena;
         }
         get listeners() {
-            return globals.client.listeners;
+            return globals.listeners;
         }
         get owner() {
             return this.get('owner');
@@ -1783,7 +1796,7 @@
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.#setCaption('');
-                        ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
+                        ws.send('init:' + JSON.stringify([globals.client.uid, globals.accessor.info]));
                         if (this.address.input.value !== config.ws) {
                             this.db.set('ws', this.address.input.value);
                         }
@@ -1835,7 +1848,7 @@
         /** Update nickname or avatar. */
         #sendInfo() {
             if (globals.client.connection instanceof WebSocket) {
-                globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
+                globals.client.connection.send('set:' + JSON.stringify(globals.accessor.info));
             }
         }
         /** Create a room entry. */
@@ -1929,7 +1942,7 @@
             const address = this.address = this.ui.create('input', group);
             address.node.classList.add('address');
             address.ready.then(() => {
-                address.input.value = globals.client.url;
+                address.input.value = globals.accessor.url;
             });
             address.callback = () => this.#connect();
             this.ui.bindClick(address.node, e => {
@@ -2361,19 +2374,6 @@
         registration = null;
         /** User identifier. */
         uid;
-        /** Components synced with the worker. */
-        components = new Map();
-        /** Event listeners. */
-        listeners = Object.freeze({
-            // connection status change
-            sync: new Set(),
-            // document resize
-            resize: new Set(),
-            // keyboard event
-            key: new Set(),
-            // stage change
-            stage: new Set()
-        });
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
@@ -2382,17 +2382,6 @@
         #loaded = 0;
         /** This.#loop is not running. */
         #paused = true;
-        /** Initialization message. */
-        get info() {
-            return [
-                globals.db.get('nickname') || config.nickname,
-                globals.db.get('avatar') || config.avatar
-            ];
-        }
-        /** WebSocket address. */
-        get url() {
-            return globals.db.get('ws') || config.ws;
-        }
         constructor() {
             this.#unload();
             // get user identifier
@@ -2419,7 +2408,7 @@
                         config.push(globals.db.get(config[0] + ':disabledHeropacks') || []);
                         config.push(globals.db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(globals.db.get(config[0] + ':config') || {});
-                        config.push(this.info);
+                        config.push(globals.accessor.info);
                         this.send(0, config, true);
                     }
                 };
@@ -2441,10 +2430,10 @@
         }
         /** Clear currently connection status without disconnecting. */
         clear(back = true) {
-            for (const cmp of this.components.values()) {
+            for (const cmp of globals.components.values()) {
                 this.#removeListeners(cmp);
             }
-            this.components.clear();
+            globals.components.clear();
             globals.ui.clearPopups();
             globals.arena?.remove();
             this.#unload();
@@ -2481,7 +2470,7 @@
         }
         /** Trigger a listener. */
         trigger(event, arg) {
-            for (const cmp of this.listeners[event]) {
+            for (const cmp of globals.listeners[event]) {
                 cmp[event](arg);
             }
         }
@@ -2504,6 +2493,7 @@
          */
         async #render() {
             const tick = this.#ticks.shift();
+            const components = globals.components;
             try {
                 // check if tick is a full UI reload
                 const [sid, tags, props, calls] = tick;
@@ -2528,7 +2518,7 @@
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
                 if (sid !== this.#stageID) {
                     this.trigger('stage');
-                    this.listeners.stage.clear();
+                    globals.listeners.stage.clear();
                     this.#stageID = sid;
                 }
                 // create new components
@@ -2537,9 +2527,9 @@
                     const id = parseInt(key);
                     const tag = tags[key];
                     if (typeof tag === 'string') {
-                        this.components.get(id)?.remove();
+                        components.get(id)?.remove();
                         const cmp = globals.ui.create(tag, null, id);
-                        this.components.set(id, cmp);
+                        components.set(id, cmp);
                         newComponents.push(cmp.ready);
                     }
                 }
@@ -2547,7 +2537,7 @@
                 // update component properties
                 let hooks = [];
                 for (const key in props) {
-                    hooks = hooks.concat(this.components.get(parseInt(key)).update(props[key], false));
+                    hooks = hooks.concat(components.get(parseInt(key)).update(props[key], false));
                 }
                 for (const [hook, cmp, newVal, oldVal] of hooks) {
                     hook.apply(cmp, [newVal, oldVal]);
@@ -2556,17 +2546,17 @@
                 for (const key in calls) {
                     const id = parseInt(key);
                     for (const [method, arg] of calls[key]) {
-                        this.components.get(id)[method](arg);
+                        components.get(id)[method](arg);
                     }
                 }
                 // delete components
                 for (const key in tags) {
                     const id = parseInt(key);
                     if (tags[key] === null) {
-                        const cmp = this.components.get(id);
+                        const cmp = components.get(id);
                         if (cmp) {
                             this.#removeListeners(cmp);
-                            this.components.delete(id);
+                            components.delete(id);
                             cmp.remove();
                         }
                     }
@@ -2605,8 +2595,8 @@
         }
         /** Remove all listeners. */
         #removeListeners(cmp) {
-            for (const key in this.listeners) {
-                this.listeners[key].delete(cmp);
+            for (const key in globals.listeners) {
+                globals.listeners[key].delete(cmp);
             }
         }
     }
@@ -2695,7 +2685,7 @@
         }
         /** Get a component by ID. */
         get(id) {
-            return globals.client.components.get(id);
+            return globals.components.get(id);
         }
         /** Create new component. */
         create(tag, parent = null, id = null) {
@@ -3213,14 +3203,19 @@
         get uid() {
             return globals.client.uid;
         }
-        get url() {
-            return globals.client.url;
-        }
-        get info() {
-            return globals.client.info;
-        }
         get assets() {
             return globals.app.assets;
+        }
+        /** Initialization message. */
+        get info() {
+            return [
+                globals.db.get('nickname') || config.nickname,
+                globals.db.get('avatar') || config.avatar
+            ];
+        }
+        /** WebSocket address. */
+        get url() {
+            return globals.db.get('ws') || config.ws;
         }
         constructor() {
             if (navigator.userAgent.includes('Android')) {

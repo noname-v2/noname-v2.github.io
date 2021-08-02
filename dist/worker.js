@@ -1,6 +1,15 @@
 (function () {
     'use strict';
 
+    /** Accessor of Stage used by Task. */
+    const taskStage = new Map();
+    /** Links to components. */
+    const links = new Map();
+    /** Internal context. */
+    const globals = { taskStage, links };
+    ////// debug
+    globalThis.globals = globals;
+
     /** Deep copy plain object. */
     function copy(from) {
         const to = {};
@@ -94,14 +103,12 @@
         awaits = new Map();
         /** Values from component.respond(). */
         results = {};
-        /** Reference to game object. */
-        #game;
-        constructor(id, path, data, parent, game) {
+        constructor(id, path, data, parent) {
             this.id = id;
             this.path = path;
             this.parent = parent;
-            this.task = apply(new (game.getTask(path))(this, game), data);
-            this.#game = game;
+            this.task = apply(new (globals.game.getTask(path))(), data);
+            globals.taskStage.set(this.task, this);
         }
         /** Execute the next step.
          * @returns {boolean | null}
@@ -115,7 +122,7 @@
                 return false;
             }
             // check if current step is skipped
-            this.#game.currentStage = this;
+            globals.game.currentStage = this;
             if ((this.skipped && this.progress < 4) ||
                 (this.task.silent && [0, 1, 4, 5].includes(this.progress))) {
                 this.progress++;
@@ -174,89 +181,80 @@
         }
         /** Trigger an event. */
         trigger(event = null) {
-            const stage = this.#game.createStage('trigger', { event }, this);
+            const stage = globals.game.createStage('trigger', { event }, this);
             stage.task.silent = true;
             this.steps.push(stage);
         }
     }
 
-    /** Internal context. */
-    const globals = {};
-    ////// debug
-    globalThis.globals = globals;
-
     class Task {
-        /** Game stage that task belongs to. */
-        #stage;
-        /** Accessor of game objects. */
-        #game;
         /** Do not trigger before / after / skip event. */
         silent = false;
         get game() {
             return globals.accessor;
         }
         get path() {
-            return this.#stage.path;
+            return globals.taskStage.get(this).path;
         }
         get parent() {
-            return this.#stage.parent?.task ?? null;
+            return globals.taskStage.get(this).parent?.task ?? null;
         }
         get results() {
-            return this.#stage.results;
-        }
-        constructor(stage, game) {
-            this.#stage = stage;
-            this.#game = game;
+            return globals.taskStage.get(this).results;
         }
         /** Main function. */
         main() { }
         /** Create a link. */
         create(tag) {
-            return this.#game.create(tag);
+            return globals.game.create(tag);
         }
         /** Add a step in current stage. */
         add(step, ...args) {
-            this.#stage.steps.push([step, false, args]);
+            globals.taskStage.get(this).steps.push([step, false, args]);
         }
         /** Add a child stage in current stage. */
         addTask(path, data) {
-            const stage = this.#game.createStage(path, data, this.#stage);
-            this.#stage.steps.push(stage);
+            const self = globals.taskStage.get(this);
+            const stage = globals.game.createStage(path, data, self);
+            self.steps.push(stage);
             return stage.task;
         }
         /** Add a sibline stage next to current stage. */
         addSiblingTask(path, data) {
-            const stage = this.#game.createStage(path, data, this.#stage.parent);
-            const idx = this.#stage.steps.indexOf(this.#stage.parent);
+            const self = globals.taskStage.get(this);
+            const stage = globals.game.createStage(path, data, self.parent);
+            const idx = self.steps.indexOf(self.parent);
             if (idx !== -1) {
-                this.#stage.steps.splice(idx + 1, 0, stage);
+                self.steps.splice(idx + 1, 0, stage);
                 return stage.task;
             }
             throw ('failed to add sibling to ' + path);
         }
         /** Add a callback for component function call. */
         monitor(link, callback) {
-            this.#stage.monitors.set(link.id, callback);
+            globals.taskStage.get(this).monitors.set(link.id, callback);
         }
         /** Pause step 2 until a return value is received. */
         await(link, tag) {
-            this.#stage.awaits.set(link.id, tag ?? null);
+            globals.taskStage.get(this).awaits.set(link.id, tag ?? null);
         }
         /** Skip stage (may trigger skip event). */
         skip() {
-            if (this.#stage.progress < 2) {
-                this.#stage.skipped = true;
-                this.#stage.awaits.clear();
-                this.#stage.monitors.clear();
+            const self = globals.taskStage.get(this);
+            if (self.progress < 2) {
+                self.skipped = true;
+                self.awaits.clear();
+                self.monitors.clear();
                 return true;
             }
             return false;
         }
         /** Force stage to finish (without triggering skip event). */
         cancel() {
-            this.#stage.progress = -1;
-            this.#stage.awaits.clear();
-            this.#stage.monitors.clear();
+            const self = globals.taskStage.get(this);
+            self.progress = -1;
+            self.awaits.clear();
+            self.monitors.clear();
         }
         /** Trigger an event. Reserved names:
          * before: triggered before executing task.main()
@@ -267,7 +265,7 @@
             if (name === 'before' || name === 'after' || name === 'skip') {
                 throw ('reserved event name: ' + name);
             }
-            return this.#stage.trigger(name);
+            globals.taskStage.get(this).trigger(name);
         }
     }
 
@@ -283,7 +281,7 @@
             return globals.worker.uid;
         }
         get arena() {
-            return globals.game.arena;
+            return globals.arena;
         }
         get mode() {
             return globals.game.mode;
@@ -308,7 +306,7 @@
         }
         /** Get a link. */
         get(id) {
-            return globals.game.links.get(id);
+            return globals.links.get(id);
         }
         /** Create a link. */
         create(tag) {
@@ -356,8 +354,6 @@
         rootStage;
         /** Current game stage. */
         currentStage;
-        /** Links to components. */
-        links = new Map();
         /** Game mode. */
         mode = {};
         /** Game configuration. */
@@ -371,8 +367,6 @@
             heros: new Set(),
             cards: new Set(),
         };
-        /** Arena link. */
-        arena;
         /** Game progress.
          * 0: waiting
          * 1: gaming
@@ -414,7 +408,7 @@
                 },
                 unlink: () => {
                     globals.worker.tick(id, null);
-                    this.links.delete(id);
+                    globals.links.delete(id);
                 },
                 update: (items) => {
                     for (const key in items) {
@@ -443,14 +437,14 @@
                     }
                 }
             });
-            this.links.set(id, [link, obj]);
+            globals.links.set(id, [link, obj]);
             globals.worker.tick(id, tag);
             return link;
         }
         /** Create a stage. */
         createStage(path, data, parent) {
             const id = ++this.#stageCount;
-            const stage = new Stage(id, path, data ?? {}, parent ?? null, this);
+            const stage = new Stage(id, path, data ?? {}, parent ?? null);
             this.#stages.set(id, stage);
             return stage;
         }
@@ -496,7 +490,7 @@
         pack() {
             const tags = {};
             const props = {};
-            for (const [uid, [link, obj]] of this.links.entries()) {
+            for (const [uid, [link, obj]] of globals.links.entries()) {
                 tags[uid] = link.tag;
                 props[uid] = obj;
             }
@@ -563,8 +557,8 @@
             // start game
             globals.accessor = new (this.getClass('game'))(this, globals.worker);
             this.rootStage = this.currentStage = this.createStage('main');
-            const arena = this.arena = this.create('arena');
-            arena.ruleset = this.#ruleset;
+            globals.arena = this.create('arena');
+            globals.arena.ruleset = this.#ruleset;
             this.loop();
         }
     }
@@ -674,7 +668,7 @@
                     peers.push(peer.id);
                 }
             }
-            globals.game.arena.update({ peers });
+            globals.arena.update({ peers });
         }
         /** The room is ready for clients to join. */
         ready() {
@@ -784,7 +778,7 @@
             try {
                 const [uid, sid, id, result, done] = data;
                 const stage = globals.game.currentStage;
-                const link = globals.game.links.get(id);
+                const link = globals.links.get(id);
                 if (id === -1) {
                     // reload UI upon error
                     this.send(uid, globals.game.pack());
