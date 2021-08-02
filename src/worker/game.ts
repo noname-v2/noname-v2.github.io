@@ -3,9 +3,9 @@ import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
 import { importExtension, getExtension } from '../extension';
-import type { Worker, UITick } from './worker';
+import { globals } from './globals';
+import type { UITick } from './worker';
 import type { Mode, Link, Dict } from '../types';
-
 
 export class Game {
     /** Root game stage. */
@@ -15,16 +15,16 @@ export class Game {
     currentStage!: Stage;
 
     /** Links to components. */
-    readonly links = new Map<number, [Link, Dict]>();
+    links = new Map<number, [Link, Dict]>();
 
     /** Game mode. */
-    readonly mode: Mode = {};
+    mode: Mode = {};
 
     /** Game configuration. */
-    readonly config: Dict;
+    config!: Dict;
 
     /** Hero packages. */
-    readonly packs: Set<string>;
+    packs!: Set<string>;
 
     /** Banned packages. */
     readonly banned = {
@@ -43,12 +43,6 @@ export class Game {
      * 2: over
     */
     progress = 0;
-
-    /** Property and method accessor. */
-    accessor!: Accessor;
-
-    /** Worker reference. */
-    #worker: Worker;
 
     /** All created stages. */
     #stages = new Map<number, Stage>();
@@ -71,13 +65,12 @@ export class Game {
     /** Currently paused by stage.awaits. */
     #paused = true;
 
-    constructor(content: [string, string[], string[], string[], Dict, [string, string]], worker: Worker) {
-        this.#worker = worker;
+    init(content: [string, string[], string[], string[], Dict, [string, string]]) {
         this.packs = new Set(content[1]);
         this.banned.heropacks = new Set(content[2]);
         this.banned.cardpacks = new Set(content[3]);
         this.config = content[4];
-        (this.#worker as any).info = content[5];
+        globals.worker.info = content[5];
 
         // load extensions
         Promise.all(content[1].map(mode => importExtension(mode))).then(() => this.#loadMode(content[0]));
@@ -92,10 +85,10 @@ export class Game {
         const reserved: Dict = {
             id, tag,
             call: (method: string, arg?: any) => {
-                this.#worker.tick(id, [method, arg]);
+                globals.worker.tick(id, [method, arg]);
             },
             unlink: () => {
-                this.#worker.tick(id, null);
+                globals.worker.tick(id, null);
                 this.links.delete(id);
             },
             update: (items: Dict) => {
@@ -103,7 +96,7 @@ export class Game {
                     const val = items[key] ?? null;
                     val === null ? delete obj[key] : obj[key] = val;
                 }
-                this.#worker.tick(id, items);
+                globals.worker.tick(id, items);
             }
         };
 
@@ -128,7 +121,7 @@ export class Game {
         }) as Link;
 
         this.links.set(id, [link, obj]);
-        this.#worker.tick(id, tag);
+        globals.worker.tick(id, tag);
         return link;
     }
 
@@ -168,16 +161,16 @@ export class Game {
             // mode name
             this.mode.name,
             // joined players
-            this.#worker.getPeers({playing: true})?.length ?? 1,
+            globals.worker.getPeers({playing: true})?.length ?? 1,
             // number of players in a game
             this.config.np,
             // nickname and avatar of owner
-            this.#worker.info,
+            globals.worker.info,
             // game state
             this.progress
         ]);
         if (push) {
-            this.#worker.connection?.send('edit:' + room);
+            globals.worker.connection?.send('edit:' + room);
         }
         return room;
     }
@@ -258,7 +251,7 @@ export class Game {
         freeze(this.mode);
         
         // start game
-        this.accessor = new (this.getClass('game'))(this, this.#worker);
+        globals.accessor = new (this.getClass('game'))(this, globals.worker);
         this.rootStage = this.currentStage = this.createStage('main');
         const arena = this.arena = this.create('arena');
         arena.ruleset = this.#ruleset;

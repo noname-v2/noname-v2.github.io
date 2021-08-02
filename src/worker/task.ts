@@ -1,3 +1,4 @@
+import { globals } from './globals';
 import type { Stage } from './stage';
 import type { Game } from './game';
 import type { Accessor } from './accessor';
@@ -17,7 +18,7 @@ export class Task<T extends Accessor = Accessor> {
     [key: string]: any;
 
     get game(): T {
-        return this.#game.accessor as T;
+        return globals.accessor as T;
     }
 
     get path(): string {

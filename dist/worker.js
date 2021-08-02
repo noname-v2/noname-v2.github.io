@@ -1,8 +1,6 @@
 (function () {
     'use strict';
 
-    const version = '2.0.0dev1';
-
     /** Deep copy plain object. */
     function copy(from) {
         const to = {};
@@ -182,6 +180,11 @@
         }
     }
 
+    /** Internal context. */
+    const globals = {};
+    ////// debug
+    globalThis.globals = globals;
+
     class Task {
         /** Game stage that task belongs to. */
         #stage;
@@ -190,7 +193,7 @@
         /** Do not trigger before / after / skip event. */
         silent = false;
         get game() {
-            return this.#game.accessor;
+            return globals.accessor;
         }
         get path() {
             return this.#stage.path;
@@ -268,70 +271,68 @@
         }
     }
 
+    /** Hub related functions. */
+    const hub = {
+        connect: (url) => globals.worker.connect(url),
+        disconnect: () => globals.worker.disconnect(),
+        syncRoom: () => globals.game.syncRoom()
+    };
     /** Accessor of game and worker properties and methods. */
     class Accessor {
-        /** Original game object. */
-        #game;
-        /** Original worker object. */
-        #worker;
         get owner() {
-            return this.#worker.uid;
+            return globals.worker.uid;
         }
         get arena() {
-            return this.#game.arena;
+            return globals.game.arena;
         }
         get mode() {
-            return this.#game.mode;
+            return globals.game.mode;
         }
         get config() {
-            return this.#game.config;
+            return globals.game.config;
         }
         get packs() {
-            return this.#game.packs;
+            return globals.game.packs;
         }
         get banned() {
-            return this.#game.banned;
+            return globals.game.banned;
         }
         get playerLinks() {
-            return this.#worker.getPeers({ playing: true });
+            return globals.worker.getPeers({ playing: true });
         }
         get spectatorLinks() {
-            return this.#worker.getPeers({ playing: false });
+            return globals.worker.getPeers({ playing: false });
         }
-        /** Hub related functions. */
         get hub() {
-            const connect = (url) => this.#worker.connect(url);
-            const disconnect = () => this.#worker.disconnect();
-            const syncRoom = () => this.#game.syncRoom();
-            return { connect, disconnect, syncRoom };
+            return hub;
         }
-        constructor(game, worker) {
-            this.#game = game;
-            this.#worker = worker;
+        /** Get a link. */
+        get(id) {
+            return globals.game.links.get(id);
         }
         /** Create a link. */
         create(tag) {
-            return this.#game.create(tag);
+            return globals.game.create(tag);
         }
         /** Creata a class in game.#gameClasses. */
         createInstance(name, ...args) {
-            return new (this.#game.getClass(name))(...args);
+            return new (globals.game.getClass(name))(...args);
         }
         /** Access extension content. */
         getExtension(path) {
-            return this.#game.getExtension(path);
+            return globals.game.getExtension(path);
         }
         /** Get links to peers. */
         getPeers(filter) {
-            return this.#worker.getPeers(filter);
+            return globals.worker.getPeers(filter);
         }
         /** Mark game as started. */
         start() {
-            this.#game.start();
+            globals.game.start();
         }
         /** Mark game as over. */
         over() {
-            this.#game.over();
+            globals.game.over();
         }
     }
 
@@ -378,10 +379,6 @@
          * 2: over
         */
         progress = 0;
-        /** Property and method accessor. */
-        accessor;
-        /** Worker reference. */
-        #worker;
         /** All created stages. */
         #stages = new Map();
         /** Array of packages that define mode tasks (priority: high -> low). */
@@ -396,13 +393,12 @@
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        constructor(content, worker) {
-            this.#worker = worker;
+        init(content) {
             this.packs = new Set(content[1]);
             this.banned.heropacks = new Set(content[2]);
             this.banned.cardpacks = new Set(content[3]);
             this.config = content[4];
-            this.#worker.info = content[5];
+            globals.worker.info = content[5];
             // load extensions
             Promise.all(content[1].map(mode => importExtension(mode))).then(() => this.#loadMode(content[0]));
         }
@@ -414,10 +410,10 @@
             const reserved = {
                 id, tag,
                 call: (method, arg) => {
-                    this.#worker.tick(id, [method, arg]);
+                    globals.worker.tick(id, [method, arg]);
                 },
                 unlink: () => {
-                    this.#worker.tick(id, null);
+                    globals.worker.tick(id, null);
                     this.links.delete(id);
                 },
                 update: (items) => {
@@ -425,7 +421,7 @@
                         const val = items[key] ?? null;
                         val === null ? delete obj[key] : obj[key] = val;
                     }
-                    this.#worker.tick(id, items);
+                    globals.worker.tick(id, items);
                 }
             };
             const link = new Proxy(obj, {
@@ -448,7 +444,7 @@
                 }
             });
             this.links.set(id, [link, obj]);
-            this.#worker.tick(id, tag);
+            globals.worker.tick(id, tag);
             return link;
         }
         /** Create a stage. */
@@ -483,16 +479,16 @@
                 // mode name
                 this.mode.name,
                 // joined players
-                this.#worker.getPeers({ playing: true })?.length ?? 1,
+                globals.worker.getPeers({ playing: true })?.length ?? 1,
                 // number of players in a game
                 this.config.np,
                 // nickname and avatar of owner
-                this.#worker.info,
+                globals.worker.info,
                 // game state
                 this.progress
             ]);
             if (push) {
-                this.#worker.connection?.send('edit:' + room);
+                globals.worker.connection?.send('edit:' + room);
             }
             return room;
         }
@@ -565,13 +561,15 @@
             this.mode.extension = mode;
             freeze(this.mode);
             // start game
-            this.accessor = new (this.getClass('game'))(this, this.#worker);
+            globals.accessor = new (this.getClass('game'))(this, globals.worker);
             this.rootStage = this.currentStage = this.createStage('main');
             const arena = this.arena = this.create('arena');
             arena.ruleset = this.#ruleset;
             this.loop();
         }
     }
+
+    const version = '2.0.0dev1';
 
     /**
      * Manager of component syncing between client and server.
@@ -591,8 +589,6 @@
         #history = [];
         /** Entries to be ticked. */
         #ticks = [];
-        /** Game object. */
-        #game;
         /**
          * Setup communication.
          */
@@ -601,7 +597,7 @@
                 if (data[1] === 0) {
                     self.onmessage = ({ data }) => this.#dispatch(data);
                     this.uid = data[0];
-                    this.#game = new Game(data[3], this);
+                    globals.game.init(data[3]);
                 }
             };
             self.postMessage('ready');
@@ -645,7 +641,7 @@
                 }
             };
             ws.onopen = () => {
-                ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.syncRoom(false)]));
+                ws.send('init:' + JSON.stringify([this.uid, this.info, globals.game.syncRoom(false)]));
             };
             ws.onmessage = ({ data }) => {
                 try {
@@ -678,7 +674,7 @@
                     peers.push(peer.id);
                 }
             }
-            this.#game.arena.update({ peers });
+            globals.game.arena.update({ peers });
         }
         /** The room is ready for clients to join. */
         ready() {
@@ -690,8 +686,8 @@
             // join as player or spectator
             const [uid, info] = JSON.parse(msg);
             this.createPeer(uid, info);
-            this.#game.syncRoom();
-            this.send(uid, this.#game.pack());
+            globals.game.syncRoom();
+            this.send(uid, globals.game.pack());
         }
         /** A remote client leaves the room. */
         leave(uid) {
@@ -699,7 +695,7 @@
                 this.peers.get(uid).unlink();
                 this.peers.delete(uid);
                 this.sync();
-                this.#game.syncRoom();
+                globals.game.syncRoom();
             }
         }
         /** A remote client sends a response message. */
@@ -708,12 +704,12 @@
         }
         /** Create a peer component. */
         createPeer(uid, info) {
-            const peer = this.#game.create('peer');
+            const peer = globals.game.create('peer');
             peer.update({
                 owner: uid,
                 nickname: info[0],
                 avatar: info[1],
-                playing: this.getPeers({ playing: true }).length < this.#game.config.np
+                playing: this.getPeers({ playing: true }).length < globals.game.config.np
             });
             this.peers.set(uid, peer);
             this.sync();
@@ -744,7 +740,7 @@
                 // schedule a UITick if no pending UITick exists
                 setTimeout(() => this.#commit());
             }
-            this.#ticks.push([this.#game.currentStage.id, id, item]);
+            this.#ticks.push([globals.game.currentStage.id, id, item]);
         }
         /** Generate UITick(s) from this.#ticks. */
         #commit() {
@@ -787,11 +783,11 @@
         async #dispatch(data) {
             try {
                 const [uid, sid, id, result, done] = data;
-                const stage = this.#game.currentStage;
-                const link = this.#game.links.get(id);
+                const stage = globals.game.currentStage;
+                const link = globals.game.links.get(id);
                 if (id === -1) {
                     // reload UI upon error
-                    this.send(uid, this.#game.pack());
+                    this.send(uid, globals.game.pack());
                 }
                 else if (id === -2) {
                     // disconnect from remote hub
@@ -807,7 +803,7 @@
                         }
                         stage.awaits.delete(id);
                         if (!stage.awaits.size) {
-                            this.#game.loop();
+                            globals.game.loop();
                         }
                     }
                     else if (!done && stage.monitors.has(id)) {
@@ -823,7 +819,7 @@
         }
     }
 
-    const worker = new Worker();
-    globalThis.worker = worker;
+    globals.worker = new Worker();
+    globals.game = new Game();
 
 }());

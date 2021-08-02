@@ -1,4 +1,6 @@
+import { Game } from './game';
 import { Worker } from './worker';
+import { globals } from './globals';
 
-const worker = new Worker();
-(globalThis as any).worker = worker;
+globals.worker = new Worker();
+globals.game = new Game();

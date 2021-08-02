@@ -1,88 +1,84 @@
-import type { Game } from './game';
-import type { Worker } from './worker';
+import { globals } from './globals';
 import type { Dict } from '../types';
+
+/** Hub related functions. */
+const hub = {
+    connect: (url: string) => globals.worker.connect(url),
+    disconnect: () => globals.worker.disconnect(),
+    syncRoom: () => globals.game.syncRoom()
+};
 
 /** Accessor of game and worker properties and methods. */
 export abstract class Accessor {
-    /** Original game object. */
-    #game: Game;
-
-    /** Original worker object. */
-    #worker: Worker;
-
     get owner() {
-        return this.#worker.uid;
+        return globals.worker.uid;
     }
 
     get arena() {
-        return this.#game.arena;
+        return globals.game.arena;
     }
 
     get mode() {
-        return this.#game.mode;
+        return globals.game.mode;
     }
 
     get config() {
-        return this.#game.config;
+        return globals.game.config;
     }
 
     get packs() {
-        return this.#game.packs;
+        return globals.game.packs;
     }
 
     get banned() {
-        return this.#game.banned;
+        return globals.game.banned;
     }
 
     get playerLinks() {
-        return this.#worker.getPeers({playing: true});
+        return globals.worker.getPeers({playing: true});
     }
 
     get spectatorLinks() {
-        return this.#worker.getPeers({playing: false});
+        return globals.worker.getPeers({playing: false});
     }
 
-    /** Hub related functions. */
     get hub() {
-        const connect = (url: string) => this.#worker.connect(url);
-        const disconnect = () => this.#worker.disconnect();
-        const syncRoom = () => this.#game.syncRoom();
-        return { connect, disconnect, syncRoom };
+        return hub;
     }
 
-    constructor(game: Game, worker: Worker) {
-        this.#game = game;
-        this.#worker = worker;
+    /** Get a link. */
+    get(id: number) {
+        return globals.game.links.get(id);
     }
 
     /** Create a link. */
     create(tag: string) {
-        return this.#game.create(tag);
+        return globals.game.create(tag);
     }
 
     /** Creata a class in game.#gameClasses. */
     createInstance(name: string, ...args: any[]) {
-        return new (this.#game.getClass(name))(...args);
+        return new (globals.game.getClass(name))(...args);
     }
 
     /** Access extension content. */
     getExtension(path: string) {
-        return this.#game.getExtension(path);
+        return globals.game.getExtension(path);
     }
 
     /** Get links to peers. */
     getPeers(filter?: Dict) {
-        return this.#worker.getPeers(filter);
+        return globals.worker.getPeers(filter);
     }
 
     /** Mark game as started. */
     start() {
-        this.#game.start();
+        globals.game.start();
     }
 
     /** Mark game as over. */
     over() {
-        this.#game.over();
+        globals.game.over();
     }
 
     /** Backup game state. */

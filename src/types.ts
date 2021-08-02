@@ -1,4 +1,4 @@
-import type {Component, ComponentClass } from './client/component';
+import type { ComponentClass } from './client/component';
 import type { Task } from './worker/task';
 
 /** Plain object. */

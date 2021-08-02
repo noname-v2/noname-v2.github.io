@@ -1,5 +1,6 @@
 import { version } from '../version';
 import { Game } from './game';
+import { globals } from './globals';
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
 import type { Link, Dict } from '../types';
@@ -36,13 +37,13 @@ export type ClientMessage = [string, number, number, any, boolean];
  */
 export class Worker {
     /** Worker version. */
-    readonly version = version;
+    version = version;
 
     /** User identifier. */
     uid!: string;
 
     /** User nickname and avatar. */
-    readonly info!: [string, string];
+    info!: [string, string];
 
     /** Connected hub. */
     connection: WebSocket | null = null;
@@ -56,9 +57,6 @@ export class Worker {
     /** Entries to be ticked. */
     #ticks: TickEntry[] = [];
 
-    /** Game object. */
-    #game!: Game;
-
     /**
      * Setup communication.
      */
@@ -67,7 +65,7 @@ export class Worker {
             if (data[1] === 0) {
                 self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
                 this.uid = data[0];
-                this.#game = new Game(data[3], this);
+                globals.game.init(data[3]);
             }
         }
         (self as any).postMessage('ready');
@@ -114,7 +112,7 @@ export class Worker {
             }
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, this.#game.syncRoom(false)]));
+            ws.send('init:' + JSON.stringify([this.uid, this.info, globals.game.syncRoom(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
@@ -149,7 +147,7 @@ export class Worker {
                 peers.push(peer.id);
             }
         }
-        this.#game.arena.update({peers});
+        globals.game.arena.update({peers});
     }
 
     /** The room is ready for clients to join. */
@@ -163,8 +161,8 @@ export class Worker {
         // join as player or spectator
         const [uid, info]: [string, [string, string]] = JSON.parse(msg);
         this.createPeer(uid, info);
-        this.#game.syncRoom();
-        this.send(uid, this.#game.pack());
+        globals.game.syncRoom();
+        this.send(uid, globals.game.pack());
     }
 
     /** A remote client leaves the room. */
@@ -173,7 +171,7 @@ export class Worker {
             this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
-            this.#game.syncRoom();
+            globals.game.syncRoom();
         }
     }
 
@@ -184,12 +182,12 @@ export class Worker {
 
     /** Create a peer component. */
     createPeer(uid: string, info: [string, string]) {
-        const peer = this.#game.create('peer');
+        const peer = globals.game.create('peer');
         peer.update({
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: this.getPeers({playing: true})!.length < this.#game.config.np
+            playing: this.getPeers({playing: true})!.length < globals.game.config.np
         });
         this.peers!.set(uid, peer);
         this.sync();
@@ -222,7 +220,7 @@ export class Worker {
             // schedule a UITick if no pending UITick exists
             setTimeout(() => this.#commit());
         }
-        this.#ticks.push([this.#game.currentStage.id, id, item]);
+        this.#ticks.push([globals.game.currentStage.id, id, item]);
     }
 
     /** Generate UITick(s) from this.#ticks. */
@@ -271,11 +269,11 @@ export class Worker {
     async #dispatch(data: ClientMessage) {
         try {
             const [uid, sid, id, result, done] = data;
-            const stage = this.#game.currentStage;
-            const link = this.#game.links.get(id);
+            const stage = globals.game.currentStage;
+            const link = globals.game.links.get(id);
             if (id === -1) {
                 // reload UI upon error
-                this.send(uid, this.#game.pack());
+                this.send(uid, globals.game.pack());
             }
             else if (id === -2) {
                 // disconnect from remote hub
@@ -291,7 +289,7 @@ export class Worker {
                     }
                     stage.awaits.delete(id);
                     if (!stage.awaits.size) {
-                        this.#game.loop();
+                        globals.game.loop();
                     }
                 }
                 else if (!done && stage.monitors.has(id)) {
