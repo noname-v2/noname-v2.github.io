@@ -19,11 +19,9 @@ export class Splash extends Component {
 	
 	init() {
 		// create mode selection gallery
-		this.gallery.splash = this;
 		this.node.appendChild(this.gallery.node);
 		
 		// bottom button bar
-		this.bar.splash = this;
         this.node.appendChild(this.bar.node);
 
 		// debug mode

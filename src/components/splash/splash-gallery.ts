@@ -1,12 +1,8 @@
 import { globals } from '../../client/globals';
 import { Gallery } from '../gallery';
-import { Splash } from '../../components';
 import type { ExtensionMeta, Dict } from '../../types';
 
 export class SplashGallery extends Gallery {
-    /** Reference to Splash. */
-    splash!: Splash;
-
     /** Single row. */
     nrows = 1;
 
@@ -65,11 +61,11 @@ export class SplashGallery extends Gallery {
 
 		// bind click
 		ui.bindClick(entry, () => {
-			if (this.splash.hidden) {
+			if (globals.splash.hidden) {
 				return;
 			}
 			globals.client.connect([mode, this.#getPacks(mode)]);
-			this.splash.hide();
+			globals.splash.hide();
 		});
 
 		return entry

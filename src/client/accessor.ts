@@ -23,6 +23,10 @@ export class Accessor {
         return this.ios || this.android;
     }
 
+    get uid() {
+        return globals.client.uid;
+    }
+
     get url() {
         return globals.client.url;
     }

@@ -1,27 +1,25 @@
 import { globals } from '../../client/globals';
-import { Component, Button, Splash, ButtonColor } from '../../components';
+import { Component, Button, ButtonColor } from '../../components';
 
 export class SplashBar extends Component {
     /** Use tag <noname-bar>. */
     static tag = 'bar';
 
-    /** Reference to Splash. */
-    splash!: Splash;
-
     /** Button names and components. */
     buttons = new Map<string, Button>();
 
     init() {
-        // add buttons
         if (globals.client.debug) {
             this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
             if (this.client.mobile) {
                 this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
             }
         }
+        
+        // add buttons
         this.addButton('workshop', '扩展', 'yellow', () => {});
-        this.addButton('hub', '联机', 'green', () => this.splash?.hub.open());
-        this.addButton('settings', '选项', 'orange', () => this.splash?.settings.open());
+        this.addButton('hub', '联机', 'green', () => globals.splash.hub.open());
+        this.addButton('settings', '选项', 'orange', () => globals.splash.settings.open());
     }
 
     /** Add a button. */
@@ -36,10 +34,8 @@ export class SplashBar extends Component {
     }
 
     async #resetGame() {
-        globals.app.node.style.opacity = '0.5';
-				
         if (window['caches']) {
-            await window['caches'].delete(globals.client.version);
+            await window['caches'].delete(this.client.version);
         }
 
         for (const file of await this.db.readdir()) {

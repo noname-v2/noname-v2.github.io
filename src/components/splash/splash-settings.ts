@@ -1,4 +1,3 @@
-import { globals } from '../../client/globals';
 import { Popup } from '../popup';
 import { Splash, Point, Gallery } from '../../components';
 
@@ -199,7 +198,7 @@ export class SplashSettings extends Popup {
                     this.#rotate(this.#rotating);
                 }
             }
-            globals.app.playMusic();
+            this.client.playMusic();
         }
         
         // callback for clicking on menu entry
