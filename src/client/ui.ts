@@ -1,8 +1,5 @@
-import type { Client } from './client';
-import type { App } from '../components';
-import type { Database } from './database';
 import { globals } from './globals';
-import { componentClasses, ComponentTagMap } from '../classes';
+import type { ComponentTagMap } from '../classes';
 
 /** Type for point location */
 export type Point = {x: number, y: number};
@@ -46,19 +43,32 @@ class Binding {
 
 export class UI {
 	/** App width. */
-	width!: number;
+	#width!: number;
 
 	/** App height. */
-	height!: number;
+	#height!: number;
 
     /** Current zoom level. */
-	zoom = 1;
+	#zoom = 1;
 
 	/** Resolved when ready. */
-	readonly ready: Promise<unknown>;
+	#ready: Promise<unknown>;
 
-    /** Root component. */
-    readonly app!: App;
+	get width() {
+		return this.#width;
+	}
+
+	get height() {
+		return this.#height;
+	}
+
+	get zoom() {
+		return this.#zoom;
+	}
+
+	get ready() {
+		return this.#ready;
+	}
 
 	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
 	#dispatched = false;
@@ -81,34 +91,43 @@ export class UI {
     constructor() {
 		// wait for document.body to load
         if (document.readyState === 'loading') {
-			this.ready = new Promise(resolve => {
+			this.#ready = new Promise(resolve => {
 				document.addEventListener('DOMContentLoaded', resolve);
 			});
 		}
 		else {
-			this.ready = Promise.resolve();
+			this.#ready = Promise.resolve();
 		}
         
-		// add bindings for drag operations
 		this.ready.then(() => {
+			// add bindings for drag operations
 			document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), {passive: true});
 			document.body.addEventListener('touchend', () => this.#pointerEnd(true), {passive: true});
 			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
 
-			if (globals.client.platform !== 'Android') {
+			// avoid unexpected mouse event behavior on some Android devices
+			if (!globals.platform.android) {
 				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
 				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
 				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
 			}
 
-			(this as any).app = this.create('app');
+			globals.app = this.create('app');
+			this.#resize();
+			window.addEventListener('resize', () => this.#resize());
+			document.oncontextmenu = () => false;
 		});
     }
 
+	/** Get a component by ID. */
+	get(id: number) {
+		return globals.client.components.get(id);
+	}
+
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
-		const cls = componentClasses.get(tag as string)!;
-        const cmp = new cls(globals.client, globals.db, this, cls.tag || tag as string, id);
+		const cls = globals.componentClasses.get(tag as string)!;
+        const cmp = new cls(cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
 		if (cls.tag) {
@@ -330,7 +349,7 @@ export class UI {
 		}
 		config ??= {};
 		config.easing ??= 'ease';
-		config.duration ??= this.app.getTransition();
+		config.duration ??= globals.app.getTransition();
 		
 		const anim = node.animate(keyframes, config);
 
@@ -382,7 +401,7 @@ export class UI {
 
 		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-		if (globals.client.platform !== 'Android') {
+		if (!globals.platform.android) {
 			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
 		}
 
@@ -471,4 +490,44 @@ export class UI {
 		this.#clicking = null;
 		this.#moving = null;
 	}
+
+    /** Adjust zoom level according to device DPI. */
+    #resize() {
+        // actual window size
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        // ideal window size
+        let [ax, ay] = [960, 540];
+
+        // let current mode determine ideal size
+        if (globals.arena) {
+            [ax, ay] = globals.arena.resize(ax, ay, width, height);
+        }
+
+        // zoom to fit ideal size
+        const zx = width / ax, zy = height / ay;
+        let w, h, z;
+
+        if (zx < zy) {
+            w = ax;
+            h = ax / width * height;
+            z = zx;
+        }
+        else {
+            w = ay / height * width;
+            h = ay;
+            z = zy;
+        }
+
+        globals.app.node.style.setProperty('--app-width', w + 'px');
+        globals.app.node.style.setProperty('--app-height', h + 'px');
+        globals.app.node.style.setProperty('--app-scale', z.toString());
+        this.#width = w;
+        this.#height = h;
+        this.#zoom = z;
+
+        // call listeners
+        globals.client.trigger('resize');
+    }
 }

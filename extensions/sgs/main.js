@@ -348,12 +348,12 @@ function arena(T) {
             const nodes = new Set();
             // append players
             for (const id of ids) {
-                const player = this.client.get(id);
+                const player = this.ui.get(id);
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
                 }
-                if (player.owner === this.client.uid) {
+                if (player.mine) {
                     this.perspective = player.get('seat');
                 }
             }

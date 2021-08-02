@@ -1,4 +1,5 @@
-import { Component } from '../../components';
+import { globals } from '../../client/globals';
+import { Component, Peer } from '../../components';
 
 export class Arena extends Component {
     /** A dialog has been popped before this.remove() is called. */
@@ -10,12 +11,47 @@ export class Arena extends Component {
     /** Trying to exit. */
     exiting = false;
 
+    get version() {
+        return globals.client.version;
+    }
+
+    get url() {
+        return globals.client.url;
+    }
+
+    /** Connected remote clients. */
+    get peers(): Peer[] | null {
+        const ids = this.get('peers');
+        if (!ids) {
+            return null;
+        }
+
+        const peers = [];
+        for (const id of ids) {
+            const cmp = this.ui.get(id);
+            if (cmp) {
+                peers.push(cmp as Peer);
+            }
+        }
+        return peers;
+    }
+
+    /** Peer component representing current client. */
+    get peer(): Peer | null {
+        for (const peer of this.peers || []) {
+            if (peer.mine) {
+                return peer;
+            }
+        }
+        return null;
+    }
+
     init() {
-        this.app.arena = this;
+        globals.arena = this;
         this.app.node.appendChild(this.node);
 
         // make android back button function as returning to splash screen
-        if (this.client.platform === 'Android' && history.state === null) {
+        if (this.platform.android && history.state === null) {
             history.pushState('arena', '');
         }
     }
@@ -27,9 +63,9 @@ export class Arena extends Component {
 
     /** Remove with fade out animation. */
     remove() {
-        if (this.app.arena === this) {
-            this.app.arena = null;
-            if (this.client.platform === 'Android' && history.state === 'arena') {
+        if (globals.arena === this) {
+            delete globals.arena;
+            if (this.platform.android && history.state === 'arena') {
                 history.back();
             }
         }
@@ -46,8 +82,8 @@ export class Arena extends Component {
             return;
         }
         this.confirming = true;
-        const ws = this.client.connection;
-        const peers = this.client.peers;
+        const ws = globals.client.connection;
+        const peers = this.peers;
         if (peers || ws instanceof WebSocket) {
             const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
             if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', {content, id: 'exitArena'})) {
@@ -57,18 +93,18 @@ export class Arena extends Component {
                 if (ws instanceof WebSocket) {
                     // leave currently connected room
                     ws.send('leave:init');
-                    this.client.clear();
+                    globals.client.clear();
                 }
                 else {
                     // tell worker to close the room
                     this.remove();
-                    this.client.send(-2, null, false);
+                    globals.client.send(-2, null, false);
                     this.exiting = true;
 
                     // force exit if worker doesn't respond within 0.5s
                     setTimeout(() => {
                         if (this.exiting) {
-                            this.client.disconnect();
+                            globals.client.disconnect();
                         }
                     }, 500);
                 }
@@ -78,19 +114,19 @@ export class Arena extends Component {
             }
         }
         else {
-            this.client.disconnect();
+            globals.client.disconnect();
         }
     }
 
     /** Connection status change. */
     $peers() {
-        if (!this.client.peers && this.exiting) {
+        if (!this.peers && this.exiting) {
             // worker notifies that room successfully closed
-            this.client.disconnect();
+            globals.client.disconnect();
         }
         else {
             // wait until other properties have been updated
-            setTimeout(() => this.client.trigger('sync'));
+            setTimeout(() => globals.client.trigger('sync'));
         }
     }
 }

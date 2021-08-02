@@ -41,7 +41,7 @@ export class Lobby extends Component {
     init() {
         const arena = this.app.arena!;
         arena.node.appendChild(this.node);
-        this.client.listeners.sync.add(this);
+        this.listeners.sync.add(this);
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
             this.sidebar.setFooter('开始游戏', () => this.respond());
@@ -54,10 +54,10 @@ export class Lobby extends Component {
 
     /** Update connected players. */
     sync() {
-        const peers = this.client.peers;
+        const peers = this.arena!.peers;
         
         // callback for online mode toggle
-        if (this.owner === this.client.uid) {
+        if (this.mine) {
             this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {
                 this.app.alert('连接失败');
@@ -98,7 +98,7 @@ export class Lobby extends Component {
         }
 
         // update spectate button
-        const peer = this.client.peer;
+        const peer = this.arena!.peer;
         if (peer) {
             this.seats.classList.remove('offline');
             this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
@@ -143,7 +143,7 @@ export class Lobby extends Component {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
-                    this.yield(['config', name, this.client.url]);
+                    this.yield(['config', name, this.arena!.url]);
                 }
                 else {
                     this.yield(['config', name, result]);
@@ -181,9 +181,9 @@ export class Lobby extends Component {
         }
     }
 
-    $owner(uid: string) {
-        this.sidebar.pane.node.classList[uid === this.client.uid ? 'remove' : 'add']('fixed');
-        this.sidebar[uid === this.client.uid ? 'showFooter' : 'hideFooter']();
+    $owner() {
+        this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
+        this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
     }
 
     $config(config: Dict) {
@@ -201,7 +201,7 @@ export class Lobby extends Component {
                 }
             }
         }
-        if (this.owner === this.client.uid) {
+        if (this.mine) {
             delete config.online;
             this.db.set(this.get('mode') + ':config', config);
         }
@@ -221,7 +221,7 @@ export class Lobby extends Component {
         for (const [name, toggle] of this.heroToggles.entries()) {
             toggle.assign(!packs.includes(name));
         }
-        if (this.owner === this.client.uid) {
+        if (this.mine) {
             this.db.set(this.get('mode') + ':disabledHeropacks', packs.length > 0 ? packs : null);
         }
     }
@@ -231,7 +231,7 @@ export class Lobby extends Component {
         for (const [name, toggle] of this.cardToggles.entries()) {
             toggle.assign(!packs.includes(name));
         }
-        if (this.owner === this.client.uid) {
+        if (this.mine) {
             this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
         }
     }
@@ -248,7 +248,7 @@ export class Lobby extends Component {
             this.players.push(player);
             this.seats.appendChild(player.node);
             this.ui.bindClick(player.node, () => {
-                if (this.owner !== this.client.uid) {
+                if (!this.mine) {
                     return;
                 }
                 const toggle = this.configToggles.get('np');
@@ -287,10 +287,10 @@ export class Lobby extends Component {
         // toggle between spectator and player
         this.ui.bindClick(this.spectateButton, () => {
             if (this.spectateButton.dataset.fill === 'red') {
-                this.client.peer!.yield('play');
+                this.arena!.peer!.yield('play');
             }
             else {
-                this.client.peer!.yield('spectate');
+                this.arena!.peer!.yield('spectate');
             }
         });
     }

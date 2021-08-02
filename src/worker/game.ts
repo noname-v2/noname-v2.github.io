@@ -9,7 +9,7 @@ import type { Mode, Link, Dict } from '../types';
 
 export class Game {
     /** Root game stage. */
-    readonly rootStage!: Stage;
+    rootStage!: Stage;
 
     /** Current game stage. */
     currentStage!: Stage;
@@ -35,7 +35,7 @@ export class Game {
     };
 
     /** Arena link. */
-    readonly arena!: Link;
+    arena!: Link;
 
     /** Game progress.
      * 0: waiting
@@ -45,7 +45,7 @@ export class Game {
     progress = 0;
 
     /** Property and method accessor. */
-    readonly accessor!: Accessor;
+    accessor!: Accessor;
 
     /** Worker reference. */
     #worker: Worker;
@@ -258,9 +258,9 @@ export class Game {
         freeze(this.mode);
         
         // start game
-        (this as any).accessor = new (this.getClass('game'))(this, this.#worker);
-        (this as any).rootStage = this.currentStage = this.createStage('main');
-        const arena = (this as any).arena = this.create('arena');
+        this.accessor = new (this.getClass('game'))(this, this.#worker);
+        this.rootStage = this.currentStage = this.createStage('main');
+        const arena = this.arena = this.create('arena');
         arena.ruleset = this.#ruleset;
         this.loop();
     }

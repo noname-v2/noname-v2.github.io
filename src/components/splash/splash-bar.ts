@@ -1,3 +1,4 @@
+import { globals } from '../../client/globals';
 import { Component, Button, Splash, ButtonColor } from '../../components';
 
 export class SplashBar extends Component {
@@ -12,9 +13,9 @@ export class SplashBar extends Component {
 
     init() {
         // add buttons
-        if (this.client.debug) {
+        if (globals.client.debug) {
             this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
-            if (this.client.mobile) {
+            if (this.platform.mobile) {
                 this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
             }
         }
@@ -38,7 +39,7 @@ export class SplashBar extends Component {
         this.app.node.style.opacity = '0.5';
 				
         if (window['caches']) {
-            await window['caches'].delete(this.client.version);
+            await window['caches'].delete(globals.client.version);
         }
 
         for (const file of await this.db.readdir()) {

@@ -39,7 +39,7 @@ export class Worker {
     readonly version = version;
 
     /** User identifier. */
-    readonly uid!: string;
+    uid!: string;
 
     /** User nickname and avatar. */
     readonly info!: [string, string];
@@ -66,7 +66,7 @@ export class Worker {
         self.onmessage = ({data}: {data: ClientMessage}) => {
             if (data[1] === 0) {
                 self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
-                (this as any).uid = data[0];
+                this.uid = data[0];
                 this.#game = new Game(data[3], this);
             }
         }

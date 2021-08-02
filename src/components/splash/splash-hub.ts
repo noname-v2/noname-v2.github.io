@@ -1,3 +1,4 @@
+import { globals } from '../../client/globals';
 import { Popup } from '../popup';
 import { Splash, Dialog, SplashGallery } from '../../components';
 import { config } from '../../version';
@@ -53,7 +54,7 @@ export class SplashHub extends Popup {
 			splash.node.classList.add('blurred');
 			this.address.input.disabled = true;
 			setTimeout(async () => {
-				if (!this.client.connection) {
+				if (!globals.client.connection) {
 					await this.#connect();
 					this.address.input.disabled = false;
 				}
@@ -72,7 +73,7 @@ export class SplashHub extends Popup {
 
     /** Disconnected or kicked out of room. */
     async reload(msg: string) {
-        const [reason, content] = this.client.utils.split(msg);
+        const [reason, content] = this.utils.split(msg);
         this.#clearRooms();
         this.edit(content);
         if (this.app.arena) {
@@ -83,7 +84,7 @@ export class SplashHub extends Popup {
                 await this.app.alert('房间已关闭');
             }
             this.app.arena.faded = true;
-            this.client.clear();
+            globals.client.clear();
         }
         this.roomGroup.classList.remove('entering');
         this.roomGroup.classList.remove('hidden');
@@ -91,7 +92,7 @@ export class SplashHub extends Popup {
 
     /** Room info update. */
     edit(msg: string) {
-        const ws = this.client.connection;
+        const ws = globals.client.connection;
         if (!(ws instanceof WebSocket)) {
             return;
         }
@@ -129,16 +130,16 @@ export class SplashHub extends Popup {
 
     /** Message received from the owner of joined room. */
     msg(msg: string) {
-        this.client.dispatch(JSON.parse(msg));
-        if (!this.app.splash.hidden) {
-            this.app.splash.hide(true);
+        globals.client.dispatch(JSON.parse(msg));
+        if (!globals.splash.hidden) {
+            globals.splash.hide(true);
             this.close();
         }
     }
 
     /** Owner of joined room disconnected. */
     down(msg: string) {
-        const ws = this.client.connection;
+        const ws = globals.client.connection;
         const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
         const dialog = this.app.popups.get('down') as Dialog;
         const update = () => {
@@ -149,10 +150,10 @@ export class SplashHub extends Popup {
         const interval = setInterval(update, 1000);
         promise.then(val => {
             clearInterval(interval);
-            if (val === true && ws === this.client.connection && ws instanceof WebSocket) {
-                if (this.app.arena) {
-                    this.app.arena.faded = true;
-                    this.client.clear();
+            if (val === true && ws === globals.client.connection && ws instanceof WebSocket) {
+                if (this.arena) {
+                    this.arena.faded = true;
+                    globals.client.clear();
                 }
                 ws.send('leave:init');
             }
@@ -166,22 +167,22 @@ export class SplashHub extends Popup {
                 this.db.set('ws', null);
                 return;
             }
-            this.client.connect('wss://' + this.address.input.value);
+            globals.client.connect('wss://' + this.address.input.value);
             this.address.set('icon', 'clear');
 
-            const ws = this.client.connection as WebSocket;
+            const ws = globals.client.connection as WebSocket;
             this.#setCaption('正在连接');
 
             return new Promise<void>(resolve => {
                 ws.onclose = () => {
-                    this.#disconnect(this.client.connection === ws);
+                    this.#disconnect(globals.client.connection === ws);
                     setTimeout(resolve, 100);
                 };
 
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.#setCaption('');
-                    ws.send('init:' + JSON.stringify([this.client.uid, this.client.info]));
+                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
                     if (this.address.input.value !== config.ws) {
                         this.db.set('ws', this.address.input.value);
                     }
@@ -189,7 +190,7 @@ export class SplashHub extends Popup {
 
                 ws.onmessage = ({data}: {data: string}) => {
                     try {
-                        const [method, arg] = this.client.utils.split<typeof hub2member[number]>(data);
+                        const [method, arg] = this.utils.split<typeof hub2member[number]>(data);
                         if (hub2member.includes(method)) {
                             this[method](arg);
                         }
@@ -210,7 +211,7 @@ export class SplashHub extends Popup {
     /** Disconnect from hub. */
     #disconnect(client: boolean) {
         if (client) {
-            this.client.disconnect();
+            globals.client.disconnect();
         }
         this.#clearRooms();
         this.address.set('icon', null);
@@ -237,8 +238,8 @@ export class SplashHub extends Popup {
 
     /** Update nickname or avatar. */
     #sendInfo() {
-        if (this.client.connection instanceof WebSocket) {
-            this.client.connection.send('set:' + JSON.stringify(this.client.info));
+        if (globals.client.connection instanceof WebSocket) {
+            globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
         }
     }
 
@@ -344,16 +345,16 @@ export class SplashHub extends Popup {
 		const address = this.address = this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
-			address.input.value = this.client.url;
+			address.input.value = globals.client.url;
 		});
         address.callback = () => this.#connect();
         this.ui.bindClick(address.node, e => {
-            const ws = this.client.connection;
+            const ws = globals.client.connection;
             if (address.input.disabled && ws instanceof WebSocket) {
                 const menu = this.ui.create('popup');
                 menu.position = e;
                 menu.pane.addOption('断开', () => {
-                    if (ws === this.client.connection) {
+                    if (ws === globals.client.connection) {
                         ws.close();
                     }
                     menu.close();

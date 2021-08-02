@@ -1,3 +1,4 @@
+import { globals } from '../../client/globals';
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
 import type { Extension, ExtensionMeta, Dict } from '../../types';
@@ -23,13 +24,13 @@ export class SplashGallery extends Gallery {
 
 		// get modes
 		this.index = await this.db.readFile('extensions/index.json') || {};
-		this.extensions = await this.client.utils.readJSON<string[]>('extensions/arrange.json');
+		this.extensions = await this.utils.readJSON<string[]>('extensions/arrange.json');
 
 		// udpate extension index
 		let write = false;
 		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
-				const meta = await this.client.getMeta(name);
+				const meta = await globals.client.getMeta(name);
 				if (meta) {
 					this.index[name] = meta;
 					write = true;
@@ -67,7 +68,7 @@ export class SplashGallery extends Gallery {
 			if (this.splash.hidden) {
 				return;
 			}
-			this.client.connect([mode, this.#getPacks(mode)]);
+			globals.client.connect([mode, this.#getPacks(mode)]);
 			this.splash.hide();
 		});
 

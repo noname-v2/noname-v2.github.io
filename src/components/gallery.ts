@@ -37,7 +37,7 @@ export class Gallery extends Component {
      * true: for devices that can scroll horizontally, scroll with CSS snap.
      * false: for mouse wheels, scroll with transform animation.
      */
-    #snap = this.client.mobile || this.db.get('snap') || false;
+    #snap = this.platform.mobile || this.db.get('snap') || false;
 
     /** Listener for wheel event. */
     #wheelListener = (e: WheelEvent) => this.#wheel(e);
@@ -56,11 +56,11 @@ export class Gallery extends Component {
         // add callbacks for dynamic item number
         if (Array.isArray(this.nrows)) {
             this.node.classList.add('centery');
-            this.client.listeners.resize.add(this);
+            this.listeners.resize.add(this);
         }
         if (Array.isArray(this.ncols)) {
             this.node.classList.add('centerx');
-            this.client.listeners.resize.add(this);
+            this.listeners.resize.add(this);
         }
     }
 

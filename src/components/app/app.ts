@@ -1,4 +1,5 @@
-import { Component, Arena, Splash, Popup, TransitionDuration } from '../../components';
+import { globals } from '../../client/globals';
+import { Component, Popup, TransitionDuration } from '../../components';
 import type { Dict } from '../../types';
 
 interface DialogOptions {
@@ -14,17 +15,11 @@ interface ConfirmOptions extends DialogOptions {
 }
 
 export class App extends Component {
-    /** Arena component. */
-    arena: Arena | null = null;
-
-    /** Splash component. */
-    readonly splash!: Splash;
-
     /** Transition durations. */
     readonly css: Dict<Dict<string>> = {};
 
     /** Index of assets. */
-    readonly assets!: Dict<Dict<string>>;
+    assets!: Dict<Dict<string>>;
 
     /** Popup components cleared when arena close. */
     readonly popups = new Map<string | number, Popup>();
@@ -49,12 +44,6 @@ export class App extends Component {
 
     async init() {
         document.head.appendChild(this.#themeNode);
-        
-        // setup triggers
-        this.resize();
-        window.addEventListener('resize', this.resize.bind(this));
-        // this.node.addEventListener('wheel', e => e.preventDefault(), {passive: false}); // prevent two finger swipe gesture in safari
-        document.oncontextmenu = () => false;
         document.body.appendChild(this.node);
 
         // wait for indexedDB
@@ -64,18 +53,18 @@ export class App extends Component {
 
         // load styles and fonts
         await this.loadTheme();
-        (this as any).splash = this.ui.create('splash');
-        await this.splash.gallery.ready;
+        globals.splash = this.ui.create('splash');
+        await globals.splash.gallery.ready;
         const initAssets = this.#initAssets();
 
         // load splash menus
-        Promise.all([initAssets, this.splash.show(), (document as any).fonts.ready]).then(() => {
-            this.splash.hub.create(this.splash);
-            this.splash.settings.create(this.splash);
+        Promise.all([initAssets, globals.splash.show(), (document as any).fonts.ready]).then(() => {
+            globals.splash.hub.create(globals.splash);
+            globals.splash.settings.create(globals.splash);
         });
 
         // add handler for android back button
-        if (this.client.platform === 'Android') {
+        if (this.platform.android) {
             window.addEventListener('popstate', e => {
                 const arena = this.app.arena
                 if (arena && !arena.exiting) {
@@ -94,8 +83,8 @@ export class App extends Component {
         const name = this.db.get('theme');
 
         // fetch current and default theme defination
-        const currentTheme = await this.client.utils.readJSON<any>('assets/theme', name, 'theme.json');
-        const defaultTheme = await this.client.utils.readJSON<any>('assets/theme', 'default', 'theme.json');
+        const currentTheme = await this.utils.readJSON<any>('assets/theme', name, 'theme.json');
+        const defaultTheme = await this.utils.readJSON<any>('assets/theme', 'default', 'theme.json');
 
         // theme stylesheet
         const sheet = this.#themeNode.sheet!;
@@ -225,46 +214,6 @@ export class App extends Component {
         else if (vol == 0) {
             this.#bgmNode.pause();
         }
-    }
-
-    /** Adjust zoom level according to device DPI. */
-    resize() {
-        // actual window size
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        // ideal window size
-        let [ax, ay] = [960, 540];
-
-        // let current mode determine ideal size
-        if (this.arena) {
-            [ax, ay] = this.arena.resize(ax, ay, width, height);
-        }
-
-        // zoom to fit ideal size
-        const zx = width / ax, zy = height / ay;
-        let w, h, z;
-
-        if (zx < zy) {
-            w = ax;
-            h = ax / width * height;
-            z = zx;
-        }
-        else {
-            w = ay / height * width;
-            h = ay;
-            z = zy;
-        }
-
-        this.node.style.setProperty('--app-width', w + 'px');
-        this.node.style.setProperty('--app-height', h + 'px');
-        this.node.style.setProperty('--app-scale', z.toString());
-        this.ui.width = w;
-        this.ui.height = h;
-        this.ui.zoom = z;
-
-        // call listeners
-        this.client.trigger('resize');
     }
 
     /** Get the duration of transition.
@@ -409,13 +358,13 @@ export class App extends Component {
         const gainNode = this.#audio.createGain();
         track.connect(gainNode).connect(this.#audio.destination);
         gainNode.gain.value = (vol >= 0 && vol <= 100) ? vol / 100 : 0;
-        (this as any).#bgmGain = gainNode.gain;
+        this.#bgmGain = gainNode.gain;
         this.playMusic();
     }
 
     /** Index assets and load fonts. */
     async #initAssets() {
-        (this as any).assets = await this.client.utils.readJSON('assets/index.json');
+        this.assets = await this.utils.readJSON('assets/index.json');
 
         // add fonts
         for (const font in this.assets['font']) {
@@ -424,10 +373,10 @@ export class App extends Component {
             (document as any).fonts.add(fontFace);
 
             if (font === this.css.app['caption-font']) {
-                fontFace.loaded.then(() => this.splash.node.classList.add('caption-font-loaded'));
+                fontFace.loaded.then(() => globals.splash.node.classList.add('caption-font-loaded'));
             }
             else if (font === this.css.app['label-font']) {
-                fontFace.loaded.then(() => this.splash.node.classList.add('label-font-loaded'));
+                fontFace.loaded.then(() => globals.splash.node.classList.add('label-font-loaded'));
             }
         }
     }

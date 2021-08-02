@@ -1,13 +1,12 @@
-import type { Client } from './client';
+import { globals } from './globals';
+import * as utils from '../utils';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
-import type { Database } from './database';
-import type { UI } from './ui';
 
 // type for component constructor
 export type ComponentClass = {
     tag?: string | null,
-    new(client: Client, db: Database, ui: UI, tag: string, id: number | null): Component
+    new(tag: string, id: number | null): Component
 };
 
 export abstract class Component {
@@ -29,42 +28,46 @@ export abstract class Component {
     /** Component ID (for worker-managed components). */
     #id: number | null;
 
-    /** Client object. */
-    #client: Client;
+    get platform() {
+        return globals.platform;
+    }
 
-    /** Database object. */
-    #db: Database;
-
-    /** UI object. */
-    #ui: UI;
-
-    get client() {
-        return this.#client;
+    get utils() {
+        return utils;
     }
 
     get db() {
-        return this.#db;
+        return globals.db;
     }
 
     get ui() {
-        return this.#ui;
+        return globals.ui;
     }
 
     get app() {
-        return this.ui.app;
+        return globals.app;
+    }
+
+    get arena() {
+        return globals.arena;
+    }
+
+    get listeners() {
+        return globals.client.listeners;
     }
 
     get owner() {
         return this.get('owner');
     }
 
+    get mine() {
+        return this.owner === globals.client.uid;
+    }
+
     /** Create node. */
-    constructor(client: Client, db: Database, ui: UI, tag: string, id: number | null) {
+    constructor(tag: string, id: number | null) {
         this.#id = id;
-        this.#client = client;
-        this.#db = db;
-        this.#ui = ui;
-        this.node = ui.createElement(tag);
+        this.node = this.ui.createElement(tag);
         this.ready = Promise.resolve().then(() => this.init());
     }
 
@@ -109,7 +112,7 @@ export abstract class Component {
         if (this.#id === null) {
             throw('element is has no ID');
         }
-        this.client.send(this.#id, result, false);
+        globals.client.send(this.#id, result, false);
     }
 
     /** Send return value to worker (component must be monitored). */
@@ -117,12 +120,12 @@ export abstract class Component {
         if (this.#id === null) {
             throw('element is has no ID');
         }
-        this.client.send(this.#id, result, true);
+        globals.client.send(this.#id, result, true);
     }
 
     /** Delay for a time period. */
     sleep(dur: TransitionDuration) {
-        return this.client.utils.sleep(this.app.getTransition(dur) / 1000)
+        return this.utils.sleep(this.app.getTransition(dur) / 1000)
     }
 
     /** Remove element. */

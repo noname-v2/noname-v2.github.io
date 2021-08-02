@@ -2,21 +2,15 @@ export class Database  {
     /** indexedDB object. */
 	#db?: IDBDatabase;
 
-	/** Get, set or delete database entry. */
-	#transact(name: 'settings'|'files', cmd: 'get'|'put'|'delete', key: string, value?: unknown) {
-		return new Promise(resolve => {
-			const mode = cmd === 'get' ? 'readonly' : 'readwrite';
-			const store = this.#db!.transaction(name, mode).objectStore(name);
-			const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
-			request.onsuccess = () => resolve(request.result ?? null);
-		});
-	}
-
 	/** Cache for synthronous database. */
 	#cache = new Map<string, unknown>();
 
 	/** Resolved when ready. */
-	readonly ready: Promise<void>;
+	#ready: Promise<void>;
+
+	get ready() {
+		return this.#ready;
+	}
 
 	constructor() {
 		// open database
@@ -37,7 +31,7 @@ export class Database  {
 		};
 
 		// wait until database is ready
-		this.ready = new Promise<void>(resolve => {
+		this.#ready = new Promise<void>(resolve => {
 			request.onsuccess = () => {
 				clearTimeout(timeout);
 				
@@ -120,6 +114,16 @@ export class Database  {
 					resolve(files);
 				}
 			};
+		});
+	}
+
+	/** Get, set or delete database entry. */
+	#transact(name: 'settings'|'files', cmd: 'get'|'put'|'delete', key: string, value?: unknown) {
+		return new Promise(resolve => {
+			const mode = cmd === 'get' ? 'readonly' : 'readwrite';
+			const store = this.#db!.transaction(name, mode).objectStore(name);
+			const request = cmd === 'put' ? store[cmd](value, key) : store[cmd](key);
+			request.onsuccess = () => resolve(request.result ?? null);
 		});
 	}
 }

@@ -5,8 +5,7 @@ import { version, config } from '../version';
 import { Component, ComponentClass } from './component';
 import { componentClasses } from '../classes';
 import { importExtension } from '../extension';
-import * as utils from '../utils';
-import type { Peer } from '../components';
+import { uid } from '../utils';
 import type { UITick, ClientMessage } from '../worker/worker';
 import type { ExtensionMeta } from '../types';
 
@@ -18,22 +17,31 @@ export class Client {
     debug: boolean = false;
 
     /** Client version. */
-    #version = version;
+    readonly version = version;
 
     /** Worker object. */
-    #connection: Worker | WebSocket | null = null;
+    connection: Worker | WebSocket | null = null;
 
     /** Service worker. */
-    #registration: ServiceWorkerRegistration | null = null;
+    registration: ServiceWorkerRegistration | null = null;
 
     /** User identifier. */
-    #uid!: string;
-
-    /** Module containing JS utilities. */
-    #utils = utils;
+    uid!: string;
 
     /** Components synced with the worker. */
-    #components = new Map<number, Component>();
+    readonly components = new Map<number, Component>();
+
+    /** Event listeners. */
+    readonly listeners = Object.freeze({
+        // connection status change
+        sync: new Set<{sync: () => void}>(),
+        // document resize
+        resize: new Set<{resize: () => void}>(),
+        // keyboard event
+        key: new Set<{key: (e: KeyboardEvent) => void}>(),
+        // stage change
+        stage: new Set<{key: () => void}>()
+    });
 
     /** ID of current stage. */
     #stageID = 0;
@@ -46,63 +54,6 @@ export class Client {
 
     /** This.#loop is not running. */
     #paused = true;
-
-	/** A copy of origional component classes. */
-	#componentClasses = new Map(componentClasses);
-
-    /** Event listeners. */
-    #listeners = Object.freeze({
-        // connection status change
-        sync: new Set<{sync: () => void}>(),
-        // document resize
-        resize: new Set<{resize: () => void}>(),
-        // keyboard event
-        key: new Set<{key: (e: KeyboardEvent) => void}>(),
-        // stage change
-        stage: new Set<{key: () => void}>()
-    });
-
-    get version() {
-        return this.#version;
-    }
-
-    get connection() {
-        return this.#connection;
-    }
-
-    get registration() {
-        return this.#registration;
-    }
-
-    get uid() {
-        return this.#uid;
-    }
-
-    get utils() {
-        return this.#utils;
-    }
-
-    get listeners() {
-        return this.#listeners;
-    }
-
-    /** Client platform. */
-    get platform(): 'iOS' | 'Android' | 'Desktop' {
-        if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
-            return 'iOS';
-        }
-        else if (navigator.userAgent.includes('Android')) {
-            return 'Android';
-        }
-        else {
-            return 'Desktop';
-        }
-    }
-
-    /** Client is mobile platform. */
-    get mobile() {
-        return ['iOS', 'Android'].includes(this.platform) && 'ontouchend' in document;
-    }
 
     /** Initialization message. */
     get info(): [string, string] {
@@ -117,34 +68,8 @@ export class Client {
         return globals.db.get('ws') || config.ws;
     }
 
-    /** Connected remote clients. */
-    get peers(): Peer[] | null {
-        const ids = globals.ui.app?.arena?.get('peers');
-        if (!ids) {
-            return null;
-        }
-
-        const peers = [];
-        for (const id of ids) {
-            const cmp = this.#components.get(id);
-            if (cmp) {
-                peers.push(cmp as Peer);
-            }
-        }
-        return peers;
-    }
-
-    /** Peer component representing current client. */
-    get peer(): Peer | null {
-        for (const peer of this.peers || []) {
-            if (peer.owner === this.uid) {
-                return peer;
-            }
-        }
-        return null;
-    }
-
     constructor() {
+        this.#unload();
         globals.client = this;
         const db = globals.db = new Database();
         globals.ui = new UI();
@@ -152,14 +77,14 @@ export class Client {
         // get user identifier
         db.ready.then(() => {
             if (!db.get('uid')) {
-                db.set('uid', this.utils.uid());
+                db.set('uid', uid());
             }
-            this.#uid = db.get('uid');
+            this.uid = db.get('uid');
         });
 
         // register service worker for PWA
         navigator.serviceWorker?.register('/service.js').then(reg => {
-            this.#registration = reg;
+            this.registration = reg;
         });
     }
 
@@ -168,7 +93,7 @@ export class Client {
         this.disconnect();
 
         if (Array.isArray(config)) {
-            const worker = this.#connection = new Worker(`dist/worker.js`, { type: 'module'});
+            const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module'});
             worker.onmessage = ({data}) => {
                 if (data === 'ready') {
                     worker.onmessage = ({data}) => this.dispatch(data);
@@ -181,7 +106,7 @@ export class Client {
             }
         }
         else {
-            this.#connection = new WebSocket(config);
+            this.connection = new WebSocket(config);
         }
     }
 
@@ -193,23 +118,23 @@ export class Client {
         else if (this.connection instanceof WebSocket) {
             this.connection.close();
         }
-        this.#connection = null;
+        this.connection = null;
         this.clear();
     }
 
     /** Clear currently connection status without disconnecting. */
     clear(back: boolean = true) {
-        for (const cmp of this.#components.values()) {
+        for (const cmp of this.components.values()) {
             this.#removeListeners(cmp);
         }
 
-        this.#components.clear();
-        globals.ui.app.clearPopups();
-        globals.ui.app.arena?.remove();
+        this.components.clear();
+        globals.app.clearPopups();
+        globals.app.arena?.remove();
         this.#unload();
 
         if (back) {
-            globals.ui.app.splash.show();
+            globals.splash.show();
             this.#stageID = 0;
         }
     }
@@ -249,11 +174,6 @@ export class Client {
         }
     }
 
-    /** Get component by ID. */
-    get(id: number) {
-        return this.#components.get(id);
-    }
-
     /** Get extension meta data. */
     async getMeta(pack: string, full: boolean = false) {
         try {
@@ -284,18 +204,15 @@ export class Client {
         for (const pack of ruleset) {
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
-                const cls = componentClasses.get(tag) ?? (Component as ComponentClass);
-                componentClasses.set(tag, ext.mode!.components[tag](cls));
+                const cls = globals.componentClasses.get(tag) ?? (Component as ComponentClass);
+                globals.componentClasses.set(tag, ext.mode!.components[tag](cls));
             }
         }
     }
 
 	/** Clear loaded mode components. */
 	#unload() {
-        componentClasses.clear();
-        for (const [key, val] of this.#componentClasses.entries()) {
-            componentClasses.set(key, val);
-        }
+        globals.componentClasses = new Map(componentClasses);
 	}
 
     /**
@@ -309,14 +226,14 @@ export class Client {
             const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    const arena = globals.ui.app.arena;
-                    if (arena && globals.ui.app.popups.size) {
+                    const arena = globals.app.arena;
+                    if (arena && globals.app.popups.size) {
                         arena.faded = true;
                     }
                     this.clear(false);
                     this.#loaded = Date.now();
                     if (arena) {
-                        await globals.ui.app.sleep('fast');
+                        await globals.app.sleep('fast');
                     }
                     await this.#load(props[key].ruleset);
                     break;
@@ -339,9 +256,9 @@ export class Client {
                 const id = parseInt(key);
                 const tag = tags[key]
                 if (typeof tag === 'string') {
-                    this.#components.get(id)?.remove();
+                    this.components.get(id)?.remove();
                     const cmp = globals.ui.create(tag, null, id);
-                    this.#components.set(id, cmp);
+                    this.components.set(id, cmp);
                     newComponents.push(cmp.ready);
                 }
             }
@@ -350,7 +267,7 @@ export class Client {
             // update component properties
             let hooks: any[] = [];
             for (const key in props) {
-                hooks = hooks.concat(this.#components.get(parseInt(key))!.update(props[key], false));
+                hooks = hooks.concat(this.components.get(parseInt(key))!.update(props[key], false));
             }
             for (const [hook, cmp, newVal, oldVal] of hooks) {
                 hook.apply(cmp, [newVal, oldVal]);
@@ -360,7 +277,7 @@ export class Client {
             for (const key in calls) {
                 const id = parseInt(key);
                 for (const [method, arg] of calls[key]) {
-                    this.#components.get(id)![method as keyof Component](arg);
+                    this.components.get(id)![method as keyof Component](arg);
                 }
             }
 
@@ -368,10 +285,10 @@ export class Client {
             for (const key in tags) {
                 const id = parseInt(key);
                 if (tags[key] === null) {
-                    const cmp = this.#components.get(id);
+                    const cmp = this.components.get(id);
                     if (cmp) {
                         this.#removeListeners(cmp);
-                        this.#components.delete(id);
+                        this.components.delete(id);
                         cmp.remove();
                     }
                 }
@@ -382,7 +299,7 @@ export class Client {
             if (Date.now() - this.#loaded < 500) {
                 // prompt reload if error occus within 0.5s after reload
                 this.#loaded = 0;
-                globals.ui.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
+                globals.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
                     if (reload === true) {
                         window.location.reload();
                     }
