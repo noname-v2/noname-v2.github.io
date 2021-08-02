@@ -12,7 +12,7 @@ export default {
                 return class Identity extends Task {
                     main() {
                         this.addTask('lobby');
-                        this.addTask('createPlayers');
+                        this.addTask('setup');
                         this.addTask('chooseHero', {np: 7});
                         this.addTask('loop');
                     }

@@ -26,6 +26,9 @@ for (const name in names) {
 }
 fs.writeFileSync('build/literals.ts', literals);
 
+// copy libraries
+fs.copyFileSync('node_modules/eruda/eruda.js', 'lib/eruda.js');
+
 // index components and stylesheets for src
 buildClasses();
 buildSheets();

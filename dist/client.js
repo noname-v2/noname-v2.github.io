@@ -109,15 +109,21 @@
         /** HTMLElement tag  name */
         static tag = null;
         /** Root element. */
-        node;
+        #node;
         /** Resolved */
-        ready;
+        #ready;
         /** This.remove() is being executed. */
         #removing = false;
         /** Properties synced with worker. */
         #props = new Map();
         /** Component ID (for worker-managed components). */
         #id;
+        get node() {
+            return this.#node;
+        }
+        get ready() {
+            return this.#ready;
+        }
         get client() {
             return globals.accessor;
         }
@@ -145,8 +151,8 @@
         /** Create node. */
         constructor(tag, id) {
             this.#id = id;
-            this.node = this.ui.createElement(tag);
-            this.ready = Promise.resolve().then(() => this.init());
+            this.#node = this.ui.createElement(tag);
+            this.#ready = Promise.resolve().then(() => this.init());
         }
         /** Make init() optional for subclasses. */
         init() { }
@@ -217,6 +223,12 @@
     }
 
     class App extends Component {
+        /** App width. */
+        width;
+        /** App height. */
+        height;
+        /** Current zoom level. */
+        zoom = 1;
         /** Transition durations. */
         css = {};
         /** Index of assets. */
@@ -234,19 +246,22 @@
         async init() {
             document.head.appendChild(this.#themeNode);
             document.body.appendChild(this.node);
+            // add bindings for window resize
+            this.#resize();
+            window.addEventListener('resize', () => this.#resize());
             // wait for indexedDB
             await this.db.ready;
             this.loadBackground();
             this.#initAudio();
             // load styles and fonts
             await this.loadTheme();
-            globals.splash = this.ui.create('splash');
-            await globals.splash.gallery.ready;
+            const splash = globals.splash = this.ui.create('splash');
+            await splash.gallery.ready;
             const initAssets = this.#initAssets();
             // load splash menus
-            Promise.all([initAssets, globals.splash.show(), document.fonts.ready]).then(() => {
-                globals.splash.hub.create(globals.splash);
-                globals.splash.settings.create(globals.splash);
+            Promise.all([initAssets, splash.show(), document.fonts.ready]).then(() => {
+                splash.hub.create(splash);
+                splash.settings.create(splash);
             });
             // add handler for android back button
             if (this.client.android) {
@@ -424,6 +439,36 @@
                 }
             }
         }
+        /** Adjust zoom level according to device DPI. */
+        #resize() {
+            // actual window size
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            // ideal window size
+            let [ax, ay] = [960, 540];
+            // let current mode determine ideal size
+            if (globals.arena) {
+                [ax, ay] = globals.arena.resize(ax, ay, width, height);
+            }
+            // zoom to fit ideal size
+            const zx = width / ax, zy = height / ay;
+            if (zx < zy) {
+                this.width = ax;
+                this.height = ax / width * height;
+                this.zoom = zx;
+            }
+            else {
+                this.width = ay / height * width;
+                this.height = ay;
+                this.zoom = zy;
+            }
+            // update styles
+            globals.app.node.style.setProperty('--app-width', this.width + 'px');
+            globals.app.node.style.setProperty('--app-height', this.height + 'px');
+            globals.app.node.style.setProperty('--app-scale', this.zoom.toString());
+            // trigger resize listeners
+            globals.client.trigger('resize');
+        }
     }
 
     class Collection extends Component {
@@ -568,15 +613,14 @@
     }
 
     class Sidebar extends Component {
-        // header text
+        /** Header text. */
         header = this.ui.createElement('caption', this.node);
         ;
-        // pane container
+        /** Pane container. */
         pane = this.ui.create('pane', this.node);
-        // pane footer
+        /** Pane footer. */
         footer = this.ui.createElement('caption.footer', this.node);
         init() {
-            // header with text and back button
             this.pane.node.classList.add('scrolly');
             this.ui.createElement('span', this.header);
             this.ui.createElement('image', this.header);
@@ -1442,21 +1486,19 @@
     class SplashBar extends Component {
         /** Use tag <noname-bar>. */
         static tag = 'bar';
-        /** Reference to Splash. */
-        splash;
         /** Button names and components. */
         buttons = new Map();
         init() {
-            // add buttons
             if (globals.client.debug) {
                 this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
                 if (this.client.mobile) {
                     this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
                 }
             }
+            // add buttons
             this.addButton('workshop', '扩展', 'yellow', () => { });
-            this.addButton('hub', '联机', 'green', () => this.splash?.hub.open());
-            this.addButton('settings', '选项', 'orange', () => this.splash?.settings.open());
+            this.addButton('hub', '联机', 'green', () => globals.splash.hub.open());
+            this.addButton('settings', '选项', 'orange', () => globals.splash.settings.open());
         }
         /** Add a button. */
         addButton(id, caption, color, onclick) {
@@ -1469,9 +1511,8 @@
             return button;
         }
         async #resetGame() {
-            globals.app.node.style.opacity = '0.5';
             if (window['caches']) {
-                await window['caches'].delete(globals.client.version);
+                await window['caches'].delete(this.client.version);
             }
             for (const file of await this.db.readdir()) {
                 if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
@@ -1483,8 +1524,6 @@
     }
 
     class SplashGallery extends Gallery {
-        /** Reference to Splash. */
-        splash;
         /** Single row. */
         nrows = 1;
         /** Extension index. */
@@ -1533,11 +1572,11 @@
             caption.innerHTML = name;
             // bind click
             ui.bindClick(entry, () => {
-                if (this.splash.hidden) {
+                if (globals.splash.hidden) {
                     return;
                 }
                 globals.client.connect([mode, this.#getPacks(mode)]);
-                this.splash.hide();
+                globals.splash.hide();
             });
             return entry;
         }
@@ -2079,7 +2118,7 @@
                         this.#rotate(this.#rotating);
                     }
                 }
-                globals.app.playMusic();
+                this.client.playMusic();
             };
             // callback for clicking on menu entry
             const clickOption = (splash, game) => {
@@ -2167,15 +2206,13 @@
         hidden = true;
         init() {
             // create mode selection gallery
-            this.gallery.splash = this;
             this.node.appendChild(this.gallery.node);
             // bottom button bar
-            this.bar.splash = this;
             this.node.appendChild(this.bar.node);
             // debug mode
             if (globals.client.debug && this.client.mobile) {
                 const script = document.createElement('script');
-                script.src = 'lib/eruda/eruda.js';
+                script.src = 'lib/eruda.js';
                 script.onload = () => window.eruda.init();
                 document.head.appendChild(script);
             }
@@ -2592,12 +2629,6 @@
         ondown = null;
     }
     class UI {
-        /** App width. */
-        #width;
-        /** App height. */
-        #height;
-        /** Current zoom level. */
-        #zoom = 1;
         /** Resolved when ready. */
         #ready;
         /** Popup components cleared when arena close. */
@@ -2618,20 +2649,20 @@
         // moving[3]: return value of the binding.onmove
         // moving[4]: started by a touch event
         #moving = null;
-        get width() {
-            return this.#width;
-        }
-        get height() {
-            return this.#height;
-        }
-        get zoom() {
-            return this.#zoom;
-        }
         get ready() {
             return this.#ready;
         }
         get popups() {
             return this.#popups;
+        }
+        get width() {
+            return globals.app.width;
+        }
+        get height() {
+            return globals.app.height;
+        }
+        get zoom() {
+            return globals.app.zoom;
         }
         get css() {
             return globals.app.css;
@@ -2657,9 +2688,8 @@
                     document.body.addEventListener('mouseup', () => this.#pointerEnd(false), { passive: true });
                     document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), { passive: true });
                 }
+                // bind resize event and disable context menu
                 globals.app = this.create('app');
-                this.#resize();
-                window.addEventListener('resize', () => this.#resize());
                 document.oncontextmenu = () => false;
             });
         }
@@ -2940,12 +2970,6 @@
             this.popups.set(dialogID, dialog);
             dialog.ready.then(() => dialog.open());
         }
-        /** Remove a popup. */
-        removePopup(id) {
-            const popup = this.popups.get(id);
-            popup?.close();
-            this.popups.delete(id);
-        }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
             for (const popup of this.popups.values()) {
@@ -3056,39 +3080,6 @@
             }
             this.#clicking = null;
             this.#moving = null;
-        }
-        /** Adjust zoom level according to device DPI. */
-        #resize() {
-            // actual window size
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            // ideal window size
-            let [ax, ay] = [960, 540];
-            // let current mode determine ideal size
-            if (globals.arena) {
-                [ax, ay] = globals.arena.resize(ax, ay, width, height);
-            }
-            // zoom to fit ideal size
-            const zx = width / ax, zy = height / ay;
-            let w, h, z;
-            if (zx < zy) {
-                w = ax;
-                h = ax / width * height;
-                z = zx;
-            }
-            else {
-                w = ay / height * width;
-                h = ay;
-                z = zy;
-            }
-            globals.app.node.style.setProperty('--app-width', w + 'px');
-            globals.app.node.style.setProperty('--app-height', h + 'px');
-            globals.app.node.style.setProperty('--app-scale', z.toString());
-            this.#width = w;
-            this.#height = h;
-            this.#zoom = z;
-            // call listeners
-            globals.client.trigger('resize');
         }
     }
 
@@ -3210,12 +3201,17 @@
         /** OS and platform info. */
         ios = false;
         android = false;
-        mobile = false;
         mac = false;
         windows = false;
         linux = false;
         get version() {
             return globals.client.version;
+        }
+        get mobile() {
+            return this.ios || this.android;
+        }
+        get uid() {
+            return globals.client.uid;
         }
         get url() {
             return globals.client.url;
@@ -3229,11 +3225,9 @@
         constructor() {
             if (navigator.userAgent.includes('Android')) {
                 this.android = true;
-                this.mobile = true;
             }
             else if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
                 this.ios = true;
-                this.mobile = true;
             }
             else if (navigator.platform === 'MacIntel') {
                 this.mac = true;
