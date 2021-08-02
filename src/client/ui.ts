@@ -1,4 +1,5 @@
 import { globals } from './globals';
+import type { Popup } from '../components';
 import type { ComponentTagMap } from '../classes';
 
 /** Type for point location */
@@ -16,6 +17,19 @@ export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower
 /** Type for event point location. */
 type EventPoint = {clientX: number, clientY: number}
 
+/** Options used by ui.choose(). */
+interface DialogOptions {
+    buttons?: [string, string, string?][];
+    content?: string;
+    id?: string;
+    timeout?: number;
+}
+
+/** Options used by ui.confirm(). */
+interface ConfirmOptions extends DialogOptions {
+    ok?: string;
+    cancel?: string;
+}
 
 /** Callback for dom events. */
 class Binding {
@@ -42,33 +56,14 @@ class Binding {
 }
 
 export class UI {
-	/** App width. */
-	#width!: number;
-
-	/** App height. */
-	#height!: number;
-
-    /** Current zoom level. */
-	#zoom = 1;
-
 	/** Resolved when ready. */
 	#ready: Promise<unknown>;
 
-	get width() {
-		return this.#width;
-	}
+    /** Popup components cleared when arena close. */
+    #popups = new Map<string | number, Popup>();
 
-	get height() {
-		return this.#height;
-	}
-
-	get zoom() {
-		return this.#zoom;
-	}
-
-	get ready() {
-		return this.#ready;
-	}
+    /** Count dialog for dialog ID */
+    #dialogCount = 0;
 
 	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
 	#dispatched = false;
@@ -87,6 +82,30 @@ export class UI {
 	// moving[3]: return value of the binding.onmove
 	// moving[4]: started by a touch event
 	#moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
+
+	get ready() {
+		return this.#ready;
+	}
+
+	get popups() {
+		return this.#popups;
+	}
+
+	get width() {
+		return globals.app.width;
+	}
+
+	get height() {
+		return globals.app.height;
+	}
+
+	get zoom() {
+		return globals.app.zoom;
+	}
+
+	get css() {
+		return globals.app.css;
+	}
 
     constructor() {
 		// wait for document.body to load
@@ -112,9 +131,8 @@ export class UI {
 				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
 			}
 
+			// bind resize event and disable context menu
 			globals.app = this.create('app');
-			this.#resize();
-			window.addEventListener('resize', () => this.#resize());
 			document.oncontextmenu = () => false;
 		});
     }
@@ -349,7 +367,7 @@ export class UI {
 		}
 		config ??= {};
 		config.easing ??= 'ease';
-		config.duration ??= globals.app.getTransition();
+		config.duration ??= this.getTransition();
 		
 		const anim = node.animate(keyframes, config);
 
@@ -363,6 +381,110 @@ export class UI {
 
 		return anim;
 	}
+
+    /** Get the duration of transition.
+     * @param {TransitionDuration} type - transition type
+     */
+    getTransition(type: TransitionDuration = null) {
+        let key = 'transition';
+        if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
+            key += '-' + type;
+        }
+        const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
+        return duration * 1000;
+    }
+
+    /** Display alert message. */
+    async alert(caption: string, config: ConfirmOptions = {}): Promise<true | null> {
+        config.buttons = [['ok', config.ok ?? '确定', 'red']];
+        return await this.choose(caption, config) === 'ok' ? true : null;
+    }
+
+    /** Display confirm message. */
+    async confirm(caption: string, config: ConfirmOptions = {}): Promise<boolean | null> {
+        config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
+        const result = await this.choose(caption, config);
+        if (result === 'ok') {
+            return true;
+        }
+        if (result === 'cancel') {
+            return false;
+        }
+        return null;
+    }
+
+    /** Display confirm message. */
+    choose(caption: string, config: DialogOptions={}): Promise<string | null> {
+        const dialog = this.create('dialog');
+        dialog.update({caption, content: config.content, buttons: config.buttons});
+        const promise = new Promise<string | null>(resolve => {
+            dialog.onclose = () => {
+                resolve(dialog.result);
+            };
+            this.popup(dialog, config.id);
+        });
+        if (config.timeout) {
+            return Promise.race([promise, new Promise<null>(resolve => {
+                setTimeout(() => resolve(null), config.timeout! * 1000);
+            })])
+        }
+        else {
+            return promise;
+        }
+    }
+
+    /** Displa a popup. */
+    popup(dialog: Popup, id?: string) {
+        const dialogID = id ?? ++this.#dialogCount;
+        this.popups.get(dialogID)?.close();
+        const onopen = dialog.onopen;
+        const onclose = dialog.onclose;
+
+        // other popups that are blurred by dialog.open()
+        const blurred: (string | number)[] = [];
+
+        dialog.onopen = () => {
+            // blur arena, splash and other popups
+            globals.app.node.classList.add('popped');
+            for (const [id, popup] of this.popups.entries()) {
+                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
+                    popup.node.classList.add('blurred');
+                    blurred.push(id);
+                }
+            }
+
+            if (typeof onopen === 'function') {
+                onopen();
+            }
+        };
+
+        dialog.onclose = () => {
+            // unblur
+            this.popups.delete(dialogID);
+            if (this.popups.size === 0) {
+                globals.app.node.classList.remove('popped');
+            }
+            for (const id of blurred) {
+                this.popups.get(id)?.node.classList.remove('blurred');
+            }
+            blurred.length = 0;
+
+            if (typeof onclose === 'function') {
+                onclose();
+            }
+        };
+
+        this.popups.set(dialogID, dialog);
+        dialog.ready.then(() => dialog.open());
+    }
+
+    /** Clear alert and confirm dialogs. */
+    clearPopups() {
+        for (const popup of this.popups.values()) {
+            popup.close();
+        }
+        this.popups.clear();
+    }
 
 	/** Get the location of mouse or touch event. */
 	#locate(e: EventPoint) {
@@ -490,44 +612,4 @@ export class UI {
 		this.#clicking = null;
 		this.#moving = null;
 	}
-
-    /** Adjust zoom level according to device DPI. */
-    #resize() {
-        // actual window size
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        // ideal window size
-        let [ax, ay] = [960, 540];
-
-        // let current mode determine ideal size
-        if (globals.arena) {
-            [ax, ay] = globals.arena.resize(ax, ay, width, height);
-        }
-
-        // zoom to fit ideal size
-        const zx = width / ax, zy = height / ay;
-        let w, h, z;
-
-        if (zx < zy) {
-            w = ax;
-            h = ax / width * height;
-            z = zx;
-        }
-        else {
-            w = ay / height * width;
-            h = ay;
-            z = zy;
-        }
-
-        globals.app.node.style.setProperty('--app-width', w + 'px');
-        globals.app.node.style.setProperty('--app-height', h + 'px');
-        globals.app.node.style.setProperty('--app-scale', z.toString());
-        this.#width = w;
-        this.#height = h;
-        this.#zoom = z;
-
-        // call listeners
-        globals.client.trigger('resize');
-    }
 }

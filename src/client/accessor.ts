@@ -4,22 +4,43 @@ import type { ExtensionMeta } from '../types';
 
 /** Accessor to client and platform properties used by extensions. */
 export class Accessor {
-    /** OS info. */
+    /** OS and platform info. */
     ios = false;
+
     android = false;
-    mobile = false;
+
     mac = false;
+
     windows = false;
+    
     linux = false;
+
+    get version() {
+        return globals.client.version;
+    }
+
+    get mobile() {
+        return this.ios || this.android;
+    }
+
+    get url() {
+        return globals.client.url;
+    }
+
+    get info() {
+        return globals.client.info;
+    }
+
+	get assets() {
+		return globals.app.assets;
+	}
 
     constructor() {
         if (navigator.userAgent.includes('Android')) {
             this.android = true;
-            this.mobile = true;
         }
         else if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
             this.ios = true;
-            this.mobile = true;
         }
         else if (navigator.platform === 'MacIntel') {
             this.mac = true;
@@ -30,18 +51,6 @@ export class Accessor {
         else if (navigator.platform.startsWith('Linux')) {
             this.linux = true;
         }
-    }
-
-    get version() {
-        return globals.client.version;
-    }
-
-    get url() {
-        return globals.client.url;
-    }
-
-    get info() {
-        return globals.client.info;
     }
 
     /** Get extension meta data. */
@@ -64,8 +73,33 @@ export class Accessor {
 			return meta;
 		}
 		catch (e) {
-			console.log(e, name);
+			console.log(e, pack);
             return null;
 		}
+    }
+
+    /** Play background music. */
+    playMusic() {
+        globals.app.playMusic();
+    }
+
+    /** Swith background music. */
+    switchMusic(bgm: string) {
+        globals.app.switchMusic(bgm);
+    }
+
+    /** Change background music volume. */
+    changeVolume(vol: number) {
+		globals.app.changeVolume(vol);
+    }
+
+    /** Update theme. */
+    loadTheme() {
+        return globals.app.loadTheme();
+    }
+
+    /** Update background image. */
+    loadBackground() {
+        globals.app.loadBackground();
     }
 }

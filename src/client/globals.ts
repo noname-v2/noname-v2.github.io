@@ -5,7 +5,7 @@ import type { ComponentClass, App, Arena, Splash } from '../components';
 import type { Accessor } from './accessor';
 
 /** Internal context. */
-export const globals = { } as {
+export const globals = {} as {
     client: Client;
     ui: UI;
     db: Database;

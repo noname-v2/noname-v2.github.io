@@ -199,7 +199,7 @@ export class Gallery extends Component {
                 this.switchToSnap();
                 this.pages.style.transform = '';
                 this.pages.scrollLeft = this.#currentPage * this.pages.offsetWidth;
-            }, this.app.getTransition());
+            }, this.ui.getTransition());
             return;
         }
 
@@ -223,7 +223,7 @@ export class Gallery extends Component {
         this.turnPage(targetPage);
         this.ui.animate(this.pages, {
             x: [-targetPage*width], auto: true, forward: true
-        }, this.app.getTransition('fast'));
+        }, this.ui.getTransition('fast'));
     }
 
     /** Render page when needed. */

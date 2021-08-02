@@ -14,10 +14,10 @@ export abstract class Component {
     static tag: string | null = null;
 
     /** Root element. */
-	readonly node: HTMLElement;
+	#node: HTMLElement;
 
     /** Resolved */
-    readonly ready: Promise<unknown>;
+    #ready: Promise<unknown>;
 
     /** This.remove() is being executed. */
     #removing = false;
@@ -27,6 +27,14 @@ export abstract class Component {
 
     /** Component ID (for worker-managed components). */
     #id: number | null;
+
+    get node() {
+        return this.#node;
+    }
+
+    get ready() {
+        return this.#ready;
+    }
 
     get client() {
         return globals.accessor;
@@ -42,10 +50,6 @@ export abstract class Component {
 
     get ui() {
         return globals.ui;
-    }
-
-    get app() {
-        return globals.app;
     }
 
     get arena() {
@@ -67,8 +71,8 @@ export abstract class Component {
     /** Create node. */
     constructor(tag: string, id: number | null) {
         this.#id = id;
-        this.node = this.ui.createElement(tag);
-        this.ready = Promise.resolve().then(() => this.init());
+        this.#node = this.ui.createElement(tag);
+        this.#ready = Promise.resolve().then(() => this.init());
     }
 
     /** Make init() optional for subclasses. */
@@ -125,7 +129,7 @@ export abstract class Component {
 
     /** Delay for a time period. */
     sleep(dur: TransitionDuration) {
-        return this.utils.sleep(this.app.getTransition(dur) / 1000)
+        return this.utils.sleep(this.ui.getTransition(dur) / 1000)
     }
 
     /** Remove element. */

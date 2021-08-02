@@ -76,14 +76,14 @@ export class SplashHub extends Popup {
         const [reason, content] = this.utils.split(msg);
         this.#clearRooms();
         this.edit(content);
-        if (this.app.arena) {
+        if (this.arena) {
             if (reason === 'kick') {
-                await this.app.alert('你被请出了房间');
+                await this.ui.alert('你被请出了房间');
             }
             else if (reason === 'end') {
-                await this.app.alert('房间已关闭');
+                await this.ui.alert('房间已关闭');
             }
-            this.app.arena.faded = true;
+            this.arena.faded = true;
             globals.client.clear();
         }
         this.roomGroup.classList.remove('entering');
@@ -140,8 +140,8 @@ export class SplashHub extends Popup {
     /** Owner of joined room disconnected. */
     down(msg: string) {
         const ws = globals.client.connection;
-        const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
-        const dialog = this.app.popups.get('down') as Dialog;
+        const promise = this.ui.alert('房主连接断开', {ok: '退出房间', id: 'down'});
+        const dialog = this.ui.popups.get('down') as Dialog;
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
             dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
@@ -334,7 +334,7 @@ export class SplashHub extends Popup {
             if (val) {
                 this.db.set('nickname', val);
 				nickname.set('icon', 'emote');
-				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
+				await new Promise(resolve => setTimeout(resolve, this.ui.getTransition('slow')));
 				nickname.set('icon', null);
                 this.#sendInfo();
 			}

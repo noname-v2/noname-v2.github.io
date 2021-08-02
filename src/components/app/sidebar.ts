@@ -1,17 +1,16 @@
 import { Component } from '../../components';
 
 export class Sidebar extends Component {
-    // header text
+    /** Header text. */
 	header = this.ui.createElement('caption', this.node);;
 
-	// pane container
+	/** Pane container. */
 	pane = this.ui.create('pane', this.node);
 
-	// pane footer
+	/** Pane footer. */
 	footer = this.ui.createElement('caption.footer', this.node);
 
     init() {
-        // header with text and back button
         this.pane.node.classList.add('scrolly');
 		this.ui.createElement('span', this.header);
 		this.ui.createElement('image', this.header);

@@ -1,3 +1,4 @@
+import { globals } from '../client/globals';
 import { Component, TransitionDuration, Point } from '../components';
 
 export class Popup extends Component {
@@ -52,7 +53,7 @@ export class Popup extends Component {
 		}
 		this.ui.animate(this.pane.node, {
 			opacity: [1, 0], scale: [1, 'var(--popup-transform)']
-		}, this.app.getTransition(this.transition)).onfinish = () => {
+		}, this.ui.getTransition(this.transition)).onfinish = () => {
 			this.node.remove();
 		};
 	}
@@ -72,7 +73,7 @@ export class Popup extends Component {
 		}
 
 		this.node.classList.add('hidden');
-        this.app.node.appendChild(this.node);
+        globals.app.node.appendChild(this.node);
 
 		if (this.position) {
 			// determine position of the menu
@@ -82,7 +83,7 @@ export class Popup extends Component {
 
 			let {x, y} = this.position;
 			const rect1 = this.pane.node.getBoundingClientRect();
-			const rect2 = this.app.node.getBoundingClientRect();
+			const rect2 = globals.app.node.getBoundingClientRect();
 			const zoom = this.ui.zoom;
 
 			x += 2;
@@ -115,6 +116,6 @@ export class Popup extends Component {
 		this.node.classList.remove('hidden');
 		this.ui.animate(this.pane.node, {
 			opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-		}, this.app.getTransition(this.transition));
+		}, this.ui.getTransition(this.transition));
 	}
 }

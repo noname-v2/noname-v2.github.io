@@ -40,7 +40,7 @@ export class Arena extends Component {
 
     init() {
         globals.arena = this;
-        this.app.node.appendChild(this.node);
+        globals.app.node.appendChild(this.node);
 
         // make android back button function as returning to splash screen
         if (this.client.android && history.state === null) {
@@ -78,7 +78,7 @@ export class Arena extends Component {
         const peers = this.peers;
         if (peers || ws instanceof WebSocket) {
             const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-            if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', {content, id: 'exitArena'})) {
+            if (!peers || peers.length <= 1 || await this.ui.confirm('联机模式', {content, id: 'exitArena'})) {
                 if (peers && peers.length > 1) {
                     this.faded = true;
                 }

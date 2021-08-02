@@ -18,8 +18,8 @@ export class SplashGallery extends Gallery {
 
     async init() {
 		// determine gallery column number
-		const margin = parseInt(this.app.css.app['splash-margin']);
-		this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
+		const margin = parseInt(this.ui.css.app['splash-margin']);
+		this.ncols = [1, margin * 2, margin, parseInt(this.ui.css.player.width)];
         super.init();
 
 		// get modes

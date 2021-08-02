@@ -1,6 +1,3 @@
-import { Database } from './database';
-import { Accessor } from './accessor';
-import { UI } from './ui';
 import { globals } from './globals';
 import { version, config } from '../version';
 import { Component, ComponentClass } from './component';
@@ -14,10 +11,10 @@ import type { UITick, ClientMessage } from '../worker/worker';
  */
 export class Client {
     /** Debug mode */
-    debug: boolean = false;
+    debug: boolean = true;
 
     /** Client version. */
-    readonly version = version;
+    version = version;
 
     /** Worker object. */
     connection: Worker | WebSocket | null = null;
@@ -29,10 +26,10 @@ export class Client {
     uid!: string;
 
     /** Components synced with the worker. */
-    readonly components = new Map<number, Component>();
+    components = new Map<number, Component>();
 
     /** Event listeners. */
-    readonly listeners = Object.freeze({
+    listeners = Object.freeze({
         // connection status change
         sync: new Set<{sync: () => void}>(),
         // document resize
@@ -70,12 +67,9 @@ export class Client {
 
     constructor() {
         this.#unload();
-        globals.client = this;
-        const db = globals.db = new Database();
-        globals.ui = new UI();
-        globals.accessor = new Accessor();
 
         // get user identifier
+        const db = globals.db;
         db.ready.then(() => {
             if (!db.get('uid')) {
                 db.set('uid', uid());
@@ -130,8 +124,8 @@ export class Client {
         }
 
         this.components.clear();
-        globals.app.clearPopups();
-        globals.app.arena?.remove();
+        globals.ui.clearPopups();
+        globals.arena?.remove();
         this.#unload();
 
         if (back) {
@@ -202,8 +196,8 @@ export class Client {
             const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    const arena = globals.app.arena;
-                    if (arena && globals.app.popups.size) {
+                    const arena = globals.arena;
+                    if (arena && globals.ui.popups.size) {
                         arena.faded = true;
                     }
                     this.clear(false);
@@ -275,7 +269,7 @@ export class Client {
             if (Date.now() - this.#loaded < 500) {
                 // prompt reload if error occus within 0.5s after reload
                 this.#loaded = 0;
-                globals.app.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
+                globals.ui.confirm('游戏错误', {content: '点击“确定”重新载入游戏，点击“取消”尝试继续。'}).then(reload => {
                     if (reload === true) {
                         window.location.reload();
                     }

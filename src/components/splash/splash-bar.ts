@@ -36,7 +36,7 @@ export class SplashBar extends Component {
     }
 
     async #resetGame() {
-        this.app.node.style.opacity = '0.5';
+        globals.app.node.style.opacity = '0.5';
 				
         if (window['caches']) {
             await window['caches'].delete(globals.client.version);

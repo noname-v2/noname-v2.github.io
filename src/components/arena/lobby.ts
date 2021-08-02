@@ -39,7 +39,7 @@ export class Lobby extends Component {
     heroDock = this.ui.createElement('dock');
 
     init() {
-        const arena = this.app.arena!;
+        const arena = this.arena!;
         arena.node.appendChild(this.node);
         this.listeners.sync.add(this);
         this.sidebar.ready.then(() => {
@@ -60,7 +60,7 @@ export class Lobby extends Component {
         if (this.mine) {
             this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {
-                this.app.alert('连接失败');
+                this.ui.alert('连接失败');
             }
             this.connecting = false;
             const toggle = this.configToggles.get('online');
