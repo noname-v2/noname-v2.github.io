@@ -1,11 +1,13 @@
 import { Database } from './database';
 import { UI } from './ui';
 import { version, config } from '../version';
-import { Component } from './component';
+import { Component, ComponentClass } from './component';
+import { componentClasses } from '../classes';
+import { importExtension } from '../extension';
 import * as utils from '../utils';
 import type { Peer } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
-import type { Extension, ExtensionMeta } from '../types';
+import type { ExtensionMeta } from '../types';
 
 /**
  * Executor of worker commands.
@@ -38,9 +40,6 @@ export class Client {
     /** Components synced with the worker. */
     #components = new Map<number, Component>();
 
-    /** Loaded extensions. */
-    #extensions = new Map<string, Extension>();
-
     /** ID of current stage. */
     #stageID = 0;
 
@@ -52,6 +51,9 @@ export class Client {
 
     /** This.#loop is not running. */
     #paused = true;
+
+	/** A copy of origional component classes. */
+	#componentClasses = new Map(componentClasses);
 
     /** Event listeners. */
     #listeners = Object.freeze({
@@ -259,7 +261,7 @@ export class Client {
     async getMeta(pack: string, full: boolean = false) {
         try {
             const meta = {} as ExtensionMeta;
-            const ext = await this.#loadExtension(pack);
+            const ext = await importExtension(pack);
 			if (ext.heropack || ext.cardpack) {
 				meta.pack = true;
 			}
@@ -280,24 +282,25 @@ export class Client {
 		}
     }
 
-    /** Overwrite components defined by mode. */
-    #load() {
-
+    /** Overwrite components  by mode. */
+    async #load(ruleset: string[]) {
+        for (const pack of ruleset) {
+            const ext = await importExtension(pack);
+            for (const tag in ext.mode?.components) {
+                const cls = componentClasses.get(tag) ?? Component;
+                console.log('>>>', tag, cls)
+                componentClasses.set(tag, ext.mode!.components[tag](cls));
+            }
+        }
     }
 
 	/** Clear loaded components. */
 	#unload() {
-		// this.#componentClasses = new Map(componentClasses);
-	}
-
-    /** Load extension. */
-    async #loadExtension(pack: string) {
-        if (!this.#extensions.has(pack)) {
-            const ext = utils.freeze((await import(`../extensions/${pack}/main.js`)).default);
-            this.#extensions.set(pack, ext);
+        componentClasses.clear();
+        for (const [key, val] of this.#componentClasses.entries()) {
+            componentClasses.set(key, val);
         }
-        return this.#extensions.get(pack)!;
-    }
+	}
 
     /**
      * Render the next UITick.

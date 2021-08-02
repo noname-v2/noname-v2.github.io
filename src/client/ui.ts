@@ -71,9 +71,6 @@ export class UI {
     /** Bindings for DOM events. */
 	#bindings = new Map<HTMLElement, Binding>();
 
-	/** Map that stores component constructors. */
-	#componentClasses = new Map(componentClasses);
-
 	// clicking[0]: element that is clicked
 	// clicking[1]: location of pointerdown
 	// clicking[2]: started by a touch event
@@ -118,7 +115,7 @@ export class UI {
 
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
-		const cls = this.#componentClasses.get(tag as string)!;
+		const cls = componentClasses.get(tag as string)!;
         const cmp = new cls(this.#client, this.#db, this, cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag

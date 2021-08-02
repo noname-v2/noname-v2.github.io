@@ -6,7 +6,7 @@ import type { UI } from './ui';
 
 // type for component constructor
 export type ComponentClass = {
-    tag: string | null,
+    tag?: string | null,
     new(client: Client, db: Database, ui: UI, tag: string, id: number | null): Component
 };
 

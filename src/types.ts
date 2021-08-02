@@ -34,7 +34,7 @@ export interface ExtensionMeta {
 
 /** Creator of a subclass. */
 export interface Class<T=any> {
-    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
+    (cls: ThisType<T>): {new(...args: any[]): T};
 };
 
 /** Mode configuration entry. */

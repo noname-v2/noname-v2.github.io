@@ -2,6 +2,7 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Accessor } from './accessor';
+import { importExtension } from '../extension';
 import type { Worker, UITick } from './worker';
 import type { Extension, Mode, Link, Dict } from '../types';
 
@@ -82,7 +83,7 @@ export class Game {
         (this.#worker as any).info = content[5];
 
         // load extensions
-        Promise.all(content[1].map(mode => this.#loadExtension(mode))).then(() => this.#loadMode(content[0]));
+        Promise.all(content[1].map(mode => importExtension(mode))).then(() => this.#loadMode(content[0]));
     }
 
     /** Create a link. */
@@ -220,15 +221,6 @@ export class Game {
         }
     }
 
-    /** Load extension. */
-    async #loadExtension(pack: string) {
-        if (!this.#extensions.has(pack)) {
-            const ext = freeze((await import(`../extensions/${pack}/main.js`)).default);
-            this.#extensions.set(pack, ext);
-        }
-        return this.#extensions.get(pack)!;
-    }
-
     /** Load mode. */
     async #loadMode(mode: string) {
         // Get list of packages that define game classes
@@ -238,7 +230,7 @@ export class Game {
                 break;
             }
             this.#ruleset.unshift(pack);
-            pack = (await this.#loadExtension(pack))!.mode?.inherit as string;
+            pack = (await importExtension(pack))!.mode?.inherit as string;
         }
 
         // merge mode objects and game classes from extensions

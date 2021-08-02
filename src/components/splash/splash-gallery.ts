@@ -107,31 +107,4 @@ export class SplashGallery extends Gallery {
 		}
 		return true;
 	}
-
-	/** Get mode information from extensions. */
-	async #loadExtension(name: string) {
-		if (this.index[name]) {
-			return;
-		}
-		try {
-			const idx = {} as ExtensionMeta;
-			const ext = (await import(`../extensions/${name}/main.js`)).default as Extension;
-			if (ext.heropack || ext.cardpack) {
-				idx.pack = true;
-			}
-			if (ext.mode?.name) {
-				idx.mode = ext.mode.name
-			}
-			if (ext.tags) {
-				idx.tags = ext.tags;
-			}
-			if (ext.hero) {
-				idx.images = Object.keys(ext.hero);
-			}
-			this.index[name] = idx;
-		}
-		catch (e) {
-			console.log(e, name);
-		}
-	}
 }

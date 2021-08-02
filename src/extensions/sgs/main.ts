@@ -32,6 +32,9 @@ export default {
         },
         classes: {
             game, task, player, card, skill
+        },
+        components: {
+            
         }
     }
 } as SGS;
