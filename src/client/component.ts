@@ -28,8 +28,8 @@ export abstract class Component {
     /** Component ID (for worker-managed components). */
     #id: number | null;
 
-    get platform() {
-        return globals.platform;
+    get client() {
+        return globals.accessor;
     }
 
     get utils() {

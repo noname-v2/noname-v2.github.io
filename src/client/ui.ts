@@ -106,7 +106,7 @@ export class UI {
 			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
 
 			// avoid unexpected mouse event behavior on some Android devices
-			if (!globals.platform.android) {
+			if (!globals.accessor.android) {
 				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
 				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
 				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
@@ -401,7 +401,7 @@ export class UI {
 
 		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-		if (!globals.platform.android) {
+		if (!globals.accessor.android) {
 			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
 		}
 

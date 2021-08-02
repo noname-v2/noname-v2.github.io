@@ -1,7 +1,7 @@
 import { globals } from '../../client/globals';
 import { Gallery } from '../gallery';
 import { Splash } from '../../components';
-import type { Extension, ExtensionMeta, Dict } from '../../types';
+import type { ExtensionMeta, Dict } from '../../types';
 
 export class SplashGallery extends Gallery {
     /** Reference to Splash. */
@@ -30,7 +30,7 @@ export class SplashGallery extends Gallery {
 		let write = false;
 		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
-				const meta = await globals.client.getMeta(name);
+				const meta = await this.client.getMeta(name);
 				if (meta) {
 					this.index[name] = meta;
 					write = true;

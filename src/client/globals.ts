@@ -2,10 +2,10 @@ import type { Client } from './client';
 import type { UI } from './ui';
 import type { Database } from './database';
 import type { ComponentClass, App, Arena, Splash } from '../components';
-import { platform } from './platform';
+import type { Accessor } from './accessor';
 
 /** Internal context. */
-export const globals = { platform } as {
+export const globals = { } as {
     client: Client;
     ui: UI;
     db: Database;
@@ -13,7 +13,7 @@ export const globals = { platform } as {
     splash: Splash;
     arena?: Arena;
     componentClasses: Map<string, ComponentClass>;
-    platform: typeof platform;
+    accessor: Accessor;
 };
 
 ////// debug

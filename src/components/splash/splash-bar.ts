@@ -15,7 +15,7 @@ export class SplashBar extends Component {
         // add buttons
         if (globals.client.debug) {
             this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
-            if (this.platform.mobile) {
+            if (this.client.mobile) {
                 this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
             }
         }

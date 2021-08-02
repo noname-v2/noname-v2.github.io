@@ -64,7 +64,7 @@ export class App extends Component {
         });
 
         // add handler for android back button
-        if (this.platform.android) {
+        if (this.client.android) {
             window.addEventListener('popstate', e => {
                 const arena = this.app.arena
                 if (arena && !arena.exiting) {

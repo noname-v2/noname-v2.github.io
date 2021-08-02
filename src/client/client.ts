@@ -1,4 +1,5 @@
 import { Database } from './database';
+import { Accessor } from './accessor';
 import { UI } from './ui';
 import { globals } from './globals';
 import { version, config } from '../version';
@@ -7,7 +8,6 @@ import { componentClasses } from '../classes';
 import { importExtension } from '../extension';
 import { uid } from '../utils';
 import type { UITick, ClientMessage } from '../worker/worker';
-import type { ExtensionMeta } from '../types';
 
 /**
  * Executor of worker commands.
@@ -73,6 +73,7 @@ export class Client {
         globals.client = this;
         const db = globals.db = new Database();
         globals.ui = new UI();
+        globals.accessor = new Accessor();
 
         // get user identifier
         db.ready.then(() => {
@@ -172,31 +173,6 @@ export class Client {
         for (const cmp of this.listeners[event]) {
             (cmp as any)[event](arg);
         }
-    }
-
-    /** Get extension meta data. */
-    async getMeta(pack: string, full: boolean = false) {
-        try {
-            const meta = {} as ExtensionMeta;
-            const ext = await importExtension(pack);
-			if (ext.heropack || ext.cardpack) {
-				meta.pack = true;
-			}
-			if (ext.mode?.name) {
-				meta.mode = ext.mode.name
-			}
-			if (ext.tags) {
-				meta.tags = ext.tags;
-			}
-			if (ext.hero) {
-				meta.images = Object.keys(ext.hero);
-			}
-			return meta;
-		}
-		catch (e) {
-			console.log(e, name);
-            return null;
-		}
     }
 
     /** Overwrite components by mode. */

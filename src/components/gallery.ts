@@ -37,7 +37,7 @@ export class Gallery extends Component {
      * true: for devices that can scroll horizontally, scroll with CSS snap.
      * false: for mouse wheels, scroll with transform animation.
      */
-    #snap = this.platform.mobile || this.db.get('snap') || false;
+    #snap = this.client.mobile || this.db.get('snap') || false;
 
     /** Listener for wheel event. */
     #wheelListener = (e: WheelEvent) => this.#wheel(e);

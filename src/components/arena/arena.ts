@@ -11,14 +11,6 @@ export class Arena extends Component {
     /** Trying to exit. */
     exiting = false;
 
-    get version() {
-        return globals.client.version;
-    }
-
-    get url() {
-        return globals.client.url;
-    }
-
     /** Connected remote clients. */
     get peers(): Peer[] | null {
         const ids = this.get('peers');
@@ -51,7 +43,7 @@ export class Arena extends Component {
         this.app.node.appendChild(this.node);
 
         // make android back button function as returning to splash screen
-        if (this.platform.android && history.state === null) {
+        if (this.client.android && history.state === null) {
             history.pushState('arena', '');
         }
     }
@@ -65,7 +57,7 @@ export class Arena extends Component {
     remove() {
         if (globals.arena === this) {
             delete globals.arena;
-            if (this.platform.android && history.state === 'arena') {
+            if (this.client.android && history.state === 'arena') {
                 history.back();
             }
         }

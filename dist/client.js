@@ -114,36 +114,176 @@
         }
     }
 
-    const platform = {
-        ios: false,
-        android: false,
-        mobile: false,
-        mac: false,
-        windows: false,
-        linux: false
-    };
-    if (navigator.userAgent.includes('Android')) {
-        platform.android = true;
-        platform.mobile = true;
-    }
-    else if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
-        platform.ios = true;
-        platform.mobile = true;
-    }
-    else if (navigator.platform === 'MacIntel') {
-        platform.mac = true;
-    }
-    else if (navigator.platform === 'Win32') {
-        platform.windows = true;
-    }
-    else if (navigator.platform.startsWith('Linux')) {
-        platform.linux = true;
-    }
-
     /** Internal context. */
-    const globals = { platform };
+    const globals = {};
     ////// debug
     globalThis.globals = globals;
+
+    /** Deep copy plain object. */
+    function copy(from) {
+        const to = {};
+        for (const key in from) {
+            if (from[key]?.constructor === Object) {
+                to[key] = copy(from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Merge two objects. */
+    function apply(to, from) {
+        for (const key in from) {
+            if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+                apply(to[key], from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Deep freeze object. */
+    function freeze(obj) {
+        const propNames = Object.getOwnPropertyNames(obj);
+        for (const name of propNames) {
+            const value = obj[name];
+            if (value && typeof value === 'object') {
+                freeze(value);
+            }
+        }
+        return Object.freeze(obj);
+    }
+    /** Access key of a nested object. */
+    function access(obj, keys) {
+        if (keys && obj) {
+            for (const key of keys.split('.')) {
+                obj = obj[key] ?? null;
+                if (obj === null) {
+                    break;
+                }
+            }
+        }
+        return obj ?? null;
+    }
+    /** Split string with `:`. */
+    function split(msg, delimiter = ':') {
+        const idx = msg.indexOf(delimiter);
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
+    }
+    /** Return a promise that resolves after n seconds. */
+    function sleep(n) {
+        return new Promise(resolve => setTimeout(resolve, n * 1000));
+    }
+    /** Generate a unique ID based on current Date.now().
+     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
+     */
+    function uid() {
+        return new Date().getTime().toString().split('').map(n => {
+            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
+            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
+        }).join('');
+    }
+    /** Fetch and parse json file. */
+    function readJSON(...args) {
+        return new Promise(resolve => {
+            fetch(args.join('/')).then(response => {
+                response.json().then(resolve);
+            });
+        });
+    }
+
+    var utils = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        copy: copy,
+        apply: apply,
+        freeze: freeze,
+        access: access,
+        split: split,
+        sleep: sleep,
+        uid: uid,
+        readJSON: readJSON
+    });
+
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+
+    /** Accessor to client and platform properties used by extensions. */
+    class Accessor {
+        /** OS info. */
+        ios = false;
+        android = false;
+        mobile = false;
+        mac = false;
+        windows = false;
+        linux = false;
+        constructor() {
+            if (navigator.userAgent.includes('Android')) {
+                this.android = true;
+                this.mobile = true;
+            }
+            else if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
+                this.ios = true;
+                this.mobile = true;
+            }
+            else if (navigator.platform === 'MacIntel') {
+                this.mac = true;
+            }
+            else if (navigator.platform === 'Win32') {
+                this.windows = true;
+            }
+            else if (navigator.platform.startsWith('Linux')) {
+                this.linux = true;
+            }
+        }
+        get version() {
+            return globals.client.version;
+        }
+        get url() {
+            return globals.client.url;
+        }
+        get info() {
+            return globals.client.info;
+        }
+        /** Get extension meta data. */
+        async getMeta(pack, full = false) {
+            try {
+                const meta = {};
+                const ext = await importExtension(pack);
+                if (ext.heropack || ext.cardpack) {
+                    meta.pack = true;
+                }
+                if (ext.mode?.name) {
+                    meta.mode = ext.mode.name;
+                }
+                if (ext.tags) {
+                    meta.tags = ext.tags;
+                }
+                if (ext.hero) {
+                    meta.images = Object.keys(ext.hero);
+                }
+                return meta;
+            }
+            catch (e) {
+                console.log(e, name);
+                return null;
+            }
+        }
+    }
 
     /** Callback for dom events. */
     class Binding {
@@ -213,7 +353,7 @@
                 document.body.addEventListener('touchend', () => this.#pointerEnd(true), { passive: true });
                 document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), { passive: true });
                 // avoid unexpected mouse event behavior on some Android devices
-                if (!globals.platform.android) {
+                if (!globals.accessor.android) {
                     document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), { passive: true });
                     document.body.addEventListener('mouseup', () => this.#pointerEnd(false), { passive: true });
                     document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), { passive: true });
@@ -446,7 +586,7 @@
                 }
             };
             node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (!globals.platform.android) {
+            if (!globals.accessor.android) {
                 node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
             }
             return binding;
@@ -562,98 +702,6 @@
         "avatar": "standard:caocao"
     };
 
-    /** Deep copy plain object. */
-    function copy(from) {
-        const to = {};
-        for (const key in from) {
-            if (from[key]?.constructor === Object) {
-                to[key] = copy(from[key]);
-            }
-            else if (from[key] !== null && from[key] !== undefined) {
-                to[key] = from[key];
-            }
-        }
-        return to;
-    }
-    /** Merge two objects. */
-    function apply(to, from) {
-        for (const key in from) {
-            if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
-                apply(to[key], from[key]);
-            }
-            else if (from[key] !== null && from[key] !== undefined) {
-                to[key] = from[key];
-            }
-        }
-        return to;
-    }
-    /** Deep freeze object. */
-    function freeze(obj) {
-        const propNames = Object.getOwnPropertyNames(obj);
-        for (const name of propNames) {
-            const value = obj[name];
-            if (value && typeof value === 'object') {
-                freeze(value);
-            }
-        }
-        return Object.freeze(obj);
-    }
-    /** Access key of a nested object. */
-    function access(obj, keys) {
-        if (keys && obj) {
-            for (const key of keys.split('.')) {
-                obj = obj[key] ?? null;
-                if (obj === null) {
-                    break;
-                }
-            }
-        }
-        return obj ?? null;
-    }
-    /** Split string with `:`. */
-    function split(msg, delimiter = ':') {
-        const idx = msg.indexOf(delimiter);
-        if (idx === -1) {
-            return [msg, ''];
-        }
-        else {
-            return [msg.slice(0, idx), msg.slice(idx + 1)];
-        }
-    }
-    /** Return a promise that resolves after n seconds. */
-    function sleep(n) {
-        return new Promise(resolve => setTimeout(resolve, n * 1000));
-    }
-    /** Generate a unique ID based on current Date.now().
-     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
-     */
-    function uid() {
-        return new Date().getTime().toString().split('').map(n => {
-            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
-            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
-        }).join('');
-    }
-    /** Fetch and parse json file. */
-    function readJSON(...args) {
-        return new Promise(resolve => {
-            fetch(args.join('/')).then(response => {
-                response.json().then(resolve);
-            });
-        });
-    }
-
-    var utils = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        copy: copy,
-        apply: apply,
-        freeze: freeze,
-        access: access,
-        split: split,
-        sleep: sleep,
-        uid: uid,
-        readJSON: readJSON
-    });
-
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
@@ -667,8 +715,8 @@
         #props = new Map();
         /** Component ID (for worker-managed components). */
         #id;
-        get platform() {
-            return globals.platform;
+        get client() {
+            return globals.accessor;
         }
         get utils() {
             return utils;
@@ -805,7 +853,7 @@
                 globals.splash.settings.create(globals.splash);
             });
             // add handler for android back button
-            if (this.platform.android) {
+            if (this.client.android) {
                 window.addEventListener('popstate', e => {
                     const arena = this.app.arena;
                     if (arena && !arena.exiting) {
@@ -1263,12 +1311,6 @@
         confirming = false;
         /** Trying to exit. */
         exiting = false;
-        get version() {
-            return globals.client.version;
-        }
-        get url() {
-            return globals.client.url;
-        }
         /** Connected remote clients. */
         get peers() {
             const ids = this.get('peers');
@@ -1297,7 +1339,7 @@
             globals.arena = this;
             this.app.node.appendChild(this.node);
             // make android back button function as returning to splash screen
-            if (this.platform.android && history.state === null) {
+            if (this.client.android && history.state === null) {
                 history.pushState('arena', '');
             }
         }
@@ -1310,7 +1352,7 @@
         remove() {
             if (globals.arena === this) {
                 delete globals.arena;
-                if (this.platform.android && history.state === 'arena') {
+                if (this.client.android && history.state === 'arena') {
                     history.back();
                 }
             }
@@ -1494,7 +1536,7 @@
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
-                        this.yield(['config', name, this.arena.url]);
+                        this.yield(['config', name, this.client.url]);
                     }
                     else {
                         this.yield(['config', name, result]);
@@ -1762,7 +1804,7 @@
          * true: for devices that can scroll horizontally, scroll with CSS snap.
          * false: for mouse wheels, scroll with transform animation.
          */
-        #snap = this.platform.mobile || this.db.get('snap') || false;
+        #snap = this.client.mobile || this.db.get('snap') || false;
         /** Listener for wheel event. */
         #wheelListener = (e) => this.#wheel(e);
         init() {
@@ -2110,7 +2152,7 @@
             // add buttons
             if (globals.client.debug) {
                 this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
-                if (this.platform.mobile) {
+                if (this.client.mobile) {
                     this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
                 }
             }
@@ -2163,7 +2205,7 @@
             let write = false;
             await Promise.all(this.extensions.map(async (name) => {
                 if (!this.index[name]) {
-                    const meta = await globals.client.getMeta(name);
+                    const meta = await this.client.getMeta(name);
                     if (meta) {
                         this.index[name] = meta;
                         write = true;
@@ -2833,7 +2875,7 @@
             this.bar.splash = this;
             this.node.appendChild(this.bar.node);
             // debug mode
-            if (globals.client.debug && this.platform.mobile) {
+            if (globals.client.debug && this.client.mobile) {
                 const script = document.createElement('script');
                 script.src = 'lib/eruda/eruda.js';
                 script.onload = () => window.eruda.init();
@@ -2959,17 +3001,6 @@
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);
 
-    /** Map of loaded extensions. */
-    const extensions = new Map();
-    /** Load extension. */
-    async function importExtension(extname) {
-        if (!extensions.has(extname)) {
-            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
-            extensions.set(extname, ext);
-        }
-        return extensions.get(extname);
-    }
-
     /**
      * Executor of worker commands.
      */
@@ -3021,6 +3052,7 @@
             globals.client = this;
             const db = globals.db = new Database();
             globals.ui = new UI();
+            globals.accessor = new Accessor();
             // get user identifier
             db.ready.then(() => {
                 if (!db.get('uid')) {
@@ -3108,30 +3140,6 @@
         trigger(event, arg) {
             for (const cmp of this.listeners[event]) {
                 cmp[event](arg);
-            }
-        }
-        /** Get extension meta data. */
-        async getMeta(pack, full = false) {
-            try {
-                const meta = {};
-                const ext = await importExtension(pack);
-                if (ext.heropack || ext.cardpack) {
-                    meta.pack = true;
-                }
-                if (ext.mode?.name) {
-                    meta.mode = ext.mode.name;
-                }
-                if (ext.tags) {
-                    meta.tags = ext.tags;
-                }
-                if (ext.hero) {
-                    meta.images = Object.keys(ext.hero);
-                }
-                return meta;
-            }
-            catch (e) {
-                console.log(e, name);
-                return null;
             }
         }
         /** Overwrite components by mode. */

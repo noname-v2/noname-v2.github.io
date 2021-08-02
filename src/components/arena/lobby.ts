@@ -143,7 +143,7 @@ export class Lobby extends Component {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
-                    this.yield(['config', name, this.arena!.url]);
+                    this.yield(['config', name, this.client.url]);
                 }
                 else {
                     this.yield(['config', name, result]);
