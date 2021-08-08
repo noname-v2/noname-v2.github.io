@@ -344,7 +344,10 @@ function arena(T) {
             console.log(ax, ay, width, height);
             return [ax, ay];
         }
-        $players(ids) {
+        $np() {
+            this.app.resize();
+        }
+        async $players(ids) {
             const nodes = new Set();
             // append players
             for (const id of ids) {

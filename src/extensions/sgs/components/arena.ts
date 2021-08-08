@@ -13,7 +13,6 @@ export function arena(T: typeof Arena) {
     
         /** Player container. */
         players = this.ui.createElement('players');
-    
 
         /** Update arena layout. */
         resize(ax: number, ay: number, width: number, height: number) {
@@ -42,7 +41,11 @@ export function arena(T: typeof Arena) {
             return [ax, ay];
         }
 
-        $players(ids: number[]) {
+        $np() {
+            this.app.resize();
+        }
+
+        async $players(ids: number[]) {
             const nodes = new Set<HTMLElement>();
 
             // append players

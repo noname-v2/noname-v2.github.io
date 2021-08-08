@@ -270,7 +270,7 @@ export class Worker {
         try {
             const [uid, sid, id, result, done] = data;
             const stage = globals.game.currentStage;
-            const link = globals.links.get(id);
+            const link = globals.game.links.get(id);
             if (id === -1) {
                 // reload UI upon error
                 this.send(uid, globals.game.pack());

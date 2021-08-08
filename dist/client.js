@@ -169,7 +169,7 @@
             this.#node = this.ui.createElement(tag);
             this.#ready = Promise.resolve().then(() => this.init());
         }
-        /** Make init() optional for subclasses. */
+        /** Optional initialization method. */
         init() { }
         ;
         /** Property getter. */
@@ -314,8 +314,8 @@
             // add bindings for window resize
             await this.ui.ready;
             document.body.appendChild(this.node);
-            this.#resize();
-            window.addEventListener('resize', () => this.#resize());
+            this.resize();
+            window.addEventListener('resize', () => this.resize());
             // load styles and fonts
             this.#initAudio();
             await this.loadTheme();
@@ -574,6 +574,36 @@
                 return null;
             }
         }
+        /** Adjust zoom level according to device DPI. */
+        resize() {
+            // actual window size
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            // ideal window size
+            let [ax, ay] = [960, 540];
+            // let current mode determine ideal size
+            if (globals.arena) {
+                [ax, ay] = globals.arena.resize(ax, ay, width, height);
+            }
+            // zoom to fit ideal size
+            const zx = width / ax, zy = height / ay;
+            if (zx < zy) {
+                this.#width = ax;
+                this.#height = ax / width * height;
+                this.#zoom = zx;
+            }
+            else {
+                this.#width = ay / height * width;
+                this.#height = ay;
+                this.#zoom = zy;
+            }
+            // update styles
+            globals.app.node.style.setProperty('--app-width', this.width + 'px');
+            globals.app.node.style.setProperty('--app-height', this.height + 'px');
+            globals.app.node.style.setProperty('--app-scale', this.zoom.toString());
+            // trigger resize listeners
+            globals.client.trigger('resize');
+        }
         /** Initialize volume settings. */
         #initAudio() {
             // add default settings
@@ -618,36 +648,6 @@
                     fontFace.loaded.then(() => globals.splash.node.classList.add('label-font-loaded'));
                 }
             }
-        }
-        /** Adjust zoom level according to device DPI. */
-        #resize() {
-            // actual window size
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            // ideal window size
-            let [ax, ay] = [960, 540];
-            // let current mode determine ideal size
-            if (globals.arena) {
-                [ax, ay] = globals.arena.resize(ax, ay, width, height);
-            }
-            // zoom to fit ideal size
-            const zx = width / ax, zy = height / ay;
-            if (zx < zy) {
-                this.#width = ax;
-                this.#height = ax / width * height;
-                this.#zoom = zx;
-            }
-            else {
-                this.#width = ay / height * width;
-                this.#height = ay;
-                this.#zoom = zy;
-            }
-            // update styles
-            globals.app.node.style.setProperty('--app-width', this.width + 'px');
-            globals.app.node.style.setProperty('--app-height', this.height + 'px');
-            globals.app.node.style.setProperty('--app-scale', this.zoom.toString());
-            // trigger resize listeners
-            globals.client.trigger('resize');
         }
     }
 

@@ -48,7 +48,7 @@ export abstract class Accessor {
 
     /** Get a link. */
     get(id: number) {
-        return globals.links.get(id);
+        return globals.game.links.get(id);
     }
 
     /** Create a link. */

@@ -38,6 +38,12 @@ export class Game {
     */
     progress = 0;
 
+    /** Map from a task to the stage containing the task. */
+    taskStage = new Map<Task, Stage>();
+
+    /** Links to components. */
+    links = new Map<number, [Link, Dict]>();
+
     /** All created stages. */
     #stages = new Map<number, Stage>();
 
@@ -83,7 +89,7 @@ export class Game {
             },
             unlink: () => {
                 globals.worker.tick(id, null);
-                globals.links.delete(id);
+                this.links.delete(id);
             },
             update: (items: Dict) => {
                 for (const key in items) {
@@ -114,8 +120,8 @@ export class Game {
             }
         }) as Link;
 
-        globals.links.set(id, [link, obj]);
         globals.worker.tick(id, tag);
+        this.links.set(id, [link, obj]);
         return link;
     }
 
@@ -173,7 +179,7 @@ export class Game {
     pack(): UITick {
         const tags: Dict<string> = {};
         const props: Dict<Dict> = {};
-        for (const [uid, [link, obj]] of globals.links.entries()) {
+        for (const [uid, [link, obj]] of this.links.entries()) {
             tags[uid] = link.tag;
             props[uid] = obj;
         }

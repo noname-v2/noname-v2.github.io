@@ -52,7 +52,7 @@ export class Stage {
         this.path = path;
         this.parent = parent;
         this.task = apply(new (globals.game.getTask(path))(), data);
-        globals.taskStage.set(this.task, this);
+        globals.game.taskStage.set(this.task, this);
     }
 
     /** Execute the next step.

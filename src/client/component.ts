@@ -73,7 +73,7 @@ export abstract class Component {
         this.#ready = Promise.resolve().then(() => this.init());
     }
 
-    /** Make init() optional for subclasses. */
+    /** Optional initialization method. */
     init() {};
 
     /** Property getter. */
