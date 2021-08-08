@@ -36,8 +36,9 @@ export class SplashHub extends Popup {
     avatarSelector: Popup | null = null;
 
     /** Called by app after UI loaded. */
-    create(splash: Splash) {
+    create() {
         // nickname, avatar and this address
+        const splash = globals.splash;
         this.#addInfo();
 
 		// room list in this menu
@@ -76,14 +77,14 @@ export class SplashHub extends Popup {
         const [reason, content] = this.utils.split(msg);
         this.#clearRooms();
         this.edit(content);
-        if (this.arena) {
+        if (this.app.arena) {
             if (reason === 'kick') {
-                await this.ui.alert('你被请出了房间');
+                await this.app.alert('你被请出了房间');
             }
             else if (reason === 'end') {
-                await this.ui.alert('房间已关闭');
+                await this.app.alert('房间已关闭');
             }
-            this.arena.faded = true;
+            this.app.arena.faded = true;
             globals.client.clear();
         }
         this.roomGroup.classList.remove('entering');
@@ -140,8 +141,8 @@ export class SplashHub extends Popup {
     /** Owner of joined room disconnected. */
     down(msg: string) {
         const ws = globals.client.connection;
-        const promise = this.ui.alert('房主连接断开', {ok: '退出房间', id: 'down'});
-        const dialog = this.ui.popups.get('down') as Dialog;
+        const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
+        const dialog = this.app.popups.get('down') as Dialog;
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
             dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
@@ -151,8 +152,8 @@ export class SplashHub extends Popup {
         promise.then(val => {
             clearInterval(interval);
             if (val === true && ws === globals.client.connection && ws instanceof WebSocket) {
-                if (this.arena) {
-                    this.arena.faded = true;
+                if (this.app.arena) {
+                    this.app.arena.faded = true;
                     globals.client.clear();
                 }
                 ws.send('leave:init');
@@ -182,7 +183,7 @@ export class SplashHub extends Popup {
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.#setCaption('');
-                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.accessor.info]));
+                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
                     if (this.address.input.value !== config.ws) {
                         this.db.set('ws', this.address.input.value);
                     }
@@ -239,7 +240,7 @@ export class SplashHub extends Popup {
     /** Update nickname or avatar. */
     #sendInfo() {
         if (globals.client.connection instanceof WebSocket) {
-            globals.client.connection.send('set:' + JSON.stringify(globals.accessor.info));
+            globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
         }
     }
 
@@ -334,7 +335,7 @@ export class SplashHub extends Popup {
             if (val) {
                 this.db.set('nickname', val);
 				nickname.set('icon', 'emote');
-				await new Promise(resolve => setTimeout(resolve, this.ui.getTransition('slow')));
+				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
 				nickname.set('icon', null);
                 this.#sendInfo();
 			}
@@ -345,7 +346,7 @@ export class SplashHub extends Popup {
 		const address = this.address = this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
-			address.input.value = globals.accessor.url;
+			address.input.value = this.app.ws;
 		});
         address.callback = () => this.#connect();
         this.ui.bindClick(address.node, e => {

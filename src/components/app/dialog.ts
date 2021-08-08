@@ -24,7 +24,7 @@ export class Dialog extends Popup {
 
     init() {
         super.init();
-        this.pane.width = parseInt(this.ui.css.popup['dialog-width']) - 20;
+        this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
     }
 
     $caption(val: string) {

@@ -1,5 +1,6 @@
 import { Popup } from '../popup';
-import { Splash, Point, Gallery } from '../../components';
+import { globals } from '../../client/globals';
+import { Point, Gallery } from '../../components';
 
 export class SplashSettings extends Popup {
     /** Portrait sized popup. */
@@ -18,8 +19,9 @@ export class SplashSettings extends Popup {
     #rotatingAnimation: Animation | null = null;
 
     /** Called by app after UI loaded. */
-    create(splash: Splash) {
+    create() {
         // blur or unblur splash
+        const splash = globals.splash;
         this.onopen = () => {
             for (const gallery of this.galleries) {
                 gallery.checkPage();
@@ -46,7 +48,7 @@ export class SplashSettings extends Popup {
 
     #addGallery(section: string, caption: string, add: string, onadd: () => void) {
         this.pane.addSection(caption);
-        const items = Array.from(Object.keys(this.client.assets[section]));
+        const items = Array.from(Object.keys(this.app.assets[section]));
 
         let gallery;
         if (section === 'bgm') {
@@ -105,7 +107,7 @@ export class SplashSettings extends Popup {
             this.ui.dispatchMove(slider, {x: offset ?? -width, y: 0})
         };
 
-        const width = 180 - 2 * parseFloat(this.ui.css.widget['image-margin-sharp']);
+        const width = 180 - 2 * parseFloat(this.app.css.widget['image-margin-sharp']);
 
         this.ui.bindMove(slider, {
             movable: {x: [-width-1, 0], y: [0,0]},
@@ -116,7 +118,7 @@ export class SplashSettings extends Popup {
                 this.db.set(key, vol);
     
                 if (key === 'music-volume') {
-                    this.client.changeVolume(vol);
+                    this.app.changeVolume(vol);
                 }
             }
         });
@@ -169,20 +171,20 @@ export class SplashSettings extends Popup {
             node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
             node.classList.add('active');
             this.db.set(section, item);
-            this.client[section === 'bg' ? 'loadBackground' : 'loadTheme']();
+            this.app[section === 'bg' ? 'loadBackground' : 'loadTheme']();
         }
         else if (section === 'bg') {
             // unset background
             node.classList.remove('active');
             this.db.set('bg', null);
-            this.client.loadBackground();
+            this.app.loadBackground();
         }
     }
 
     /** Open menu when clicking on music gallery. */
     #musicMenu(node: HTMLElement, bgm: string, e: Point) {
         const rotating_bak: [HTMLElement | null, Animation | null] = [this.#rotating, this.#rotatingAnimation];
-        this.client.switchMusic(bgm);
+        this.app.switchMusic(bgm);
         const menu = this.ui.create('popup');
         this.#rotate(node);
 
@@ -198,7 +200,7 @@ export class SplashSettings extends Popup {
                     this.#rotate(this.#rotating);
                 }
             }
-            this.client.playMusic();
+            this.app.playMusic();
         }
         
         // callback for clicking on menu entry

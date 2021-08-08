@@ -3,7 +3,7 @@ import { Component } from '../components';
 
 export class Peer extends Component {
 	$playing() {
-        if (this.arena?.peers) {
+        if (this.app.arena?.peers) {
             globals.client.trigger('sync');
         }
     }

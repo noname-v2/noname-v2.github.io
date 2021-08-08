@@ -1,21 +1,8 @@
 (function () {
     'use strict';
 
-    /** Components synced with the worker. */
-    const components = new Map();
-    /** Event listeners. */
-    const listeners = Object.freeze({
-        // connection status change
-        sync: new Set(),
-        // document resize
-        resize: new Set(),
-        // keyboard event
-        key: new Set(),
-        // stage change
-        stage: new Set()
-    });
     /** Internal context. */
-    const globals = { components, listeners };
+    const globals = {};
     ////// debug
     globalThis.globals = globals;
 
@@ -25,6 +12,24 @@
         "nickname": "无名玩家",
         "avatar": "standard:caocao"
     };
+
+    /** Platform detector. */
+    const ios = navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document);
+    const android = navigator.userAgent.includes('Android');
+    const mobile = ios || android;
+    const mac = navigator.platform === 'MacIntel' && !('ontouchend' in document);
+    const windows = navigator.platform === 'Win32';
+    const linux = navigator.platform.startsWith('Linux');
+
+    var platform = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        ios: ios,
+        android: android,
+        mobile: mobile,
+        mac: mac,
+        windows: windows,
+        linux: linux
+    });
 
     /** Deep copy plain object. */
     function copy(from) {
@@ -137,8 +142,11 @@
         get ready() {
             return this.#ready;
         }
-        get client() {
-            return globals.accessor;
+        get app() {
+            return globals.app;
+        }
+        get platform() {
+            return platform;
         }
         get utils() {
             return utils;
@@ -148,12 +156,6 @@
         }
         get ui() {
             return globals.ui;
-        }
-        get arena() {
-            return globals.arena;
-        }
-        get listeners() {
-            return globals.listeners;
         }
         get owner() {
             return this.get('owner');
@@ -213,9 +215,13 @@
             }
             globals.client.send(this.#id, result, true);
         }
+        /** Add component event listener. */
+        listen(event) {
+            globals.client.listeners[event].add(this);
+        }
         /** Delay for a time period. */
         sleep(dur) {
-            return this.utils.sleep(this.ui.getTransition(dur) / 1000);
+            return this.utils.sleep(this.app.getTransition(dur) / 1000);
         }
         /** Remove element. */
         remove(promise) {
@@ -235,17 +241,30 @@
         }
     }
 
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+
     class App extends Component {
+        /** Client version. */
+        #version = version;
         /** App width. */
-        width;
+        #width;
         /** App height. */
-        height;
+        #height;
         /** Current zoom level. */
-        zoom = 1;
+        #zoom = 1;
         /** Transition durations. */
-        css = {};
+        #css = {};
         /** Index of assets. */
-        assets;
+        #assets;
         /** Stylesheet for theme. */
         #themeNode = document.createElement('style');
         /** Node for displaying background. */
@@ -256,28 +275,60 @@
         #bgmGain;
         /** Audio context. */
         #audio = new (window.AudioContext || window.webkitAudioContext)();
+        /** Popup components cleared when arena close. */
+        #popups = new Map();
+        /** Count dialog for dialog ID */
+        #dialogCount = 0;
+        get version() {
+            return this.#version;
+        }
+        get width() {
+            return this.#width;
+        }
+        get height() {
+            return this.#height;
+        }
+        get zoom() {
+            return this.#zoom;
+        }
+        get assets() {
+            return this.#assets;
+        }
+        get css() {
+            return this.#css;
+        }
+        get popups() {
+            return this.#popups;
+        }
+        get arena() {
+            return globals.arena ?? null;
+        }
+        get ws() {
+            return globals.client.ws;
+        }
         async init() {
             document.head.appendChild(this.#themeNode);
-            document.body.appendChild(this.node);
-            // add bindings for window resize
-            this.#resize();
-            window.addEventListener('resize', () => this.#resize());
             // wait for indexedDB
             await this.db.ready;
             this.loadBackground();
-            this.#initAudio();
+            // add bindings for window resize
+            await this.ui.ready;
+            document.body.appendChild(this.node);
+            this.#resize();
+            window.addEventListener('resize', () => this.#resize());
             // load styles and fonts
+            this.#initAudio();
             await this.loadTheme();
             const splash = globals.splash = this.ui.create('splash');
             await splash.gallery.ready;
             const initAssets = this.#initAssets();
             // load splash menus
             Promise.all([initAssets, splash.show(), document.fonts.ready]).then(() => {
-                splash.hub.create(splash);
-                splash.settings.create(splash);
+                splash.hub.create();
+                splash.settings.create();
             });
             // add handler for android back button
-            if (this.client.android) {
+            if (this.platform.android) {
                 window.addEventListener('popstate', e => {
                     const arena = this.arena;
                     if (arena && !arena.exiting) {
@@ -407,6 +458,122 @@
                 this.#bgmNode.pause();
             }
         }
+        /** Get the duration of transition.
+         * @param {TransitionDuration} type - transition type
+         */
+        getTransition(type = null) {
+            let key = 'transition';
+            if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
+                key += '-' + type;
+            }
+            const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
+            return duration * 1000;
+        }
+        /** Display alert message. */
+        async alert(caption, config = {}) {
+            config.buttons = [['ok', config.ok ?? '确定', 'red']];
+            return await this.choose(caption, config) === 'ok' ? true : null;
+        }
+        /** Display confirm message. */
+        async confirm(caption, config = {}) {
+            config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
+            const result = await this.choose(caption, config);
+            if (result === 'ok') {
+                return true;
+            }
+            if (result === 'cancel') {
+                return false;
+            }
+            return null;
+        }
+        /** Display confirm message. */
+        choose(caption, config = {}) {
+            const dialog = this.ui.create('dialog');
+            dialog.update({ caption, content: config.content, buttons: config.buttons });
+            const promise = new Promise(resolve => {
+                dialog.onclose = () => {
+                    resolve(dialog.result);
+                };
+                this.popup(dialog, config.id);
+            });
+            if (config.timeout) {
+                return Promise.race([promise, new Promise(resolve => {
+                        setTimeout(() => resolve(null), config.timeout * 1000);
+                    })]);
+            }
+            else {
+                return promise;
+            }
+        }
+        /** Displa a popup. */
+        popup(dialog, id) {
+            const dialogID = id ?? ++this.#dialogCount;
+            this.popups.get(dialogID)?.close();
+            const onopen = dialog.onopen;
+            const onclose = dialog.onclose;
+            // other popups that are blurred by dialog.open()
+            const blurred = [];
+            dialog.onopen = () => {
+                // blur arena, splash and other popups
+                globals.app.node.classList.add('popped');
+                for (const [id, popup] of this.popups.entries()) {
+                    if (popup !== dialog && !popup.node.classList.contains('blurred')) {
+                        popup.node.classList.add('blurred');
+                        blurred.push(id);
+                    }
+                }
+                if (typeof onopen === 'function') {
+                    onopen();
+                }
+            };
+            dialog.onclose = () => {
+                // unblur
+                this.popups.delete(dialogID);
+                if (this.popups.size === 0) {
+                    globals.app.node.classList.remove('popped');
+                }
+                for (const id of blurred) {
+                    this.popups.get(id)?.node.classList.remove('blurred');
+                }
+                blurred.length = 0;
+                if (typeof onclose === 'function') {
+                    onclose();
+                }
+            };
+            this.popups.set(dialogID, dialog);
+            dialog.ready.then(() => dialog.open());
+        }
+        /** Clear alert and confirm dialogs. */
+        clearPopups() {
+            for (const popup of this.popups.values()) {
+                popup.close();
+            }
+            this.popups.clear();
+        }
+        /** Get extension meta data. */
+        async getMeta(pack, full = false) {
+            try {
+                const meta = {};
+                const ext = await importExtension(pack);
+                if (ext.heropack || ext.cardpack) {
+                    meta.pack = true;
+                }
+                if (ext.mode?.name) {
+                    meta.mode = ext.mode.name;
+                }
+                if (ext.tags) {
+                    meta.tags = ext.tags;
+                }
+                if (ext.hero) {
+                    meta.images = Object.keys(ext.hero);
+                }
+                return meta;
+            }
+            catch (e) {
+                console.log(e, pack);
+                return null;
+            }
+        }
         /** Initialize volume settings. */
         #initAudio() {
             // add default settings
@@ -438,9 +605,9 @@
         }
         /** Index assets and load fonts. */
         async #initAssets() {
-            this.assets = await this.utils.readJSON('assets/index.json');
+            this.#assets = await this.utils.readJSON('assets/index.json');
             // add fonts
-            for (const font in this.assets['font']) {
+            for (const font in this.#assets['font']) {
                 const fontPath = 'assets/font/' + font + '.woff2';
                 const fontFace = new window.FontFace(font, `url(${fontPath})`);
                 document.fonts.add(fontFace);
@@ -466,14 +633,14 @@
             // zoom to fit ideal size
             const zx = width / ax, zy = height / ay;
             if (zx < zy) {
-                this.width = ax;
-                this.height = ax / width * height;
-                this.zoom = zx;
+                this.#width = ax;
+                this.#height = ax / width * height;
+                this.#zoom = zx;
             }
             else {
-                this.width = ay / height * width;
-                this.height = ay;
-                this.zoom = zy;
+                this.#width = ay / height * width;
+                this.#height = ay;
+                this.#zoom = zy;
             }
             // update styles
             globals.app.node.style.setProperty('--app-width', this.width + 'px');
@@ -527,7 +694,7 @@
             }
             this.ui.animate(this.pane.node, {
                 opacity: [1, 0], scale: [1, 'var(--popup-transform)']
-            }, this.ui.getTransition(this.transition)).onfinish = () => {
+            }, this.app.getTransition(this.transition)).onfinish = () => {
                 this.node.remove();
             };
         }
@@ -552,7 +719,7 @@
                 let { x, y } = this.position;
                 const rect1 = this.pane.node.getBoundingClientRect();
                 const rect2 = globals.app.node.getBoundingClientRect();
-                const zoom = this.ui.zoom;
+                const zoom = this.app.zoom;
                 x += 2;
                 y -= 2;
                 if (x < 10) {
@@ -577,7 +744,7 @@
             this.node.classList.remove('hidden');
             this.ui.animate(this.pane.node, {
                 opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-            }, this.ui.getTransition(this.transition));
+            }, this.app.getTransition(this.transition));
         }
     }
 
@@ -598,7 +765,7 @@
         transition = 'fast';
         init() {
             super.init();
-            this.pane.width = parseInt(this.ui.css.popup['dialog-width']) - 20;
+            this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
         }
         $caption(val) {
             this.caption.innerHTML = val;
@@ -694,7 +861,7 @@
             globals.arena = this;
             globals.app.node.appendChild(this.node);
             // make android back button function as returning to splash screen
-            if (this.client.android && history.state === null) {
+            if (this.platform.android && history.state === null) {
                 history.pushState('arena', '');
             }
         }
@@ -707,7 +874,7 @@
         remove() {
             if (globals.arena === this) {
                 delete globals.arena;
-                if (this.client.android && history.state === 'arena') {
+                if (this.platform.android && history.state === 'arena') {
                     history.back();
                 }
             }
@@ -727,7 +894,7 @@
             const peers = this.peers;
             if (peers || ws instanceof WebSocket) {
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
-                if (!peers || peers.length <= 1 || await this.ui.confirm('联机模式', { content, id: 'exitArena' })) {
+                if (!peers || peers.length <= 1 || await this.app.confirm('联机模式', { content, id: 'exitArena' })) {
                     if (peers && peers.length > 1) {
                         this.faded = true;
                     }
@@ -796,9 +963,9 @@
         /** Container of chosen heros. */
         heroDock = this.ui.createElement('dock');
         init() {
-            const arena = this.arena;
+            const arena = this.app.arena;
             arena.node.appendChild(this.node);
-            this.listeners.sync.add(this);
+            this.listen('sync');
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
                 this.sidebar.setFooter('开始游戏', () => this.respond());
@@ -809,12 +976,12 @@
         }
         /** Update connected players. */
         sync() {
-            const peers = this.arena.peers;
+            const peers = this.app.arena.peers;
             // callback for online mode toggle
             if (this.mine) {
                 this.yield(['sync', null, peers ? true : false]);
                 if (this.connecting && !peers) {
-                    this.ui.alert('连接失败');
+                    this.app.alert('连接失败');
                 }
                 this.connecting = false;
                 const toggle = this.configToggles.get('online');
@@ -850,7 +1017,7 @@
                 }
             }
             // update spectate button
-            const peer = this.arena.peer;
+            const peer = this.app.arena.peer;
             if (peer) {
                 this.seats.classList.remove('offline');
                 this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
@@ -891,7 +1058,7 @@
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
-                        this.yield(['config', name, this.client.url]);
+                        this.yield(['config', name, this.app.ws]);
                     }
                     else {
                         this.yield(['config', name, result]);
@@ -1026,10 +1193,10 @@
             // toggle between spectator and player
             this.ui.bindClick(this.spectateButton, () => {
                 if (this.spectateButton.dataset.fill === 'red') {
-                    this.arena.peer.yield('play');
+                    this.app.arena.peer.yield('play');
                 }
                 else {
-                    this.arena.peer.yield('spectate');
+                    this.app.arena.peer.yield('spectate');
                 }
             });
         }
@@ -1159,7 +1326,7 @@
          * true: for devices that can scroll horizontally, scroll with CSS snap.
          * false: for mouse wheels, scroll with transform animation.
          */
-        #snap = this.client.mobile || this.db.get('snap') || false;
+        #snap = this.platform.mobile || this.db.get('snap') || false;
         /** Listener for wheel event. */
         #wheelListener = (e) => this.#wheel(e);
         init() {
@@ -1175,11 +1342,11 @@
             // add callbacks for dynamic item number
             if (Array.isArray(this.nrows)) {
                 this.node.classList.add('centery');
-                this.listeners.resize.add(this);
+                this.listen('resize');
             }
             if (Array.isArray(this.ncols)) {
                 this.node.classList.add('centerx');
-                this.listeners.resize.add(this);
+                this.listen('resize');
             }
         }
         /** Add an item or an item constructor. */
@@ -1206,8 +1373,8 @@
                 const [ratio, margin, spacing, length] = n;
                 return Math.floor((ratio * full - 2 * margin) / (length + spacing * 2));
             };
-            const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
-            const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
+            const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.app.height);
+            const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.app.width);
             this.#currentSize = [nrows, ncols];
             return nrows * ncols;
         }
@@ -1299,7 +1466,7 @@
                     this.switchToSnap();
                     this.pages.style.transform = '';
                     this.pages.scrollLeft = this.#currentPage * this.pages.offsetWidth;
-                }, this.ui.getTransition());
+                }, this.app.getTransition());
                 return;
             }
             // turn page
@@ -1321,7 +1488,7 @@
             this.turnPage(targetPage);
             this.ui.animate(this.pages, {
                 x: [-targetPage * width], auto: true, forward: true
-            }, this.ui.getTransition('fast'));
+            }, this.app.getTransition('fast'));
         }
         /** Render page when needed. */
         #renderPage(i) {
@@ -1490,7 +1657,7 @@
 
     class Peer extends Component {
         $playing() {
-            if (this.arena?.peers) {
+            if (this.app.arena?.peers) {
                 globals.client.trigger('sync');
             }
         }
@@ -1504,7 +1671,7 @@
         init() {
             if (globals.client.debug) {
                 this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
-                if (this.client.mobile) {
+                if (this.platform.mobile) {
                     this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
                 }
             }
@@ -1525,7 +1692,7 @@
         }
         async #resetGame() {
             if (window['caches']) {
-                await window['caches'].delete(this.client.version);
+                await window['caches'].delete(this.app.version);
             }
             for (const file of await this.db.readdir()) {
                 if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
@@ -1545,8 +1712,8 @@
         extensions;
         async init() {
             // determine gallery column number
-            const margin = parseInt(this.ui.css.app['splash-margin']);
-            this.ncols = [1, margin * 2, margin, parseInt(this.ui.css.player.width)];
+            const margin = parseInt(this.app.css.app['splash-margin']);
+            this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
             super.init();
             // get modes
             this.index = await this.db.readFile('extensions/index.json') || {};
@@ -1555,7 +1722,7 @@
             let write = false;
             await Promise.all(this.extensions.map(async (name) => {
                 if (!this.index[name]) {
-                    const meta = await this.client.getMeta(name);
+                    const meta = await this.app.getMeta(name);
                     if (meta) {
                         this.index[name] = meta;
                         write = true;
@@ -1664,8 +1831,9 @@
         /** Popup for avatar selection. */
         avatarSelector = null;
         /** Called by app after UI loaded. */
-        create(splash) {
+        create() {
             // nickname, avatar and this address
+            const splash = globals.splash;
             this.#addInfo();
             // room list in this menu
             this.numSection = this.pane.addSection('');
@@ -1698,14 +1866,14 @@
             const [reason, content] = this.utils.split(msg);
             this.#clearRooms();
             this.edit(content);
-            if (this.arena) {
+            if (this.app.arena) {
                 if (reason === 'kick') {
-                    await this.ui.alert('你被请出了房间');
+                    await this.app.alert('你被请出了房间');
                 }
                 else if (reason === 'end') {
-                    await this.ui.alert('房间已关闭');
+                    await this.app.alert('房间已关闭');
                 }
-                this.arena.faded = true;
+                this.app.arena.faded = true;
                 globals.client.clear();
             }
             this.roomGroup.classList.remove('entering');
@@ -1758,8 +1926,8 @@
         /** Owner of joined room disconnected. */
         down(msg) {
             const ws = globals.client.connection;
-            const promise = this.ui.alert('房主连接断开', { ok: '退出房间', id: 'down' });
-            const dialog = this.ui.popups.get('down');
+            const promise = this.app.alert('房主连接断开', { ok: '退出房间', id: 'down' });
+            const dialog = this.app.popups.get('down');
             const update = () => {
                 const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
                 dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
@@ -1769,8 +1937,8 @@
             promise.then(val => {
                 clearInterval(interval);
                 if (val === true && ws === globals.client.connection && ws instanceof WebSocket) {
-                    if (this.arena) {
-                        this.arena.faded = true;
+                    if (this.app.arena) {
+                        this.app.arena.faded = true;
                         globals.client.clear();
                     }
                     ws.send('leave:init');
@@ -1796,7 +1964,7 @@
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.#setCaption('');
-                        ws.send('init:' + JSON.stringify([globals.client.uid, globals.accessor.info]));
+                        ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
                         if (this.address.input.value !== config.ws) {
                             this.db.set('ws', this.address.input.value);
                         }
@@ -1848,7 +2016,7 @@
         /** Update nickname or avatar. */
         #sendInfo() {
             if (globals.client.connection instanceof WebSocket) {
-                globals.client.connection.send('set:' + JSON.stringify(globals.accessor.info));
+                globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
             }
         }
         /** Create a room entry. */
@@ -1932,7 +2100,7 @@
                 if (val) {
                     this.db.set('nickname', val);
                     nickname.set('icon', 'emote');
-                    await new Promise(resolve => setTimeout(resolve, this.ui.getTransition('slow')));
+                    await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
                     nickname.set('icon', null);
                     this.#sendInfo();
                 }
@@ -1942,7 +2110,7 @@
             const address = this.address = this.ui.create('input', group);
             address.node.classList.add('address');
             address.ready.then(() => {
-                address.input.value = globals.accessor.url;
+                address.input.value = this.app.ws;
             });
             address.callback = () => this.#connect();
             this.ui.bindClick(address.node, e => {
@@ -1976,8 +2144,9 @@
         /** Animation of this.rotating. */
         #rotatingAnimation = null;
         /** Called by app after UI loaded. */
-        create(splash) {
+        create() {
             // blur or unblur splash
+            const splash = globals.splash;
             this.onopen = () => {
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
@@ -2000,7 +2169,7 @@
         }
         #addGallery(section, caption, add, onadd) {
             this.pane.addSection(caption);
-            const items = Array.from(Object.keys(this.client.assets[section]));
+            const items = Array.from(Object.keys(this.app.assets[section]));
             let gallery;
             if (section === 'bgm') {
                 //  6-column music gallery with volume sliders
@@ -2051,7 +2220,7 @@
                 }
                 this.ui.dispatchMove(slider, { x: offset ?? -width, y: 0 });
             };
-            const width = 180 - 2 * parseFloat(this.ui.css.widget['image-margin-sharp']);
+            const width = 180 - 2 * parseFloat(this.app.css.widget['image-margin-sharp']);
             this.ui.bindMove(slider, {
                 movable: { x: [-width - 1, 0], y: [0, 0] },
                 onmove: ({ x }) => {
@@ -2059,7 +2228,7 @@
                     text.innerHTML = caption + '<div>' + vol + '</div>';
                     this.db.set(key, vol);
                     if (key === 'music-volume') {
-                        this.client.changeVolume(vol);
+                        this.app.changeVolume(vol);
                     }
                 }
             });
@@ -2104,19 +2273,19 @@
                 node.parentNode?.parentNode?.parentNode?.parentNode?.querySelector('noname-widget.active')?.classList.remove('active');
                 node.classList.add('active');
                 this.db.set(section, item);
-                this.client[section === 'bg' ? 'loadBackground' : 'loadTheme']();
+                this.app[section === 'bg' ? 'loadBackground' : 'loadTheme']();
             }
             else if (section === 'bg') {
                 // unset background
                 node.classList.remove('active');
                 this.db.set('bg', null);
-                this.client.loadBackground();
+                this.app.loadBackground();
             }
         }
         /** Open menu when clicking on music gallery. */
         #musicMenu(node, bgm, e) {
             const rotating_bak = [this.#rotating, this.#rotatingAnimation];
-            this.client.switchMusic(bgm);
+            this.app.switchMusic(bgm);
             const menu = this.ui.create('popup');
             this.#rotate(node);
             // restore rotation animation of previous splash music
@@ -2131,7 +2300,7 @@
                         this.#rotate(this.#rotating);
                     }
                 }
-                this.client.playMusic();
+                this.app.playMusic();
             };
             // callback for clicking on menu entry
             const clickOption = (splash, game) => {
@@ -2223,7 +2392,7 @@
             // bottom button bar
             this.node.appendChild(this.bar.node);
             // debug mode
-            if (globals.client.debug && this.client.mobile) {
+            if (globals.client.debug && this.platform.mobile) {
                 const script = document.createElement('script');
                 script.src = 'lib/eruda.js';
                 script.onload = () => window.eruda.init();
@@ -2283,7 +2452,7 @@
                         menu.pane.addOption(name, async () => {
                             if (this.confirm.has(id)) {
                                 const [title, content] = this.confirm.get(id);
-                                if (!await this.ui.confirm(title ?? '确定将' + caption + '设为' + name + '？', { content })) {
+                                if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', { content })) {
                                     return;
                                 }
                             }
@@ -2291,7 +2460,7 @@
                             menu.close();
                         });
                     }
-                    menu.position = { x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3 };
+                    menu.position = { x: (rect.left + rect.width) / this.app.zoom + 3, y: rect.top / this.app.zoom - 3 };
                     menu.open();
                 });
                 // save captions corresponding to option values
@@ -2307,7 +2476,7 @@
                     const val = !this.node.classList.contains('on');
                     if (this.confirm.has(val)) {
                         const [title, content] = this.confirm.get(val);
-                        if (!await this.ui.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', { content })) {
+                        if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', { content })) {
                             return;
                         }
                     }
@@ -2349,20 +2518,7 @@
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);
 
-    /** Map of loaded extensions. */
-    const extensions = new Map();
-    /** Load extension. */
-    async function importExtension(extname) {
-        if (!extensions.has(extname)) {
-            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
-            extensions.set(extname, ext);
-        }
-        return extensions.get(extname);
-    }
-
-    /**
-     * Executor of worker commands.
-     */
+    /** Executor of worker commands. */
     class Client {
         /** Debug mode */
         debug = true;
@@ -2374,6 +2530,12 @@
         registration = null;
         /** User identifier. */
         uid;
+        /** Components created from worker. */
+        components = new Map();
+        /** Component constructors. */
+        componentClasses = new Map(componentClasses);
+        /** Event listeners. */
+        listeners = Object.freeze({ sync: new Set(), resize: new Set(), key: new Set(), stage: new Set() });
         /** ID of current stage. */
         #stageID = 0;
         /**  UITicks waiting for dispatch. */
@@ -2382,8 +2544,16 @@
         #loaded = 0;
         /** This.#loop is not running. */
         #paused = true;
+        get ws() {
+            return globals.db.get('url') || config.ws;
+        }
+        get info() {
+            return [
+                globals.db.get('nickname') || config.nickname,
+                globals.db.get('avatar') || config.avatar
+            ];
+        }
         constructor() {
-            this.#unload();
             // get user identifier
             const db = globals.db;
             db.ready.then(() => {
@@ -2402,13 +2572,14 @@
             this.disconnect();
             if (Array.isArray(config)) {
                 const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
+                const db = globals.db;
                 worker.onmessage = ({ data }) => {
                     if (data === 'ready') {
                         worker.onmessage = ({ data }) => this.dispatch(data);
-                        config.push(globals.db.get(config[0] + ':disabledHeropacks') || []);
-                        config.push(globals.db.get(config[0] + ':disabledCardpacks') || []);
-                        config.push(globals.db.get(config[0] + ':config') || {});
-                        config.push(globals.accessor.info);
+                        config.push(db.get(config[0] + ':disabledHeropacks') || []);
+                        config.push(db.get(config[0] + ':disabledCardpacks') || []);
+                        config.push(db.get(config[0] + ':config') || {});
+                        config.push(this.info);
                         this.send(0, config, true);
                     }
                 };
@@ -2430,11 +2601,11 @@
         }
         /** Clear currently connection status without disconnecting. */
         clear(back = true) {
-            for (const cmp of globals.components.values()) {
+            for (const cmp of this.components.values()) {
                 this.#removeListeners(cmp);
             }
-            globals.components.clear();
-            globals.ui.clearPopups();
+            this.components.clear();
+            globals.app.clearPopups();
             globals.arena?.remove();
             this.#unload();
             if (back) {
@@ -2470,7 +2641,7 @@
         }
         /** Trigger a listener. */
         trigger(event, arg) {
-            for (const cmp of globals.listeners[event]) {
+            for (const cmp of this.listeners[event]) {
                 cmp[event](arg);
             }
         }
@@ -2479,28 +2650,28 @@
             for (const pack of ruleset) {
                 const ext = await importExtension(pack);
                 for (const tag in ext.mode?.components) {
-                    const cls = globals.componentClasses.get(tag) ?? Component;
-                    globals.componentClasses.set(tag, ext.mode.components[tag](cls));
+                    const cls = this.componentClasses.get(tag) ?? Component;
+                    this.componentClasses.set(tag, ext.mode.components[tag](cls));
                 }
             }
         }
         /** Clear loaded mode components. */
         #unload() {
-            globals.componentClasses = new Map(componentClasses);
+            this.componentClasses = new Map(componentClasses);
         }
         /**
          * Render the next UITick.
          */
         async #render() {
             const tick = this.#ticks.shift();
-            const components = globals.components;
+            const components = this.components;
             try {
                 // check if tick is a full UI reload
                 const [sid, tags, props, calls] = tick;
                 for (const key in tags) {
                     if (tags[key] === 'arena') {
                         const arena = globals.arena;
-                        if (arena && globals.ui.popups.size) {
+                        if (arena && globals.app.popups.size) {
                             arena.faded = true;
                         }
                         this.clear(false);
@@ -2518,7 +2689,7 @@
                 // clear unfinished function calls (e.g. selectCard / selectTarget)
                 if (sid !== this.#stageID) {
                     this.trigger('stage');
-                    globals.listeners.stage.clear();
+                    this.listeners.stage.clear();
                     this.#stageID = sid;
                 }
                 // create new components
@@ -2567,7 +2738,7 @@
                 if (Date.now() - this.#loaded < 500) {
                     // prompt reload if error occus within 0.5s after reload
                     this.#loaded = 0;
-                    globals.ui.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
+                    globals.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
                         if (reload === true) {
                             window.location.reload();
                         }
@@ -2595,8 +2766,8 @@
         }
         /** Remove all listeners. */
         #removeListeners(cmp) {
-            for (const key in globals.listeners) {
-                globals.listeners[key].delete(cmp);
+            for (const key in this.listeners) {
+                this.listeners[key].delete(cmp);
             }
         }
     }
@@ -2618,13 +2789,10 @@
         // callback for pointerdown
         ondown = null;
     }
+    /** DOM related operations. */
     class UI {
         /** Resolved when ready. */
         #ready;
-        /** Popup components cleared when arena close. */
-        #popups = new Map();
-        /** Count dialog for dialog ID */
-        #dialogCount = 0;
         /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
         #dispatched = false;
         /** Bindings for DOM events. */
@@ -2642,21 +2810,6 @@
         get ready() {
             return this.#ready;
         }
-        get popups() {
-            return this.#popups;
-        }
-        get width() {
-            return globals.app.width;
-        }
-        get height() {
-            return globals.app.height;
-        }
-        get zoom() {
-            return globals.app.zoom;
-        }
-        get css() {
-            return globals.app.css;
-        }
         constructor() {
             // wait for document.body to load
             if (document.readyState === 'loading') {
@@ -2673,23 +2826,22 @@
                 document.body.addEventListener('touchend', () => this.#pointerEnd(true), { passive: true });
                 document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), { passive: true });
                 // avoid unexpected mouse event behavior on some Android devices
-                if (!globals.accessor.android) {
+                if (!android) {
                     document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), { passive: true });
                     document.body.addEventListener('mouseup', () => this.#pointerEnd(false), { passive: true });
                     document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), { passive: true });
                 }
-                // bind resize event and disable context menu
-                globals.app = this.create('app');
+                // disable context menu
                 document.oncontextmenu = () => false;
             });
         }
         /** Get a component by ID. */
         get(id) {
-            return globals.components.get(id);
+            return globals.client.components.get(id);
         }
         /** Create new component. */
         create(tag, parent = null, id = null) {
-            const cls = globals.componentClasses.get(tag);
+            const cls = globals.client.componentClasses.get(tag);
             const cmp = new cls(cls.tag || tag, id);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
@@ -2864,7 +3016,7 @@
             }
             config ??= {};
             config.easing ??= 'ease';
-            config.duration ??= this.getTransition();
+            config.duration ??= globals.app.getTransition();
             const anim = node.animate(keyframes, config);
             // use last frame as final style
             if (animation.forward) {
@@ -2875,103 +3027,11 @@
             }
             return anim;
         }
-        /** Get the duration of transition.
-         * @param {TransitionDuration} type - transition type
-         */
-        getTransition(type = null) {
-            let key = 'transition';
-            if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
-                key += '-' + type;
-            }
-            const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
-            return duration * 1000;
-        }
-        /** Display alert message. */
-        async alert(caption, config = {}) {
-            config.buttons = [['ok', config.ok ?? '确定', 'red']];
-            return await this.choose(caption, config) === 'ok' ? true : null;
-        }
-        /** Display confirm message. */
-        async confirm(caption, config = {}) {
-            config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
-            const result = await this.choose(caption, config);
-            if (result === 'ok') {
-                return true;
-            }
-            if (result === 'cancel') {
-                return false;
-            }
-            return null;
-        }
-        /** Display confirm message. */
-        choose(caption, config = {}) {
-            const dialog = this.create('dialog');
-            dialog.update({ caption, content: config.content, buttons: config.buttons });
-            const promise = new Promise(resolve => {
-                dialog.onclose = () => {
-                    resolve(dialog.result);
-                };
-                this.popup(dialog, config.id);
-            });
-            if (config.timeout) {
-                return Promise.race([promise, new Promise(resolve => {
-                        setTimeout(() => resolve(null), config.timeout * 1000);
-                    })]);
-            }
-            else {
-                return promise;
-            }
-        }
-        /** Displa a popup. */
-        popup(dialog, id) {
-            const dialogID = id ?? ++this.#dialogCount;
-            this.popups.get(dialogID)?.close();
-            const onopen = dialog.onopen;
-            const onclose = dialog.onclose;
-            // other popups that are blurred by dialog.open()
-            const blurred = [];
-            dialog.onopen = () => {
-                // blur arena, splash and other popups
-                globals.app.node.classList.add('popped');
-                for (const [id, popup] of this.popups.entries()) {
-                    if (popup !== dialog && !popup.node.classList.contains('blurred')) {
-                        popup.node.classList.add('blurred');
-                        blurred.push(id);
-                    }
-                }
-                if (typeof onopen === 'function') {
-                    onopen();
-                }
-            };
-            dialog.onclose = () => {
-                // unblur
-                this.popups.delete(dialogID);
-                if (this.popups.size === 0) {
-                    globals.app.node.classList.remove('popped');
-                }
-                for (const id of blurred) {
-                    this.popups.get(id)?.node.classList.remove('blurred');
-                }
-                blurred.length = 0;
-                if (typeof onclose === 'function') {
-                    onclose();
-                }
-            };
-            this.popups.set(dialogID, dialog);
-            dialog.ready.then(() => dialog.open());
-        }
-        /** Clear alert and confirm dialogs. */
-        clearPopups() {
-            for (const popup of this.popups.values()) {
-                popup.close();
-            }
-            this.popups.clear();
-        }
         /** Get the location of mouse or touch event. */
         #locate(e) {
             return {
-                x: Math.round(e.clientX / this.zoom),
-                y: Math.round(e.clientY / this.zoom)
+                x: Math.round(e.clientX / globals.app.zoom),
+                y: Math.round(e.clientY / globals.app.zoom)
             };
         }
         /** Register pointerdown for click or move. */
@@ -2997,7 +3057,7 @@
                 }
             };
             node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (!globals.accessor.android) {
+            if (!android) {
                 node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
             }
             return binding;
@@ -3186,103 +3246,9 @@
         }
     }
 
-    /** Accessor to client and platform properties used by extensions. */
-    class Accessor {
-        /** OS and platform info. */
-        ios = false;
-        android = false;
-        mac = false;
-        windows = false;
-        linux = false;
-        get version() {
-            return globals.client.version;
-        }
-        get mobile() {
-            return this.ios || this.android;
-        }
-        get uid() {
-            return globals.client.uid;
-        }
-        get assets() {
-            return globals.app.assets;
-        }
-        /** Initialization message. */
-        get info() {
-            return [
-                globals.db.get('nickname') || config.nickname,
-                globals.db.get('avatar') || config.avatar
-            ];
-        }
-        /** WebSocket address. */
-        get url() {
-            return globals.db.get('ws') || config.ws;
-        }
-        constructor() {
-            if (navigator.userAgent.includes('Android')) {
-                this.android = true;
-            }
-            else if (navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document)) {
-                this.ios = true;
-            }
-            else if (navigator.platform === 'MacIntel') {
-                this.mac = true;
-            }
-            else if (navigator.platform === 'Win32') {
-                this.windows = true;
-            }
-            else if (navigator.platform.startsWith('Linux')) {
-                this.linux = true;
-            }
-        }
-        /** Get extension meta data. */
-        async getMeta(pack, full = false) {
-            try {
-                const meta = {};
-                const ext = await importExtension(pack);
-                if (ext.heropack || ext.cardpack) {
-                    meta.pack = true;
-                }
-                if (ext.mode?.name) {
-                    meta.mode = ext.mode.name;
-                }
-                if (ext.tags) {
-                    meta.tags = ext.tags;
-                }
-                if (ext.hero) {
-                    meta.images = Object.keys(ext.hero);
-                }
-                return meta;
-            }
-            catch (e) {
-                console.log(e, pack);
-                return null;
-            }
-        }
-        /** Play background music. */
-        playMusic() {
-            globals.app.playMusic();
-        }
-        /** Swith background music. */
-        switchMusic(bgm) {
-            globals.app.switchMusic(bgm);
-        }
-        /** Change background music volume. */
-        changeVolume(vol) {
-            globals.app.changeVolume(vol);
-        }
-        /** Update theme. */
-        loadTheme() {
-            return globals.app.loadTheme();
-        }
-        /** Update background image. */
-        loadBackground() {
-            globals.app.loadBackground();
-        }
-    }
-
     globals.db = new Database();
-    globals.accessor = new Accessor();
     globals.client = new Client();
     globals.ui = new UI();
+    globals.app = globals.ui.create('app');
 
 }());

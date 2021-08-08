@@ -1,12 +1,14 @@
 import { globals } from './globals';
+import * as platform from '../platform';
 import * as utils from '../utils';
+import type { Listeners } from './client';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
 
-// type for component constructor
+/** Type for component constructor. */
 export type ComponentClass = {
-    tag?: string | null,
-    new(tag: string, id: number | null): Component
+    tag?: string | null;
+    new(tag: string, id: number | null): Component;
 };
 
 export abstract class Component {
@@ -36,8 +38,12 @@ export abstract class Component {
         return this.#ready;
     }
 
-    get client() {
-        return globals.accessor;
+    get app() {
+        return globals.app;
+    }
+
+    get platform() {
+        return platform;
     }
 
     get utils() {
@@ -50,14 +56,6 @@ export abstract class Component {
 
     get ui() {
         return globals.ui;
-    }
-
-    get arena() {
-        return globals.arena;
-    }
-
-    get listeners() {
-        return globals.listeners;
     }
 
     get owner() {
@@ -127,9 +125,14 @@ export abstract class Component {
         globals.client.send(this.#id, result, true);
     }
 
+    /** Add component event listener. */
+    listen<T extends keyof Listeners>(this: Listeners[T], event: T) {
+        globals.client.listeners[event].add(this);
+    }
+
     /** Delay for a time period. */
     sleep(dur: TransitionDuration) {
-        return this.utils.sleep(this.ui.getTransition(dur) / 1000)
+        return this.utils.sleep(this.app.getTransition(dur) / 1000)
     }
 
     /** Remove element. */

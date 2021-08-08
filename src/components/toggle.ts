@@ -32,7 +32,7 @@ export class Toggle extends Component {
                     menu.pane.addOption(name, async () => {
                         if (this.confirm.has(id)) {
                             const [title, content] = this.confirm.get(id)!;
-                            if (!await this.ui.confirm(title ?? '确定将' + caption + '设为' + name + '？', {content})) {
+                            if (!await this.app.confirm(title ?? '确定将' + caption + '设为' + name + '？', {content})) {
                                 return;
                             }
                         }
@@ -40,7 +40,7 @@ export class Toggle extends Component {
                         menu.close();
                     })
                 }
-                menu.position = {x: (rect.left + rect.width) / this.ui.zoom + 3, y: rect.top / this.ui.zoom - 3};
+                menu.position = {x: (rect.left + rect.width) / this.app.zoom + 3, y: rect.top / this.app.zoom - 3};
                 menu.open();
             });
 
@@ -57,7 +57,7 @@ export class Toggle extends Component {
                 const val = !this.node.classList.contains('on');
                 if (this.confirm.has(val)) {
                     const [title, content] = this.confirm.get(val) as [string?, string?];
-                    if (!await this.ui.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', {content})) {
+                    if (!await this.app.confirm(title ?? '确定' + (val ? '开启' : '关闭') + caption + '？', {content})) {
                         return;
                     }
                 }

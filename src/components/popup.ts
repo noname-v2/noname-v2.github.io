@@ -53,7 +53,7 @@ export class Popup extends Component {
 		}
 		this.ui.animate(this.pane.node, {
 			opacity: [1, 0], scale: [1, 'var(--popup-transform)']
-		}, this.ui.getTransition(this.transition)).onfinish = () => {
+		}, this.app.getTransition(this.transition)).onfinish = () => {
 			this.node.remove();
 		};
 	}
@@ -84,7 +84,7 @@ export class Popup extends Component {
 			let {x, y} = this.position;
 			const rect1 = this.pane.node.getBoundingClientRect();
 			const rect2 = globals.app.node.getBoundingClientRect();
-			const zoom = this.ui.zoom;
+			const zoom = this.app.zoom;
 
 			x += 2;
 			y -= 2;
@@ -116,6 +116,6 @@ export class Popup extends Component {
 		this.node.classList.remove('hidden');
 		this.ui.animate(this.pane.node, {
 			opacity: [0, 1], scale: ['var(--popup-transform)', 1]
-		}, this.ui.getTransition(this.transition));
+		}, this.app.getTransition(this.transition));
 	}
 }

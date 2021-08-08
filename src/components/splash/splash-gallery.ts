@@ -14,8 +14,8 @@ export class SplashGallery extends Gallery {
 
     async init() {
 		// determine gallery column number
-		const margin = parseInt(this.ui.css.app['splash-margin']);
-		this.ncols = [1, margin * 2, margin, parseInt(this.ui.css.player.width)];
+		const margin = parseInt(this.app.css.app['splash-margin']);
+		this.ncols = [1, margin * 2, margin, parseInt(this.app.css.player.width)];
         super.init();
 
 		// get modes
@@ -26,7 +26,7 @@ export class SplashGallery extends Gallery {
 		let write = false;
 		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
-				const meta = await this.client.getMeta(name);
+				const meta = await this.app.getMeta(name);
 				if (meta) {
 					this.index[name] = meta;
 					write = true;

@@ -1,5 +1,5 @@
 import { globals } from './globals';
-import type { Popup } from '../components';
+import { android } from '../platform';
 import type { ComponentTagMap } from '../classes';
 
 /** Type for point location */
@@ -11,25 +11,8 @@ export type Region = {x: [number, number], y: [number, number]};
 /** Return value of onmove */
 export type MoveState = unknown;
 
-/** Transition duration names. */
-export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
-
 /** Type for event point location. */
 type EventPoint = {clientX: number, clientY: number}
-
-/** Options used by ui.choose(). */
-interface DialogOptions {
-    buttons?: [string, string, string?][];
-    content?: string;
-    id?: string;
-    timeout?: number;
-}
-
-/** Options used by ui.confirm(). */
-interface ConfirmOptions extends DialogOptions {
-    ok?: string;
-    cancel?: string;
-}
 
 /** Callback for dom events. */
 class Binding {
@@ -55,15 +38,10 @@ class Binding {
 	ondown: ((e: Point) => void) | null = null;
 }
 
+/** DOM related operations. */
 export class UI {
 	/** Resolved when ready. */
 	#ready: Promise<unknown>;
-
-    /** Popup components cleared when arena close. */
-    #popups = new Map<string | number, Popup>();
-
-    /** Count dialog for dialog ID */
-    #dialogCount = 0;
 
 	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
 	#dispatched = false;
@@ -87,26 +65,6 @@ export class UI {
 		return this.#ready;
 	}
 
-	get popups() {
-		return this.#popups;
-	}
-
-	get width() {
-		return globals.app.width;
-	}
-
-	get height() {
-		return globals.app.height;
-	}
-
-	get zoom() {
-		return globals.app.zoom;
-	}
-
-	get css() {
-		return globals.app.css;
-	}
-
     constructor() {
 		// wait for document.body to load
         if (document.readyState === 'loading') {
@@ -125,26 +83,25 @@ export class UI {
 			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
 
 			// avoid unexpected mouse event behavior on some Android devices
-			if (!globals.accessor.android) {
+			if (!android) {
 				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
 				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
 				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
 			}
 
-			// bind resize event and disable context menu
-			globals.app = this.create('app');
+			// disable context menu
 			document.oncontextmenu = () => false;
 		});
     }
 
 	/** Get a component by ID. */
 	get(id: number) {
-		return globals.components.get(id);
+		return globals.client.components.get(id);
 	}
 
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
-		const cls = globals.componentClasses.get(tag as string)!;
+		const cls = globals.client.componentClasses.get(tag as string)!;
         const cmp = new cls(cls.tag || tag as string, id);
 
 		// add className for a Component subclass with a static tag
@@ -367,7 +324,7 @@ export class UI {
 		}
 		config ??= {};
 		config.easing ??= 'ease';
-		config.duration ??= this.getTransition();
+		config.duration ??= globals.app.getTransition();
 		
 		const anim = node.animate(keyframes, config);
 
@@ -382,115 +339,11 @@ export class UI {
 		return anim;
 	}
 
-    /** Get the duration of transition.
-     * @param {TransitionDuration} type - transition type
-     */
-    getTransition(type: TransitionDuration = null) {
-        let key = 'transition';
-        if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
-            key += '-' + type;
-        }
-        const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
-        return duration * 1000;
-    }
-
-    /** Display alert message. */
-    async alert(caption: string, config: ConfirmOptions = {}): Promise<true | null> {
-        config.buttons = [['ok', config.ok ?? '确定', 'red']];
-        return await this.choose(caption, config) === 'ok' ? true : null;
-    }
-
-    /** Display confirm message. */
-    async confirm(caption: string, config: ConfirmOptions = {}): Promise<boolean | null> {
-        config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
-        const result = await this.choose(caption, config);
-        if (result === 'ok') {
-            return true;
-        }
-        if (result === 'cancel') {
-            return false;
-        }
-        return null;
-    }
-
-    /** Display confirm message. */
-    choose(caption: string, config: DialogOptions={}): Promise<string | null> {
-        const dialog = this.create('dialog');
-        dialog.update({caption, content: config.content, buttons: config.buttons});
-        const promise = new Promise<string | null>(resolve => {
-            dialog.onclose = () => {
-                resolve(dialog.result);
-            };
-            this.popup(dialog, config.id);
-        });
-        if (config.timeout) {
-            return Promise.race([promise, new Promise<null>(resolve => {
-                setTimeout(() => resolve(null), config.timeout! * 1000);
-            })])
-        }
-        else {
-            return promise;
-        }
-    }
-
-    /** Displa a popup. */
-    popup(dialog: Popup, id?: string) {
-        const dialogID = id ?? ++this.#dialogCount;
-        this.popups.get(dialogID)?.close();
-        const onopen = dialog.onopen;
-        const onclose = dialog.onclose;
-
-        // other popups that are blurred by dialog.open()
-        const blurred: (string | number)[] = [];
-
-        dialog.onopen = () => {
-            // blur arena, splash and other popups
-            globals.app.node.classList.add('popped');
-            for (const [id, popup] of this.popups.entries()) {
-                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
-                    popup.node.classList.add('blurred');
-                    blurred.push(id);
-                }
-            }
-
-            if (typeof onopen === 'function') {
-                onopen();
-            }
-        };
-
-        dialog.onclose = () => {
-            // unblur
-            this.popups.delete(dialogID);
-            if (this.popups.size === 0) {
-                globals.app.node.classList.remove('popped');
-            }
-            for (const id of blurred) {
-                this.popups.get(id)?.node.classList.remove('blurred');
-            }
-            blurred.length = 0;
-
-            if (typeof onclose === 'function') {
-                onclose();
-            }
-        };
-
-        this.popups.set(dialogID, dialog);
-        dialog.ready.then(() => dialog.open());
-    }
-
-    /** Clear alert and confirm dialogs. */
-    clearPopups() {
-        for (const popup of this.popups.values()) {
-            popup.close();
-        }
-        this.popups.clear();
-    }
-
 	/** Get the location of mouse or touch event. */
 	#locate(e: EventPoint) {
 		return {
-			x: Math.round(e.clientX / this.zoom),
-			y: Math.round(e.clientY / this.zoom)
+			x: Math.round(e.clientX / globals.app.zoom),
+			y: Math.round(e.clientY / globals.app.zoom)
 		}
 	}
 
@@ -523,7 +376,7 @@ export class UI {
 
 		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-		if (!globals.accessor.android) {
+		if (!android) {
 			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
 		}
 

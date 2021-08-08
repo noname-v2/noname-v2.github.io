@@ -11,7 +11,7 @@ export class SplashBar extends Component {
     init() {
         if (globals.client.debug) {
             this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
-            if (this.client.mobile) {
+            if (this.platform.mobile) {
                 this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
             }
         }
@@ -35,7 +35,7 @@ export class SplashBar extends Component {
 
     async #resetGame() {
         if (window['caches']) {
-            await window['caches'].delete(this.client.version);
+            await window['caches'].delete(this.app.version);
         }
 
         for (const file of await this.db.readdir()) {

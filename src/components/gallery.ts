@@ -37,7 +37,7 @@ export class Gallery extends Component {
      * true: for devices that can scroll horizontally, scroll with CSS snap.
      * false: for mouse wheels, scroll with transform animation.
      */
-    #snap = this.client.mobile || this.db.get('snap') || false;
+    #snap = this.platform.mobile || this.db.get('snap') || false;
 
     /** Listener for wheel event. */
     #wheelListener = (e: WheelEvent) => this.#wheel(e);
@@ -56,11 +56,11 @@ export class Gallery extends Component {
         // add callbacks for dynamic item number
         if (Array.isArray(this.nrows)) {
             this.node.classList.add('centery');
-            this.listeners.resize.add(this);
+            this.listen('resize');
         }
         if (Array.isArray(this.ncols)) {
             this.node.classList.add('centerx');
-            this.listeners.resize.add(this);
+            this.listen('resize');
         }
     }
 
@@ -91,8 +91,8 @@ export class Gallery extends Component {
             const [ratio, margin, spacing, length] = n;
             return Math.floor((ratio * full - 2 * margin) / (length + spacing * 2));
         };
-        const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.ui.height);
-        const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.ui.width);
+        const nrows = typeof this.nrows === 'number' ? this.nrows : calc(this.nrows, this.app.height);
+        const ncols = typeof this.ncols === 'number' ? this.ncols : calc(this.ncols, this.app.width);
         this.#currentSize = [nrows, ncols];
 
         return nrows * ncols;
@@ -199,7 +199,7 @@ export class Gallery extends Component {
                 this.switchToSnap();
                 this.pages.style.transform = '';
                 this.pages.scrollLeft = this.#currentPage * this.pages.offsetWidth;
-            }, this.ui.getTransition());
+            }, this.app.getTransition());
             return;
         }
 
@@ -223,7 +223,7 @@ export class Gallery extends Component {
         this.turnPage(targetPage);
         this.ui.animate(this.pages, {
             x: [-targetPage*width], auto: true, forward: true
-        }, this.ui.getTransition('fast'));
+        }, this.app.getTransition('fast'));
     }
 
     /** Render page when needed. */

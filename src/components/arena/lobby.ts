@@ -39,9 +39,9 @@ export class Lobby extends Component {
     heroDock = this.ui.createElement('dock');
 
     init() {
-        const arena = this.arena!;
+        const arena = this.app.arena!;
         arena.node.appendChild(this.node);
-        this.listeners.sync.add(this);
+        this.listen('sync');
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
             this.sidebar.setFooter('开始游戏', () => this.respond());
@@ -54,13 +54,13 @@ export class Lobby extends Component {
 
     /** Update connected players. */
     sync() {
-        const peers = this.arena!.peers;
+        const peers = this.app.arena!.peers;
         
         // callback for online mode toggle
         if (this.mine) {
             this.yield(['sync', null, peers ? true : false]);
             if (this.connecting && !peers) {
-                this.ui.alert('连接失败');
+                this.app.alert('连接失败');
             }
             this.connecting = false;
             const toggle = this.configToggles.get('online');
@@ -98,7 +98,7 @@ export class Lobby extends Component {
         }
 
         // update spectate button
-        const peer = this.arena!.peer;
+        const peer = this.app.arena!.peer;
         if (peer) {
             this.seats.classList.remove('offline');
             this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
@@ -143,7 +143,7 @@ export class Lobby extends Component {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
-                    this.yield(['config', name, this.client.url]);
+                    this.yield(['config', name, this.app.ws]);
                 }
                 else {
                     this.yield(['config', name, result]);
@@ -287,10 +287,10 @@ export class Lobby extends Component {
         // toggle between spectator and player
         this.ui.bindClick(this.spectateButton, () => {
             if (this.spectateButton.dataset.fill === 'red') {
-                this.arena!.peer!.yield('play');
+                this.app.arena!.peer!.yield('play');
             }
             else {
-                this.arena!.peer!.yield('spectate');
+                this.app.arena!.peer!.yield('spectate');
             }
         });
     }

@@ -1,22 +1,44 @@
 import { globals } from '../../client/globals';
-import { Component } from '../../components';
-import type { Dict } from '../../types';
+import { config, version } from '../../version';
+import { Component, Popup } from '../../components';
+import { importExtension } from '../../extension';
+import type { ExtensionMeta, Dict } from '../../types';
+
+/** Transition duration names. */
+export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
+
+/** Options used by ui.choose(). */
+interface DialogOptions {
+    buttons?: [string, string, string?][];
+    content?: string;
+    id?: string;
+    timeout?: number;
+}
+
+/** Options used by ui.confirm(). */
+interface ConfirmOptions extends DialogOptions {
+    ok?: string;
+    cancel?: string;
+}
 
 export class App extends Component {
+    /** Client version. */
+    #version = version;
+
 	/** App width. */
-	width!: number;
+	#width!: number;
 
 	/** App height. */
-	height!: number;
+	#height!: number;
 
     /** Current zoom level. */
-	zoom = 1;
+	#zoom = 1;
 
     /** Transition durations. */
-    css: Dict<Dict<string>> = {};
+    #css: Dict<Dict<string>> = {};
 
     /** Index of assets. */
-    assets!: Dict<Dict<string>>;
+    #assets!: Dict<Dict<string>>;
 
     /** Stylesheet for theme. */
     #themeNode = document.createElement('style');
@@ -33,20 +55,63 @@ export class App extends Component {
     /** Audio context. */
     #audio = new (window.AudioContext || (window as any).webkitAudioContext)();
 
+    /** Popup components cleared when arena close. */
+    #popups = new Map<string | number, Popup>();
+
+    /** Count dialog for dialog ID */
+    #dialogCount = 0;
+
+    get version() {
+        return this.#version;
+    }
+
+    get width() {
+        return this.#width;
+    }
+
+    get height() {
+        return this.#height;
+    }
+
+    get zoom() {
+        return this.#zoom;
+    }
+
+    get assets() {
+        return this.#assets;
+    }
+    
+    get css() {
+        return this.#css;
+    }
+
+	get popups() {
+		return this.#popups;
+	}
+
+    get arena() {
+        return globals.arena ?? null;
+    }
+
+    get ws() {
+        return globals.client.ws;
+    }
+
     async init() {
         document.head.appendChild(this.#themeNode);
-        document.body.appendChild(this.node);
-
-        // add bindings for window resize
-        this.#resize();
-        window.addEventListener('resize', () => this.#resize());
-
+        
         // wait for indexedDB
         await this.db.ready;
         this.loadBackground();
-        this.#initAudio();
-
+        
+        // add bindings for window resize
+        await this.ui.ready;
+        document.body.appendChild(this.node);
+        this.#resize();
+        window.addEventListener('resize', () => this.#resize());
+        
         // load styles and fonts
+        this.#initAudio();
         await this.loadTheme();
         const splash = globals.splash = this.ui.create('splash');
         await splash.gallery.ready;
@@ -54,12 +119,12 @@ export class App extends Component {
 
         // load splash menus
         Promise.all([initAssets, splash.show(), (document as any).fonts.ready]).then(() => {
-            splash.hub.create(splash);
-            splash.settings.create(splash);
+            splash.hub.create();
+            splash.settings.create();
         });
 
         // add handler for android back button
-        if (this.client.android) {
+        if (this.platform.android) {
             window.addEventListener('popstate', e => {
                 const arena = this.arena;
                 if (arena && !arena.exiting) {
@@ -211,6 +276,135 @@ export class App extends Component {
         }
     }
 
+    /** Get the duration of transition.
+     * @param {TransitionDuration} type - transition type
+     */
+    getTransition(type: TransitionDuration = null) {
+        let key = 'transition';
+        if (type && ['fast', 'slow', 'faster', 'slower'].includes(type)) {
+            key += '-' + type;
+        }
+        const duration = parseFloat(this.css.app[key]) || parseFloat(this.css.app.transition);
+        return duration * 1000;
+    }
+
+    /** Display alert message. */
+    async alert(caption: string, config: ConfirmOptions = {}): Promise<true | null> {
+        config.buttons = [['ok', config.ok ?? '确定', 'red']];
+        return await this.choose(caption, config) === 'ok' ? true : null;
+    }
+
+    /** Display confirm message. */
+    async confirm(caption: string, config: ConfirmOptions = {}): Promise<boolean | null> {
+        config.buttons = [['ok', config.ok ?? '确定', 'red'], ['cancel', config.cancel ?? '取消']];
+        const result = await this.choose(caption, config);
+        if (result === 'ok') {
+            return true;
+        }
+        if (result === 'cancel') {
+            return false;
+        }
+        return null;
+    }
+
+    /** Display confirm message. */
+    choose(caption: string, config: DialogOptions={}): Promise<string | null> {
+        const dialog = this.ui.create('dialog');
+        dialog.update({caption, content: config.content, buttons: config.buttons});
+        const promise = new Promise<string | null>(resolve => {
+            dialog.onclose = () => {
+                resolve(dialog.result);
+            };
+            this.popup(dialog, config.id);
+        });
+        if (config.timeout) {
+            return Promise.race([promise, new Promise<null>(resolve => {
+                setTimeout(() => resolve(null), config.timeout! * 1000);
+            })])
+        }
+        else {
+            return promise;
+        }
+    }
+
+    /** Displa a popup. */
+    popup(dialog: Popup, id?: string) {
+        const dialogID = id ?? ++this.#dialogCount;
+        this.popups.get(dialogID)?.close();
+        const onopen = dialog.onopen;
+        const onclose = dialog.onclose;
+
+        // other popups that are blurred by dialog.open()
+        const blurred: (string | number)[] = [];
+
+        dialog.onopen = () => {
+            // blur arena, splash and other popups
+            globals.app.node.classList.add('popped');
+            for (const [id, popup] of this.popups.entries()) {
+                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
+                    popup.node.classList.add('blurred');
+                    blurred.push(id);
+                }
+            }
+
+            if (typeof onopen === 'function') {
+                onopen();
+            }
+        };
+
+        dialog.onclose = () => {
+            // unblur
+            this.popups.delete(dialogID);
+            if (this.popups.size === 0) {
+                globals.app.node.classList.remove('popped');
+            }
+            for (const id of blurred) {
+                this.popups.get(id)?.node.classList.remove('blurred');
+            }
+            blurred.length = 0;
+
+            if (typeof onclose === 'function') {
+                onclose();
+            }
+        };
+
+        this.popups.set(dialogID, dialog);
+        dialog.ready.then(() => dialog.open());
+    }
+
+    /** Clear alert and confirm dialogs. */
+    clearPopups() {
+        for (const popup of this.popups.values()) {
+            popup.close();
+        }
+        this.popups.clear();
+    }
+
+    /** Get extension meta data. */
+    async getMeta(pack: string, full: boolean = false) {
+        try {
+            const meta = {} as ExtensionMeta;
+            const ext = await importExtension(pack);
+			if (ext.heropack || ext.cardpack) {
+				meta.pack = true;
+			}
+			if (ext.mode?.name) {
+				meta.mode = ext.mode.name
+			}
+			if (ext.tags) {
+				meta.tags = ext.tags;
+			}
+			if (ext.hero) {
+				meta.images = Object.keys(ext.hero);
+			}
+			return meta;
+		}
+		catch (e) {
+			console.log(e, pack);
+            return null;
+		}
+    }
+
     /** Initialize volume settings. */
     #initAudio() {
         // add default settings
@@ -248,10 +442,10 @@ export class App extends Component {
 
     /** Index assets and load fonts. */
     async #initAssets() {
-        this.assets = await this.utils.readJSON('assets/index.json');
+        this.#assets = await this.utils.readJSON('assets/index.json');
 
         // add fonts
-        for (const font in this.assets['font']) {
+        for (const font in this.#assets['font']) {
             const fontPath = 'assets/font/' + font + '.woff2';
             const fontFace = new (window as any).FontFace(font, `url(${fontPath})`);
             (document as any).fonts.add(fontFace);
@@ -283,14 +477,14 @@ export class App extends Component {
         const zx = width / ax, zy = height / ay;
 
         if (zx < zy) {
-            this.width = ax;
-            this.height = ax / width * height;
-            this.zoom = zx;
+            this.#width = ax;
+            this.#height = ax / width * height;
+            this.#zoom = zx;
         }
         else {
-            this.width = ay / height * width;
-            this.height = ay;
-            this.zoom = zy;
+            this.#width = ay / height * width;
+            this.#height = ay;
+            this.#zoom = zy;
         }
 
         // update styles
