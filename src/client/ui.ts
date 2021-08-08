@@ -102,7 +102,7 @@ export class UI {
     /** Create new component. */
     create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
 		const cls = globals.client.componentClasses.get(tag as string)!;
-        const cmp = new cls(cls.tag || tag as string, id);
+        const cmp = new cls(cls.tag || tag as string, id, cls.virtual);
 
 		// add className for a Component subclass with a static tag
 		if (cls.tag) {

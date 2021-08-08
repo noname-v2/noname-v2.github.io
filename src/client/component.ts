@@ -7,16 +7,20 @@ import type { TransitionDuration } from '../components';
 
 /** Type for component constructor. */
 export type ComponentClass = {
-    tag?: string | null;
-    new(tag: string, id: number | null): Component;
+    tag: string | null;
+    virtual: boolean;
+    new(tag: string, id: number | null, virtual: boolean): Component;
 };
 
-export abstract class Component {
+export class Component {
     /** HTMLElement tag  name */
     static tag: string | null = null;
 
+    /** Component without DOM element for communication with worker. */
+    static virtual = false;
+
     /** Root element. */
-	#node: HTMLElement;
+	#node!: HTMLElement;
 
     /** Resolved */
     #ready: Promise<unknown>;
@@ -67,10 +71,12 @@ export abstract class Component {
     }
 
     /** Create node. */
-    constructor(tag: string, id: number | null) {
+    constructor(tag: string, id: number | null, virtual: boolean) {
         this.#id = id;
-        this.#node = this.ui.createElement(tag);
         this.#ready = Promise.resolve().then(() => this.init());
+        if (!virtual) {
+            this.#node = this.ui.createElement(tag);
+        }
     }
 
     /** Optional initialization method. */

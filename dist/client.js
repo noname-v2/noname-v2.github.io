@@ -126,6 +126,8 @@
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
+        /** Component without DOM element for communication with worker. */
+        static virtual = false;
         /** Root element. */
         #node;
         /** Resolved */
@@ -164,10 +166,12 @@
             return this.owner === globals.client.uid;
         }
         /** Create node. */
-        constructor(tag, id) {
+        constructor(tag, id, virtual) {
             this.#id = id;
-            this.#node = this.ui.createElement(tag);
             this.#ready = Promise.resolve().then(() => this.init());
+            if (!virtual) {
+                this.#node = this.ui.createElement(tag);
+            }
         }
         /** Optional initialization method. */
         init() { }
@@ -2881,7 +2885,7 @@
         /** Create new component. */
         create(tag, parent = null, id = null) {
             const cls = globals.client.componentClasses.get(tag);
-            const cmp = new cls(cls.tag || tag, id);
+            const cmp = new cls(cls.tag || tag, id, cls.virtual);
             // add className for a Component subclass with a static tag
             if (cls.tag) {
                 cmp.node.classList.add(tag);

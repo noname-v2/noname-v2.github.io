@@ -51,6 +51,9 @@ export class Worker {
     /** Links of connected clients. */
     peers: Map<string, Link> | null = null;
 
+    /** Links to components. */
+    links = new Map<number, [Link, Dict]>();
+
     /** Ticked history items with timestamp. */
     #history: [number, UITick][] = [];
 

@@ -554,7 +554,7 @@
             this.mode.extension = mode;
             freeze(this.mode);
             // start game
-            globals.accessor = new (this.getClass('game'))(this, globals.worker);
+            globals.accessor = new (this.getClass('game'))();
             this.rootStage = this.currentStage = this.createStage('main');
             globals.arena = this.create('arena');
             globals.arena.ruleset = this.#ruleset;
@@ -578,6 +578,8 @@
         connection = null;
         /** Links of connected clients. */
         peers = null;
+        /** Links to components. */
+        links = new Map();
         /** Ticked history items with timestamp. */
         #history = [];
         /** Entries to be ticked. */
