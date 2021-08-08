@@ -40,7 +40,7 @@ export class Lobby extends Component {
 
     init() {
         const arena = this.app.arena!;
-        arena.node.appendChild(this.node);
+        arena.appLayer.appendChild(this.node);
         this.listen('sync');
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());

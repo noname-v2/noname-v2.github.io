@@ -2,7 +2,7 @@ noname-arena {
     @include layer;
 	@include transit;
 
-    > noname-players {
+    > noname-zoom.arena > noname-players {
         @include layer;
         
         > noname-player {

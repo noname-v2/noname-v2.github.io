@@ -1,12 +1,25 @@
 noname-app {
-	// not using @include layer because of zooming
-	position: absolute;
-	left: 0;
-	top: 0;
-	transform-origin: top left;
-	width: var(--app-width);
-	height: var(--app-height);
-	transform: scale(var(--app-scale));
+	@include layer;
+	
+	> noname-zoom, > noname-arena > noname-zoom {
+		// not using @include layer because of zooming
+		&:empty {
+			pointer-events: none;
+		}
+		position: absolute;
+		left: 0;
+		top: 0;
+		transform-origin: top left;
+		width: var(--app-width);
+		height: var(--app-height);
+		transform: scale(var(--app-scale));
+
+		&.arena {
+			width: var(--arena-width);
+			height: var(--arena-height);
+			transform: scale(var(--arena-scale));
+		}
+	}
 
 	// text and cursor styles
 	text-shadow: var(--app-text-shadow);

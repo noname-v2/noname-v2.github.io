@@ -51,7 +51,7 @@ export class Splash extends Component {
 			return;
 		}
 		this.hidden = false;
-		globals.app.node.appendChild(this.node);
+		globals.app.zoomNode.appendChild(this.node);
 		this.gallery.checkPage();
 		return new Promise(resolve => {
 			this.ui.animate(this.node, {

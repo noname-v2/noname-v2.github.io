@@ -259,8 +259,14 @@
         #width;
         /** App height. */
         #height;
-        /** Current zoom level. */
+        /** App zoom level. */
         #zoom = 1;
+        /** Arena width. */
+        #arenaWidth;
+        /** Arena height. */
+        #arenaHeight;
+        /** Arena zoom level. */
+        #arenaZoom = 1;
         /** Transition durations. */
         #css = {};
         /** Index of assets. */
@@ -269,6 +275,8 @@
         #themeNode = document.createElement('style');
         /** Node for displaying background. */
         #bgNode = this.ui.createElement('background', this.node);
+        /** Layer that zooms based on client size. */
+        #zoomNode = this.ui.createElement('zoom', this.node);
         /** Node for playing background music. */
         #bgmNode = document.createElement('audio');
         /** Background music volume control. */
@@ -283,12 +291,21 @@
             return this.#version;
         }
         get width() {
+            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+                return this.#arenaWidth;
+            }
             return this.#width;
         }
         get height() {
+            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+                return this.#arenaHeight;
+            }
             return this.#height;
         }
         get zoom() {
+            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+                return this.#arenaZoom;
+            }
             return this.#zoom;
         }
         get assets() {
@@ -305,6 +322,9 @@
         }
         get ws() {
             return globals.client.ws;
+        }
+        get zoomNode() {
+            return this.#zoomNode;
         }
         async init() {
             document.head.appendChild(this.#themeNode);
@@ -581,10 +601,6 @@
             const height = window.innerHeight;
             // ideal window size
             let [ax, ay] = [960, 540];
-            // let current mode determine ideal size
-            if (globals.arena) {
-                [ax, ay] = globals.arena.resize(ax, ay, width, height);
-            }
             // zoom to fit ideal size
             const zx = width / ax, zy = height / ay;
             if (zx < zy) {
@@ -598,9 +614,28 @@
                 this.#zoom = zy;
             }
             // update styles
-            globals.app.node.style.setProperty('--app-width', this.width + 'px');
-            globals.app.node.style.setProperty('--app-height', this.height + 'px');
-            globals.app.node.style.setProperty('--app-scale', this.zoom.toString());
+            globals.app.node.style.setProperty('--app-width', this.#width + 'px');
+            globals.app.node.style.setProperty('--app-height', this.#height + 'px');
+            globals.app.node.style.setProperty('--app-scale', this.#zoom.toString());
+            // update arena zoom
+            if (globals.arena) {
+                [ax, ay] = globals.arena.resize(ax, ay, width, height);
+                const zx = width / ax, zy = height / ay;
+                if (zx < zy) {
+                    this.#arenaWidth = ax;
+                    this.#arenaHeight = ax / width * height;
+                    this.#arenaZoom = zx;
+                }
+                else {
+                    this.#arenaWidth = ay / height * width;
+                    this.#arenaHeight = ay;
+                    this.#arenaZoom = zy;
+                }
+                // update styles
+                globals.app.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
+                globals.app.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
+                globals.app.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+            }
             // trigger resize listeners
             globals.client.trigger('resize');
         }
@@ -710,7 +745,7 @@
                 this.node.classList.add(this.size);
             }
             this.node.classList.add('hidden');
-            globals.app.node.appendChild(this.node);
+            globals.app.zoomNode.appendChild(this.node);
             if (this.position) {
                 // determine position of the menu
                 if (this.transition === null) {
@@ -718,7 +753,7 @@
                 }
                 let { x, y } = this.position;
                 const rect1 = this.pane.node.getBoundingClientRect();
-                const rect2 = globals.app.node.getBoundingClientRect();
+                const rect2 = globals.app.zoomNode.getBoundingClientRect();
                 const zoom = this.app.zoom;
                 x += 2;
                 y -= 2;
@@ -833,6 +868,10 @@
         confirming = false;
         /** Trying to exit. */
         exiting = false;
+        /** Layer using arena zoom. */
+        arenaLayer = this.ui.createElement('zoom.arena', this.node);
+        /** Layer using app zoom. */
+        appLayer = this.ui.createElement('zoom', this.node);
         /** Connected remote clients. */
         get peers() {
             const ids = this.get('peers');
@@ -859,7 +898,7 @@
         }
         init() {
             globals.arena = this;
-            globals.app.node.appendChild(this.node);
+            globals.app.node.insertBefore(this.node, globals.app.zoomNode);
             // make android back button function as returning to splash screen
             if (this.platform.android && history.state === null) {
                 history.pushState('arena', '');
@@ -964,7 +1003,7 @@
         heroDock = this.ui.createElement('dock');
         init() {
             const arena = this.app.arena;
-            arena.node.appendChild(this.node);
+            arena.appLayer.appendChild(this.node);
             this.listen('sync');
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
@@ -2416,7 +2455,7 @@
                 return;
             }
             this.hidden = false;
-            globals.app.node.appendChild(this.node);
+            globals.app.zoomNode.appendChild(this.node);
             this.gallery.checkPage();
             return new Promise(resolve => {
                 this.ui.animate(this.node, {

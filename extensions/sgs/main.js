@@ -368,7 +368,7 @@ function arena(T) {
             }
             // append player region
             if (!this.players.parentNode) {
-                this.node.appendChild(this.players);
+                this.arenaLayer.appendChild(this.players);
             }
         }
     };

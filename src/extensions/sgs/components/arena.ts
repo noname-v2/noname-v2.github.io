@@ -69,7 +69,7 @@ export function arena(T: typeof Arena) {
 
             // append player region
             if (!this.players.parentNode) {
-                this.node.appendChild(this.players);
+                this.arenaLayer.appendChild(this.players);
             }
         }
     }

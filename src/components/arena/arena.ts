@@ -11,6 +11,12 @@ export class Arena extends Component {
     /** Trying to exit. */
     exiting = false;
 
+    /** Layer using arena zoom. */
+    arenaLayer = this.ui.createElement('zoom.arena', this.node);
+
+    /** Layer using app zoom. */
+    appLayer = this.ui.createElement('zoom', this.node);
+
     /** Connected remote clients. */
     get peers(): Peer[] | null {
         const ids = this.get('peers');
@@ -40,7 +46,7 @@ export class Arena extends Component {
 
     init() {
         globals.arena = this;
-        globals.app.node.appendChild(this.node);
+        globals.app.node.insertBefore(this.node, globals.app.zoomNode);
 
         // make android back button function as returning to splash screen
         if (this.platform.android && history.state === null) {

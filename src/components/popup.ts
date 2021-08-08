@@ -73,7 +73,7 @@ export class Popup extends Component {
 		}
 
 		this.node.classList.add('hidden');
-        globals.app.node.appendChild(this.node);
+        globals.app.zoomNode.appendChild(this.node);
 
 		if (this.position) {
 			// determine position of the menu
@@ -83,7 +83,7 @@ export class Popup extends Component {
 
 			let {x, y} = this.position;
 			const rect1 = this.pane.node.getBoundingClientRect();
-			const rect2 = globals.app.node.getBoundingClientRect();
+			const rect2 = globals.app.zoomNode.getBoundingClientRect();
 			const zoom = this.app.zoom;
 
 			x += 2;

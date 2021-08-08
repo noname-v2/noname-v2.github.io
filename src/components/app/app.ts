@@ -31,8 +31,17 @@ export class App extends Component {
 	/** App height. */
 	#height!: number;
 
-    /** Current zoom level. */
+    /** App zoom level. */
 	#zoom = 1;
+
+    /** Arena width. */
+	#arenaWidth!: number;
+
+	/** Arena height. */
+	#arenaHeight!: number;
+
+    /** Arena zoom level. */
+	#arenaZoom = 1;
 
     /** Transition durations. */
     #css: Dict<Dict<string>> = {};
@@ -45,6 +54,9 @@ export class App extends Component {
 
     /** Node for displaying background. */
     #bgNode = this.ui.createElement('background', this.node);
+
+    /** Layer that zooms based on client size. */
+    #zoomNode = this.ui.createElement('zoom', this.node);
 
     /** Node for playing background music. */
     #bgmNode = document.createElement('audio');
@@ -66,14 +78,23 @@ export class App extends Component {
     }
 
     get width() {
+        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            return this.#arenaWidth;
+        }
         return this.#width;
     }
 
     get height() {
+        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            return this.#arenaHeight;
+        }
         return this.#height;
     }
 
     get zoom() {
+        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            return this.#arenaZoom;
+        }
         return this.#zoom;
     }
 
@@ -95,6 +116,10 @@ export class App extends Component {
 
     get ws() {
         return globals.client.ws;
+    }
+
+    get zoomNode() {
+        return this.#zoomNode;
     }
 
     async init() {
@@ -414,11 +439,6 @@ export class App extends Component {
         // ideal window size
         let [ax, ay] = [960, 540];
 
-        // let current mode determine ideal size
-        if (globals.arena) {
-            [ax, ay] = globals.arena.resize(ax, ay, width, height);
-        }
-
         // zoom to fit ideal size
         const zx = width / ax, zy = height / ay;
 
@@ -434,9 +454,32 @@ export class App extends Component {
         }
 
         // update styles
-        globals.app.node.style.setProperty('--app-width', this.width + 'px');
-        globals.app.node.style.setProperty('--app-height', this.height + 'px');
-        globals.app.node.style.setProperty('--app-scale', this.zoom.toString());
+        globals.app.node.style.setProperty('--app-width', this.#width + 'px');
+        globals.app.node.style.setProperty('--app-height', this.#height + 'px');
+        globals.app.node.style.setProperty('--app-scale', this.#zoom.toString());
+
+        // update arena zoom
+        if (globals.arena) {
+            [ax, ay] = globals.arena.resize(ax, ay, width, height);
+
+            const zx = width / ax, zy = height / ay;
+
+            if (zx < zy) {
+                this.#arenaWidth = ax;
+                this.#arenaHeight = ax / width * height;
+                this.#arenaZoom = zx;
+            }
+            else {
+                this.#arenaWidth = ay / height * width;
+                this.#arenaHeight = ay;
+                this.#arenaZoom = zy;
+            }
+
+            // update styles
+            globals.app.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
+            globals.app.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
+            globals.app.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+        }
 
         // trigger resize listeners
         globals.client.trigger('resize');

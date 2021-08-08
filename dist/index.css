@@ -1,4 +1,17 @@
 noname-app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  text-shadow: var(--app-text-shadow);
+  color: var(--app-color);
+  font-family: var(--app-font), sans-serif;
+  cursor: default;
+}
+noname-app > noname-zoom, noname-app > noname-arena > noname-zoom {
   position: absolute;
   left: 0;
   top: 0;
@@ -6,10 +19,14 @@ noname-app {
   width: var(--app-width);
   height: var(--app-height);
   transform: scale(var(--app-scale));
-  text-shadow: var(--app-text-shadow);
-  color: var(--app-color);
-  font-family: var(--app-font), sans-serif;
-  cursor: default;
+}
+noname-app > noname-zoom:empty, noname-app > noname-arena > noname-zoom:empty {
+  pointer-events: none;
+}
+noname-app > noname-zoom.arena, noname-app > noname-arena > noname-zoom.arena {
+  width: var(--arena-width);
+  height: var(--arena-height);
+  transform: scale(var(--arena-scale));
 }
 noname-app > noname-background {
   background: var(--app-background);
@@ -29,7 +46,7 @@ noname-arena {
   transition-property: opacity, transform;
   transition-duration: var(--app-transition);
 }
-noname-arena > noname-players {
+noname-arena > noname-zoom.arena > noname-players {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -38,7 +55,7 @@ noname-arena > noname-players {
   top: 0;
   position: absolute;
 }
-noname-arena > noname-players > noname-player {
+noname-arena > noname-zoom.arena > noname-players > noname-player {
   position: absolute;
 }
 
