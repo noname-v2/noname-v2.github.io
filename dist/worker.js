@@ -64,6 +64,39 @@
             return [msg.slice(0, idx), msg.slice(idx + 1)];
         }
     }
+    /** Return a promise that resolves after n seconds. */
+    function sleep(n) {
+        return new Promise(resolve => setTimeout(resolve, n * 1000));
+    }
+    /** Generate a unique ID based on current Date.now().
+     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
+     */
+    function uid() {
+        return new Date().getTime().toString().split('').map(n => {
+            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
+            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
+        }).join('');
+    }
+    /** Fetch and parse json file. */
+    function readJSON(...args) {
+        return new Promise(resolve => {
+            fetch(args.join('/')).then(response => {
+                response.json().then(resolve);
+            });
+        });
+    }
+
+    var utils = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        copy: copy,
+        apply: apply,
+        freeze: freeze,
+        access: access,
+        split: split,
+        sleep: sleep,
+        uid: uid,
+        readJSON: readJSON
+    });
 
     class Stage {
         /** Stage ID. */
@@ -103,8 +136,8 @@
             this.id = id;
             this.path = path;
             this.parent = parent;
-            this.task = apply(new (globals.game.getTask(path))(), data);
-            globals.game.taskStage.set(this.task, this);
+            this.task = apply(new (globals.room.getTask(path))(), data);
+            globals.room.tasks.set(this.task, this);
         }
         /** Execute the next step.
          * @returns {boolean | null}
@@ -118,7 +151,7 @@
                 return false;
             }
             // check if current step is skipped
-            globals.game.currentStage = this;
+            globals.room.currentStage = this;
             if ((this.skipped && this.progress < 4) ||
                 (this.task.silent && [0, 1, 4, 5].includes(this.progress))) {
                 this.progress++;
@@ -177,7 +210,7 @@
         }
         /** Trigger an event. */
         trigger(event = null) {
-            const stage = globals.game.createStage('trigger', { event }, this);
+            const stage = globals.room.createStage('trigger', { event }, this);
             stage.task.silent = true;
             this.steps.push(stage);
         }
@@ -186,11 +219,8 @@
     class Task {
         /** Do not trigger before / after / skip event. */
         silent = false;
-        get #stage() {
-            return globals.game.taskStage.get(this);
-        }
         get game() {
-            return globals.accessor;
+            return globals.game;
         }
         get path() {
             return this.#stage.path;
@@ -200,6 +230,9 @@
         }
         get results() {
             return this.#stage.results;
+        }
+        get #stage() {
+            return globals.room.tasks.get(this);
         }
         /** Main function. */
         main() { }
@@ -213,13 +246,13 @@
         }
         /** Add a child stage in current stage. */
         addTask(path, data) {
-            const stage = globals.game.createStage(path, data, this.#stage);
+            const stage = globals.room.createStage(path, data, this.#stage);
             this.#stage.steps.push(stage);
             return stage.task;
         }
         /** Add a sibline stage next to current stage. */
         addSiblingTask(path, data) {
-            const stage = globals.game.createStage(path, data, this.#stage.parent);
+            const stage = globals.room.createStage(path, data, this.#stage.parent);
             const idx = this.#stage.steps.indexOf(this.#stage.parent);
             if (idx !== -1) {
                 this.#stage.steps.splice(idx + 1, 0, stage);
@@ -265,13 +298,29 @@
     }
 
     /** Hub related functions. */
-    const hub = {
-        connect: (url) => globals.worker.connect(url),
-        disconnect: () => globals.worker.disconnect(),
-        syncRoom: () => globals.game.syncRoom()
-    };
-    /** Accessor of game and worker properties and methods. */
-    class Accessor {
+    class Hub {
+        connect(url) {
+            globals.worker.connect(url);
+        }
+        disconnect() {
+            globals.worker.disconnect();
+        }
+        update() {
+            globals.room.update();
+        }
+        get peers() {
+            return globals.worker.getPeers();
+        }
+        get players() {
+            return globals.worker.getPeers({ playing: true });
+        }
+        get spectators() {
+            return globals.worker.getPeers({ playing: false });
+        }
+    }
+    const hub = new Hub();
+    /** Game object used by stages. */
+    class Game {
         get owner() {
             return globals.worker.uid;
         }
@@ -279,41 +328,35 @@
             return globals.arena;
         }
         get mode() {
-            return globals.game.mode;
+            return globals.room.mode;
         }
         get config() {
-            return globals.game.config;
+            return globals.room.config;
         }
         get packs() {
-            return globals.game.packs;
-        }
-        get banned() {
-            return globals.game.banned;
-        }
-        get playerLinks() {
-            return globals.worker.getPeers({ playing: true });
-        }
-        get spectatorLinks() {
-            return globals.worker.getPeers({ playing: false });
+            return globals.room.packs;
         }
         get hub() {
             return hub;
         }
+        get utils() {
+            return utils;
+        }
         /** Get a link. */
         get(id) {
-            return globals.game.links.get(id);
+            return globals.room.links.get(id);
         }
         /** Create a link. */
         create(tag) {
-            return globals.game.create(tag);
+            return globals.room.create(tag);
         }
         /** Creata a class in game.#gameClasses. */
         createInstance(name, ...args) {
-            return new (globals.game.getClass(name))(...args);
+            return new (globals.room.getClass(name))(...args);
         }
         /** Access extension content. */
         getExtension(path) {
-            return globals.game.getExtension(path);
+            return globals.room.getExtension(path);
         }
         /** Get links to peers. */
         getPeers(filter) {
@@ -321,11 +364,11 @@
         }
         /** Mark game as started. */
         start() {
-            globals.game.start();
+            globals.room.start();
         }
         /** Mark game as over. */
         over() {
-            globals.game.over();
+            globals.room.over();
         }
     }
 
@@ -344,7 +387,7 @@
         return extensions.get(extname);
     }
 
-    class Game {
+    class Room {
         /** Root game stage. */
         rootStage;
         /** Current game stage. */
@@ -355,13 +398,6 @@
         config;
         /** Hero packages. */
         packs;
-        /** Banned packages. */
-        banned = {
-            heropacks: new Set(),
-            cardpacks: new Set(),
-            heros: new Set(),
-            cards: new Set(),
-        };
         /** Game progress.
          * 0: waiting
          * 1: gaming
@@ -369,7 +405,7 @@
         */
         progress = 0;
         /** Map from a task to the stage containing the task. */
-        taskStage = new Map();
+        tasks = new Map();
         /** Links to components. */
         links = new Map();
         /** All created stages. */
@@ -379,21 +415,34 @@
         /** Map of task classes. */
         #taskClasses = new Map();
         /** Base game classes. */
-        #gameClasses = new Map([['game', Accessor], ['task', Task]]);
+        #gameClasses = new Map([['game', Game], ['task', Task]]);
         /** Number of links created. */
         #linkCount = 0;
         /** Number of stages created. */
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        init(content) {
-            this.packs = new Set(content[1]);
-            this.banned.heropacks = new Set(content[2]);
-            this.banned.cardpacks = new Set(content[3]);
-            this.config = content[4];
-            globals.worker.info = content[5];
+        async init(mode, packs, config) {
+            this.packs = new Set(packs);
+            this.config = config;
             // load extensions
-            Promise.all(content[1].map(mode => importExtension(mode))).then(() => this.#loadMode(content[0]));
+            await Promise.all(packs.map(pack => importExtension(pack)));
+            // Get list of packages that define game classes
+            await this.#getRuleset(mode);
+            // merge mode objects and game classes from extensions
+            await this.#getClasses();
+            // finalize and freez mode object
+            delete this.mode.tasks;
+            delete this.mode.components;
+            delete this.mode.classes;
+            this.mode.extension = mode;
+            freeze(this.mode);
+            // start game
+            globals.game = new (this.getClass('game'))();
+            this.rootStage = this.currentStage = this.createStage('main');
+            globals.arena = this.create('arena');
+            globals.arena.ruleset = this.#ruleset;
+            this.loop();
         }
         /** Create a link. */
         create(tag) {
@@ -467,7 +516,7 @@
             return this.#gameClasses.get(path);
         }
         /** Update room info for idle clients. */
-        syncRoom(push = true) {
+        update(push = true) {
             const room = JSON.stringify([
                 // mode name
                 this.mode.name,
@@ -497,17 +546,14 @@
         }
         /** Mark game as started and disallow changing configuration. */
         start() {
-            freeze(this.mode);
             freeze(this.config);
-            freeze(this.packs);
-            freeze(this.banned);
             this.progress = 1;
-            this.syncRoom();
+            this.update();
         }
         /** Mark game as over. */
         over() {
             this.progress = 2;
-            this.syncRoom();
+            this.update();
         }
         /** Execute stages. */
         async loop() {
@@ -518,25 +564,25 @@
                 this.#paused = true;
             }
         }
-        /** Load mode. */
-        async #loadMode(mode) {
-            // Get list of packages that define game classes
-            let pack = mode;
-            while (pack) {
-                if (this.#ruleset.includes(pack)) {
+        async #getRuleset(mode) {
+            while (mode) {
+                if (this.#ruleset.includes(mode)) {
                     break;
                 }
-                this.#ruleset.unshift(pack);
-                pack = (await importExtension(pack)).mode?.inherit;
+                this.#ruleset.unshift(mode);
+                mode = (await importExtension(mode)).mode?.inherit;
             }
-            // merge mode objects and game classes from extensions
+        }
+        async #getClasses() {
             const modeTasks = [];
             for (const pack of this.#ruleset) {
                 const mode = copy(getExtension(pack)?.mode ?? {});
+                // update game classes (including base Task class)
                 for (const name in mode.classes) {
                     const cls = this.#gameClasses.get(name);
                     this.#gameClasses.set(name, mode.classes[name](cls));
                 }
+                // update task classes after Task class is finalized
                 modeTasks.push(mode.tasks);
                 apply(this.mode, mode);
             }
@@ -547,18 +593,6 @@
                     this.#taskClasses.set(task, tasks[task](cls));
                 }
             }
-            // finalize and freez mode object
-            delete this.mode.game;
-            delete this.mode.tasks;
-            delete this.mode.components;
-            this.mode.extension = mode;
-            freeze(this.mode);
-            // start game
-            globals.accessor = new (this.getClass('game'))();
-            this.rootStage = this.currentStage = this.createStage('main');
-            globals.arena = this.create('arena');
-            globals.arena.ruleset = this.#ruleset;
-            this.loop();
         }
     }
 
@@ -578,8 +612,6 @@
         connection = null;
         /** Links of connected clients. */
         peers = null;
-        /** Links to components. */
-        links = new Map();
         /** Ticked history items with timestamp. */
         #history = [];
         /** Entries to be ticked. */
@@ -591,8 +623,10 @@
             self.onmessage = ({ data }) => {
                 if (data[1] === 0) {
                     self.onmessage = ({ data }) => this.#dispatch(data);
+                    const [mode, packs, config, info] = data[3];
                     this.uid = data[0];
-                    globals.game.init(data[3]);
+                    this.info = info;
+                    globals.room.init(mode, packs, config);
                 }
             };
             self.postMessage('ready');
@@ -636,7 +670,7 @@
                 }
             };
             ws.onopen = () => {
-                ws.send('init:' + JSON.stringify([this.uid, this.info, globals.game.syncRoom(false)]));
+                ws.send('init:' + JSON.stringify([this.uid, this.info, globals.room.update(false)]));
             };
             ws.onmessage = ({ data }) => {
                 try {
@@ -674,15 +708,15 @@
         /** The room is ready for clients to join. */
         ready() {
             this.peers = new Map();
-            this.createPeer(this.uid, this.info);
+            this.#createPeer(this.uid, this.info);
         }
         /** A remote client joins the room. */
         join(msg) {
             // join as player or spectator
             const [uid, info] = JSON.parse(msg);
-            this.createPeer(uid, info);
-            globals.game.syncRoom();
-            this.send(uid, globals.game.pack());
+            this.#createPeer(uid, info);
+            globals.room.update();
+            this.send(uid, globals.room.pack());
         }
         /** A remote client leaves the room. */
         leave(uid) {
@@ -690,24 +724,12 @@
                 this.peers.get(uid).unlink();
                 this.peers.delete(uid);
                 this.sync();
-                globals.game.syncRoom();
+                globals.room.update();
             }
         }
         /** A remote client sends a response message. */
         resp(msg) {
             this.#dispatch(JSON.parse(msg));
-        }
-        /** Create a peer component. */
-        createPeer(uid, info) {
-            const peer = globals.game.create('peer');
-            peer.update({
-                owner: uid,
-                nickname: info[0],
-                avatar: info[1],
-                playing: this.getPeers({ playing: true }).length < globals.game.config.np
-            });
-            this.peers.set(uid, peer);
-            this.sync();
         }
         /** Get peers that match certain condition. */
         getPeers(filter) {
@@ -735,7 +757,19 @@
                 // schedule a UITick if no pending UITick exists
                 setTimeout(() => this.#commit());
             }
-            this.#ticks.push([globals.game.currentStage.id, id, item]);
+            this.#ticks.push([globals.room.currentStage.id, id, item]);
+        }
+        /** Create a peer component. */
+        #createPeer(uid, info) {
+            const peer = globals.room.create('peer');
+            peer.update({
+                owner: uid,
+                nickname: info[0],
+                avatar: info[1],
+                playing: this.getPeers({ playing: true }).length < globals.room.config.np
+            });
+            this.peers.set(uid, peer);
+            this.sync();
         }
         /** Generate UITick(s) from this.#ticks. */
         #commit() {
@@ -778,11 +812,11 @@
         async #dispatch(data) {
             try {
                 const [uid, sid, id, result, done] = data;
-                const stage = globals.game.currentStage;
-                const link = globals.game.links.get(id);
+                const stage = globals.room.currentStage;
+                const link = globals.room.links.get(id);
                 if (id === -1) {
                     // reload UI upon error
-                    this.send(uid, globals.game.pack());
+                    this.send(uid, globals.room.pack());
                 }
                 else if (id === -2) {
                     // disconnect from remote hub
@@ -798,7 +832,7 @@
                         }
                         stage.awaits.delete(id);
                         if (!stage.awaits.size) {
-                            globals.game.loop();
+                            globals.room.loop();
                         }
                     }
                     else if (!done && stage.monitors.has(id)) {
@@ -815,6 +849,6 @@
     }
 
     globals.worker = new Worker();
-    globals.game = new Game();
+    globals.room = new Room();
 
 }());

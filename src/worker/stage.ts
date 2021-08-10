@@ -51,8 +51,8 @@ export class Stage {
         this.id = id;
         this.path = path;
         this.parent = parent;
-        this.task = apply(new (globals.game.getTask(path))(), data);
-        globals.game.taskStage.set(this.task, this);
+        this.task = apply(new (globals.room.getTask(path))(), data);
+        globals.room.tasks.set(this.task, this);
     }
 
     /** Execute the next step.
@@ -68,7 +68,7 @@ export class Stage {
         }
 
         // check if current step is skipped
-        globals.game.currentStage = this;
+        globals.room.currentStage = this;
         if ((this.skipped && this.progress < 4) ||
             (this.task.silent && [0, 1, 4, 5].includes(this.progress))) {
             this.progress++;
@@ -131,7 +131,7 @@ export class Stage {
 
     /** Trigger an event. */
     trigger(event: string | null = null) {
-        const stage = globals.game.createStage('trigger', {event}, this);
+        const stage = globals.room.createStage('trigger', {event}, this);
         stage.task.silent = true;
         this.steps.push(stage);
     }

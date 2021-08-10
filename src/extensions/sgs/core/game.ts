@@ -1,9 +1,9 @@
-import type { Accessor } from '../../../worker/accessor';
+import type { Game } from '../../../worker/game';
 import type { Card } from './card';
 import type { Player } from './player';
 import type { Skill } from './skill';
 
-export function game(A: typeof Accessor) {
+export function game(A: typeof Game) {
     return class Game extends A {
         players: Player[] = [];
         cards: Card[] = [];

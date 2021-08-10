@@ -96,8 +96,6 @@ export class Client {
             worker.onmessage = ({data}) => {
                 if (data === 'ready') {
                     worker.onmessage = ({data}) => this.dispatch(data);
-                    config.push(db.get(config[0] + ':disabledHeropacks') || []);
-                    config.push(db.get(config[0] + ':disabledCardpacks') || []);
                     config.push(db.get(config[0] + ':config') || {});
                     config.push(this.info);
                     this.send(0, config, true);

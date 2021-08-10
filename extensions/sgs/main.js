@@ -148,8 +148,7 @@ function lobby(T) {
             lobby.owner = this.game.owner;
             lobby.mode = this.game.mode.extension;
             lobby.config = this.game.config;
-            lobby.disabledHeropacks = Array.from(this.game.banned.heropacks);
-            lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
+            lobby.config.banned ??= {};
             this.monitor(lobby, 'updateLobby');
             this.await(lobby);
         }
@@ -190,36 +189,38 @@ function lobby(T) {
                     this.lobby.config = this.game.config;
                     // update seats in the lobby
                     if (key === 'np') {
-                        const players = this.game.playerLinks;
+                        const players = this.game.getPeers({ playing: true });
                         if (players && players.length > val) {
                             for (let i = val; i < players.length; i++) {
                                 players[i].playing = false;
                             }
                         }
-                        this.game.hub.syncRoom();
+                        this.game.hub.update();
                     }
                 }
             }
-            else if (type === 'hero') {
-                // enable or disable a heropack
-                this.game.banned.heropacks[val ? 'delete' : 'add'](key);
-                this.lobby.disabledHeropacks = Array.from(this.game.banned.heropacks);
-            }
-            else if (type === 'card') {
-                // enable or disable a cardpack
-                this.game.banned.cardpacks[val ? 'delete' : 'add'](key);
-                this.lobby.disabledCardpacks = Array.from(this.game.banned.cardpacks);
+            else if (type === 'banned') {
+                const [section, name] = this.game.utils.split(key, '/');
+                const set = new Set(this.game.config.banned[section]);
+                set[val ? 'delete' : 'add'](name);
+                if (set.size) {
+                    this.game.config.banned[section] = Array.from(set);
+                }
+                else {
+                    delete this.game.config.banned[section];
+                }
+                this.lobby.config = this.game.config;
             }
         }
         /** Update info about joined players. */
         updatePeer(val, peer) {
             if (val === 'spectate' && peer.playing) {
                 peer.playing = false;
-                this.game.hub.syncRoom();
+                this.game.hub.update();
             }
-            else if (val === 'play' && !peer.playing && this.game.playerLinks.length < this.game.config.np) {
+            else if (val === 'play' && !peer.playing && this.game.hub.players.length < this.game.config.np) {
                 peer.playing = true;
-                this.game.hub.syncRoom();
+                this.game.hub.update();
             }
         }
         /** Remove lobby and start game. */

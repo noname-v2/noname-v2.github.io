@@ -1122,7 +1122,7 @@
             for (const name in configs.heropacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
                     this.freeze();
-                    this.yield(['hero', name, result]);
+                    this.yield(['banned', 'heropack/' + name, result]);
                 });
                 this.heroToggles.set(name, toggle);
             }
@@ -1131,7 +1131,7 @@
             for (const name in configs.cardpacks) {
                 const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
                     this.freeze();
-                    this.yield(['card', name, result]);
+                    this.yield(['banned', 'cardpack/' + name, result]);
                 });
                 this.cardToggles.set(name, toggle);
             }
@@ -1142,6 +1142,7 @@
         }
         $config(config) {
             this.unfreeze();
+            // update toggles
             for (const key in config) {
                 const toggle = this.configToggles.get(key);
                 toggle?.assign(config[key]);
@@ -1155,10 +1156,12 @@
                     }
                 }
             }
+            // save configuration
             if (this.mine) {
                 delete config.online;
                 this.db.set(this.get('mode') + ':config', config);
             }
+            // update spectators
             if (config.np) {
                 // make sure npmax is set
                 setTimeout(() => {
@@ -1168,23 +1171,12 @@
                     this.#checkSpectate();
                 });
             }
-        }
-        $disabledHeropacks(packs) {
-            this.unfreeze();
+            // update banned packs
             for (const [name, toggle] of this.heroToggles.entries()) {
-                toggle.assign(!packs.includes(name));
+                toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
             }
-            if (this.mine) {
-                this.db.set(this.get('mode') + ':disabledHeropacks', packs.length > 0 ? packs : null);
-            }
-        }
-        $disabledCardpacks(packs) {
-            this.unfreeze();
             for (const [name, toggle] of this.cardToggles.entries()) {
-                toggle.assign(!packs.includes(name));
-            }
-            if (this.mine) {
-                this.db.set(this.get('mode') + ':disabledCardpacks', packs.length > 0 ? packs : null);
+                toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
             }
         }
         $npmax(npmax) {
@@ -2619,8 +2611,6 @@
                 worker.onmessage = ({ data }) => {
                     if (data === 'ready') {
                         worker.onmessage = ({ data }) => this.dispatch(data);
-                        config.push(db.get(config[0] + ':disabledHeropacks') || []);
-                        config.push(db.get(config[0] + ':disabledCardpacks') || []);
                         config.push(db.get(config[0] + ':config') || {});
                         config.push(this.info);
                         this.send(0, config, true);

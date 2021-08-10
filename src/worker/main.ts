@@ -1,6 +1,6 @@
-import { Game } from './game';
+import { Room } from './room';
 import { Worker } from './worker';
 import { globals } from './globals';
 
 globals.worker = new Worker();
-globals.game = new Game();
+globals.room = new Room();

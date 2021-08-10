@@ -1,15 +1,13 @@
-import type { Accessor } from './accessor';
+import type { Room } from './room';
 import type { Game } from './game';
 import type { Worker } from './worker';
-import type { Stage } from './stage';
-import type { Task } from './task';
-import type { Link, Dict } from '../types';
+import type { Link } from '../types';
 
 /** Internal context. */
 export const globals = {} as {
+    room: Room;
     game: Game;
     worker: Worker;
-    accessor: Accessor;
     arena: Link;
 };
 

@@ -1,5 +1,4 @@
 import { version } from '../version';
-import { Game } from './game';
 import { globals } from './globals';
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
@@ -51,9 +50,6 @@ export class Worker {
     /** Links of connected clients. */
     peers: Map<string, Link> | null = null;
 
-    /** Links to components. */
-    links = new Map<number, [Link, Dict]>();
-
     /** Ticked history items with timestamp. */
     #history: [number, UITick][] = [];
 
@@ -67,8 +63,10 @@ export class Worker {
         self.onmessage = ({data}: {data: ClientMessage}) => {
             if (data[1] === 0) {
                 self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
+                const [mode, packs, config, info] = data[3];
                 this.uid = data[0];
-                globals.game.init(data[3]);
+                this.info = info;
+                globals.room.init(mode, packs, config);
             }
         }
         (self as any).postMessage('ready');
@@ -115,7 +113,7 @@ export class Worker {
             }
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, globals.game.syncRoom(false)]));
+            ws.send('init:' + JSON.stringify([this.uid, this.info, globals.room.update(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
@@ -156,16 +154,16 @@ export class Worker {
     /** The room is ready for clients to join. */
     ready() {
         this.peers = new Map();
-        this.createPeer(this.uid, this.info);
+        this.#createPeer(this.uid, this.info);
     }
 
     /** A remote client joins the room. */
     join(msg: string) {
         // join as player or spectator
         const [uid, info]: [string, [string, string]] = JSON.parse(msg);
-        this.createPeer(uid, info);
-        globals.game.syncRoom();
-        this.send(uid, globals.game.pack());
+        this.#createPeer(uid, info);
+        globals.room.update();
+        this.send(uid, globals.room.pack());
     }
 
     /** A remote client leaves the room. */
@@ -174,26 +172,13 @@ export class Worker {
             this.peers.get(uid)!.unlink();
             this.peers.delete(uid);
             this.sync();
-            globals.game.syncRoom();
+            globals.room.update();
         }
     }
 
     /** A remote client sends a response message. */
     resp(msg: string) {
         this.#dispatch(JSON.parse(msg));
-    }
-
-    /** Create a peer component. */
-    createPeer(uid: string, info: [string, string]) {
-        const peer = globals.game.create('peer');
-        peer.update({
-            owner: uid,
-            nickname: info[0],
-            avatar: info[1],
-            playing: this.getPeers({playing: true})!.length < globals.game.config.np
-        });
-        this.peers!.set(uid, peer);
-        this.sync();
     }
 
     /** Get peers that match certain condition. */
@@ -223,7 +208,20 @@ export class Worker {
             // schedule a UITick if no pending UITick exists
             setTimeout(() => this.#commit());
         }
-        this.#ticks.push([globals.game.currentStage.id, id, item]);
+        this.#ticks.push([globals.room.currentStage.id, id, item]);
+    }
+
+    /** Create a peer component. */
+    #createPeer(uid: string, info: [string, string]) {
+        const peer = globals.room.create('peer');
+        peer.update({
+            owner: uid,
+            nickname: info[0],
+            avatar: info[1],
+            playing: this.getPeers({playing: true})!.length < globals.room.config.np
+        });
+        this.peers!.set(uid, peer);
+        this.sync();
     }
 
     /** Generate UITick(s) from this.#ticks. */
@@ -272,11 +270,11 @@ export class Worker {
     async #dispatch(data: ClientMessage) {
         try {
             const [uid, sid, id, result, done] = data;
-            const stage = globals.game.currentStage;
-            const link = globals.game.links.get(id);
+            const stage = globals.room.currentStage;
+            const link = globals.room.links.get(id);
             if (id === -1) {
                 // reload UI upon error
-                this.send(uid, globals.game.pack());
+                this.send(uid, globals.room.pack());
             }
             else if (id === -2) {
                 // disconnect from remote hub
@@ -292,7 +290,7 @@ export class Worker {
                     }
                     stage.awaits.delete(id);
                     if (!stage.awaits.size) {
-                        globals.game.loop();
+                        globals.room.loop();
                     }
                 }
                 else if (!done && stage.monitors.has(id)) {
