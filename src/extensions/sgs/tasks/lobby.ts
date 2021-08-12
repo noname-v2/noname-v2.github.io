@@ -76,7 +76,7 @@ export function lobby(T: TaskClass) {
                 this.lobby.config = this.game.config;
 
                 // add callback for client operations
-                const peers = this.game.getPeers();
+                const peers = this.game.hub.peers;
                 if (peers) {
                     for (const peer of peers) {
                         this.monitor(peer, 'updatePeer');
@@ -108,7 +108,7 @@ export function lobby(T: TaskClass) {
 
                     // update seats in the lobby
                     if (key === 'np' ) {
-                        const players = this.game.getPeers({playing: true});
+                        const players = this.game.hub.players;
                         if (players && players.length > val) {
                             for (let i = val; i < players.length; i++) {
                                 players[i].playing = false;

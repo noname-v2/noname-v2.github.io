@@ -1,4 +1,5 @@
 import { globals } from './globals';
+import { freeze } from '../utils';
 import * as utils from '../utils';
 import type { Dict } from '../types';
 
@@ -24,10 +25,11 @@ class Hub {
     }
 }
 
-const hub = new Hub();
-
 /** Game object used by stages. */
 export abstract class Game {
+    /** Communication with remote hub. */
+    #hub = new Hub();
+
     get owner() {
         return globals.worker.uid;
     }
@@ -49,7 +51,7 @@ export abstract class Game {
     }
 
     get hub() {
-        return hub;
+        return this.#hub;
     }
 
     get utils() {
@@ -76,19 +78,17 @@ export abstract class Game {
         return globals.room.getExtension(path);
     }
 
-    /** Get links to peers. */
-    getPeers(filter?: Dict) {
-        return globals.worker.getPeers(filter);
-    }
-
-    /** Mark game as started. */
+    /** Mark game as started and disallow changing configuration. */
     start() {
-        globals.room.start();
+        freeze(this.config);
+        globals.room.progress = 1;
+        this.#hub.update();
     }
 
     /** Mark game as over. */
     over() {
-        globals.room.over();
+        globals.room.progress = 2;
+        this.#hub.update();
     }
 
     /** Backup game state. */

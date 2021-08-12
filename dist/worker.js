@@ -318,9 +318,10 @@
             return globals.worker.getPeers({ playing: false });
         }
     }
-    const hub = new Hub();
     /** Game object used by stages. */
     class Game {
+        /** Communication with remote hub. */
+        #hub = new Hub();
         get owner() {
             return globals.worker.uid;
         }
@@ -337,7 +338,7 @@
             return globals.room.packs;
         }
         get hub() {
-            return hub;
+            return this.#hub;
         }
         get utils() {
             return utils;
@@ -358,17 +359,16 @@
         getExtension(path) {
             return globals.room.getExtension(path);
         }
-        /** Get links to peers. */
-        getPeers(filter) {
-            return globals.worker.getPeers(filter);
-        }
-        /** Mark game as started. */
+        /** Mark game as started and disallow changing configuration. */
         start() {
-            globals.room.start();
+            freeze(this.config);
+            globals.room.progress = 1;
+            this.#hub.update();
         }
         /** Mark game as over. */
         over() {
-            globals.room.over();
+            globals.room.progress = 2;
+            this.#hub.update();
         }
     }
 
@@ -543,17 +543,6 @@
                 props[uid] = obj;
             }
             return [this.currentStage.id, tags, props, {}];
-        }
-        /** Mark game as started and disallow changing configuration. */
-        start() {
-            freeze(this.config);
-            this.progress = 1;
-            this.update();
-        }
-        /** Mark game as over. */
-        over() {
-            this.progress = 2;
-            this.update();
         }
         /** Execute stages. */
         async loop() {

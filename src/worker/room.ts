@@ -7,6 +7,7 @@ import { globals } from './globals';
 import type { UITick } from './worker';
 import type { Mode, Link, Dict } from '../types';
 
+/** Room that controlls game flow and classes. */
 export class Room {
     /** Root game stage. */
     rootStage!: Stage;
@@ -193,19 +194,6 @@ export class Room {
             props[uid] = obj;
         }
         return [this.currentStage.id, tags, props, {}];
-    }
-
-    /** Mark game as started and disallow changing configuration. */
-    start() {
-        freeze(this.config);
-        this.progress = 1;
-        this.update();
-    }
-
-    /** Mark game as over. */
-    over() {
-        this.progress = 2;
-        this.update();
     }
 
     /** Execute stages. */
