@@ -5,11 +5,11 @@ import { loop } from './tasks/loop';
 import { lobby } from './tasks/lobby';
 
 /** Player tasks. */
-import { choose } from './player/choose';
-import { chooseHero } from './player/choose-hero';
+import { choose } from './tasks/player/choose';
+import { chooseHero } from './tasks/player/choose-hero';
 
 // card tasks
-import { moveTo } from './card/move-to';
+import { moveTo } from './tasks/card/move-to';
 
 export const tasks = {
     trigger, setup, loop, lobby,

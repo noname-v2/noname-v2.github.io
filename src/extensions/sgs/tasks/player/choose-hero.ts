@@ -1,6 +1,6 @@
-import type { TaskClass, Link, Config, Dict } from '../types';
+import type { TaskClass, Link, Config, Dict } from '../../types';
 import type { choose } from './choose';
-import type { config } from '../config';
+import type { config } from '../../config';
 
 type A = typeof config
 

@@ -47,7 +47,7 @@ export function arena(T: typeof Arena) {
         }
 
         // get location of a seat
-        getLocation(seat: number) {
+        locatePlayer(seat: number) {
             // actual seat considering viewport
             const np = <number>this.get('np');
             seat -= this.perspective;
@@ -205,6 +205,7 @@ export function arena(T: typeof Arena) {
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
+                    this.ui.animate(this.players, {opacity: [0, 1]});
                 }
                 if (player.mine) {
                     this.perspective = player.get('seat');

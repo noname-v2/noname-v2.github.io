@@ -1,4 +1,4 @@
-import type { TaskClass } from '../types';
+import type { TaskClass } from '../../types';
 
 export function moveTo(T: TaskClass) {
     return class MoveTo extends T {

@@ -1,4 +1,4 @@
-import type { TaskClass, Link, Config, Dict } from '../types';
+import type { TaskClass, Link, Config, Dict } from '../../types';
 
 export function choose(T: TaskClass) {
     return class Choose extends T {

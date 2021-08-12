@@ -361,7 +361,7 @@ function arena(T) {
             return [ax, ay];
         }
         // get location of a seat
-        getLocation(seat) {
+        locatePlayer(seat) {
             // actual seat considering viewport
             const np = this.get('np');
             seat -= this.perspective;
@@ -514,6 +514,7 @@ function arena(T) {
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
+                    this.ui.animate(this.players, { opacity: [0, 1] });
                 }
                 if (player.mine) {
                     this.perspective = player.get('seat');
@@ -542,7 +543,7 @@ function player(T) {
         }
         $seat(seat) {
             seat ??= this.get('seat');
-            [this.x, this.y] = this.app.arena.getLocation(seat);
+            [this.x, this.y] = this.app.arena.locatePlayer(seat);
             this.locate();
         }
     };
