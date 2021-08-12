@@ -19,8 +19,6 @@ class Player {
         this.game = game;
         this.link = game.create('player');
     }
-
-
 }
 
 export type { Player };

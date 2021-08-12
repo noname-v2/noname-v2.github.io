@@ -27,6 +27,8 @@ export class Component {
     /** Component ID (for worker-managed components). */
     #id: number | null;
 
+    [key: string]: any;
+
     get node() {
         return this.#node;
     }
