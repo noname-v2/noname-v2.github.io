@@ -148,7 +148,7 @@ export class Worker {
                 peers.push(peer.id);
             }
         }
-        globals.arena.update({peers});
+        globals.game.arena.update({peers});
     }
 
     /** The room is ready for clients to join. */

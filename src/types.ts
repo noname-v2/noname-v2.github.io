@@ -1,5 +1,5 @@
-import type { ComponentClass } from './client/component';
 import type { Task } from './worker/task';
+import type { Component } from './components';
 
 /** Plain object. */
 export type Dict<T=any> = {[key: string]: T};
@@ -53,7 +53,7 @@ export interface Mode<T extends Task = Task> {
     intro?: string;
     extension?: string;
     tasks?: Dict<Class<T>>;
-    components?: Dict<(cls: any) => ComponentClass>;
+    components?: Dict<(cls: any) => typeof Component>;
     classes?: Dict<Class>;
     config?: Dict<Config>;
     inherit?: string;

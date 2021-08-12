@@ -1,7 +1,6 @@
 import { globals } from './globals';
 import { freeze } from '../utils';
 import * as utils from '../utils';
-import type { Dict } from '../types';
 
 /** Hub related functions. */
 class Hub {
@@ -35,7 +34,7 @@ export abstract class Game {
     }
 
     get arena() {
-        return globals.arena;
+        return globals.room.arena;
     }
 
     get mode() {

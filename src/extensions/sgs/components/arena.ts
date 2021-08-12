@@ -37,7 +37,6 @@ export function arena(T: typeof Arena) {
                     this.layout = 0;
                 }
             }
-            console.log(ax, ay, width, height)
             return [ax, ay];
         }
 

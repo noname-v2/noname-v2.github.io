@@ -326,7 +326,7 @@
             return globals.worker.uid;
         }
         get arena() {
-            return globals.arena;
+            return globals.room.arena;
         }
         get mode() {
             return globals.room.mode;
@@ -387,6 +387,7 @@
         return extensions.get(extname);
     }
 
+    /** Room that controlls game flow and classes. */
     class Room {
         /** Root game stage. */
         rootStage;
@@ -398,6 +399,8 @@
         config;
         /** Hero packages. */
         packs;
+        /** Link to Arena. */
+        arena;
         /** Game progress.
          * 0: waiting
          * 1: gaming
@@ -440,8 +443,8 @@
             // start game
             globals.game = new (this.getClass('game'))();
             this.rootStage = this.currentStage = this.createStage('main');
-            globals.arena = this.create('arena');
-            globals.arena.ruleset = this.#ruleset;
+            this.arena = this.create('arena');
+            this.arena.ruleset = this.#ruleset;
             this.loop();
         }
         /** Create a link. */
@@ -692,7 +695,7 @@
                     peers.push(peer.id);
                 }
             }
-            globals.arena.update({ peers });
+            globals.game.arena.update({ peers });
         }
         /** The room is ready for clients to join. */
         ready() {

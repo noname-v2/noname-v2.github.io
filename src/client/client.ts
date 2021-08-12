@@ -1,6 +1,6 @@
 import { globals } from './globals';
 import { version, config as cfg } from '../version';
-import { Component, ComponentClass } from './component';
+import { Component } from './component';
 import { componentClasses } from '../classes';
 import { importExtension } from '../extension';
 import { uid } from '../utils';
@@ -176,7 +176,7 @@ export class Client {
         for (const pack of ruleset) {
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
-                const cls = this.componentClasses.get(tag) ?? (Component as ComponentClass);
+                const cls = this.componentClasses.get(tag) ?? Component;
                 this.componentClasses.set(tag, ext.mode!.components[tag](cls));
             }
         }

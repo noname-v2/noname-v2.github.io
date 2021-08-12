@@ -24,6 +24,9 @@ export class Room {
     /** Hero packages. */
     packs!: Set<string>;
 
+    /** Link to Arena. */
+    arena!: Link;
+
     /** Game progress.
      * 0: waiting
      * 1: gaming
@@ -81,8 +84,8 @@ export class Room {
         // start game
         globals.game = new (this.getClass('game'))();
         this.rootStage = this.currentStage = this.createStage('main');
-        globals.arena = this.create('arena');
-        globals.arena.ruleset = this.#ruleset;
+        this.arena = this.create('arena');
+        this.arena.ruleset = this.#ruleset;
         this.loop();
     }
 
@@ -92,7 +95,7 @@ export class Room {
         const obj: Dict = {};
 
         // reserved link keys
-        const reserved: Dict = {
+        const reserved: Link = {
             id, tag,
             call: (method: string, arg?: any) => {
                 globals.worker.tick(id, [method, arg]);

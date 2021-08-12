@@ -5,13 +5,6 @@ import type { Listeners } from './client';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
 
-/** Type for component constructor. */
-export type ComponentClass = {
-    tag: string | null;
-    virtual: boolean;
-    new(tag: string, id: number | null, virtual: boolean): Component;
-};
-
 export class Component {
     /** HTMLElement tag  name */
     static tag: string | null = null;
