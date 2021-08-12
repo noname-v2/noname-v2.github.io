@@ -9,8 +9,8 @@ export function player(T: typeof Player) {
             this.node.style.transform = `translate(${this.x + dx}px,${this.y + dy}px)`;
         }
 
-        $seat(seat: number) {
-            console.log(this, seat);
+        $seat(seat?: number) {
+            seat ??= this.get('seat');
             [this.x, this.y] = this.app.arena!.getLocation(seat);
             this.locate();
         }

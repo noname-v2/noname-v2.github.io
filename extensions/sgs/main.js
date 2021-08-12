@@ -333,7 +333,6 @@ function arena(T) {
         players = this.ui.createElement('players');
         /** Update arena layout. */
         resize(ax, ay, width, height) {
-            // future: -> app.css['player-width'], etc.
             const np = this.get('np');
             if (np) {
                 if (np >= 7 && width / height < (18 + (np - 1) * 168) / 720) {
@@ -352,6 +351,12 @@ function arena(T) {
                     ay = 620;
                     this.layout = 0;
                 }
+                // update player locations
+                setTimeout(() => {
+                    for (const id of this.get('players')) {
+                        this.ui.get(id).$seat();
+                    }
+                });
             }
             return [ax, ay];
         }
@@ -363,8 +368,8 @@ function arena(T) {
             if (seat < 0) {
                 seat += np;
             }
-            const width = this.node.offsetWidth;
-            const height = this.node.offsetHeight;
+            const width = this.app.width;
+            const height = this.app.height;
             if (this.layout === 1) {
                 let dx1 = 25;
                 let dx2 = (width - dx1 * 2 - 150 * (np - 3)) / (np - 4);
@@ -536,7 +541,7 @@ function player(T) {
             this.node.style.transform = `translate(${this.x + dx}px,${this.y + dy}px)`;
         }
         $seat(seat) {
-            console.log(this, seat);
+            seat ??= this.get('seat');
             [this.x, this.y] = this.app.arena.getLocation(seat);
             this.locate();
         }

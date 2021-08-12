@@ -16,7 +16,6 @@ export function arena(T: typeof Arena) {
 
         /** Update arena layout. */
         resize(ax: number, ay: number, width: number, height: number) {
-            // future: -> app.css['player-width'], etc.
             const np = this.get('np');
                 
             if (np) {
@@ -36,6 +35,13 @@ export function arena(T: typeof Arena) {
                     ay = 620;
                     this.layout = 0;
                 }
+
+                // update player locations
+                setTimeout(() => {
+                    for (const id of this.get('players')) {
+                        this.ui.get(id)!.$seat();
+                    }
+                });
             }
             return [ax, ay];
         }
@@ -49,8 +55,8 @@ export function arena(T: typeof Arena) {
                 seat += np;
             }
     
-            const width = this.node.offsetWidth;
-            const height = this.node.offsetHeight;
+            const width = this.app.width;
+            const height = this.app.height;
     
             if (this.layout === 1) {
                 let dx1 = 25;
