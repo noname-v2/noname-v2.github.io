@@ -1,8 +1,5 @@
-import { Database } from './database';
+import * as db from './db';
 import { version } from '../version';
-
-/** Database for file storage. */
-const db = new Database();
 
 /** Base URL */
 const scope = (self as any).registration.scope;

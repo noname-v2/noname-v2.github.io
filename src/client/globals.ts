@@ -1,13 +1,13 @@
 import type { Client } from './client';
 import type { UI } from './ui';
-import type { Database } from './database';
 import type { App, Arena, Splash } from '../components';
+import * as db from './db';
 
 /** Internal context. */
-export const globals = {} as {
+export const globals = { db } as {
     client: Client;
     ui: UI;
-    db: Database;
+    db: typeof db;
     app: App;
     splash: Splash;
     arena?: Arena;
