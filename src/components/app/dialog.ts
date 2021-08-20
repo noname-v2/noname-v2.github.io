@@ -45,7 +45,7 @@ export class Dialog extends Popup {
                 button.dataset.fill = color;
             }
             button.innerHTML = text;
-            this.ui.bindClick(button, () => {
+            this.ui.bind(button, () => {
                 this.result = id;
                 this.close();
             });

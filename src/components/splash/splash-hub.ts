@@ -1,8 +1,8 @@
-import { globals } from '../../client/globals';
+import * as client from '../../client/client';
+import { splash } from '../../client/shared';
 import { Popup } from '../popup';
-import { Splash, Dialog, SplashGallery } from '../../components';
-import { config } from '../../version';
 import { hub2member } from '../../hub/types';
+import type { Dialog, SplashGallery } from '../../components';
 
 export class SplashHub extends Popup {
     /** Portrait sized popup. */
@@ -38,7 +38,6 @@ export class SplashHub extends Popup {
     /** Called by app after UI loaded. */
     create() {
         // nickname, avatar and this address
-        const splash = globals.splash;
         this.#addInfo();
 
 		// room list in this menu
@@ -55,7 +54,7 @@ export class SplashHub extends Popup {
 			splash.node.classList.add('blurred');
 			this.address.input.disabled = true;
 			setTimeout(async () => {
-				if (!globals.client.connection) {
+				if (!client.connection) {
 					await this.#connect();
 					this.address.input.disabled = false;
 				}
@@ -85,7 +84,7 @@ export class SplashHub extends Popup {
                 await this.app.alert('房间已关闭');
             }
             this.app.arena.faded = true;
-            globals.client.clear();
+            client.clear();
         }
         this.roomGroup.classList.remove('entering');
         this.roomGroup.classList.remove('hidden');
@@ -93,7 +92,7 @@ export class SplashHub extends Popup {
 
     /** Room info update. */
     edit(msg: string) {
-        const ws = globals.client.connection;
+        const ws = client.connection;
         if (!(ws instanceof WebSocket)) {
             return;
         }
@@ -104,7 +103,7 @@ export class SplashHub extends Popup {
                 try {
                     const room = this.#createRoom(JSON.parse(rooms[uid]));
                     this.rooms.set(uid, room);
-                    this.ui.bindClick(room, () => {
+                    this.ui.bind(room, () => {
                         if (!this.roomGroup.classList.contains('entering')) {
                             this.roomGroup.classList.add('entering');
                             ws.send('join:' + uid);
@@ -131,16 +130,16 @@ export class SplashHub extends Popup {
 
     /** Message received from the owner of joined room. */
     msg(msg: string) {
-        globals.client.dispatch(JSON.parse(msg));
-        if (!globals.splash.hidden) {
-            globals.splash.hide(true);
+        client.dispatch(JSON.parse(msg));
+        if (!splash.hidden) {
+            splash.hide(true);
             this.close();
         }
     }
 
     /** Owner of joined room disconnected. */
     down(msg: string) {
-        const ws = globals.client.connection;
+        const ws = client.connection;
         const promise = this.app.alert('房主连接断开', {ok: '退出房间', id: 'down'});
         const dialog = this.app.popups.get('down') as Dialog;
         const update = () => {
@@ -151,10 +150,10 @@ export class SplashHub extends Popup {
         const interval = setInterval(update, 1000);
         promise.then(val => {
             clearInterval(interval);
-            if (val === true && ws === globals.client.connection && ws instanceof WebSocket) {
+            if (val === true && ws === client.connection && ws instanceof WebSocket) {
                 if (this.app.arena) {
                     this.app.arena.faded = true;
-                    globals.client.clear();
+                    client.clear();
                 }
                 ws.send('leave:init');
             }
@@ -165,27 +164,27 @@ export class SplashHub extends Popup {
     #connect() {
         try {
             if (!this.address.input.value) {
-                this.db.set('ws', null);
+                this.db.set('url', null);
                 return;
             }
-            globals.client.connect('wss://' + this.address.input.value);
+            client.connect('wss://' + this.address.input.value);
             this.address.set('icon', 'clear');
 
-            const ws = globals.client.connection as WebSocket;
+            const ws = client.connection as WebSocket;
             this.#setCaption('正在连接');
 
             return new Promise<void>(resolve => {
                 ws.onclose = () => {
-                    this.#disconnect(globals.client.connection === ws);
+                    this.#disconnect(client.connection === ws);
                     setTimeout(resolve, 100);
                 };
 
                 ws.onopen = () => {
                     this.address.set('icon', 'ok');
                     this.#setCaption('');
-                    ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
-                    if (this.address.input.value !== config.ws) {
-                        this.db.set('ws', this.address.input.value);
+                    ws.send('init:' + JSON.stringify([client.uid, [client.hub.nickname, client.hub.avatar]]));
+                    if (this.address.input.value !== client.hub.url) {
+                        this.db.set('url', this.address.input.value);
                     }
                 };
 
@@ -210,9 +209,9 @@ export class SplashHub extends Popup {
     }
 
     /** Disconnect from hub. */
-    #disconnect(client: boolean) {
-        if (client) {
-            globals.client.disconnect();
+    #disconnect(ws: boolean) {
+        if (ws) {
+            client.disconnect();
         }
         this.#clearRooms();
         this.address.set('icon', null);
@@ -239,8 +238,8 @@ export class SplashHub extends Popup {
 
     /** Update nickname or avatar. */
     #sendInfo() {
-        if (globals.client.connection instanceof WebSocket) {
-            globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
+        if (client.connection instanceof WebSocket) {
+            client.connection.send('set:' + JSON.stringify([client.hub.nickname, client.hub.avatar]));
         }
     }
 
@@ -294,7 +293,7 @@ export class SplashHub extends Popup {
             gallery.add(() => {
                 const node = this.ui.createElement('image.avatar');
                 this.ui.setImage(node, img);
-                this.ui.bindClick(node, () => {
+                this.ui.bind(node, () => {
                     this.ui.setImage(this.avatarImage, img);
                     this.db.set('avatar', img);
                     this.#sendInfo();
@@ -312,9 +311,8 @@ export class SplashHub extends Popup {
         // avatar
 		const avatarNode = this.ui.createElement('widget', group);
 		const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
-		const url = this.db.get('avatar') ?? config.avatar;
-        this.ui.setImage(img, url);
-        this.ui.bindClick(avatarNode, () => {
+        this.ui.setImage(img, client.hub.avatar);
+        this.ui.bind(avatarNode, () => {
             if (this.hidden) {
                 return;
             }
@@ -329,7 +327,7 @@ export class SplashHub extends Popup {
 		const nickname = this.nickname = this.ui.create('input', group);
 		nickname.node.classList.add('nickname');
 		nickname.ready.then(() => {
-            nickname.input.value = this.db.get('nickname') || config.nickname;
+            nickname.input.value = client.hub.nickname;
 		});
 		nickname.callback = async val => {
             if (val) {
@@ -346,16 +344,16 @@ export class SplashHub extends Popup {
 		const address = this.address = this.ui.create('input', group);
 		address.node.classList.add('address');
 		address.ready.then(() => {
-			address.input.value = this.app.ws;
+			address.input.value = client.hub.url;
 		});
         address.callback = () => this.#connect();
-        this.ui.bindClick(address.node, e => {
-            const ws = globals.client.connection;
+        this.ui.bind(address.node, e => {
+            const ws = client.connection;
             if (address.input.disabled && ws instanceof WebSocket) {
                 const menu = this.ui.create('popup');
                 menu.position = e;
                 menu.pane.addOption('断开', () => {
-                    if (ws === globals.client.connection) {
+                    if (ws === client.connection) {
                         ws.close();
                     }
                     menu.close();

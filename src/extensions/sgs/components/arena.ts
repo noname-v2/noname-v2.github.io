@@ -39,7 +39,7 @@ export function arena(T: typeof Arena) {
                 // update player locations
                 setTimeout(() => {
                     for (const id of this.get('players')) {
-                        this.ui.get(id)!.$seat();
+                        this.getComponent(id)!.$seat();
                     }
                 });
             }
@@ -201,7 +201,7 @@ export function arena(T: typeof Arena) {
 
             // append players
             for (const id of ids) {
-                const player = this.ui.get(id)!;
+                const player = this.getComponent(id)!;
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
@@ -221,7 +221,7 @@ export function arena(T: typeof Arena) {
 
             // append player region
             if (!this.players.parentNode) {
-                this.arenaLayer.appendChild(this.players);
+                this.arenaZoom.appendChild(this.players);
             }
         }
     }

@@ -68,10 +68,10 @@
     function sleep(n) {
         return new Promise(resolve => setTimeout(resolve, n * 1000));
     }
-    /** Generate a unique ID based on current Date.now().
+    /** Generate a unique string based on current Date.now().
      * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
      */
-    function uid() {
+    function rng() {
         return new Date().getTime().toString().split('').map(n => {
             const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
             return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
@@ -94,7 +94,7 @@
         access: access,
         split: split,
         sleep: sleep,
-        uid: uid,
+        rng: rng,
         readJSON: readJSON
     });
 

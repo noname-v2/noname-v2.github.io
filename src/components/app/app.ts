@@ -1,5 +1,5 @@
-import { globals } from '../../client/globals';
-import { config, version } from '../../version';
+import { trigger } from '../../client/client';
+import { splash, arena } from '../../client/shared';
 import { Component, Popup } from '../../components';
 import { importExtension } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
@@ -22,9 +22,6 @@ interface ConfirmOptions extends DialogOptions {
 }
 
 export class App extends Component {
-    /** Client version. */
-    #version = version;
-
 	/** App width. */
 	#width!: number;
 
@@ -73,26 +70,26 @@ export class App extends Component {
     /** Count dialog for dialog ID */
     #dialogCount = 0;
 
-    get version() {
-        return this.#version;
+    get arena() {
+        return arena;
     }
 
     get width() {
-        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
             return this.#arenaWidth;
         }
         return this.#width;
     }
 
     get height() {
-        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
             return this.#arenaHeight;
         }
         return this.#height;
     }
 
     get zoom() {
-        if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
             return this.#arenaZoom;
         }
         return this.#zoom;
@@ -109,14 +106,6 @@ export class App extends Component {
 	get popups() {
 		return this.#popups;
 	}
-
-    get arena() {
-        return globals.arena ?? null;
-    }
-
-    get ws() {
-        return globals.client.ws;
-    }
 
     get zoomNode() {
         return this.#zoomNode;
@@ -138,7 +127,7 @@ export class App extends Component {
         // load styles and fonts
         this.#initAudio();
         await this.loadTheme();
-        const splash = globals.splash = this.ui.create('splash');
+        splash.gallery = this.ui.create('splash-gallery');
         await splash.gallery.ready;
         const initAssets = this.#initAssets();
 
@@ -364,7 +353,7 @@ export class App extends Component {
 
         dialog.onopen = () => {
             // blur arena, splash and other popups
-            globals.app.node.classList.add('popped');
+            this.node.classList.add('popped');
             for (const [id, popup] of this.popups.entries()) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
@@ -381,7 +370,7 @@ export class App extends Component {
             // unblur
             this.popups.delete(dialogID);
             if (this.popups.size === 0) {
-                globals.app.node.classList.remove('popped');
+                this.node.classList.remove('popped');
             }
             for (const id of blurred) {
                 this.popups.get(id)?.node.classList.remove('blurred');
@@ -454,13 +443,13 @@ export class App extends Component {
         }
 
         // update styles
-        globals.app.node.style.setProperty('--app-width', this.#width + 'px');
-        globals.app.node.style.setProperty('--app-height', this.#height + 'px');
-        globals.app.node.style.setProperty('--app-scale', this.#zoom.toString());
+        this.node.style.setProperty('--app-width', this.#width + 'px');
+        this.node.style.setProperty('--app-height', this.#height + 'px');
+        this.node.style.setProperty('--app-scale', this.#zoom.toString());
 
         // update arena zoom
-        if (globals.arena) {
-            [ax, ay] = globals.arena.resize(ax, ay, width, height);
+        if (arena) {
+            [ax, ay] = arena.resize(ax, ay, width, height);
 
             const zx = width / ax, zy = height / ay;
 
@@ -476,13 +465,13 @@ export class App extends Component {
             }
 
             // update styles
-            globals.app.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
-            globals.app.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
-            globals.app.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+            this.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
+            this.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
+            this.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
         }
 
         // trigger resize listeners
-        globals.client.trigger('resize');
+        trigger('resize');
     }
 
     /** Initialize volume settings. */
@@ -531,10 +520,10 @@ export class App extends Component {
             (document as any).fonts.add(fontFace);
 
             if (font === this.css.app['caption-font']) {
-                fontFace.loaded.then(() => globals.splash.node.classList.add('caption-font-loaded'));
+                fontFace.loaded.then(() => splash.node.classList.add('caption-font-loaded'));
             }
             else if (font === this.css.app['label-font']) {
-                fontFace.loaded.then(() => globals.splash.node.classList.add('label-font-loaded'));
+                fontFace.loaded.then(() => splash.node.classList.add('label-font-loaded'));
             }
         }
     }

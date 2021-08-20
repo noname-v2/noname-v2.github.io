@@ -1,9 +1,9 @@
-import { globals } from '../../client/globals';
-import { Component } from '../../components';
+import { debug } from '../../client/client';
+import { Component, SplashGallery } from '../../components';
 
 export class Splash extends Component {
     // gallery of modes
-	gallery = this.ui.create('splash-gallery');
+	gallery!: SplashGallery;
 
 	// bottom toolbar
 	bar = this.ui.create('splash-bar');
@@ -16,22 +16,6 @@ export class Splash extends Component {
 
 	// currently hidden
 	hidden = true;
-	
-	init() {
-		// create mode selection gallery
-		this.node.appendChild(this.gallery.node);
-		
-		// bottom button bar
-        this.node.appendChild(this.bar.node);
-
-		// debug mode
-		if (globals.client.debug && this.platform.mobile) {
-			const script = document.createElement('script');
-            script.src = 'lib/eruda.js';
-            script.onload = () => (window as any).eruda.init();
-            document.head.appendChild(script);
-		}
-	}
 
 	hide(faded: boolean = false) {
 		if (this.hidden) {
@@ -51,7 +35,7 @@ export class Splash extends Component {
 			return;
 		}
 		this.hidden = false;
-		globals.app.zoomNode.appendChild(this.node);
+		this.app.zoomNode.appendChild(this.node);
 		this.gallery.checkPage();
 		return new Promise(resolve => {
 			this.ui.animate(this.node, {

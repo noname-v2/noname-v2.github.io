@@ -1,5 +1,5 @@
 import * as db from './db';
-import { version } from '../version';
+import { version } from '../meta';
 
 /** Base URL */
 const scope = (self as any).registration.scope;

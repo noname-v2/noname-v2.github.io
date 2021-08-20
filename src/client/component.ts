@@ -1,6 +1,9 @@
-import { globals } from './globals';
+import * as ui from './ui';
+import * as db from './db';
 import * as platform from '../platform';
 import * as utils from '../utils';
+import { app } from './shared';
+import { uid, send, listeners, components, componentIDs } from './client';
 import type { Listeners } from './client';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
@@ -9,7 +12,7 @@ export class Component {
     /** HTMLElement tag  name */
     static tag: string | null = null;
 
-    /** Component without DOM element for communication with worker. */
+    /** Component without DOM element. */
     static virtual = false;
 
     /** Root element. */
@@ -24,9 +27,6 @@ export class Component {
     /** Properties synced with worker. */
     #props = new Map<string, any>();
 
-    /** Component ID (for worker-managed components). */
-    #id: number | null;
-
     [key: string]: any;
 
     get node() {
@@ -38,7 +38,7 @@ export class Component {
     }
 
     get app() {
-        return globals.app;
+        return app;
     }
 
     get platform() {
@@ -50,11 +50,11 @@ export class Component {
     }
 
     get db() {
-        return globals.db;
+        return db;
     }
 
     get ui() {
-        return globals.ui;
+        return ui;
     }
 
     get owner() {
@@ -62,15 +62,17 @@ export class Component {
     }
 
     get mine() {
-        return this.owner === globals.client.uid;
+        return this.owner === uid;
     }
 
     /** Create node. */
-    constructor(tag: string, id: number | null, virtual: boolean) {
-        this.#id = id;
+    constructor(tag: string) {
         this.#ready = Promise.resolve().then(() => this.init());
-        if (!virtual) {
-            this.#node = this.ui.createElement(tag);
+        const cls = this.constructor as typeof Component;
+
+        // create DOM element
+        if (!cls.virtual) {
+            this.#node = this.ui.createElement(cls.tag || tag);
         }
     }
 
@@ -85,6 +87,11 @@ export class Component {
     /** Property setter. */
     set(key: string, val: any) {
         this.update({[key]: val});
+    }
+
+    /** Get compnent by ID. */
+    getComponent(id: number) {
+        return components.get(id) ?? null;
     }
 
     /** Update properties. Reserved key:
@@ -112,23 +119,23 @@ export class Component {
 
     /** Send update to worker (component must be monitored). */
     yield(result: any) {
-        if (this.#id === null) {
+        if (!componentIDs.has(this)) {
             throw('element is has no ID');
         }
-        globals.client.send(this.#id, result, false);
+        send(componentIDs.get(this)!, result, false);
     }
 
     /** Send return value to worker (component must be monitored). */
     respond(result?: any) {
-        if (this.#id === null) {
+        if (!componentIDs.has(this)) {
             throw('element is has no ID');
         }
-        globals.client.send(this.#id, result, true);
+        send(componentIDs.get(this)!, result, true);
     }
 
     /** Add component event listener. */
     listen<T extends keyof Listeners>(this: Listeners[T], event: T) {
-        globals.client.listeners[event].add(this);
+        listeners[event].add(this);
     }
 
     /** Delay for a time period. */

@@ -47,7 +47,7 @@ export class Pane extends Component {
 		this.node.classList.add('menu');
 		const option = this.ui.createElement('option');
 		option.innerHTML = caption;
-		this.ui.bindClick(option, onclick);
+		this.ui.bind(option, onclick);
 		this.node.appendChild(option);
 		return option;
 	}

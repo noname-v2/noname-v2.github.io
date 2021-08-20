@@ -62,7 +62,7 @@ export class Input extends Component {
 		};
 
 		// callback when clicking icon
-		this.ui.bindClick(this.icon, e => {
+		this.ui.bind(this.icon, e => {
 			if (this.onicon) {
 				this.onicon(e);
 			}

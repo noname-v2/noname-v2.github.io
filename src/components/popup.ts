@@ -1,4 +1,3 @@
-import { globals } from '../client/globals';
 import { Component, TransitionDuration, Point } from '../components';
 
 export class Popup extends Component {
@@ -33,10 +32,10 @@ export class Popup extends Component {
 		this.node.classList.add('noname-popup');
 		
 		// block DOM events behind the pane
-        this.ui.bindClick(this.pane.node, () => {});
+        this.ui.bind(this.pane.node, () => {});
 
 		// close when clicking on background layer
-        this.ui.bindClick(this.node, () => {
+        this.ui.bind(this.node, () => {
             if (this.temp) {
                 this.close();
             }
@@ -73,7 +72,7 @@ export class Popup extends Component {
 		}
 
 		this.node.classList.add('hidden');
-        globals.app.zoomNode.appendChild(this.node);
+        this.app.zoomNode.appendChild(this.node);
 
 		if (this.position) {
 			// determine position of the menu
@@ -83,7 +82,7 @@ export class Popup extends Component {
 
 			let {x, y} = this.position;
 			const rect1 = this.pane.node.getBoundingClientRect();
-			const rect2 = globals.app.zoomNode.getBoundingClientRect();
+			const rect2 = this.app.zoomNode.getBoundingClientRect();
 			const zoom = this.app.zoom;
 
 			x += 2;

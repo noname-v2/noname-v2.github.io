@@ -14,7 +14,7 @@ export class Button extends Component {
 	onclick: (() => void) | null = null;
 
 	init() {
-		this.ui.bindClick(this.node, () => {
+		this.ui.bind(this.node, () => {
 			if (this.onclick) {
 				this.onclick();
 			}

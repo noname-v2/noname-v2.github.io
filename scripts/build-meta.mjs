@@ -5,10 +5,10 @@ import { buildSheets } from './build-sheets.mjs';
 
 // get info from package.json
 const pack = JSON.parse(fs.readFileSync('package.json'));
-fs.writeFileSync('build/version.ts',
+fs.writeFileSync('build/meta.ts',
     `export const version = '${pack.version}';\n` +
     `export const homepage = '${pack.homepage}';\n` + 
-    `export const config = ${JSON.stringify(pack.config, null, 4)};\n`);
+    `export const hub = ${JSON.stringify(pack.config, null, 4)};\n`);
 
 // get color literal types
 const css = JSON.parse(fs.readFileSync('assets/theme/default/theme.json'));

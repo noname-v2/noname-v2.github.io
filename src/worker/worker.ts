@@ -1,4 +1,4 @@
-import { version } from '../version';
+import { version } from '../meta';
 import { globals } from './globals';
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';

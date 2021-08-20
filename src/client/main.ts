@@ -1,7 +1,14 @@
-import { Client } from './client';
-import { UI } from './ui';
-import { globals} from './globals';
+import { ready, create } from './ui';
+import { backups, restore, init } from "./shared";
+import { componentClasses } from '../classes';
 
-globals.client = new Client();
-globals.ui = new UI();
-globals.app = globals.ui.create('app');
+// initialize component classes
+for (const [key, val] of componentClasses) {
+    backups.set(key, val);
+}
+restore();
+
+// create app component
+ready.then(() => {
+    init(create);
+});

@@ -1,10 +1,10 @@
-import { globals } from '../client/globals';
+import { trigger } from '../client/client';
 import { Component } from '../components';
 
 export class Peer extends Component {
 	$playing() {
         if (this.app.arena?.peers) {
-            globals.client.trigger('sync');
+            trigger('sync');
         }
     }
 }

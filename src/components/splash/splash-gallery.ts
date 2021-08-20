@@ -1,4 +1,5 @@
-import { globals } from '../../client/globals';
+import { splash } from '../../client/shared';
+import { connect } from '../../client/client';
 import { Gallery } from '../gallery';
 import type { ExtensionMeta, Dict } from '../../types';
 
@@ -43,29 +44,31 @@ export class SplashGallery extends Gallery {
 				this.add(() => this.addMode(name));
 			}
 		}
+
+		// append to splash
+		splash.node.appendChild(this.node);
     }
 
 	/** Add a mode to gallery. */
     addMode(mode: string) {
-        const ui = this.ui;
-		const entry = ui.createElement('widget');
+		const entry = this.ui.createElement('widget');
 		const name = this.index[mode].mode;
 		
 		// set mode backgrround
-		const bg = ui.createElement('image', entry);
-		ui.setBackground(bg, 'extensions', mode, 'mode');
+		const bg = this.ui.createElement('image', entry);
+		this.ui.setBackground(bg, 'extensions', mode, 'mode');
 		
 		// set caption
-		const caption = ui.createElement('caption', entry);
+		const caption = this.ui.createElement('caption', entry);
 		caption.innerHTML = name;
 
 		// bind click
-		ui.bindClick(entry, () => {
-			if (globals.splash.hidden) {
+		this.ui.bind(entry, () => {
+			if (splash.hidden) {
 				return;
 			}
-			globals.client.connect([mode, this.#getPacks(mode)]);
-			globals.splash.hide();
+			connect([mode, this.#getPacks(mode)]);
+			splash.hide();
 		});
 
 		return entry

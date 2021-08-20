@@ -354,7 +354,7 @@ function arena(T) {
                 // update player locations
                 setTimeout(() => {
                     for (const id of this.get('players')) {
-                        this.ui.get(id).$seat();
+                        this.getComponent(id).$seat();
                     }
                 });
             }
@@ -510,7 +510,7 @@ function arena(T) {
             const nodes = new Set();
             // append players
             for (const id of ids) {
-                const player = this.ui.get(id);
+                const player = this.getComponent(id);
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
@@ -528,7 +528,7 @@ function arena(T) {
             }
             // append player region
             if (!this.players.parentNode) {
-                this.arenaLayer.appendChild(this.players);
+                this.arenaZoom.appendChild(this.players);
             }
         }
     };

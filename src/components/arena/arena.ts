@@ -1,4 +1,5 @@
-import { globals } from '../../client/globals';
+import { setArena } from '../../client/shared';
+import { connection, clear, disconnect, trigger, send } from '../../client/client';
 import { Component, Peer } from '../../components';
 
 export class Arena extends Component {
@@ -12,10 +13,10 @@ export class Arena extends Component {
     exiting = false;
 
     /** Layer using arena zoom. */
-    arenaLayer = this.ui.createElement('zoom.arena', this.node);
+    arenaZoom = this.ui.createElement('zoom.arena', this.node);
 
     /** Layer using app zoom. */
-    appLayer = this.ui.createElement('zoom', this.node);
+    appZoom = this.ui.createElement('zoom', this.node);
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
@@ -26,7 +27,7 @@ export class Arena extends Component {
 
         const peers = [];
         for (const id of ids) {
-            const cmp = this.ui.get(id);
+            const cmp = this.getComponent(id);
             if (cmp) {
                 peers.push(cmp as Peer);
             }
@@ -45,8 +46,8 @@ export class Arena extends Component {
     }
 
     init() {
-        globals.arena = this;
-        globals.app.node.insertBefore(this.node, globals.app.zoomNode);
+        setArena(this);
+        this.app.node.insertBefore(this.node, this.app.zoomNode);
 
         // make android back button function as returning to splash screen
         if (this.platform.android && history.state === null) {
@@ -61,8 +62,8 @@ export class Arena extends Component {
 
     /** Remove with fade out animation. */
     remove() {
-        if (globals.arena === this) {
-            delete globals.arena;
+        if (this.app.arena === this) {
+            setArena(null);
             if (this.platform.android && history.state === 'arena') {
                 history.back();
             }
@@ -80,7 +81,7 @@ export class Arena extends Component {
             return;
         }
         this.confirming = true;
-        const ws = globals.client.connection;
+        const ws = connection;
         const peers = this.peers;
         if (peers || ws instanceof WebSocket) {
             const content = ws instanceof WebSocket ? '确定退出当前房间？': '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
@@ -91,18 +92,18 @@ export class Arena extends Component {
                 if (ws instanceof WebSocket) {
                     // leave currently connected room
                     ws.send('leave:init');
-                    globals.client.clear();
+                    clear();
                 }
                 else {
                     // tell worker to close the room
                     this.remove();
-                    globals.client.send(-2, null, false);
+                    send(-2, null, false);
                     this.exiting = true;
 
                     // force exit if worker doesn't respond within 0.5s
                     setTimeout(() => {
                         if (this.exiting) {
-                            globals.client.disconnect();
+                            disconnect();
                         }
                     }, 500);
                 }
@@ -112,7 +113,7 @@ export class Arena extends Component {
             }
         }
         else {
-            globals.client.disconnect();
+            disconnect();
         }
     }
 
@@ -120,11 +121,11 @@ export class Arena extends Component {
     $peers() {
         if (!this.peers && this.exiting) {
             // worker notifies that room successfully closed
-            globals.client.disconnect();
+            disconnect();
         }
         else {
             // wait until other properties have been updated
-            setTimeout(() => globals.client.trigger('sync'));
+            setTimeout(() => trigger('sync'));
         }
     }
 }

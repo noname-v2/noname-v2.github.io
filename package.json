@@ -3,7 +3,7 @@
 	"version": "2.0.0dev1",
 	"homepage": "noname.pub",
 	"config": {
-		"ws": "ws.noname.pub:8080",
+		"url": "ws.noname.pub:8080",
 		"nickname": "无名玩家",
 		"avatar": "standard:caocao"
 	},

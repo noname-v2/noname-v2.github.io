@@ -14,13 +14,14 @@ import walk from './walk.mjs';
  */
 export function buildClasses() {
     const imports = [
-        `import type { Component } from '../src/client/component';`
+        `import { Component } from '../src/client/component';`
     ];
 
     const types = [];
 
     const classes = [
-        'export const componentClasses = new Map<string, typeof Component>();'
+        'export const componentClasses = new Map<string, typeof Component>();',
+        `componentClasses.set('component', Component);`
     ];
 
     const tags = [

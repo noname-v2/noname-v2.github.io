@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { globals } from '../../client/globals';
+import { splash } from '../../client/shared';
 import { Point, Gallery } from '../../components';
 
 export class SplashSettings extends Popup {
@@ -21,7 +21,6 @@ export class SplashSettings extends Popup {
     /** Called by app after UI loaded. */
     create() {
         // blur or unblur splash
-        const splash = globals.splash;
         this.onopen = () => {
             for (const gallery of this.galleries) {
                 gallery.checkPage();
@@ -74,7 +73,7 @@ export class SplashSettings extends Popup {
             const node = this.ui.createElement('widget.sharp');
             const content = this.ui.createElement('content', node);
             this.ui.createElement('caption', content).innerHTML = add;
-            this.ui.bindClick(node, onadd);
+            this.ui.bind(node, onadd);
             return node;
         });
     }
@@ -109,7 +108,7 @@ export class SplashSettings extends Popup {
 
         const width = 180 - 2 * parseFloat(this.app.css.widget['image-margin-sharp']);
 
-        this.ui.bindMove(slider, {
+        this.ui.bind(slider, {
             movable: {x: [-width-1, 0], y: [0,0]},
             onmove: ({x}) => {
                 const vol = Math.max(0, 100 - Math.round(-x * 100 / width));
@@ -155,10 +154,10 @@ export class SplashSettings extends Popup {
             if (item === this.db.get('bgm-splash')) {
                 this.#rotating = node;
             }
-            this.ui.bindClick(node, e => this.#musicMenu(node, item, e));
+            this.ui.bind(node, e => this.#musicMenu(node, item, e));
         }
         else {
-            this.ui.bindClick(node, () => this.#clickItem(node, item, section));
+            this.ui.bind(node, () => this.#clickItem(node, item, section));
         }
 
         return node;

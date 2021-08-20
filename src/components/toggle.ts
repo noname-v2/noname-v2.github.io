@@ -24,7 +24,7 @@ export class Toggle extends Component {
             const popup = this.ui.createElement('text', this.node);
             this.text = this.ui.createElement('span', popup);
             this.ui.createElement('bar', popup);
-            this.ui.bindClick(popup, () => {
+            this.ui.bind(popup, () => {
                 // open context menu
                 const rect = popup.getBoundingClientRect();
                 const menu = this.ui.create('popup');
@@ -53,7 +53,7 @@ export class Toggle extends Component {
             const container = this.ui.createElement('switcher-container', switcher);
             this.ui.createElement('switcher-background', container);
             this.ui.createElement('switcher-button', switcher);
-            this.ui.bindClick(switcher, async () => {
+            this.ui.bind(switcher, async () => {
                 const val = !this.node.classList.contains('on');
                 if (this.confirm.has(val)) {
                     const [title, content] = this.confirm.get(val) as [string?, string?];

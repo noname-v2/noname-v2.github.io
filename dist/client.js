@@ -1,6 +1,379 @@
 (function () {
     'use strict';
 
+    /** Platform detector. */
+    const ios = navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document);
+    const android = navigator.userAgent.includes('Android');
+    const mobile = ios || android;
+    const mac = navigator.platform === 'MacIntel' && !('ontouchend' in document);
+    const windows = navigator.platform === 'Win32';
+    const linux = navigator.platform.startsWith('Linux');
+
+    var platform = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        ios: ios,
+        android: android,
+        mobile: mobile,
+        mac: mac,
+        windows: windows,
+        linux: linux
+    });
+
+    /** Map of component constructors no extension loaded. */
+    const backups = new Map();
+    /** Map of component constructors. */
+    const componentClasses$1 = new Map();
+    /** Restore original component constructors. */
+    function restore() {
+        componentClasses$1.clear();
+        for (const [key, val] of backups.entries()) {
+            componentClasses$1.set(key, val);
+        }
+    }
+    /** Main components. */
+    let app;
+    let splash;
+    let arena = null;
+    /** Create app and splash. */
+    function init(c) {
+        app = c('app');
+        splash = c('splash');
+    }
+    /** Set arena. */
+    function setArena(a) {
+        arena = a;
+    }
+
+    /** Bindings for DOM events. */
+    const bindings = new Map();
+    /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
+    let dispatched = false;
+    /** Handler for current click event.
+     * [0]: Element that is clicked.
+     * [1]: Location of pointerdown.
+     * [2]: true: started by a touch event, false: started by a mouse event.
+     */
+    let clicking = null;
+    /** Handler for current move event.
+     * [0]: Element that is moved.
+     * [1]: Location of pointerdown.
+     * [2]: Initial transform of target element when pointerdown is fired.
+     * [3]: Return value of the binding.onmove.
+     * [4]: true: started by a touch event, false: started by a mouse event.
+     */
+    let moving = null;
+    /** Get the location of mouse or touch event. */
+    function locate(e) {
+        return {
+            x: Math.round(e.clientX / app.zoom),
+            y: Math.round(e.clientY / app.zoom)
+        };
+    }
+    /** Register pointerdown for click or move. */
+    function register(node) {
+        // event callback
+        const binding = {};
+        bindings.set(node, binding);
+        // register event
+        const dispatchDown = (e, touch) => {
+            const origin = locate(e);
+            // initialize click event
+            if (binding.onclick && !clicking) {
+                node.classList.add('clickdown');
+                clicking = [node, origin, touch];
+            }
+            // initialize move event
+            if (binding.movable && !moving) {
+                moving = [node, origin, binding.offset || { x: 0, y: 0 }, null, touch];
+                // fire ondown event
+                if (binding.ondown) {
+                    binding.ondown(origin);
+                }
+            }
+        };
+        node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
+        if (!android) {
+            node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
+        }
+        return binding;
+    }
+    /** Cancel click callback for current pointerdown. */
+    function resetClick(node) {
+        if (clicking && clicking[0] === node) {
+            clicking = null;
+        }
+        node.classList.remove('clickdown');
+    }
+    /** Cancel move callback for current pointerdown. */
+    function resetMove(node) {
+        if (moving && moving[0] === node) {
+            moving = null;
+        }
+    }
+    /** Callback for mousemove or touchmove. */
+    function pointerMove(e, touch) {
+        const { x, y } = locate(e);
+        // not a click event if move distance > 5px
+        if (clicking && clicking[2] === touch) {
+            const [node, origin] = clicking;
+            const dx = origin.x - x;
+            const dz = origin.y - y;
+            if (dx * dx + dz * dz > 25) {
+                resetClick(node);
+            }
+        }
+        // get offset and trigger move event
+        if (moving && moving[4] === touch) {
+            const [node, origin, offset] = moving;
+            dispatchMove(node, {
+                x: x - origin.x + offset.x,
+                y: y - origin.y + offset.y
+            });
+        }
+    }
+    /** Ccallback for mouseup or touchend. */
+    function pointerEnd(touch) {
+        if (dispatched === false) {
+            // dispatch events
+            if (clicking && clicking[2] === touch) {
+                dispatched = true;
+                dispatchClick(clicking[0]);
+            }
+            if (moving && moving[4] === touch) {
+                dispatched = true;
+                dispatchMoveEnd(moving[0]);
+            }
+            // re-enable event trigger after 200ms
+            if (dispatched) {
+                window.setTimeout(() => dispatched = false, 200);
+            }
+        }
+        if (clicking && clicking[2] === touch) {
+            clicking = null;
+        }
+        if (moving && moving[4] === touch) {
+            moving = null;
+        }
+    }
+    /** Callback for mouseleave or touchcancel. */
+    function pointerCancel(touch) {
+        if (clicking && clicking[2] === touch) {
+            clicking[0].classList.remove('clickdown');
+        }
+        if (moving && moving[4] === touch) {
+            dispatchMoveEnd(moving[0]);
+        }
+        clicking = null;
+        moving = null;
+    }
+    /** Resolved when document is ready. */
+    const ready$1 = new Promise(async (resolve) => {
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+        }
+        // add bindings for drag operations
+        document.body.addEventListener('touchmove', e => pointerMove(e.touches[0], true), { passive: true });
+        document.body.addEventListener('touchend', () => pointerEnd(true), { passive: true });
+        document.body.addEventListener('touchcancel', () => pointerCancel(true), { passive: true });
+        // avoid unexpected mouse event behavior on some Android devices
+        if (!android) {
+            document.body.addEventListener('mousemove', e => pointerMove(e, false), { passive: true });
+            document.body.addEventListener('mouseup', () => pointerEnd(false), { passive: true });
+            document.body.addEventListener('mouseleave', () => pointerCancel(false), { passive: true });
+        }
+        // disable context menu
+        document.oncontextmenu = () => false;
+        resolve();
+    });
+    /** Create new component. */
+    function create(tag, parent) {
+        const cls = componentClasses$1.get(tag);
+        const cmp = new cls(tag);
+        // add className for a Component subclass with a static tag
+        if (cls.tag && cmp.node) {
+            cmp.node.classList.add(tag);
+        }
+        if (parent) {
+            parent.appendChild(cmp.node);
+        }
+        return cmp;
+    }
+    // create HTMLElement
+    function createElement(tag, parent = null) {
+        const tags = tag.split('.');
+        const tagName = 'noname-' + tags[0];
+        // define custom element
+        if (!customElements.get(tagName)) {
+            customElements.define(tagName, class extends HTMLElement {
+            });
+        }
+        // create and append to parent
+        const node = document.createElement(tagName);
+        for (let i = 1; i < tags.length; i++) {
+            node.classList.add(tags[i]);
+        }
+        if (parent) {
+            parent.appendChild(node);
+        }
+        return node;
+    }
+    /** Set background image and set background position/size to center/cover. */
+    function setBackground(node, ...args) {
+        if (!args[args.length - 1].split('/').pop().includes('.')) {
+            args[args.length - 1] += '.webp';
+        }
+        node.style.background = `url(${args.join('/')}) center/cover`;
+    }
+    /** Set background image from an extension. */
+    function setImage(node, url) {
+        if (url.includes(':')) {
+            const [ext, name] = url.split(':');
+            setBackground(node, 'extensions', ext, 'images', name);
+        }
+        else {
+            setBackground(node, url);
+        }
+    }
+    /** Set binding for move or click event. */
+    function bind(node, config) {
+        const binding = bindings.get(node) || register(node);
+        if (typeof config === 'function') {
+            binding.onclick = config;
+        }
+        else {
+            Object.assign(binding, config);
+        }
+    }
+    /** Fire click event. */
+    function dispatchClick(node) {
+        // onclick
+        const binding = bindings.get(node);
+        if (binding?.onclick) {
+            if (clicking && clicking[0] === node) {
+                // use the location of clicking if applicable
+                binding.onclick.call(node, clicking[1]);
+            }
+            else {
+                // a pseudo click event without location info
+                binding.onclick.call(node, { x: 0, y: 0 });
+            }
+        }
+        // avoid duplicate trigger
+        resetClick(node);
+        resetMove(node);
+    }
+    /** Fire move event. */
+    function dispatchMove(node, location) {
+        const binding = bindings.get(node);
+        if (binding?.movable) {
+            // get offset of node
+            const movable = binding.movable;
+            let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
+            let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
+            // trigger onoff
+            if (binding.onoff && (x != location.x || y != location.y)) {
+                const off = binding.onoff({ x, y }, { x: location.x, y: location.y });
+                x = off.x;
+                y = off.y;
+            }
+            // set and save node offset
+            node.style.transform = `translate(${x}px, ${y}px)`;
+            binding.offset = { x, y };
+            // trigger onmove
+            if (binding.onmove) {
+                const state = binding.onmove(binding.offset);
+                // save move state to moving if applicable
+                if (moving && moving[0] === node) {
+                    moving[3] = state;
+                }
+            }
+        }
+    }
+    /** Fire moveend event. */
+    function dispatchMoveEnd(node) {
+        // onmoveend
+        const binding = bindings.get(node);
+        if (binding && binding.onmoveend) {
+            if (moving && moving[0] === node) {
+                // pass the state of moving if applicable
+                binding.onmoveend(moving[3]);
+            }
+            else {
+                // a pseudo moveend event without current state
+                binding.onmoveend(null);
+            }
+        }
+        // avoid duplicate trigger
+        resetClick(node);
+        resetMove(node);
+    }
+    /** Wrapper of HTMLElement.animate(). */
+    function animate(node, animation, config) {
+        const keyframes = [];
+        // get number of keyframes
+        let length = 0;
+        for (const key in animation) {
+            if (Array.isArray(animation[key])) {
+                length = Math.max(length, animation[key].length);
+            }
+        }
+        // create keyframes
+        for (let i = 0; i < length; i++) {
+            const frame = {};
+            if (animation.x) {
+                frame.transform = `translateX(${animation.x[i]}px)`;
+            }
+            if (animation.y) {
+                frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
+            }
+            if (animation.scale) {
+                frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
+            }
+            if (animation.opacity) {
+                frame.opacity = animation.opacity[i].toString();
+            }
+            keyframes.push(frame);
+        }
+        // use current style as starting frame
+        if (animation.auto) {
+            const frame = {};
+            for (const key in keyframes[0]) {
+                frame[key] = getComputedStyle(node)[key];
+            }
+            keyframes.unshift(frame);
+        }
+        // fill animation configurations
+        if (typeof config === 'number') {
+            config = { duration: config };
+        }
+        config ??= {};
+        config.easing ??= 'ease';
+        config.duration ??= app.getTransition();
+        const anim = node.animate(keyframes, config);
+        // use last frame as final style
+        if (animation.forward) {
+            const frame = keyframes[keyframes.length - 1];
+            for (const key in frame) {
+                node.style[key] = frame[key];
+            }
+        }
+        return anim;
+    }
+
+    var ui = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        ready: ready$1,
+        create: create,
+        createElement: createElement,
+        setBackground: setBackground,
+        setImage: setImage,
+        bind: bind,
+        dispatchClick: dispatchClick,
+        dispatchMove: dispatchMove,
+        dispatchMoveEnd: dispatchMoveEnd,
+        animate: animate
+    });
+
     /** Opened indexedDB object. */
     let db;
     /** Cache of settings. */
@@ -114,36 +487,6 @@
         readdir: readdir
     });
 
-    /** Internal context. */
-    const globals = { db: db$1 };
-    ////// debug
-    globalThis.globals = globals;
-
-    const version = '2.0.0dev1';
-    const config = {
-        "ws": "ws.noname.pub:8080",
-        "nickname": "无名玩家",
-        "avatar": "standard:caocao"
-    };
-
-    /** Platform detector. */
-    const ios = navigator.platform === 'iPhone' || (navigator.platform === 'MacIntel' && 'ontouchend' in document);
-    const android = navigator.userAgent.includes('Android');
-    const mobile = ios || android;
-    const mac = navigator.platform === 'MacIntel' && !('ontouchend' in document);
-    const windows = navigator.platform === 'Win32';
-    const linux = navigator.platform.startsWith('Linux');
-
-    var platform = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        ios: ios,
-        android: android,
-        mobile: mobile,
-        mac: mac,
-        windows: windows,
-        linux: linux
-    });
-
     /** Deep copy plain object. */
     function copy(from) {
         const to = {};
@@ -206,10 +549,10 @@
     function sleep(n) {
         return new Promise(resolve => setTimeout(resolve, n * 1000));
     }
-    /** Generate a unique ID based on current Date.now().
+    /** Generate a unique string based on current Date.now().
      * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
      */
-    function uid() {
+    function rng() {
         return new Date().getTime().toString().split('').map(n => {
             const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
             return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
@@ -232,14 +575,266 @@
         access: access,
         split: split,
         sleep: sleep,
-        uid: uid,
+        rng: rng,
         readJSON: readJSON
     });
+
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+
+    const hub$1 = {
+        "url": "ws.noname.pub:8080",
+        "nickname": "无名玩家",
+        "avatar": "standard:caocao"
+    };
+
+    /** Hub configuration. */
+    const hub = new Proxy(hub$1, {
+        get(target, key) {
+            return get(key) ?? target[key];
+        }
+    });
+    /** Worker object. */
+    let connection = null;
+    navigator.serviceWorker?.register('/service.js').then(reg => {
+    });
+    /** User identifier. */
+    let uid;
+    ready.then(() => {
+        if (!get('uid')) {
+            set('uid', rng());
+        }
+        uid = get('uid');
+    });
+    /** Components managed by worker. */
+    const components = new Map();
+    const componentIDs = new Map();
+    /** Event listeners. */
+    const listeners = Object.freeze({
+        sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
+    });
+    /** ID of current stage. */
+    let stageID = 0;
+    /**  UITicks waiting for dispatch. */
+    let ticks = [];
+    /** Timestamp of the last full UI load. */
+    let loaded = 0;
+    /** This.#loop is not running. */
+    let paused = true;
+    /** Connect to a game server.
+     * to worker: config[0]: mode name, config[1]: mode packs
+     * to hub: config: hub url
+     */
+    function connect(config) {
+        disconnect();
+        if (Array.isArray(config)) {
+            const worker = connection = new Worker(`dist/worker.js`, { type: 'module' });
+            worker.onmessage = ({ data }) => {
+                if (data === 'ready') {
+                    worker.onmessage = ({ data }) => dispatch(data);
+                    config.push(get(config[0] + ':config') || {});
+                    config.push([hub.nickname, hub.avatar]);
+                    send(0, config, true);
+                }
+            };
+        }
+        else {
+            connection = new WebSocket(config);
+        }
+    }
+    /** Disconnect from web worker. */
+    function disconnect() {
+        if (connection instanceof Worker) {
+            connection.terminate();
+        }
+        else if (connection instanceof WebSocket) {
+            connection.close();
+        }
+        connection = null;
+        clear();
+    }
+    /**
+     * Send component return value to worker.
+     * @param {number} id - ID of component (id > 0).
+     * @param {any} result - Return value of component.
+     * @param {boolean} done - true: component.respond(); false: component.yield()
+     * Special ID:
+     * 0: Initialize worker and create worker.#game.
+     * -1: Reload due to UI error.
+     * -2: Tell worker to disconnect from hub
+     */
+    function send(id, result, done) {
+        const msg = [uid, stageID, id, result, done];
+        if (connection instanceof Worker) {
+            connection.postMessage(msg);
+        }
+        else if (connection instanceof WebSocket) {
+            connection.send('resp:' + JSON.stringify(msg));
+        }
+    }
+    /** Add a UITick to render queue. */
+    function dispatch(data) {
+        ticks.push(data);
+        if (paused) {
+            loop();
+        }
+    }
+    /** Clear currently connection status without disconnecting. */
+    function clear(back = true) {
+        for (const cmp of components.values()) {
+            removeListeners(cmp);
+        }
+        components.clear();
+        componentIDs.clear();
+        app.clearPopups();
+        app.arena?.remove();
+        restore();
+        if (back) {
+            splash.show();
+            stageID = 0;
+        }
+    }
+    /** Trigger a listener. */
+    function trigger(event, arg) {
+        for (const cmp of listeners[event]) {
+            cmp[event](arg);
+        }
+    }
+    /** Overwrite components by mode. */
+    async function load(ruleset) {
+        for (const pack of ruleset) {
+            const ext = await importExtension(pack);
+            for (const tag in ext.mode?.components) {
+                const cls = componentClasses$1.get(tag) ?? backups.get('component');
+                componentClasses$1.set(tag, ext.mode.components[tag](cls));
+            }
+        }
+    }
+    /**
+     * Render the next UITick.
+     */
+    async function render() {
+        const tick = ticks.shift();
+        try {
+            // check if tick is a full UI reload
+            const [sid, tags, props, calls] = tick;
+            for (const key in tags) {
+                if (tags[key] === 'arena') {
+                    const arena = app.arena;
+                    if (arena && app.popups.size) {
+                        arena.faded = true;
+                    }
+                    clear(false);
+                    loaded = Date.now();
+                    if (arena) {
+                        await app.sleep('fast');
+                    }
+                    await load(props[key].ruleset);
+                    break;
+                }
+            }
+            if (!loaded) {
+                throw ('UI not loaded');
+            }
+            // clear unfinished function calls (e.g. selectCard / selectTarget)
+            if (sid !== stageID) {
+                trigger('stage');
+                listeners.stage.clear();
+                stageID = sid;
+            }
+            // create new components
+            const newComponents = [];
+            for (const key in tags) {
+                const id = parseInt(key);
+                const tag = tags[key];
+                if (typeof tag === 'string') {
+                    components.get(id)?.remove();
+                    const cmp = create(tag);
+                    components.set(id, cmp);
+                    componentIDs.set(cmp, id);
+                    newComponents.push(cmp.ready);
+                }
+            }
+            await Promise.all(newComponents);
+            // update component properties
+            let hooks = [];
+            for (const key in props) {
+                hooks = hooks.concat(components.get(parseInt(key)).update(props[key], false));
+            }
+            for (const [hook, cmp, newVal, oldVal] of hooks) {
+                hook.apply(cmp, [newVal, oldVal]);
+            }
+            // call component methods
+            for (const key in calls) {
+                const id = parseInt(key);
+                for (const [method, arg] of calls[key]) {
+                    components.get(id)[method](arg);
+                }
+            }
+            // delete components
+            for (const key in tags) {
+                const id = parseInt(key);
+                if (tags[key] === null) {
+                    const cmp = components.get(id);
+                    if (cmp) {
+                        removeListeners(cmp);
+                        components.delete(id);
+                        componentIDs.delete(cmp);
+                        cmp.remove();
+                    }
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+            if (Date.now() - loaded < 500) {
+                // prompt reload if error occus within 0.5s after reload
+                loaded = 0;
+                app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
+                    if (reload === true) {
+                        window.location.reload();
+                    }
+                    else if (reload === false) {
+                        send(-1, null, false);
+                    }
+                });
+            }
+            else if (loaded) {
+                // tell worker to reload UI
+                loaded = 0;
+                send(-1, null, false);
+            }
+        }
+    }
+    /** Render UITick(s). */
+    async function loop() {
+        if (paused) {
+            paused = false;
+            while (ticks.length) {
+                await render();
+            }
+            paused = true;
+        }
+    }
+    /** Remove all listeners. */
+    function removeListeners(cmp) {
+        for (const key in listeners) {
+            listeners[key].delete(cmp);
+        }
+    }
 
     class Component {
         /** HTMLElement tag  name */
         static tag = null;
-        /** Component without DOM element for communication with worker. */
+        /** Component without DOM element. */
         static virtual = false;
         /** Root element. */
         #node;
@@ -249,8 +844,6 @@
         #removing = false;
         /** Properties synced with worker. */
         #props = new Map();
-        /** Component ID (for worker-managed components). */
-        #id;
         get node() {
             return this.#node;
         }
@@ -258,7 +851,7 @@
             return this.#ready;
         }
         get app() {
-            return globals.app;
+            return app;
         }
         get platform() {
             return platform;
@@ -267,23 +860,24 @@
             return utils;
         }
         get db() {
-            return globals.db;
+            return db$1;
         }
         get ui() {
-            return globals.ui;
+            return ui;
         }
         get owner() {
             return this.get('owner');
         }
         get mine() {
-            return this.owner === globals.client.uid;
+            return this.owner === uid;
         }
         /** Create node. */
-        constructor(tag, id, virtual) {
-            this.#id = id;
+        constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
-            if (!virtual) {
-                this.#node = this.ui.createElement(tag);
+            const cls = this.constructor;
+            // create DOM element
+            if (!cls.virtual) {
+                this.#node = this.ui.createElement(cls.tag || tag);
             }
         }
         /** Optional initialization method. */
@@ -296,6 +890,10 @@
         /** Property setter. */
         set(key, val) {
             this.update({ [key]: val });
+        }
+        /** Get compnent by ID. */
+        getComponent(id) {
+            return components.get(id) ?? null;
         }
         /** Update properties. Reserved key:
          * owner: uid of client that controlls the component
@@ -320,21 +918,21 @@
         }
         /** Send update to worker (component must be monitored). */
         yield(result) {
-            if (this.#id === null) {
+            if (!componentIDs.has(this)) {
                 throw ('element is has no ID');
             }
-            globals.client.send(this.#id, result, false);
+            send(componentIDs.get(this), result, false);
         }
         /** Send return value to worker (component must be monitored). */
         respond(result) {
-            if (this.#id === null) {
+            if (!componentIDs.has(this)) {
                 throw ('element is has no ID');
             }
-            globals.client.send(this.#id, result, true);
+            send(componentIDs.get(this), result, true);
         }
         /** Add component event listener. */
         listen(event) {
-            globals.client.listeners[event].add(this);
+            listeners[event].add(this);
         }
         /** Delay for a time period. */
         sleep(dur) {
@@ -358,20 +956,7 @@
         }
     }
 
-    /** Map of loaded extensions. */
-    const extensions = new Map();
-    /** Load extension. */
-    async function importExtension(extname) {
-        if (!extensions.has(extname)) {
-            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
-            extensions.set(extname, ext);
-        }
-        return extensions.get(extname);
-    }
-
     class App extends Component {
-        /** Client version. */
-        #version = version;
         /** App width. */
         #width;
         /** App height. */
@@ -404,23 +989,23 @@
         #popups = new Map();
         /** Count dialog for dialog ID */
         #dialogCount = 0;
-        get version() {
-            return this.#version;
+        get arena() {
+            return arena;
         }
         get width() {
-            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
                 return this.#arenaWidth;
             }
             return this.#width;
         }
         get height() {
-            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
                 return this.#arenaHeight;
             }
             return this.#height;
         }
         get zoom() {
-            if (!this.popups.size && this.arena?.arenaLayer.childNodes.length) {
+            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
                 return this.#arenaZoom;
             }
             return this.#zoom;
@@ -433,12 +1018,6 @@
         }
         get popups() {
             return this.#popups;
-        }
-        get arena() {
-            return globals.arena ?? null;
-        }
-        get ws() {
-            return globals.client.ws;
         }
         get zoomNode() {
             return this.#zoomNode;
@@ -456,7 +1035,7 @@
             // load styles and fonts
             this.#initAudio();
             await this.loadTheme();
-            const splash = globals.splash = this.ui.create('splash');
+            splash.gallery = this.ui.create('splash-gallery');
             await splash.gallery.ready;
             const initAssets = this.#initAssets();
             // load splash menus
@@ -652,7 +1231,7 @@
             const blurred = [];
             dialog.onopen = () => {
                 // blur arena, splash and other popups
-                globals.app.node.classList.add('popped');
+                this.node.classList.add('popped');
                 for (const [id, popup] of this.popups.entries()) {
                     if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                         popup.node.classList.add('blurred');
@@ -667,7 +1246,7 @@
                 // unblur
                 this.popups.delete(dialogID);
                 if (this.popups.size === 0) {
-                    globals.app.node.classList.remove('popped');
+                    this.node.classList.remove('popped');
                 }
                 for (const id of blurred) {
                     this.popups.get(id)?.node.classList.remove('blurred');
@@ -731,12 +1310,12 @@
                 this.#zoom = zy;
             }
             // update styles
-            globals.app.node.style.setProperty('--app-width', this.#width + 'px');
-            globals.app.node.style.setProperty('--app-height', this.#height + 'px');
-            globals.app.node.style.setProperty('--app-scale', this.#zoom.toString());
+            this.node.style.setProperty('--app-width', this.#width + 'px');
+            this.node.style.setProperty('--app-height', this.#height + 'px');
+            this.node.style.setProperty('--app-scale', this.#zoom.toString());
             // update arena zoom
-            if (globals.arena) {
-                [ax, ay] = globals.arena.resize(ax, ay, width, height);
+            if (arena) {
+                [ax, ay] = arena.resize(ax, ay, width, height);
                 const zx = width / ax, zy = height / ay;
                 if (zx < zy) {
                     this.#arenaWidth = ax;
@@ -749,12 +1328,12 @@
                     this.#arenaZoom = zy;
                 }
                 // update styles
-                globals.app.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
-                globals.app.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
-                globals.app.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+                this.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
+                this.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
+                this.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
             }
             // trigger resize listeners
-            globals.client.trigger('resize');
+            trigger('resize');
         }
         /** Initialize volume settings. */
         #initAudio() {
@@ -794,10 +1373,10 @@
                 const fontFace = new window.FontFace(font, `url(${fontPath})`);
                 document.fonts.add(fontFace);
                 if (font === this.css.app['caption-font']) {
-                    fontFace.loaded.then(() => globals.splash.node.classList.add('caption-font-loaded'));
+                    fontFace.loaded.then(() => splash.node.classList.add('caption-font-loaded'));
                 }
                 else if (font === this.css.app['label-font']) {
-                    fontFace.loaded.then(() => globals.splash.node.classList.add('label-font-loaded'));
+                    fontFace.loaded.then(() => splash.node.classList.add('label-font-loaded'));
                 }
             }
         }
@@ -828,9 +1407,9 @@
         init() {
             this.node.classList.add('noname-popup');
             // block DOM events behind the pane
-            this.ui.bindClick(this.pane.node, () => { });
+            this.ui.bind(this.pane.node, () => { });
             // close when clicking on background layer
-            this.ui.bindClick(this.node, () => {
+            this.ui.bind(this.node, () => {
                 if (this.temp) {
                     this.close();
                 }
@@ -862,7 +1441,7 @@
                 this.node.classList.add(this.size);
             }
             this.node.classList.add('hidden');
-            globals.app.zoomNode.appendChild(this.node);
+            this.app.zoomNode.appendChild(this.node);
             if (this.position) {
                 // determine position of the menu
                 if (this.transition === null) {
@@ -870,7 +1449,7 @@
                 }
                 let { x, y } = this.position;
                 const rect1 = this.pane.node.getBoundingClientRect();
-                const rect2 = globals.app.zoomNode.getBoundingClientRect();
+                const rect2 = this.app.zoomNode.getBoundingClientRect();
                 const zoom = this.app.zoom;
                 x += 2;
                 y -= 2;
@@ -935,7 +1514,7 @@
                     button.dataset.fill = color;
                 }
                 button.innerHTML = text;
-                this.ui.bindClick(button, () => {
+                this.ui.bind(button, () => {
                     this.result = id;
                     this.close();
                 });
@@ -960,12 +1539,12 @@
         }
         /** Button at the top. */
         setHeader(caption, onclick) {
-            this.ui.bindClick(this.header, onclick);
+            this.ui.bind(this.header, onclick);
             this.header.firstChild.innerHTML = caption;
         }
         /** Button at the bottom. */
         setFooter(caption, onclick) {
-            this.ui.bindClick(this.footer, onclick);
+            this.ui.bind(this.footer, onclick);
             this.footer.firstChild.innerHTML = caption;
         }
         /** Show button at the bottom. */
@@ -986,9 +1565,9 @@
         /** Trying to exit. */
         exiting = false;
         /** Layer using arena zoom. */
-        arenaLayer = this.ui.createElement('zoom.arena', this.node);
+        arenaZoom = this.ui.createElement('zoom.arena', this.node);
         /** Layer using app zoom. */
-        appLayer = this.ui.createElement('zoom', this.node);
+        appZoom = this.ui.createElement('zoom', this.node);
         /** Connected remote clients. */
         get peers() {
             const ids = this.get('peers');
@@ -997,7 +1576,7 @@
             }
             const peers = [];
             for (const id of ids) {
-                const cmp = this.ui.get(id);
+                const cmp = this.getComponent(id);
                 if (cmp) {
                     peers.push(cmp);
                 }
@@ -1014,8 +1593,8 @@
             return null;
         }
         init() {
-            globals.arena = this;
-            globals.app.node.insertBefore(this.node, globals.app.zoomNode);
+            setArena(this);
+            this.app.node.insertBefore(this.node, this.app.zoomNode);
             // make android back button function as returning to splash screen
             if (this.platform.android && history.state === null) {
                 history.pushState('arena', '');
@@ -1028,8 +1607,8 @@
         ;
         /** Remove with fade out animation. */
         remove() {
-            if (globals.arena === this) {
-                delete globals.arena;
+            if (this.app.arena === this) {
+                setArena(null);
                 if (this.platform.android && history.state === 'arena') {
                     history.back();
                 }
@@ -1046,7 +1625,7 @@
                 return;
             }
             this.confirming = true;
-            const ws = globals.client.connection;
+            const ws = connection;
             const peers = this.peers;
             if (peers || ws instanceof WebSocket) {
                 const content = ws instanceof WebSocket ? '确定退出当前房间？' : '当前房间有其他玩家，退出后将断开连接并请出所有其他玩家，确定退出当前模式？';
@@ -1057,17 +1636,17 @@
                     if (ws instanceof WebSocket) {
                         // leave currently connected room
                         ws.send('leave:init');
-                        globals.client.clear();
+                        clear();
                     }
                     else {
                         // tell worker to close the room
                         this.remove();
-                        globals.client.send(-2, null, false);
+                        send(-2, null, false);
                         this.exiting = true;
                         // force exit if worker doesn't respond within 0.5s
                         setTimeout(() => {
                             if (this.exiting) {
-                                globals.client.disconnect();
+                                disconnect();
                             }
                         }, 500);
                     }
@@ -1077,18 +1656,18 @@
                 }
             }
             else {
-                globals.client.disconnect();
+                disconnect();
             }
         }
         /** Connection status change. */
         $peers() {
             if (!this.peers && this.exiting) {
                 // worker notifies that room successfully closed
-                globals.client.disconnect();
+                disconnect();
             }
             else {
                 // wait until other properties have been updated
-                setTimeout(() => globals.client.trigger('sync'));
+                setTimeout(() => trigger('sync'));
             }
         }
     }
@@ -1120,7 +1699,7 @@
         heroDock = this.ui.createElement('dock');
         init() {
             const arena = this.app.arena;
-            arena.appLayer.appendChild(this.node);
+            arena.appZoom.appendChild(this.node);
             this.listen('sync');
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
@@ -1214,7 +1793,7 @@
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
-                        this.yield(['config', name, this.app.ws]);
+                        this.yield(['config', name, hub.url]);
                     }
                     else {
                         this.yield(['config', name, result]);
@@ -1303,7 +1882,7 @@
                 const player = this.ui.create('player');
                 this.players.push(player);
                 this.seats.appendChild(player.node);
-                this.ui.bindClick(player.node, () => {
+                this.ui.bind(player.node, () => {
                     if (!this.mine) {
                         return;
                     }
@@ -1339,7 +1918,7 @@
             this.spectateButton.innerHTML = '旁观';
             this.heroButton.innerHTML = '点将';
             // toggle between spectator and player
-            this.ui.bindClick(this.spectateButton, () => {
+            this.ui.bind(this.spectateButton, () => {
                 if (this.spectateButton.dataset.fill === 'red') {
                     this.app.arena.peer.yield('play');
                 }
@@ -1429,7 +2008,7 @@
         /** Click callback. */
         onclick = null;
         init() {
-            this.ui.bindClick(this.node, () => {
+            this.ui.bind(this.node, () => {
                 if (this.onclick) {
                     this.onclick();
                 }
@@ -1725,7 +2304,7 @@
                 ]).then(() => this.input.disabled = false);
             };
             // callback when clicking icon
-            this.ui.bindClick(this.icon, e => {
+            this.ui.bind(this.icon, e => {
                 if (this.onicon) {
                     this.onicon(e);
                 }
@@ -1783,7 +2362,7 @@
             this.node.classList.add('menu');
             const option = this.ui.createElement('option');
             option.innerHTML = caption;
-            this.ui.bindClick(option, onclick);
+            this.ui.bind(option, onclick);
             this.node.appendChild(option);
             return option;
         }
@@ -1806,7 +2385,7 @@
     class Peer extends Component {
         $playing() {
             if (this.app.arena?.peers) {
-                globals.client.trigger('sync');
+                trigger('sync');
             }
         }
     }
@@ -1817,16 +2396,23 @@
         /** Button names and components. */
         buttons = new Map();
         init() {
-            if (globals.client.debug) {
+            {
                 this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
                 if (this.platform.mobile) {
                     this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
+                    // eruda console
+                    const script = document.createElement('script');
+                    script.src = 'lib/eruda.js';
+                    script.onload = () => window.eruda.init();
+                    document.head.appendChild(script);
                 }
             }
             // add buttons
             this.addButton('workshop', '扩展', 'yellow', () => { });
-            this.addButton('hub', '联机', 'green', () => globals.splash.hub.open());
-            this.addButton('settings', '选项', 'orange', () => globals.splash.settings.open());
+            this.addButton('hub', '联机', 'green', () => splash.hub.open());
+            this.addButton('settings', '选项', 'orange', () => splash.settings.open());
+            // append to splash
+            splash.node.appendChild(this.node);
         }
         /** Add a button. */
         addButton(id, caption, color, onclick) {
@@ -1886,25 +2472,26 @@
                     this.add(() => this.addMode(name));
                 }
             }
+            // append to splash
+            splash.node.appendChild(this.node);
         }
         /** Add a mode to gallery. */
         addMode(mode) {
-            const ui = this.ui;
-            const entry = ui.createElement('widget');
+            const entry = this.ui.createElement('widget');
             const name = this.index[mode].mode;
             // set mode backgrround
-            const bg = ui.createElement('image', entry);
-            ui.setBackground(bg, 'extensions', mode, 'mode');
+            const bg = this.ui.createElement('image', entry);
+            this.ui.setBackground(bg, 'extensions', mode, 'mode');
             // set caption
-            const caption = ui.createElement('caption', entry);
+            const caption = this.ui.createElement('caption', entry);
             caption.innerHTML = name;
             // bind click
-            ui.bindClick(entry, () => {
-                if (globals.splash.hidden) {
+            this.ui.bind(entry, () => {
+                if (splash.hidden) {
                     return;
                 }
-                globals.client.connect([mode, this.#getPacks(mode)]);
-                globals.splash.hide();
+                connect([mode, this.#getPacks(mode)]);
+                splash.hide();
             });
             return entry;
         }
@@ -1981,7 +2568,6 @@
         /** Called by app after UI loaded. */
         create() {
             // nickname, avatar and this address
-            const splash = globals.splash;
             this.#addInfo();
             // room list in this menu
             this.numSection = this.pane.addSection('');
@@ -1995,7 +2581,7 @@
                 splash.node.classList.add('blurred');
                 this.address.input.disabled = true;
                 setTimeout(async () => {
-                    if (!globals.client.connection) {
+                    if (!connection) {
                         await this.#connect();
                         this.address.input.disabled = false;
                     }
@@ -2022,14 +2608,14 @@
                     await this.app.alert('房间已关闭');
                 }
                 this.app.arena.faded = true;
-                globals.client.clear();
+                clear();
             }
             this.roomGroup.classList.remove('entering');
             this.roomGroup.classList.remove('hidden');
         }
         /** Room info update. */
         edit(msg) {
-            const ws = globals.client.connection;
+            const ws = connection;
             if (!(ws instanceof WebSocket)) {
                 return;
             }
@@ -2040,7 +2626,7 @@
                     try {
                         const room = this.#createRoom(JSON.parse(rooms[uid]));
                         this.rooms.set(uid, room);
-                        this.ui.bindClick(room, () => {
+                        this.ui.bind(room, () => {
                             if (!this.roomGroup.classList.contains('entering')) {
                                 this.roomGroup.classList.add('entering');
                                 ws.send('join:' + uid);
@@ -2065,15 +2651,15 @@
         }
         /** Message received from the owner of joined room. */
         msg(msg) {
-            globals.client.dispatch(JSON.parse(msg));
-            if (!globals.splash.hidden) {
-                globals.splash.hide(true);
+            dispatch(JSON.parse(msg));
+            if (!splash.hidden) {
+                splash.hide(true);
                 this.close();
             }
         }
         /** Owner of joined room disconnected. */
         down(msg) {
-            const ws = globals.client.connection;
+            const ws = connection;
             const promise = this.app.alert('房主连接断开', { ok: '退出房间', id: 'down' });
             const dialog = this.app.popups.get('down');
             const update = () => {
@@ -2084,10 +2670,10 @@
             const interval = setInterval(update, 1000);
             promise.then(val => {
                 clearInterval(interval);
-                if (val === true && ws === globals.client.connection && ws instanceof WebSocket) {
+                if (val === true && ws === connection && ws instanceof WebSocket) {
                     if (this.app.arena) {
                         this.app.arena.faded = true;
-                        globals.client.clear();
+                        clear();
                     }
                     ws.send('leave:init');
                 }
@@ -2097,24 +2683,24 @@
         #connect() {
             try {
                 if (!this.address.input.value) {
-                    this.db.set('ws', null);
+                    this.db.set('url', null);
                     return;
                 }
-                globals.client.connect('wss://' + this.address.input.value);
+                connect('wss://' + this.address.input.value);
                 this.address.set('icon', 'clear');
-                const ws = globals.client.connection;
+                const ws = connection;
                 this.#setCaption('正在连接');
                 return new Promise(resolve => {
                     ws.onclose = () => {
-                        this.#disconnect(globals.client.connection === ws);
+                        this.#disconnect(connection === ws);
                         setTimeout(resolve, 100);
                     };
                     ws.onopen = () => {
                         this.address.set('icon', 'ok');
                         this.#setCaption('');
-                        ws.send('init:' + JSON.stringify([globals.client.uid, globals.client.info]));
-                        if (this.address.input.value !== config.ws) {
-                            this.db.set('ws', this.address.input.value);
+                        ws.send('init:' + JSON.stringify([uid, [hub.nickname, hub.avatar]]));
+                        if (this.address.input.value !== hub.url) {
+                            this.db.set('url', this.address.input.value);
                         }
                     };
                     ws.onmessage = ({ data }) => {
@@ -2137,9 +2723,9 @@
             }
         }
         /** Disconnect from hub. */
-        #disconnect(client) {
-            if (client) {
-                globals.client.disconnect();
+        #disconnect(ws) {
+            if (ws) {
+                disconnect();
             }
             this.#clearRooms();
             this.address.set('icon', null);
@@ -2163,8 +2749,8 @@
         }
         /** Update nickname or avatar. */
         #sendInfo() {
-            if (globals.client.connection instanceof WebSocket) {
-                globals.client.connection.send('set:' + JSON.stringify(globals.client.info));
+            if (connection instanceof WebSocket) {
+                connection.send('set:' + JSON.stringify([hub.nickname, hub.avatar]));
             }
         }
         /** Create a room entry. */
@@ -2210,7 +2796,7 @@
                 gallery.add(() => {
                     const node = this.ui.createElement('image.avatar');
                     this.ui.setImage(node, img);
-                    this.ui.bindClick(node, () => {
+                    this.ui.bind(node, () => {
                         this.ui.setImage(this.avatarImage, img);
                         this.db.set('avatar', img);
                         this.#sendInfo();
@@ -2226,9 +2812,8 @@
             // avatar
             const avatarNode = this.ui.createElement('widget', group);
             const img = this.avatarImage = this.ui.createElement('image.avatar', avatarNode);
-            const url = this.db.get('avatar') ?? config.avatar;
-            this.ui.setImage(img, url);
-            this.ui.bindClick(avatarNode, () => {
+            this.ui.setImage(img, hub.avatar);
+            this.ui.bind(avatarNode, () => {
                 if (this.hidden) {
                     return;
                 }
@@ -2242,7 +2827,7 @@
             const nickname = this.nickname = this.ui.create('input', group);
             nickname.node.classList.add('nickname');
             nickname.ready.then(() => {
-                nickname.input.value = this.db.get('nickname') || config.nickname;
+                nickname.input.value = hub.nickname;
             });
             nickname.callback = async (val) => {
                 if (val) {
@@ -2258,16 +2843,16 @@
             const address = this.address = this.ui.create('input', group);
             address.node.classList.add('address');
             address.ready.then(() => {
-                address.input.value = this.app.ws;
+                address.input.value = hub.url;
             });
             address.callback = () => this.#connect();
-            this.ui.bindClick(address.node, e => {
-                const ws = globals.client.connection;
+            this.ui.bind(address.node, e => {
+                const ws = connection;
                 if (address.input.disabled && ws instanceof WebSocket) {
                     const menu = this.ui.create('popup');
                     menu.position = e;
                     menu.pane.addOption('断开', () => {
-                        if (ws === globals.client.connection) {
+                        if (ws === connection) {
                             ws.close();
                         }
                         menu.close();
@@ -2294,7 +2879,6 @@
         /** Called by app after UI loaded. */
         create() {
             // blur or unblur splash
-            const splash = globals.splash;
             this.onopen = () => {
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
@@ -2339,7 +2923,7 @@
                 const node = this.ui.createElement('widget.sharp');
                 const content = this.ui.createElement('content', node);
                 this.ui.createElement('caption', content).innerHTML = add;
-                this.ui.bindClick(node, onadd);
+                this.ui.bind(node, onadd);
                 return node;
             });
         }
@@ -2369,7 +2953,7 @@
                 this.ui.dispatchMove(slider, { x: offset ?? -width, y: 0 });
             };
             const width = 180 - 2 * parseFloat(this.app.css.widget['image-margin-sharp']);
-            this.ui.bindMove(slider, {
+            this.ui.bind(slider, {
                 movable: { x: [-width - 1, 0], y: [0, 0] },
                 onmove: ({ x }) => {
                     const vol = Math.max(0, 100 - Math.round(-x * 100 / width));
@@ -2407,10 +2991,10 @@
                 if (item === this.db.get('bgm-splash')) {
                     this.#rotating = node;
                 }
-                this.ui.bindClick(node, e => this.#musicMenu(node, item, e));
+                this.ui.bind(node, e => this.#musicMenu(node, item, e));
             }
             else {
-                this.ui.bindClick(node, () => this.#clickItem(node, item, section));
+                this.ui.bind(node, () => this.#clickItem(node, item, section));
             }
             return node;
         }
@@ -2525,7 +3109,7 @@
 
     class Splash extends Component {
         // gallery of modes
-        gallery = this.ui.create('splash-gallery');
+        gallery;
         // bottom toolbar
         bar = this.ui.create('splash-bar');
         // settings menu
@@ -2534,19 +3118,6 @@
         hub = this.ui.create('splash-hub');
         // currently hidden
         hidden = true;
-        init() {
-            // create mode selection gallery
-            this.node.appendChild(this.gallery.node);
-            // bottom button bar
-            this.node.appendChild(this.bar.node);
-            // debug mode
-            if (globals.client.debug && this.platform.mobile) {
-                const script = document.createElement('script');
-                script.src = 'lib/eruda.js';
-                script.onload = () => window.eruda.init();
-                document.head.appendChild(script);
-            }
-        }
         hide(faded = false) {
             if (this.hidden) {
                 return;
@@ -2564,7 +3135,7 @@
                 return;
             }
             this.hidden = false;
-            globals.app.zoomNode.appendChild(this.node);
+            this.app.zoomNode.appendChild(this.node);
             this.gallery.checkPage();
             return new Promise(resolve => {
                 this.ui.animate(this.node, {
@@ -2592,7 +3163,7 @@
                 const popup = this.ui.createElement('text', this.node);
                 this.text = this.ui.createElement('span', popup);
                 this.ui.createElement('bar', popup);
-                this.ui.bindClick(popup, () => {
+                this.ui.bind(popup, () => {
                     // open context menu
                     const rect = popup.getBoundingClientRect();
                     const menu = this.ui.create('popup');
@@ -2620,7 +3191,7 @@
                 const container = this.ui.createElement('switcher-container', switcher);
                 this.ui.createElement('switcher-background', container);
                 this.ui.createElement('switcher-button', switcher);
-                this.ui.bindClick(switcher, async () => {
+                this.ui.bind(switcher, async () => {
                     const val = !this.node.classList.contains('on');
                     if (this.confirm.has(val)) {
                         const [title, content] = this.confirm.get(val);
@@ -2645,7 +3216,14 @@
         }
     }
 
+    class Zoom extends Component {
+        width;
+        height;
+        zoom;
+    }
+
     const componentClasses = new Map();
+    componentClasses.set('component', Component);
     componentClasses.set('app', App);
     componentClasses.set('collection', Collection);
     componentClasses.set('dialog', Dialog);
@@ -2665,622 +3243,16 @@
     componentClasses.set('splash-settings', SplashSettings);
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);
+    componentClasses.set('zoom', Zoom);
 
-    /** Executor of worker commands. */
-    class Client {
-        /** Debug mode */
-        debug = true;
-        /** Client version. */
-        version = version;
-        /** Worker object. */
-        connection = null;
-        /** Service worker. */
-        registration = null;
-        /** User identifier. */
-        uid;
-        /** Components created from worker. */
-        components = new Map();
-        /** Component constructors. */
-        componentClasses = new Map(componentClasses);
-        /** Event listeners. */
-        listeners = Object.freeze({ sync: new Set(), resize: new Set(), key: new Set(), stage: new Set() });
-        /** ID of current stage. */
-        #stageID = 0;
-        /**  UITicks waiting for dispatch. */
-        #ticks = [];
-        /** Timestamp of the last full UI load. */
-        #loaded = 0;
-        /** This.#loop is not running. */
-        #paused = true;
-        get ws() {
-            return globals.db.get('url') || config.ws;
-        }
-        get info() {
-            return [
-                globals.db.get('nickname') || config.nickname,
-                globals.db.get('avatar') || config.avatar
-            ];
-        }
-        constructor() {
-            // get user identifier
-            const db = globals.db;
-            db.ready.then(() => {
-                if (!db.get('uid')) {
-                    db.set('uid', uid());
-                }
-                this.uid = db.get('uid');
-            });
-            // register service worker for PWA
-            navigator.serviceWorker?.register('/service.js').then(reg => {
-                this.registration = reg;
-            });
-        }
-        /** Connect to a game server. */
-        connect(config) {
-            this.disconnect();
-            if (Array.isArray(config)) {
-                const worker = this.connection = new Worker(`dist/worker.js`, { type: 'module' });
-                const db = globals.db;
-                worker.onmessage = ({ data }) => {
-                    if (data === 'ready') {
-                        worker.onmessage = ({ data }) => this.dispatch(data);
-                        config.push(db.get(config[0] + ':config') || {});
-                        config.push(this.info);
-                        this.send(0, config, true);
-                    }
-                };
-            }
-            else {
-                this.connection = new WebSocket(config);
-            }
-        }
-        /** Disconnect from web worker. */
-        disconnect() {
-            if (this.connection instanceof Worker) {
-                this.connection.terminate();
-            }
-            else if (this.connection instanceof WebSocket) {
-                this.connection.close();
-            }
-            this.connection = null;
-            this.clear();
-        }
-        /** Clear currently connection status without disconnecting. */
-        clear(back = true) {
-            for (const cmp of this.components.values()) {
-                this.#removeListeners(cmp);
-            }
-            this.components.clear();
-            globals.app.clearPopups();
-            globals.arena?.remove();
-            this.#unload();
-            if (back) {
-                globals.splash.show();
-                this.#stageID = 0;
-            }
-        }
-        /**
-         * Send component return value to worker.
-         * @param {number} id - ID of component (id > 0).
-         * @param {any} result - Return value of component.
-         * @param {boolean} done - true: component.respond(); false: component.yield()
-         * Special ID:
-         * 0: Initialize worker and create worker.#game.
-         * -1: Reload due to UI error.
-         * -2: Tell worker to disconnect from hub
-         */
-        send(id, result, done) {
-            const msg = [this.uid, this.#stageID, id, result, done];
-            if (this.connection instanceof Worker) {
-                this.connection.postMessage(msg);
-            }
-            else if (this.connection instanceof WebSocket) {
-                this.connection.send('resp:' + JSON.stringify(msg));
-            }
-        }
-        /** Add a UITick to render queue. */
-        dispatch(data) {
-            this.#ticks.push(data);
-            if (this.#paused) {
-                this.#loop();
-            }
-        }
-        /** Trigger a listener. */
-        trigger(event, arg) {
-            for (const cmp of this.listeners[event]) {
-                cmp[event](arg);
-            }
-        }
-        /** Overwrite components by mode. */
-        async #load(ruleset) {
-            for (const pack of ruleset) {
-                const ext = await importExtension(pack);
-                for (const tag in ext.mode?.components) {
-                    const cls = this.componentClasses.get(tag) ?? Component;
-                    this.componentClasses.set(tag, ext.mode.components[tag](cls));
-                }
-            }
-        }
-        /** Clear loaded mode components. */
-        #unload() {
-            this.componentClasses = new Map(componentClasses);
-        }
-        /**
-         * Render the next UITick.
-         */
-        async #render() {
-            const tick = this.#ticks.shift();
-            const components = this.components;
-            try {
-                // check if tick is a full UI reload
-                const [sid, tags, props, calls] = tick;
-                for (const key in tags) {
-                    if (tags[key] === 'arena') {
-                        const arena = globals.arena;
-                        if (arena && globals.app.popups.size) {
-                            arena.faded = true;
-                        }
-                        this.clear(false);
-                        this.#loaded = Date.now();
-                        if (arena) {
-                            await globals.app.sleep('fast');
-                        }
-                        await this.#load(props[key].ruleset);
-                        break;
-                    }
-                }
-                if (!this.#loaded) {
-                    throw ('UI not loaded');
-                }
-                // clear unfinished function calls (e.g. selectCard / selectTarget)
-                if (sid !== this.#stageID) {
-                    this.trigger('stage');
-                    this.listeners.stage.clear();
-                    this.#stageID = sid;
-                }
-                // create new components
-                const newComponents = [];
-                for (const key in tags) {
-                    const id = parseInt(key);
-                    const tag = tags[key];
-                    if (typeof tag === 'string') {
-                        components.get(id)?.remove();
-                        const cmp = globals.ui.create(tag, null, id);
-                        components.set(id, cmp);
-                        newComponents.push(cmp.ready);
-                    }
-                }
-                await Promise.all(newComponents);
-                // update component properties
-                let hooks = [];
-                for (const key in props) {
-                    hooks = hooks.concat(components.get(parseInt(key)).update(props[key], false));
-                }
-                for (const [hook, cmp, newVal, oldVal] of hooks) {
-                    hook.apply(cmp, [newVal, oldVal]);
-                }
-                // call component methods
-                for (const key in calls) {
-                    const id = parseInt(key);
-                    for (const [method, arg] of calls[key]) {
-                        components.get(id)[method](arg);
-                    }
-                }
-                // delete components
-                for (const key in tags) {
-                    const id = parseInt(key);
-                    if (tags[key] === null) {
-                        const cmp = components.get(id);
-                        if (cmp) {
-                            this.#removeListeners(cmp);
-                            components.delete(id);
-                            cmp.remove();
-                        }
-                    }
-                }
-            }
-            catch (e) {
-                console.log(e);
-                if (Date.now() - this.#loaded < 500) {
-                    // prompt reload if error occus within 0.5s after reload
-                    this.#loaded = 0;
-                    globals.app.confirm('游戏错误', { content: '点击“确定”重新载入游戏，点击“取消”尝试继续。' }).then(reload => {
-                        if (reload === true) {
-                            window.location.reload();
-                        }
-                        else if (reload === false) {
-                            this.send(-1, null, false);
-                        }
-                    });
-                }
-                else if (this.#loaded) {
-                    // tell worker to reload UI
-                    this.#loaded = 0;
-                    this.send(-1, null, false);
-                }
-            }
-        }
-        /** Render UITick(s). */
-        async #loop() {
-            if (this.#paused) {
-                this.#paused = false;
-                while (this.#ticks.length) {
-                    await this.#render();
-                }
-                this.#paused = true;
-            }
-        }
-        /** Remove all listeners. */
-        #removeListeners(cmp) {
-            for (const key in this.listeners) {
-                this.listeners[key].delete(cmp);
-            }
-        }
+    // initialize component classes
+    for (const [key, val] of componentClasses) {
+        backups.set(key, val);
     }
-
-    /** Callback for dom events. */
-    class Binding {
-        // current offset
-        offset = null;
-        // maximium offset
-        movable = null;
-        // move callback for pointermove
-        onmove = null;
-        // move callback for pointermove outside the range
-        onoff = null;
-        // move callback for pointerup
-        onmoveend = null;
-        // click callback for pointerup
-        onclick = null;
-        // callback for pointerdown
-        ondown = null;
-    }
-    /** DOM related operations. */
-    class UI {
-        /** Resolved when ready. */
-        #ready;
-        /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
-        #dispatched = false;
-        /** Bindings for DOM events. */
-        #bindings = new Map();
-        // clicking[0]: element that is clicked
-        // clicking[1]: location of pointerdown
-        // clicking[2]: started by a touch event
-        #clicking = null;
-        // moving[0]: element that is moved
-        // moving[1]: location of pointerdown
-        // moving[2]: initial transform of target element when pointerdown is fired
-        // moving[3]: return value of the binding.onmove
-        // moving[4]: started by a touch event
-        #moving = null;
-        get ready() {
-            return this.#ready;
-        }
-        constructor() {
-            // wait for document.body to load
-            if (document.readyState === 'loading') {
-                this.#ready = new Promise(resolve => {
-                    document.addEventListener('DOMContentLoaded', resolve);
-                });
-            }
-            else {
-                this.#ready = Promise.resolve();
-            }
-            this.ready.then(() => {
-                // add bindings for drag operations
-                document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), { passive: true });
-                document.body.addEventListener('touchend', () => this.#pointerEnd(true), { passive: true });
-                document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), { passive: true });
-                // avoid unexpected mouse event behavior on some Android devices
-                if (!android) {
-                    document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), { passive: true });
-                    document.body.addEventListener('mouseup', () => this.#pointerEnd(false), { passive: true });
-                    document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), { passive: true });
-                }
-                // disable context menu
-                document.oncontextmenu = () => false;
-            });
-        }
-        /** Get a component by ID. */
-        get(id) {
-            return globals.client.components.get(id);
-        }
-        /** Create new component. */
-        create(tag, parent = null, id = null) {
-            const cls = globals.client.componentClasses.get(tag);
-            const cmp = new cls(cls.tag || tag, id, cls.virtual);
-            // add className for a Component subclass with a static tag
-            if (cls.tag) {
-                cmp.node.classList.add(tag);
-            }
-            if (parent) {
-                parent.appendChild(cmp.node);
-            }
-            return cmp;
-        }
-        // create HTMLElement
-        createElement(tag, parent = null) {
-            const tags = tag.split('.');
-            const tagName = 'noname-' + tags[0];
-            // define custom element
-            if (!customElements.get(tagName)) {
-                customElements.define(tagName, class extends HTMLElement {
-                });
-            }
-            // create and append to parent
-            const node = document.createElement(tagName);
-            for (let i = 1; i < tags.length; i++) {
-                node.classList.add(tags[i]);
-            }
-            if (parent) {
-                parent.appendChild(node);
-            }
-            return node;
-        }
-        /** Set background image and set background position/size to center/cover. */
-        setBackground(node, ...args) {
-            if (!args[args.length - 1].split('/').pop().includes('.')) {
-                args[args.length - 1] += '.webp';
-            }
-            node.style.background = `url(${args.join('/')}) center/cover`;
-        }
-        /** Set background image from an extension. */
-        setImage(node, url) {
-            if (url.includes(':')) {
-                const [ext, name] = url.split(':');
-                this.setBackground(node, 'extensions', ext, 'images', name);
-            }
-            else {
-                this.setBackground(node, url);
-            }
-        }
-        /** Set binding for ClickEvent. */
-        bindClick(node, onclick) {
-            // get or create registry for node
-            const binding = this.#bindings.get(node) || this.#register(node);
-            // bind click event
-            binding.onclick = onclick;
-        }
-        /** Set binding for MoveEvent. */
-        bindMove(node, config) {
-            // get or create registry for node
-            const binding = this.#bindings.get(node) || this.#register(node);
-            // set move area
-            binding.movable = config.movable;
-            // bind pointerdown event
-            binding.ondown = config.ondown ?? null;
-            // bind move event
-            binding.onmove = config.onmove ?? null;
-            // bind moveend event
-            binding.onmoveend = config.onmoveend ?? null;
-            // bind onoff event
-            binding.onoff = config.onoff ?? null;
-            // initial offset
-            binding.offset = config.offset ?? null;
-        }
-        /** Fire click event. */
-        dispatchClick(node) {
-            // onclick
-            const binding = this.#bindings.get(node);
-            if (binding && binding.onclick) {
-                if (this.#clicking && this.#clicking[0] === node) {
-                    // use the location of this.#clicking if applicable
-                    binding.onclick.call(node, this.#clicking[1]);
-                }
-                else {
-                    // a pseudo click event without location info
-                    binding.onclick.call(node, { x: 0, y: 0 });
-                }
-            }
-            // avoid duplicate trigger
-            this.#resetClick(node);
-            this.#resetMove(node);
-        }
-        /** Fire move event. */
-        dispatchMove(node, location) {
-            const binding = this.#bindings.get(node);
-            if (binding && binding.movable) {
-                // get offset of node
-                const movable = binding.movable;
-                let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
-                let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
-                // trigger onoff
-                if (binding.onoff && (x != location.x || y != location.y)) {
-                    const off = binding.onoff({ x, y }, { x: location.x, y: location.y });
-                    x = off.x;
-                    y = off.y;
-                }
-                // set and save node offset
-                node.style.transform = `translate(${x}px, ${y}px)`;
-                binding.offset = { x, y };
-                // trigger onmove
-                if (binding.onmove) {
-                    const state = binding.onmove(binding.offset);
-                    // save move state to this.#moving if applicable
-                    if (this.#moving && this.#moving[0] === node) {
-                        this.#moving[3] = state;
-                    }
-                }
-            }
-        }
-        /** Fire moveend event. */
-        dispatchMoveEnd(node) {
-            // onmoveend
-            const binding = this.#bindings.get(node);
-            if (binding && binding.onmoveend) {
-                if (this.#moving && this.#moving[0] === node) {
-                    // pass the state of this.#moving if applicable
-                    binding.onmoveend(this.#moving[3]);
-                }
-                else {
-                    // a pseudo moveend event without current state
-                    binding.onmoveend(null);
-                }
-            }
-            // avoid duplicate trigger
-            this.#resetClick(node);
-            this.#resetMove(node);
-        }
-        /** Wrapper of HTMLElement.animate(). */
-        animate(node, animation, config) {
-            const keyframes = [];
-            // get number of keyframes
-            let length = 0;
-            for (const key in animation) {
-                if (Array.isArray(animation[key])) {
-                    length = Math.max(length, animation[key].length);
-                }
-            }
-            // create keyframes
-            for (let i = 0; i < length; i++) {
-                const frame = {};
-                if (animation.x) {
-                    frame.transform = `translateX(${animation.x[i]}px)`;
-                }
-                if (animation.y) {
-                    frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
-                }
-                if (animation.scale) {
-                    frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
-                }
-                if (animation.opacity) {
-                    frame.opacity = animation.opacity[i].toString();
-                }
-                keyframes.push(frame);
-            }
-            // use current style as starting frame
-            if (animation.auto) {
-                const frame = {};
-                for (const key in keyframes[0]) {
-                    frame[key] = getComputedStyle(node)[key];
-                }
-                keyframes.unshift(frame);
-            }
-            // fill animation configurations
-            if (typeof config === 'number') {
-                config = { duration: config };
-            }
-            config ??= {};
-            config.easing ??= 'ease';
-            config.duration ??= globals.app.getTransition();
-            const anim = node.animate(keyframes, config);
-            // use last frame as final style
-            if (animation.forward) {
-                const frame = keyframes[keyframes.length - 1];
-                for (const key in frame) {
-                    node.style[key] = frame[key];
-                }
-            }
-            return anim;
-        }
-        /** Get the location of mouse or touch event. */
-        #locate(e) {
-            return {
-                x: Math.round(e.clientX / globals.app.zoom),
-                y: Math.round(e.clientY / globals.app.zoom)
-            };
-        }
-        /** Register pointerdown for click or move. */
-        #register(node) {
-            // event callback
-            const binding = new Binding();
-            this.#bindings.set(node, binding);
-            // register event
-            const dispatchDown = (e, touch) => {
-                const origin = this.#locate(e);
-                // initialize click event
-                if (binding.onclick && !this.#clicking) {
-                    node.classList.add('clickdown');
-                    this.#clicking = [node, origin, touch];
-                }
-                // initialize move event
-                if (binding.movable && !this.#moving) {
-                    this.#moving = [node, origin, binding.offset || { x: 0, y: 0 }, null, touch];
-                    // fire ondown event
-                    if (binding.ondown) {
-                        binding.ondown(origin);
-                    }
-                }
-            };
-            node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-            if (!android) {
-                node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
-            }
-            return binding;
-        }
-        /** Cancel click callback for current pointerdown. */
-        #resetClick(node) {
-            if (this.#clicking && this.#clicking[0] === node) {
-                this.#clicking = null;
-            }
-            node.classList.remove('clickdown');
-        }
-        /** Cancel move callback for current pointerdown. */
-        #resetMove(node) {
-            if (this.#moving && this.#moving[0] === node) {
-                this.#moving = null;
-            }
-        }
-        /** Callback for mousemove or touchmove. */
-        #pointerMove(e, touch) {
-            const { x, y } = this.#locate(e);
-            // not a click event if move distance > 5px
-            if (this.#clicking && this.#clicking[2] === touch) {
-                const [node, origin] = this.#clicking;
-                const dx = origin.x - x;
-                const dz = origin.y - y;
-                if (dx * dx + dz * dz > 25) {
-                    this.#resetClick(node);
-                }
-            }
-            // get offset and trigger move event
-            if (this.#moving && this.#moving[4] === touch) {
-                const [node, origin, offset] = this.#moving;
-                this.dispatchMove(node, {
-                    x: x - origin.x + offset.x,
-                    y: y - origin.y + offset.y
-                });
-            }
-        }
-        /** Ccallback for mouseup or touchend. */
-        #pointerEnd(touch) {
-            if (this.#dispatched === false) {
-                // dispatch events
-                if (this.#clicking && this.#clicking[2] === touch) {
-                    this.#dispatched = true;
-                    this.dispatchClick(this.#clicking[0]);
-                }
-                if (this.#moving && this.#moving[4] === touch) {
-                    this.#dispatched = true;
-                    this.dispatchMoveEnd(this.#moving[0]);
-                }
-                // re-enable event trigger after 200ms
-                if (this.#dispatched) {
-                    window.setTimeout(() => this.#dispatched = false, 200);
-                }
-            }
-            if (this.#clicking && this.#clicking[2] === touch) {
-                this.#clicking = null;
-            }
-            if (this.#moving && this.#moving[4] === touch) {
-                this.#moving = null;
-            }
-        }
-        /** Callback for mouseleave or touchcancel. */
-        #pointerCancel(touch) {
-            if (this.#clicking && this.#clicking[2] === touch) {
-                this.#clicking[0].classList.remove('clickdown');
-            }
-            if (this.#moving && this.#moving[4] === touch) {
-                this.dispatchMoveEnd(this.#moving[0]);
-            }
-            this.#clicking = null;
-            this.#moving = null;
-        }
-    }
-
-    globals.client = new Client();
-    globals.ui = new UI();
-    globals.app = globals.ui.create('app');
+    restore();
+    // create app component
+    ready$1.then(() => {
+        init(create);
+    });
 
 }());

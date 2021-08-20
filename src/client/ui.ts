@@ -1,468 +1,420 @@
-import { globals } from './globals';
 import { android } from '../platform';
+import { app, componentClasses } from './shared';
 import type { ComponentTagMap } from '../classes';
 
 /** Type for point location */
 export type Point = {x: number, y: number};
 
-/** Type for region range */
+/** Type for an area */
 export type Region = {x: [number, number], y: [number, number]};
 
-/** Return value of onmove */
-export type MoveState = unknown;
-
-/** Type for event point location. */
+/** Type for point location from an event. */
 type EventPoint = {clientX: number, clientY: number}
 
-/** Callback for dom events. */
-class Binding {
-	// current offset
-	offset: Point | null = null;
+/** Callback for click or drag event. */
+interface Binding {
+	// current displacement
+	offset?: Point;
 
-	// maximium offset
-	movable: Region | null = null;
+	// maximium displacement
+	movable?: Region;
 
 	// move callback for pointermove
-	onmove: ((e: Point) => MoveState) | null = null;
+	onmove?: (e: Point) => any;
 
 	// move callback for pointermove outside the range
-	onoff: ((e1: Point, e2: Point) => Point) | null = null;
+	onoff?: (e1: Point, e2: Point) => Point;
 
 	// move callback for pointerup
-	onmoveend: ((arg: MoveState) => void )| null = null;
+	onmoveend?: (arg: any) => void;
 
 	// click callback for pointerup
-	onclick: ((e: Point) => void) | null = null;
+	onclick?: (e: Point) => void;
 
 	// callback for pointerdown
-	ondown: ((e: Point) => void) | null = null;
+	ondown?: (e: Point) => void;
 }
 
-/** DOM related operations. */
-export class UI {
-	/** Resolved when ready. */
-	#ready: Promise<unknown>;
+/** Bindings for DOM events. */
+const bindings = new Map<HTMLElement, Binding>();
 
-	/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
-	#dispatched = false;
+/** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
+let dispatched = false;
 
-    /** Bindings for DOM events. */
-	#bindings = new Map<HTMLElement, Binding>();
+/** Handler for current click event.
+ * [0]: Element that is clicked.
+ * [1]: Location of pointerdown.
+ * [2]: true: started by a touch event, false: started by a mouse event.
+ */
+let clicking: [HTMLElement, Point, boolean] | null = null;
 
-	// clicking[0]: element that is clicked
-	// clicking[1]: location of pointerdown
-	// clicking[2]: started by a touch event
-	#clicking: [HTMLElement, Point, boolean] | null = null;
+/** Handler for current move event.
+ * [0]: Element that is moved.
+ * [1]: Location of pointerdown.
+ * [2]: Initial transform of target element when pointerdown is fired.
+ * [3]: Return value of the binding.onmove.
+ * [4]: true: started by a touch event, false: started by a mouse event.
+ */
+let moving: [HTMLElement, Point, Point, any, boolean] | null = null;
 
-	// moving[0]: element that is moved
-	// moving[1]: location of pointerdown
-	// moving[2]: initial transform of target element when pointerdown is fired
-	// moving[3]: return value of the binding.onmove
-	// moving[4]: started by a touch event
-	#moving: [HTMLElement, Point, Point, MoveState, boolean] | null = null;
+/** Get the location of mouse or touch event. */
+function locate(e: EventPoint): Point {
+    return {
+        x: Math.round(e.clientX / app.zoom),
+        y: Math.round(e.clientY / app.zoom)
+    }
+}
 
-	get ready() {
-		return this.#ready;
-	}
+/** Register pointerdown for click or move. */
+function register(node: HTMLElement) {
+    // event callback
+    const binding = {} as Binding;
+    bindings.set(node, binding);
 
-    constructor() {
-		// wait for document.body to load
-        if (document.readyState === 'loading') {
-			this.#ready = new Promise(resolve => {
-				document.addEventListener('DOMContentLoaded', resolve);
-			});
-		}
-		else {
-			this.#ready = Promise.resolve();
-		}
+    // register event
+    const dispatchDown = (e: EventPoint, touch: boolean) => {
+        const origin = locate(e);
+
+        // initialize click event
+        if (binding.onclick && !clicking) {
+            node.classList.add('clickdown');
+            clicking = [node, origin, touch];
+        }
+
+        // initialize move event
+        if (binding.movable && !moving) {
+            moving = [node, origin, binding.offset || {x: 0, y: 0}, null, touch];
+
+            // fire ondown event
+            if (binding.ondown) {
+                binding.ondown(origin);
+            }
+        }
+    };
+
+    node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
+
+    if (!android) {
+        node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
+    }
+
+    return binding;
+}
+
+/** Cancel click callback for current pointerdown. */
+function resetClick(node: HTMLElement) {
+    if (clicking && clicking[0] === node) {
+        clicking = null;
+    }
+    node.classList.remove('clickdown');
+}
+
+/** Cancel move callback for current pointerdown. */
+function resetMove(node: HTMLElement) {
+    if (moving && moving[0] === node) {
+        moving = null;
+    }
+}
+
+/** Callback for mousemove or touchmove. */
+function pointerMove(e: EventPoint, touch: boolean) {
+    const {x, y} = locate(e);
+
+    // not a click event if move distance > 5px
+    if (clicking && clicking[2] === touch) {
+        const [node, origin] = clicking;
+        const dx = origin.x - x;
+        const dz = origin.y - y;
         
-		this.ready.then(() => {
-			// add bindings for drag operations
-			document.body.addEventListener('touchmove', e => this.#pointerMove(e.touches[0], true), {passive: true});
-			document.body.addEventListener('touchend', () => this.#pointerEnd(true), {passive: true});
-			document.body.addEventListener('touchcancel', () => this.#pointerCancel(true), {passive: true});
-
-			// avoid unexpected mouse event behavior on some Android devices
-			if (!android) {
-				document.body.addEventListener('mousemove', e => this.#pointerMove(e, false), {passive: true});
-				document.body.addEventListener('mouseup', () => this.#pointerEnd(false), {passive: true});
-				document.body.addEventListener('mouseleave', () => this.#pointerCancel(false), {passive: true});
-			}
-
-			// disable context menu
-			document.oncontextmenu = () => false;
-		});
+        if (dx * dx + dz * dz > 25) {
+            resetClick(node);
+        }
     }
 
-	/** Get a component by ID. */
-	get(id: number) {
-		return globals.client.components.get(id);
-	}
+    // get offset and trigger move event
+    if (moving && moving[4] === touch) {
+        const [node, origin, offset] = moving;
+        dispatchMove(node, {
+            x: x - origin.x + offset.x,
+            y: y - origin.y + offset.y
+        });
+    }
+}
 
-    /** Create new component. */
-    create<T extends keyof ComponentTagMap>(tag: T, parent: HTMLElement | null = null, id: number | null = null): ComponentTagMap[T] {
-		const cls = globals.client.componentClasses.get(tag as string)!;
-        const cmp = new cls(cls.tag || tag as string, id, cls.virtual);
+/** Ccallback for mouseup or touchend. */
+function pointerEnd(touch: boolean) {
+    if (dispatched === false) {
+        // dispatch events
+        if (clicking && clicking[2] === touch) {
+            dispatched = true;
+            dispatchClick(clicking[0]);
+        }
 
-		// add className for a Component subclass with a static tag
-		if (cls.tag) {
-			cmp.node.classList.add(tag as string);
-		}
-		
-		if (parent) {
-			parent.appendChild(cmp.node);
-		}
+        if (moving && moving[4] === touch) {
+            dispatched = true;
+            dispatchMoveEnd(moving[0]);
+        }
 
-        return cmp;
+        // re-enable event trigger after 200ms
+        if (dispatched) {
+            window.setTimeout(() => dispatched = false, 200);
+        }
     }
 
-	// create HTMLElement
-	createElement(tag: string, parent: null | HTMLElement = null) {
-		const tags = tag.split('.')
-		const tagName = 'noname-' + tags[0];
+    if (clicking && clicking[2] === touch) {
+        clicking = null;
+    }
+    
+    if (moving && moving[4] === touch) {
+        moving = null;
+    }
+}
 
-		// define custom element
-		if (!customElements.get(tagName)) {
-			customElements.define(tagName, class extends HTMLElement {});
-		}
+/** Callback for mouseleave or touchcancel. */
+function pointerCancel(touch: boolean) {
+    if (clicking && clicking[2] === touch) {
+        clicking[0].classList.remove('clickdown');
+    }
 
-		// create and append to parent
-		const node = document.createElement(tagName);
-		for (let i = 1; i < tags.length; i++) {
-			node.classList.add(tags[i]);
-		}
-		if (parent) {
-			parent.appendChild(node);
-		}
+    if (moving && moving[4] === touch) {
+        dispatchMoveEnd(moving[0]);
+    }
 
-		return node;
-	}
-	
-	/** Set background image and set background position/size to center/cover. */
-	setBackground(node: HTMLElement, ...args: string[]) {
-		if (!args[args.length - 1].split('/').pop()!.includes('.')) {
-			args[args.length - 1] += '.webp';
-		}
-		node.style.background = `url(${args.join('/')}) center/cover`;
-	}
+    clicking = null;
+    moving = null;
+}
 
-	/** Set background image from an extension. */
-	setImage(node: HTMLElement, url: string) {
-		if (url.includes(':')) {
-			const [ext, name] = url.split(':');
-			this.setBackground(node, 'extensions', ext, 'images', name);
-		}
-		else {
-			this.setBackground(node, url);
-		}
-	}
+/** Resolved when document is ready. */
+export const ready = new Promise<void>(async resolve => {
+    if (document.readyState === 'loading') {
+        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve));
+    }
 
-    /** Set binding for ClickEvent. */
-	bindClick(node: HTMLElement, onclick: (e: Point) => void) {
-		// get or create registry for node
-		const binding = this.#bindings.get(node) || this.#register(node);
+    // add bindings for drag operations
+    document.body.addEventListener('touchmove', e => pointerMove(e.touches[0], true), {passive: true});
+    document.body.addEventListener('touchend', () => pointerEnd(true), {passive: true});
+    document.body.addEventListener('touchcancel', () => pointerCancel(true), {passive: true});
 
-		// bind click event
-		binding.onclick = onclick;
-	}
+    // avoid unexpected mouse event behavior on some Android devices
+    if (!android) {
+        document.body.addEventListener('mousemove', e => pointerMove(e, false), {passive: true});
+        document.body.addEventListener('mouseup', () => pointerEnd(false), {passive: true});
+        document.body.addEventListener('mouseleave', () => pointerCancel(false), {passive: true});
+    }
 
-	/** Set binding for MoveEvent. */
-	bindMove(node: HTMLElement, config: {
-		movable: Region,
-		ondown?: (e: Point) => void
-		onmove?: (e: Point) => MoveState,
-		onmoveend?: (arg?: MoveState) => void,
-		onoff?: (e1: Point, e2: Point) => Point,
-		offset?: Point
-	}) {
-		// get or create registry for node
-		const binding = this.#bindings.get(node) || this.#register(node);
+    // disable context menu
+    document.oncontextmenu = () => false;
 
-		// set move area
-		binding.movable = config.movable;
+    resolve();
+});
 
-		// bind pointerdown event
-		binding.ondown = config.ondown ?? null;
+/** Create new component. */
+export function create<T extends keyof ComponentTagMap>(tag: T, parent?: HTMLElement): ComponentTagMap[T] {
+    const cls = componentClasses.get(tag as string)!;
+    const cmp = new cls(tag as string)
 
-		// bind move event
-		binding.onmove = config.onmove ?? null;
+    // add className for a Component subclass with a static tag
+    if (cls.tag && cmp.node) {
+        cmp.node.classList.add(tag as string);
+    }
+    
+    if (parent) {
+        parent.appendChild(cmp.node);
+    }
 
-		// bind moveend event
-		binding.onmoveend = config.onmoveend ?? null;
+    return cmp;
+}
 
-		// bind onoff event
-		binding.onoff = config.onoff ?? null;
+// create HTMLElement
+export function createElement(tag: string, parent: null | HTMLElement = null) {
+    const tags = tag.split('.')
+    const tagName = 'noname-' + tags[0];
 
-		// initial offset
-		binding.offset = config.offset ?? null;
-	}
+    // define custom element
+    if (!customElements.get(tagName)) {
+        customElements.define(tagName, class extends HTMLElement {});
+    }
 
-	/** Fire click event. */
-	dispatchClick(node: HTMLElement) {
-		// onclick
-		const binding = this.#bindings.get(node);
+    // create and append to parent
+    const node = document.createElement(tagName);
+    for (let i = 1; i < tags.length; i++) {
+        node.classList.add(tags[i]);
+    }
+    if (parent) {
+        parent.appendChild(node);
+    }
 
-		if (binding && binding.onclick) {
-			if (this.#clicking && this.#clicking[0] === node) {
-				// use the location of this.#clicking if applicable
-				binding.onclick.call(node, this.#clicking[1]);
-			}
-			else {
-				// a pseudo click event without location info
-				binding.onclick.call(node, {x: 0, y: 0});
-			}
-		}
+    return node;
+}
 
-		// avoid duplicate trigger
-		this.#resetClick(node);
-		this.#resetMove(node);
-	}
+/** Set background image and set background position/size to center/cover. */
+export function setBackground(node: HTMLElement, ...args: string[]) {
+    if (!args[args.length - 1].split('/').pop()!.includes('.')) {
+        args[args.length - 1] += '.webp';
+    }
+    node.style.background = `url(${args.join('/')}) center/cover`;
+}
 
-	/** Fire move event. */
-	dispatchMove(node: HTMLElement, location: Point) {
-		const binding = this.#bindings.get(node);
+/** Set background image from an extension. */
+export function setImage(node: HTMLElement, url: string) {
+    if (url.includes(':')) {
+        const [ext, name] = url.split(':');
+        setBackground(node, 'extensions', ext, 'images', name);
+    }
+    else {
+        setBackground(node, url);
+    }
+}
 
-		if (binding && binding.movable) {
-			// get offset of node
-			const movable = binding.movable;
-			let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
-			let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
+/** Set binding for move or click event. */
+export function bind(node: HTMLElement, config: Binding | ((e: Point) => void)) {
+    const binding = bindings.get(node) || register(node);
+    if (typeof config === 'function') {
+        binding.onclick = config;
+    }
+    else {
+        Object.assign(binding, config);
+    }
+}
 
-			// trigger onoff
-			if (binding.onoff && (x != location.x || y != location.y)) {
-				const off = binding.onoff({x, y}, {x: location.x, y: location.y});
-				x = off.x;
-				y = off.y;
-			}
-			
-			// set and save node offset
-			node.style.transform = `translate(${x}px, ${y}px)`;
-			binding.offset = {x, y};
+/** Fire click event. */
+export function dispatchClick(node: HTMLElement) {
+    // onclick
+    const binding = bindings.get(node);
 
-			// trigger onmove
-			if (binding.onmove) {
-				const state = binding.onmove(binding.offset);
+    if (binding?.onclick) {
+        if (clicking && clicking[0] === node) {
+            // use the location of clicking if applicable
+            binding.onclick.call(node, clicking[1]);
+        }
+        else {
+            // a pseudo click event without location info
+            binding.onclick.call(node, {x: 0, y: 0});
+        }
+    }
 
-				// save move state to this.#moving if applicable
-				if (this.#moving && this.#moving[0] === node) {
-					this.#moving[3] = state;
-				}
-			}
-		}
-	}
+    // avoid duplicate trigger
+    resetClick(node);
+    resetMove(node);
+}
 
-	/** Fire moveend event. */
-	dispatchMoveEnd(node: HTMLElement) {
-		// onmoveend
-		const binding = this.#bindings.get(node);
+/** Fire move event. */
+export function dispatchMove(node: HTMLElement, location: Point) {
+    const binding = bindings.get(node);
 
-		if (binding && binding.onmoveend) {
-			if (this.#moving && this.#moving[0] === node) {
-				// pass the state of this.#moving if applicable
-				binding.onmoveend(this.#moving[3]);
-			}
-			else {
-				// a pseudo moveend event without current state
-				binding.onmoveend(null);
-			}
-		}
+    if (binding?.movable) {
+        // get offset of node
+        const movable = binding.movable;
+        let x = Math.min(Math.max(location.x, movable.x[0]), movable.x[1]);
+        let y = Math.min(Math.max(location.y, movable.y[0]), movable.y[1]);
 
-		// avoid duplicate trigger
-		this.#resetClick(node);
-		this.#resetMove(node);
-	}
+        // trigger onoff
+        if (binding.onoff && (x != location.x || y != location.y)) {
+            const off = binding.onoff({x, y}, {x: location.x, y: location.y});
+            x = off.x;
+            y = off.y;
+        }
+        
+        // set and save node offset
+        node.style.transform = `translate(${x}px, ${y}px)`;
+        binding.offset = {x, y};
 
-	/** Wrapper of HTMLElement.animate(). */
-	animate(node: HTMLElement, animation: {
-			x?: (number | string)[],
-			y?: (number | string)[],
-			scale?: (number | string)[],
-			opacity?: (number | string)[],
-			auto?: boolean,
-			forward?: boolean
-		}, config?: KeyframeAnimationOptions | number) {
-		const keyframes = [];
-		
-		// get number of keyframes
-		let length = 0;
-		for (const key in animation) {
-			if (Array.isArray((animation as any)[key])) {
-				length = Math.max(length, (animation as any)[key].length);
-			}
-		}
+        // trigger onmove
+        if (binding.onmove) {
+            const state = binding.onmove(binding.offset);
 
-		// create keyframes
-		for (let i = 0; i < length; i++) {
-			const frame: Keyframe = {};
-			if (animation.x) {
-				frame.transform = `translateX(${animation.x[i]}px)`;
-			}
-			if (animation.y) {
-				frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
-			}
-			if (animation.scale) {
-				frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
-			}
-			if (animation.opacity) {
-				frame.opacity = animation.opacity[i].toString();
-			}
-			keyframes.push(frame);
-		}
+            // save move state to moving if applicable
+            if (moving && moving[0] === node) {
+                moving[3] = state;
+            }
+        }
+    }
+}
 
-		// use current style as starting frame
-		if (animation.auto) {
-			const frame = {} as any;
-			for (const key in keyframes[0]) {
-				frame[key] = (getComputedStyle(node) as any)[key];
-			}
-			keyframes.unshift(frame);
-		}
+/** Fire moveend event. */
+export function dispatchMoveEnd(node: HTMLElement) {
+    // onmoveend
+    const binding = bindings.get(node);
 
-		// fill animation configurations
-		if (typeof config === 'number') {
-			config = {duration: config};
-		}
-		config ??= {};
-		config.easing ??= 'ease';
-		config.duration ??= globals.app.getTransition();
-		
-		const anim = node.animate(keyframes, config);
+    if (binding && binding.onmoveend) {
+        if (moving && moving[0] === node) {
+            // pass the state of moving if applicable
+            binding.onmoveend(moving[3]);
+        }
+        else {
+            // a pseudo moveend event without current state
+            binding.onmoveend(null);
+        }
+    }
 
-		// use last frame as final style
-		if (animation.forward) {
-			const frame = keyframes[keyframes.length - 1];
-			for (const key in frame) {
-				(node as any).style[key] = frame[key];
-			}
-		}
+    // avoid duplicate trigger
+    resetClick(node);
+    resetMove(node);
+}
 
-		return anim;
-	}
+/** Wrapper of HTMLElement.animate(). */
+export function animate(node: HTMLElement, animation: {
+        x?: (number | string)[],
+        y?: (number | string)[],
+        scale?: (number | string)[],
+        opacity?: (number | string)[],
+        auto?: boolean,
+        forward?: boolean
+    }, config?: KeyframeAnimationOptions | number) {
+    const keyframes = [];
+    
+    // get number of keyframes
+    let length = 0;
+    for (const key in animation) {
+        if (Array.isArray((animation as any)[key])) {
+            length = Math.max(length, (animation as any)[key].length);
+        }
+    }
 
-	/** Get the location of mouse or touch event. */
-	#locate(e: EventPoint) {
-		return {
-			x: Math.round(e.clientX / globals.app.zoom),
-			y: Math.round(e.clientY / globals.app.zoom)
-		}
-	}
+    // create keyframes
+    for (let i = 0; i < length; i++) {
+        const frame: Keyframe = {};
+        if (animation.x) {
+            frame.transform = `translateX(${animation.x[i]}px)`;
+        }
+        if (animation.y) {
+            frame.transform = (frame.transform || '') + ` translateY(${animation.y[i]}px)`;
+        }
+        if (animation.scale) {
+            frame.transform = (frame.transform || '') + ` scale(${animation.scale[i]})`;
+        }
+        if (animation.opacity) {
+            frame.opacity = animation.opacity[i].toString();
+        }
+        keyframes.push(frame);
+    }
 
-	/** Register pointerdown for click or move. */
-	#register(node: HTMLElement) {
-		// event callback
-		const binding = new Binding();
-		this.#bindings.set(node, binding);
+    // use current style as starting frame
+    if (animation.auto) {
+        const frame = {} as any;
+        for (const key in keyframes[0]) {
+            frame[key] = (getComputedStyle(node) as any)[key];
+        }
+        keyframes.unshift(frame);
+    }
 
-		// register event
-		const dispatchDown = (e: EventPoint, touch: boolean) => {
-			const origin = this.#locate(e);
+    // fill animation configurations
+    if (typeof config === 'number') {
+        config = {duration: config};
+    }
+    config ??= {};
+    config.easing ??= 'ease';
+    config.duration ??= app.getTransition();
+    
+    const anim = node.animate(keyframes, config);
 
-			// initialize click event
-			if (binding.onclick && !this.#clicking) {
-				node.classList.add('clickdown');
-				this.#clicking = [node, origin, touch];
-			}
+    // use last frame as final style
+    if (animation.forward) {
+        const frame = keyframes[keyframes.length - 1];
+        for (const key in frame) {
+            (node as any).style[key] = frame[key];
+        }
+    }
 
-			// initialize move event
-			if (binding.movable && !this.#moving) {
-				this.#moving = [node, origin, binding.offset || {x: 0, y: 0}, null, touch];
-
-				// fire ondown event
-				if (binding.ondown) {
-					binding.ondown(origin);
-				}
-			}
-		};
-
-		node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
-
-		if (!android) {
-			node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
-		}
-
-		return binding;
-	}
-
-	/** Cancel click callback for current pointerdown. */
-	#resetClick(node: HTMLElement) {
-		if (this.#clicking && this.#clicking[0] === node) {
-			this.#clicking = null;
-		}
-		node.classList.remove('clickdown');
-	}
-
-	/** Cancel move callback for current pointerdown. */
-	#resetMove(node: HTMLElement) {
-		if (this.#moving && this.#moving[0] === node) {
-			this.#moving = null;
-		}
-	}
-
-	/** Callback for mousemove or touchmove. */
-	#pointerMove(e: EventPoint, touch: boolean) {
-		const {x, y} = this.#locate(e);
-
-		// not a click event if move distance > 5px
-		if (this.#clicking && this.#clicking[2] === touch) {
-			const [node, origin] = this.#clicking;
-			const dx = origin.x - x;
-			const dz = origin.y - y;
-			
-			if (dx * dx + dz * dz > 25) {
-				this.#resetClick(node);
-			}
-		}
-
-		// get offset and trigger move event
-		if (this.#moving && this.#moving[4] === touch) {
-			const [node, origin, offset] = this.#moving;
-			this.dispatchMove(node, {
-				x: x - origin.x + offset.x,
-				y: y - origin.y + offset.y
-			});
-		}
-	}
-
-	/** Ccallback for mouseup or touchend. */
-	#pointerEnd(touch: boolean) {
-		if (this.#dispatched === false) {
-			// dispatch events
-			if (this.#clicking && this.#clicking[2] === touch) {
-				this.#dispatched = true;
-				this.dispatchClick(this.#clicking[0]);
-			}
-
-			if (this.#moving && this.#moving[4] === touch) {
-				this.#dispatched = true;
-				this.dispatchMoveEnd(this.#moving[0]);
-			}
-
-			// re-enable event trigger after 200ms
-			if (this.#dispatched) {
-				window.setTimeout(() => this.#dispatched = false, 200);
-			}
-		}
-
-		if (this.#clicking && this.#clicking[2] === touch) {
-			this.#clicking = null;
-		}
-		
-		if (this.#moving && this.#moving[4] === touch) {
-			this.#moving = null;
-		}
-	}
-
-	/** Callback for mouseleave or touchcancel. */
-	#pointerCancel(touch: boolean) {
-		if (this.#clicking && this.#clicking[2] === touch) {
-			this.#clicking[0].classList.remove('clickdown');
-		}
-
-		if (this.#moving && this.#moving[4] === touch) {
-			this.dispatchMoveEnd(this.#moving[0]);
-		}
-
-		this.#clicking = null;
-		this.#moving = null;
-	}
+    return anim;
 }

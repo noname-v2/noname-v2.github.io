@@ -1,4 +1,5 @@
-import { globals } from '../../client/globals';
+import { debug } from '../../client/client';
+import { splash } from '../../client/shared';
 import { Component, Button, ButtonColor } from '../../components';
 
 export class SplashBar extends Component {
@@ -9,17 +10,27 @@ export class SplashBar extends Component {
     buttons = new Map<string, Button>();
 
     init() {
-        if (globals.client.debug) {
+        if (debug) {
             this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
+
             if (this.platform.mobile) {
                 this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');
+
+                // eruda console
+                const script = document.createElement('script');
+                script.src = 'lib/eruda.js';
+                script.onload = () => (window as any).eruda.init();
+                document.head.appendChild(script);
             }
         }
         
         // add buttons
         this.addButton('workshop', '扩展', 'yellow', () => {});
-        this.addButton('hub', '联机', 'green', () => globals.splash.hub.open());
-        this.addButton('settings', '选项', 'orange', () => globals.splash.settings.open());
+        this.addButton('hub', '联机', 'green', () => splash.hub.open());
+        this.addButton('settings', '选项', 'orange', () => splash.settings.open());
+
+		// append to splash
+		splash.node.appendChild(this.node);
     }
 
     /** Add a button. */

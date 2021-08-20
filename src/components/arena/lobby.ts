@@ -1,3 +1,4 @@
+import { hub } from '../../client/client';
 import { Component, Toggle, Player } from '../../components';
 import type { Config, Dict } from '../../types';
 
@@ -40,7 +41,7 @@ export class Lobby extends Component {
 
     init() {
         const arena = this.app.arena!;
-        arena.appLayer.appendChild(this.node);
+        arena.appZoom.appendChild(this.node);
         this.listen('sync');
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
@@ -143,7 +144,7 @@ export class Lobby extends Component {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;
-                    this.yield(['config', name, this.app.ws]);
+                    this.yield(['config', name, hub.url]);
                 }
                 else {
                     this.yield(['config', name, result]);
@@ -241,7 +242,7 @@ export class Lobby extends Component {
             const player = this.ui.create('player');
             this.players.push(player);
             this.seats.appendChild(player.node);
-            this.ui.bindClick(player.node, () => {
+            this.ui.bind(player.node, () => {
                 if (!this.mine) {
                     return;
                 }
@@ -279,7 +280,7 @@ export class Lobby extends Component {
         this.heroButton.innerHTML = '点将';
         
         // toggle between spectator and player
-        this.ui.bindClick(this.spectateButton, () => {
+        this.ui.bind(this.spectateButton, () => {
             if (this.spectateButton.dataset.fill === 'red') {
                 this.app.arena!.peer!.yield('play');
             }
