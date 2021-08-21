@@ -14,6 +14,12 @@ export const hub = new Proxy(meta.hub, {
     }
 });
 
+/** Debug mode */
+export let debug: boolean = true;
+
+/** Worker object. */
+export let connection: Worker | WebSocket | null = null;
+
 /** Types of component event listeners. */
 export interface Listeners {
      // connection status change
@@ -29,11 +35,10 @@ export interface Listeners {
      stage: {key: () => void};
 }
 
-/** Debug mode */
-export let debug: boolean = true;
-
-/** Worker object. */
-export let connection: Worker | WebSocket | null = null;
+/** Event listeners. */
+export const listeners = Object.freeze({
+    sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
+});
 
 /** Service worker. */
 export let registration: ServiceWorkerRegistration | null = null;
@@ -53,11 +58,6 @@ db.ready.then(() => {
 /** Components managed by worker. */
 export const components = new Map<number, Component>();
 export const componentIDs = new Map<Component, number>();
-
-/** Event listeners. */
-export const listeners = Object.freeze({
-    sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
-});
 
 /** ID of current stage. */
 let stageID = 0;
@@ -159,8 +159,8 @@ export function trigger(event: keyof Listeners, arg?: any) {
     }
 } 
 
-/** Overwrite components by mode. */
-async function load(ruleset: string[]) {
+/** Overwrite component constructors by mode. */
+async function loadComponents(ruleset: string[]) {
     for (const pack of ruleset) {
         const ext = await importExtension(pack);
         for (const tag in ext.mode?.components) {
@@ -189,7 +189,7 @@ async function render() {
                 if (arena) {
                     await app.sleep('fast');
                 }
-                await load(props[key].ruleset);
+                await loadComponents(props[key].ruleset);
                 break;
             }
         }

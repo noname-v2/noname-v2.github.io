@@ -1,6 +1,6 @@
 import { trigger } from '../../client/client';
 import { splash, arena } from '../../client/shared';
-import { Component, Popup } from '../../components';
+import { Component, Popup, Zoom } from '../../components';
 import { importExtension } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
 
@@ -22,24 +22,6 @@ interface ConfirmOptions extends DialogOptions {
 }
 
 export class App extends Component {
-	/** App width. */
-	#width!: number;
-
-	/** App height. */
-	#height!: number;
-
-    /** App zoom level. */
-	#zoom = 1;
-
-    /** Arena width. */
-	#arenaWidth!: number;
-
-	/** Arena height. */
-	#arenaHeight!: number;
-
-    /** Arena zoom level. */
-	#arenaZoom = 1;
-
     /** Transition durations. */
     #css: Dict<Dict<string>> = {};
 
@@ -53,7 +35,7 @@ export class App extends Component {
     #bgNode = this.ui.createElement('background', this.node);
 
     /** Layer that zooms based on client size. */
-    #zoomNode = this.ui.createElement('zoom', this.node);
+    #zoom = this.ui.create('zoom', this.node);
 
     /** Node for playing background music. */
     #bgmNode = document.createElement('audio');
@@ -75,24 +57,15 @@ export class App extends Component {
     }
 
     get width() {
-        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-            return this.#arenaWidth;
-        }
-        return this.#width;
+        return this.#currentZoom.width;
     }
 
     get height() {
-        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-            return this.#arenaHeight;
-        }
-        return this.#height;
+        return this.#currentZoom.height;
     }
 
     get zoom() {
-        if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-            return this.#arenaZoom;
-        }
-        return this.#zoom;
+        return this.#currentZoom.zoom;
     }
 
     get assets() {
@@ -108,7 +81,14 @@ export class App extends Component {
 	}
 
     get zoomNode() {
-        return this.#zoomNode;
+        return this.#zoom.node;
+    }
+
+    get #currentZoom(): Zoom {
+        if (!this.popups.size && this.arena?.arenaZoom.node.childNodes.length) {
+            return this.arena.arenaZoom;
+        }
+        return this.#zoom;
     }
 
     async init() {
@@ -354,7 +334,7 @@ export class App extends Component {
         dialog.onopen = () => {
             // blur arena, splash and other popups
             this.node.classList.add('popped');
-            for (const [id, popup] of this.popups.entries()) {
+            for (const [id, popup] of this.popups) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
                     blurred.push(id);
@@ -429,45 +409,12 @@ export class App extends Component {
         let [ax, ay] = [960, 540];
 
         // zoom to fit ideal size
-        const zx = width / ax, zy = height / ay;
-
-        if (zx < zy) {
-            this.#width = ax;
-            this.#height = ax / width * height;
-            this.#zoom = zx;
-        }
-        else {
-            this.#width = ay / height * width;
-            this.#height = ay;
-            this.#zoom = zy;
-        }
-
-        // update styles
-        this.node.style.setProperty('--app-width', this.#width + 'px');
-        this.node.style.setProperty('--app-height', this.#height + 'px');
-        this.node.style.setProperty('--app-scale', this.#zoom.toString());
+        this.#zoom.scale(ax, ay, width, height, this.node);
 
         // update arena zoom
         if (arena) {
             [ax, ay] = arena.resize(ax, ay, width, height);
-
-            const zx = width / ax, zy = height / ay;
-
-            if (zx < zy) {
-                this.#arenaWidth = ax;
-                this.#arenaHeight = ax / width * height;
-                this.#arenaZoom = zx;
-            }
-            else {
-                this.#arenaWidth = ay / height * width;
-                this.#arenaHeight = ay;
-                this.#arenaZoom = zy;
-            }
-
-            // update styles
-            this.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
-            this.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
-            this.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+            arena.arenaZoom.scale(ax, ay, width, height);
         }
 
         // trigger resize listeners

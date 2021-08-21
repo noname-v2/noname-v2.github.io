@@ -10,8 +10,8 @@ export const componentClasses = new Map<string, typeof Component>();
 /** Restore original component constructors. */
 export function restore() {
     componentClasses.clear();
-    for (const [key, val] of backups.entries()) {
-        componentClasses.set(key, val);
+    for (const [tag, cls] of backups) {
+        componentClasses.set(tag, cls);
     }
 }
 

@@ -192,7 +192,7 @@ export class Room {
     pack(): UITick {
         const tags: Dict<string> = {};
         const props: Dict<Dict> = {};
-        for (const [uid, [link, obj]] of this.links.entries()) {
+        for (const [uid, [link, obj]] of this.links) {
             tags[uid] = link.tag;
             props[uid] = obj;
         }

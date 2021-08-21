@@ -3,8 +3,8 @@ import { backups, restore, init } from "./shared";
 import { componentClasses } from '../classes';
 
 // initialize component classes
-for (const [key, val] of componentClasses) {
-    backups.set(key, val);
+for (const [tag, cls] of componentClasses) {
+    backups.set(tag, cls);
 }
 restore();
 

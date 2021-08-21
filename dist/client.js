@@ -604,6 +604,10 @@
     });
     /** Worker object. */
     let connection = null;
+    /** Event listeners. */
+    const listeners = Object.freeze({
+        sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
+    });
     navigator.serviceWorker?.register('/service.js').then(reg => {
     });
     /** User identifier. */
@@ -617,10 +621,6 @@
     /** Components managed by worker. */
     const components = new Map();
     const componentIDs = new Map();
-    /** Event listeners. */
-    const listeners = Object.freeze({
-        sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
-    });
     /** ID of current stage. */
     let stageID = 0;
     /**  UITicks waiting for dispatch. */
@@ -939,13 +939,13 @@
             return this.utils.sleep(this.app.getTransition(dur) / 1000);
         }
         /** Remove element. */
-        remove(promise) {
+        remove(after) {
             if (this.#removing) {
                 return;
             }
-            if (promise) {
+            if (after) {
                 this.#removing = true;
-                promise.then(() => {
+                after.then(() => {
                     this.node.remove();
                     this.#removing = false;
                 });
@@ -957,18 +957,6 @@
     }
 
     class App extends Component {
-        /** App width. */
-        #width;
-        /** App height. */
-        #height;
-        /** App zoom level. */
-        #zoom = 1;
-        /** Arena width. */
-        #arenaWidth;
-        /** Arena height. */
-        #arenaHeight;
-        /** Arena zoom level. */
-        #arenaZoom = 1;
         /** Transition durations. */
         #css = {};
         /** Index of assets. */
@@ -978,7 +966,7 @@
         /** Node for displaying background. */
         #bgNode = this.ui.createElement('background', this.node);
         /** Layer that zooms based on client size. */
-        #zoomNode = this.ui.createElement('zoom', this.node);
+        #zoom = this.ui.create('zoom', this.node);
         /** Node for playing background music. */
         #bgmNode = document.createElement('audio');
         /** Background music volume control. */
@@ -993,22 +981,13 @@
             return arena;
         }
         get width() {
-            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-                return this.#arenaWidth;
-            }
-            return this.#width;
+            return this.#currentZoom.width;
         }
         get height() {
-            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-                return this.#arenaHeight;
-            }
-            return this.#height;
+            return this.#currentZoom.height;
         }
         get zoom() {
-            if (!this.popups.size && this.arena?.arenaZoom.childNodes.length) {
-                return this.#arenaZoom;
-            }
-            return this.#zoom;
+            return this.#currentZoom.zoom;
         }
         get assets() {
             return this.#assets;
@@ -1020,7 +999,13 @@
             return this.#popups;
         }
         get zoomNode() {
-            return this.#zoomNode;
+            return this.#zoom.node;
+        }
+        get #currentZoom() {
+            if (!this.popups.size && this.arena?.arenaZoom.node.childNodes.length) {
+                return this.arena.arenaZoom;
+            }
+            return this.#zoom;
         }
         async init() {
             document.head.appendChild(this.#themeNode);
@@ -1298,39 +1283,11 @@
             // ideal window size
             let [ax, ay] = [960, 540];
             // zoom to fit ideal size
-            const zx = width / ax, zy = height / ay;
-            if (zx < zy) {
-                this.#width = ax;
-                this.#height = ax / width * height;
-                this.#zoom = zx;
-            }
-            else {
-                this.#width = ay / height * width;
-                this.#height = ay;
-                this.#zoom = zy;
-            }
-            // update styles
-            this.node.style.setProperty('--app-width', this.#width + 'px');
-            this.node.style.setProperty('--app-height', this.#height + 'px');
-            this.node.style.setProperty('--app-scale', this.#zoom.toString());
+            this.#zoom.scale(ax, ay, width, height, this.node);
             // update arena zoom
             if (arena) {
                 [ax, ay] = arena.resize(ax, ay, width, height);
-                const zx = width / ax, zy = height / ay;
-                if (zx < zy) {
-                    this.#arenaWidth = ax;
-                    this.#arenaHeight = ax / width * height;
-                    this.#arenaZoom = zx;
-                }
-                else {
-                    this.#arenaWidth = ay / height * width;
-                    this.#arenaHeight = ay;
-                    this.#arenaZoom = zy;
-                }
-                // update styles
-                this.node.style.setProperty('--arena-width', this.#arenaWidth + 'px');
-                this.node.style.setProperty('--arena-height', this.#arenaHeight + 'px');
-                this.node.style.setProperty('--arena-scale', this.#arenaZoom.toString());
+                arena.arenaZoom.scale(ax, ay, width, height);
             }
             // trigger resize listeners
             trigger('resize');
@@ -1565,9 +1522,9 @@
         /** Trying to exit. */
         exiting = false;
         /** Layer using arena zoom. */
-        arenaZoom = this.ui.createElement('zoom.arena', this.node);
+        arenaZoom = this.ui.create('zoom', this.node);
         /** Layer using app zoom. */
-        appZoom = this.ui.createElement('zoom', this.node);
+        appZoom = this.ui.create('zoom', this.node);
         /** Connected remote clients. */
         get peers() {
             const ids = this.get('peers');
@@ -1699,7 +1656,7 @@
         heroDock = this.ui.createElement('dock');
         init() {
             const arena = this.app.arena;
-            arena.appZoom.appendChild(this.node);
+            arena.appZoom.node.appendChild(this.node);
             this.listen('sync');
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
@@ -3217,9 +3174,32 @@
     }
 
     class Zoom extends Component {
+        /** Actual element width without scaling. */
         width;
+        /** Actual element width without scaling. */
         height;
+        /** Element zoom. */
         zoom;
+        /** Change zoom based on ideal width and height */
+        scale(ax, ay, width, height, node) {
+            // zoom to fit ideal size
+            const zx = width / ax, zy = height / ay;
+            if (zx < zy) {
+                this.width = ax;
+                this.height = ax / width * height;
+                this.zoom = zx;
+            }
+            else {
+                this.width = ay / height * width;
+                this.height = ay;
+                this.zoom = zy;
+            }
+            // update styles
+            node ??= this.node;
+            node.style.setProperty('--zoom-width', this.width + 'px');
+            node.style.setProperty('--zoom-height', this.height + 'px');
+            node.style.setProperty('--zoom-scale', this.zoom.toString());
+        }
     }
 
     const componentClasses = new Map();

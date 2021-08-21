@@ -41,7 +41,7 @@ export class Lobby extends Component {
 
     init() {
         const arena = this.app.arena!;
-        arena.appZoom.appendChild(this.node);
+        arena.appZoom.node.appendChild(this.node);
         this.listen('sync');
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
@@ -223,10 +223,10 @@ export class Lobby extends Component {
         }
 
         // update banned packs
-        for (const [name, toggle] of this.heroToggles.entries()) {
+        for (const [name, toggle] of this.heroToggles) {
             toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
         }
-        for (const [name, toggle] of this.cardToggles.entries()) {
+        for (const [name, toggle] of this.cardToggles) {
             toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
         }
     }

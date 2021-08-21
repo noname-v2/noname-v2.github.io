@@ -2,22 +2,16 @@ noname-app {
 	@include layer;
 	
 	> noname-zoom, > noname-arena > noname-zoom {
-		// not using @include layer because of zooming
-		&:empty {
-			pointer-events: none;
-		}
 		position: absolute;
 		left: 0;
 		top: 0;
 		transform-origin: top left;
-		width: var(--app-width);
-		height: var(--app-height);
-		transform: scale(var(--app-scale));
+		width: var(--zoom-width);
+		height: var(--zoom-height);
+		transform: scale(var(--zoom-scale));
 
-		&.arena {
-			width: var(--arena-width);
-			height: var(--arena-height);
-			transform: scale(var(--arena-scale));
+		&:empty {
+			pointer-events: none;
 		}
 	}
 

@@ -18,7 +18,7 @@ export class Component {
     /** Root element. */
 	#node!: HTMLElement;
 
-    /** Resolved */
+    /** Resolved after executing this.init(). */
     #ready: Promise<unknown>;
 
     /** This.remove() is being executed. */
@@ -144,14 +144,14 @@ export class Component {
     }
 
     /** Remove element. */
-    remove(promise?: Promise<any>) {
+    remove(after?: Promise<any>) {
         if (this.#removing) {
             return;
         }
 
-        if (promise) {
+        if (after) {
             this.#removing = true;
-            promise.then(() => {
+            after.then(() => {
                 this.node.remove();
                 this.#removing = false;
             });

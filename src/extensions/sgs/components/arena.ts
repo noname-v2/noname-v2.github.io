@@ -221,7 +221,7 @@ export function arena(T: typeof Arena) {
 
             // append player region
             if (!this.players.parentNode) {
-                this.arenaZoom.appendChild(this.players);
+                this.arenaZoom.node.appendChild(this.players);
             }
         }
     }

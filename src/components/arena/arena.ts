@@ -13,10 +13,10 @@ export class Arena extends Component {
     exiting = false;
 
     /** Layer using arena zoom. */
-    arenaZoom = this.ui.createElement('zoom.arena', this.node);
+    arenaZoom = this.ui.create('zoom', this.node);
 
     /** Layer using app zoom. */
-    appZoom = this.ui.createElement('zoom', this.node);
+    appZoom = this.ui.create('zoom', this.node);
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
