@@ -34,14 +34,19 @@
     let app;
     let splash;
     let arena = null;
-    /** Create app and splash. */
-    function init(c) {
-        app = c('app');
-        splash = c('splash');
-    }
-    /** Set arena. */
-    function setArena(a) {
-        arena = a;
+    /** Set the value of main components. */
+    function set$1(name, val) {
+        switch (name) {
+            case 'app':
+                app = val;
+                break;
+            case 'splash':
+                splash = val;
+                break;
+            case 'arena':
+                arena = val;
+                break;
+        }
     }
 
     /** Bindings for DOM events. */
@@ -1028,7 +1033,7 @@
             // load styles and fonts
             this.#initAudio();
             await this.loadTheme();
-            splash.gallery = this.ui.create('splash-gallery');
+            set$1('splash', this.ui.create('splash'));
             await splash.gallery.ready;
             const initAssets = this.#initAssets();
             // load splash menus
@@ -1558,7 +1563,7 @@
             return null;
         }
         init() {
-            setArena(this);
+            set$1('arena', this);
             this.app.node.insertBefore(this.node, this.app.zoomNode);
             // make android back button function as returning to splash screen
             if (this.platform.android && history.state === null) {
@@ -1573,7 +1578,7 @@
         /** Remove with fade out animation. */
         remove() {
             if (this.app.arena === this) {
-                setArena(null);
+                set$1('arena', null);
                 if (this.platform.android && history.state === 'arena') {
                     history.back();
                 }
@@ -3074,7 +3079,7 @@
 
     class Splash extends Component {
         // gallery of modes
-        gallery;
+        gallery = this.ui.create('splash-gallery');
         // bottom toolbar
         bar = this.ui.create('splash-bar');
         // settings menu
@@ -3240,7 +3245,7 @@
     restore();
     // create app component
     ready$1.then(() => {
-        init(create);
+        set$1('app', create('app'));
     });
 
 }());

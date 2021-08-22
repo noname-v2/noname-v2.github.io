@@ -2,7 +2,7 @@ import * as ui from './ui';
 import * as db from './db';
 import * as platform from '../platform';
 import * as utils from '../utils';
-import { app } from './shared';
+import { app } from './globals';
 import { uid, send, listeners, components, componentIDs } from './client';
 import type { Listeners } from './client';
 import type { Dict } from '../types';

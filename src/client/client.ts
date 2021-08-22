@@ -1,7 +1,7 @@
 import { importExtension } from '../extension';
 import { rng } from '../utils';
 import { create } from './ui';
-import { backups, componentClasses, restore, app, splash } from './shared';
+import { backups, componentClasses, restore, app, splash } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
 import type { Component } from '../components';

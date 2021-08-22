@@ -1,4 +1,4 @@
-import { splash } from '../../client/shared';
+import { splash } from '../../client/globals';
 import { connect } from '../../client/client';
 import { Gallery } from '../gallery';
 import type { ExtensionMeta, Dict } from '../../types';

@@ -1,5 +1,5 @@
 import * as client from '../../client/client';
-import { splash } from '../../client/shared';
+import { splash } from '../../client/globals';
 import { Popup } from '../popup';
 import { hub2member } from '../../hub/types';
 import type { Dialog, SplashGallery } from '../../components';

@@ -1,4 +1,4 @@
-import { setArena } from '../../client/shared';
+import { set } from '../../client/globals';
 import { connection, clear, disconnect, trigger, send } from '../../client/client';
 import { Component, Peer } from '../../components';
 
@@ -46,7 +46,7 @@ export class Arena extends Component {
     }
 
     init() {
-        setArena(this);
+        set('arena', this);
         this.app.node.insertBefore(this.node, this.app.zoomNode);
 
         // make android back button function as returning to splash screen
@@ -63,7 +63,7 @@ export class Arena extends Component {
     /** Remove with fade out animation. */
     remove() {
         if (this.app.arena === this) {
-            setArena(null);
+            set('arena', null);
             if (this.platform.android && history.state === 'arena') {
                 history.back();
             }

@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import { splash } from '../../client/shared';
+import { splash } from '../../client/globals';
 import { Point, Gallery } from '../../components';
 
 export class SplashSettings extends Popup {

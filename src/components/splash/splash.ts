@@ -1,9 +1,8 @@
-import { debug } from '../../client/client';
-import { Component, SplashGallery } from '../../components';
+import { Component } from '../../components';
 
 export class Splash extends Component {
     // gallery of modes
-	gallery!: SplashGallery;
+	gallery = this.ui.create('splash-gallery');
 
 	// bottom toolbar
 	bar = this.ui.create('splash-bar');

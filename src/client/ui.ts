@@ -1,5 +1,5 @@
 import { android } from '../platform';
-import { app, componentClasses } from './shared';
+import { app, componentClasses } from './globals';
 import type { ComponentTagMap } from '../classes';
 
 /** Type for point location */

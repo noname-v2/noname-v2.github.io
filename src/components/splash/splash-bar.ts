@@ -1,5 +1,5 @@
 import { debug } from '../../client/client';
-import { splash } from '../../client/shared';
+import { splash } from '../../client/globals';
 import { version } from '../../meta';
 import { Component, Button, ButtonColor } from '../../components';
 

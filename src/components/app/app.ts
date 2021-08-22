@@ -1,5 +1,5 @@
 import { trigger } from '../../client/client';
-import { splash, arena } from '../../client/shared';
+import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom } from '../../components';
 import { importExtension } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
@@ -107,7 +107,7 @@ export class App extends Component {
         // load styles and fonts
         this.#initAudio();
         await this.loadTheme();
-        splash.gallery = this.ui.create('splash-gallery');
+        set('splash', this.ui.create('splash'));
         await splash.gallery.ready;
         const initAssets = this.#initAssets();
 
