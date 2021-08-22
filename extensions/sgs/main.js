@@ -333,7 +333,7 @@ function arena(T) {
         players = this.ui.createElement('players');
         /** Update arena layout. */
         resize(ax, ay, width, height) {
-            const np = this.get('np');
+            const np = this.data.np;
             if (np) {
                 if (np >= 7 && width / height < (18 + (np - 1) * 168) / 720) {
                     // wide 2-row layout
@@ -353,7 +353,7 @@ function arena(T) {
                 }
                 // update player locations
                 setTimeout(() => {
-                    for (const id of this.get('players')) {
+                    for (const id of this.data.players) {
                         this.getComponent(id).$seat();
                     }
                 });
@@ -363,7 +363,7 @@ function arena(T) {
         // get location of a seat
         locatePlayer(seat) {
             // actual seat considering viewport
-            const np = this.get('np');
+            const np = this.data.np;
             seat -= this.perspective;
             if (seat < 0) {
                 seat += np;
@@ -542,7 +542,7 @@ function player(T) {
             this.node.style.transform = `translate(${this.x + dx}px,${this.y + dy}px)`;
         }
         $seat(seat) {
-            seat ??= this.get('seat');
+            seat ??= this.data.seat;
             [this.x, this.y] = this.app.arena.locatePlayer(seat);
             this.locate();
         }

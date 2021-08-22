@@ -16,7 +16,7 @@ export function arena(T: typeof Arena) {
 
         /** Update arena layout. */
         resize(ax: number, ay: number, width: number, height: number) {
-            const np = this.get('np');
+            const np = this.data.np;
                 
             if (np) {
                 if (np >= 7 && width / height < (18 + (np - 1) * 168) / 720) {
@@ -38,7 +38,7 @@ export function arena(T: typeof Arena) {
 
                 // update player locations
                 setTimeout(() => {
-                    for (const id of this.get('players')) {
+                    for (const id of this.data.players) {
                         this.getComponent(id)!.$seat();
                     }
                 });
@@ -49,7 +49,7 @@ export function arena(T: typeof Arena) {
         // get location of a seat
         locatePlayer(seat: number) {
             // actual seat considering viewport
-            const np = <number>this.get('np');
+            const np = this.data.np;
             seat -= this.perspective;
             if (seat < 0) {
                 seat += np;

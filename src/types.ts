@@ -4,6 +4,11 @@ import type { Component } from './components';
 /** Plain object. */
 export type Dict<T=any> = {[key: string]: T};
 
+/** Creator of a subclass. */
+export interface Class<T=any> {
+    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
+};
+
 /** A link to client component. */
 export interface Link {
     /** Component ID. */
@@ -31,11 +36,6 @@ export interface ExtensionMeta {
 	tags: string[];
 	images: string[];
 }
-
-/** Creator of a subclass. */
-export interface Class<T=any> {
-    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
-};
 
 /** Mode configuration entry. */
 export interface Config {

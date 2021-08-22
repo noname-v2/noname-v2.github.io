@@ -20,7 +20,7 @@ export class Arena extends Component {
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
-        const ids = this.get('peers');
+        const ids = this.data.peers;
         if (!ids) {
             return null;
         }

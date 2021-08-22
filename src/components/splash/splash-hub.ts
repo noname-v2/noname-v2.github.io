@@ -144,7 +144,7 @@ export class SplashHub extends Popup {
         const dialog = this.app.popups.get('down') as Dialog;
         const update = () => {
             const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
-            dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+            dialog.data.content = `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`;
         };
         update();
         const interval = setInterval(update, 1000);
@@ -168,7 +168,7 @@ export class SplashHub extends Popup {
                 return;
             }
             client.connect('wss://' + this.address.input.value);
-            this.address.set('icon', 'clear');
+            this.address.data.icon = 'clear';
 
             const ws = client.connection as WebSocket;
             this.#setCaption('正在连接');
@@ -180,7 +180,7 @@ export class SplashHub extends Popup {
                 };
 
                 ws.onopen = () => {
-                    this.address.set('icon', 'ok');
+                    this.address.data.icon = 'ok';
                     this.#setCaption('');
                     ws.send('init:' + JSON.stringify([client.uid, [client.hub.nickname, client.hub.avatar]]));
                     if (this.address.input.value !== client.hub.url) {
@@ -214,7 +214,7 @@ export class SplashHub extends Popup {
             client.disconnect();
         }
         this.#clearRooms();
-        this.address.set('icon', null);
+        this.address.data.icon = null;
         this.#setCaption('已断开');
     }
 
@@ -332,9 +332,9 @@ export class SplashHub extends Popup {
 		nickname.callback = async val => {
             if (val) {
                 this.db.set('nickname', val);
-				nickname.set('icon', 'emote');
+				nickname.data.icon = 'emote';
 				await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
-				nickname.set('icon', null);
+				nickname.data.icon = null;
                 this.#sendInfo();
 			}
 		};

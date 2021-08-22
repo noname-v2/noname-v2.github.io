@@ -10,7 +10,7 @@ export function player(T: typeof Player) {
         }
 
         $seat(seat?: number) {
-            seat ??= this.get('seat');
+            seat ??= this.data.seat;
             [this.x, this.y] = this.app.arena!.locatePlayer(seat);
             this.locate();
         }

@@ -1,5 +1,6 @@
 import { debug } from '../../client/client';
 import { splash } from '../../client/shared';
+import { version } from '../../meta';
 import { Component, Button, ButtonColor } from '../../components';
 
 export class SplashBar extends Component {
@@ -46,7 +47,7 @@ export class SplashBar extends Component {
 
     async #resetGame() {
         if (window['caches']) {
-            await window['caches'].delete(this.app.version);
+            await window['caches'].delete(version);
         }
 
         for (const file of await this.db.readdir()) {

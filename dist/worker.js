@@ -541,7 +541,7 @@
         pack() {
             const tags = {};
             const props = {};
-            for (const [uid, [link, obj]] of this.links.entries()) {
+            for (const [uid, [link, obj]] of this.links) {
                 tags[uid] = link.tag;
                 props[uid] = obj;
             }

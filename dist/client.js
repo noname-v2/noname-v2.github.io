@@ -26,8 +26,8 @@
     /** Restore original component constructors. */
     function restore() {
         componentClasses$1.clear();
-        for (const [key, val] of backups.entries()) {
-            componentClasses$1.set(key, val);
+        for (const [tag, cls] of backups) {
+            componentClasses$1.set(tag, cls);
         }
     }
     /** Main components. */
@@ -708,8 +708,8 @@
             cmp[event](arg);
         }
     }
-    /** Overwrite components by mode. */
-    async function load(ruleset) {
+    /** Overwrite component constructors by mode. */
+    async function loadComponents(ruleset) {
         for (const pack of ruleset) {
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
@@ -737,7 +737,7 @@
                     if (arena) {
                         await app.sleep('fast');
                     }
-                    await load(props[key].ruleset);
+                    await loadComponents(props[key].ruleset);
                     break;
                 }
             }
@@ -838,17 +838,22 @@
         static virtual = false;
         /** Root element. */
         #node;
-        /** Resolved */
+        /** Resolved after executing this.init(). */
         #ready;
         /** This.remove() is being executed. */
         #removing = false;
         /** Properties synced with worker. */
         #props = new Map();
+        /** Property accessor. */
+        #data;
         get node() {
             return this.#node;
         }
         get ready() {
             return this.#ready;
+        }
+        get data() {
+            return this.#data;
         }
         get app() {
             return app;
@@ -866,7 +871,7 @@
             return ui;
         }
         get owner() {
-            return this.get('owner');
+            return this.data.owner;
         }
         get mine() {
             return this.owner === uid;
@@ -874,8 +879,17 @@
         /** Create node. */
         constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
-            const cls = this.constructor;
+            this.#data = new Proxy({}, {
+                get: (_, key) => {
+                    return this.#props.get(key) ?? null;
+                },
+                set: (_, key, val) => {
+                    this.update({ [key]: val });
+                    return true;
+                }
+            });
             // create DOM element
+            const cls = this.constructor;
             if (!cls.virtual) {
                 this.#node = this.ui.createElement(cls.tag || tag);
             }
@@ -883,14 +897,6 @@
         /** Optional initialization method. */
         init() { }
         ;
-        /** Property getter. */
-        get(key) {
-            return this.#props.get(key) ?? null;
-        }
-        /** Property setter. */
-        set(key, val) {
-            this.update({ [key]: val });
-        }
         /** Get compnent by ID. */
         getComponent(id) {
             return components.get(id) ?? null;
@@ -901,7 +907,7 @@
         update(items, hook = true) {
             const hooks = [];
             for (const key in items) {
-                const oldVal = this.get(key);
+                const oldVal = this.#props.get(key) ?? null;
                 const newVal = items[key] ?? null;
                 newVal === null ? this.#props.delete(key) : this.#props.set(key, newVal);
                 const hook = this['$' + key];
@@ -1217,7 +1223,7 @@
             dialog.onopen = () => {
                 // blur arena, splash and other popups
                 this.node.classList.add('popped');
-                for (const [id, popup] of this.popups.entries()) {
+                for (const [id, popup] of this.popups) {
                     if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                         popup.node.classList.add('blurred');
                         blurred.push(id);
@@ -1527,7 +1533,7 @@
         appZoom = this.ui.create('zoom', this.node);
         /** Connected remote clients. */
         get peers() {
-            const ids = this.get('peers');
+            const ids = this.data.peers;
             if (!ids) {
                 return null;
             }
@@ -1690,7 +1696,7 @@
             const players = [];
             const spectators = [];
             for (const peer of peers || []) {
-                if (peer.get('playing')) {
+                if (peer.data.playing) {
                     players.push(peer);
                 }
                 else {
@@ -1700,20 +1706,20 @@
             for (let i = 0; i < this.players.length; i++) {
                 if (i < players.length) {
                     const peer = players[i];
-                    this.players[i].set('heroImage', peer.get('avatar'));
-                    this.players[i].set('heroName', peer.get('nickname'));
+                    this.players[i].data.heroImage = peer.data.avatar;
+                    this.players[i].data.heroName = peer.data.nickname;
                 }
                 else {
-                    this.players[i].set('heroImage', null);
-                    this.players[i].set('heroName', null);
+                    this.players[i].data.heroImage = null;
+                    this.players[i].data.heroName = null;
                 }
             }
             // update spectate button
             const peer = this.app.arena.peer;
             if (peer) {
                 this.seats.classList.remove('offline');
-                this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-                this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+                this.spectateButton.dataset.fill = peer.data.playing ? '' : 'red';
+                this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.data.avatar));
                 this.#checkSpectate();
             }
             else {
@@ -1808,23 +1814,23 @@
             // save configuration
             if (this.mine) {
                 delete config.online;
-                this.db.set(this.get('mode') + ':config', config);
+                this.db.set(this.data.mode + ':config', config);
             }
             // update spectators
             if (config.np) {
                 // make sure npmax is set
                 setTimeout(() => {
-                    for (let i = 0; i < this.get('npmax'); i++) {
+                    for (let i = 0; i < this.data.npmax; i++) {
                         this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                     }
                     this.#checkSpectate();
                 });
             }
             // update banned packs
-            for (const [name, toggle] of this.heroToggles.entries()) {
+            for (const [name, toggle] of this.heroToggles) {
                 toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
             }
-            for (const [name, toggle] of this.cardToggles.entries()) {
+            for (const [name, toggle] of this.cardToggles) {
                 toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
             }
         }
@@ -1846,7 +1852,7 @@
                     const toggle = this.configToggles.get('np');
                     if (toggle) {
                         const nps = Array.from(toggle.choices.keys());
-                        const idx = nps.indexOf(this.get('config').np);
+                        const idx = nps.indexOf(this.data.config.np);
                         const delta = player.node.classList.contains('blurred') ? 1 : -1;
                         const np = nps[idx + delta];
                         if (typeof np === 'number') {
@@ -1911,10 +1917,10 @@
                 this.spectateButton.classList.remove('disabled');
             }
             else {
-                const np = this.get('config').np;
+                const np = this.data.config.np;
                 let n = 0;
                 for (const player of this.players) {
-                    if (player.get('heroName')) {
+                    if (player.data.heroName) {
                         n++;
                     }
                 }
@@ -2621,7 +2627,7 @@
             const dialog = this.app.popups.get('down');
             const update = () => {
                 const remaining = Math.max(0, Math.round((parseInt(msg) - Date.now()) / 1000));
-                dialog.set('content', `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`);
+                dialog.data.content = `如果房主无法在<span class="mono">${remaining}</span>秒内重新连接，房间将自动关闭。`;
             };
             update();
             const interval = setInterval(update, 1000);
@@ -2644,7 +2650,7 @@
                     return;
                 }
                 connect('wss://' + this.address.input.value);
-                this.address.set('icon', 'clear');
+                this.address.data.icon = 'clear';
                 const ws = connection;
                 this.#setCaption('正在连接');
                 return new Promise(resolve => {
@@ -2653,7 +2659,7 @@
                         setTimeout(resolve, 100);
                     };
                     ws.onopen = () => {
-                        this.address.set('icon', 'ok');
+                        this.address.data.icon = 'ok';
                         this.#setCaption('');
                         ws.send('init:' + JSON.stringify([uid, [hub.nickname, hub.avatar]]));
                         if (this.address.input.value !== hub.url) {
@@ -2685,7 +2691,7 @@
                 disconnect();
             }
             this.#clearRooms();
-            this.address.set('icon', null);
+            this.address.data.icon = null;
             this.#setCaption('已断开');
         }
         /** Remove room list. */
@@ -2789,9 +2795,9 @@
             nickname.callback = async (val) => {
                 if (val) {
                     this.db.set('nickname', val);
-                    nickname.set('icon', 'emote');
+                    nickname.data.icon = 'emote';
                     await new Promise(resolve => setTimeout(resolve, this.app.getTransition('slow')));
-                    nickname.set('icon', null);
+                    nickname.data.icon = null;
                     this.#sendInfo();
                 }
             };
@@ -3226,8 +3232,8 @@
     componentClasses.set('zoom', Zoom);
 
     // initialize component classes
-    for (const [key, val] of componentClasses) {
-        backups.set(key, val);
+    for (const [tag, cls] of componentClasses) {
+        backups.set(tag, cls);
     }
     restore();
     // create app component

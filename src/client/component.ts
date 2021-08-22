@@ -27,6 +27,9 @@ export class Component {
     /** Properties synced with worker. */
     #props = new Map<string, any>();
 
+    /** Property accessor. */
+    #data: Dict;
+
     [key: string]: any;
 
     get node() {
@@ -35,6 +38,10 @@ export class Component {
 
     get ready() {
         return this.#ready;
+    }
+
+    get data() {
+        return this.#data;
     }
 
     get app() {
@@ -57,8 +64,8 @@ export class Component {
         return ui;
     }
 
-    get owner() {
-        return this.get('owner');
+    get owner(): string | null {
+        return this.data.owner;
     }
 
     get mine() {
@@ -68,9 +75,20 @@ export class Component {
     /** Create node. */
     constructor(tag: string) {
         this.#ready = Promise.resolve().then(() => this.init());
-        const cls = this.constructor as typeof Component;
+
+        // property accessor
+        this.#data = new Proxy({}, {
+            get: (_, key: string) => {
+                return this.#props.get(key) ?? null;
+            },
+            set: (_, key: string, val: any) => {
+                this.update({[key]: val});
+                return true;
+            }
+        });
 
         // create DOM element
+        const cls = this.constructor as typeof Component;
         if (!cls.virtual) {
             this.#node = this.ui.createElement(cls.tag || tag);
         }
@@ -78,16 +96,6 @@ export class Component {
 
     /** Optional initialization method. */
     init() {};
-
-    /** Property getter. */
-    get(key: string): any {
-        return this.#props.get(key) ?? null;
-    }
-
-    /** Property setter. */
-    set(key: string, val: any) {
-        this.update({[key]: val});
-    }
 
     /** Get compnent by ID. */
     getComponent(id: number) {
@@ -100,7 +108,7 @@ export class Component {
     update(items: Dict, hook: boolean = true) {
         const hooks = [];
         for (const key in items) {
-            const oldVal = this.get(key);
+            const oldVal = this.#props.get(key) ?? null;
             const newVal = items[key] ?? null;
             newVal === null ? this.#props.delete(key) : this.#props.set(key, newVal);
             const hook = this['$' + key as keyof Component];
@@ -114,6 +122,7 @@ export class Component {
                 hook.apply(cmp, [newVal, oldVal]);
             }
         }
+
         return hooks;
     }
 

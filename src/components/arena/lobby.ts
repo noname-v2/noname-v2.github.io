@@ -79,7 +79,7 @@ export class Lobby extends Component {
         const players = [];
         const spectators = [];
         for (const peer of peers || []) {
-            if (peer.get('playing')) {
+            if (peer.data.playing) {
                 players.push(peer);
             }
             else {
@@ -89,12 +89,12 @@ export class Lobby extends Component {
         for (let i = 0; i < this.players.length; i++) {
             if (i < players.length) {
                 const peer = players[i]!;
-                this.players[i].set('heroImage', peer.get('avatar'));
-                this.players[i].set('heroName', peer.get('nickname'));
+                this.players[i].data.heroImage = peer.data.avatar;
+                this.players[i].data.heroName = peer.data.nickname;
             }
             else {
-                this.players[i].set('heroImage', null);
-                this.players[i].set('heroName', null);
+                this.players[i].data.heroImage = null;
+                this.players[i].data.heroName = null;
             }
         }
 
@@ -102,8 +102,8 @@ export class Lobby extends Component {
         const peer = this.app.arena!.peer;
         if (peer) {
             this.seats.classList.remove('offline');
-            this.spectateButton.dataset.fill = peer.get('playing') ? '' : 'red';
-            this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.get('avatar')));
+            this.spectateButton.dataset.fill = peer.data.playing ? '' : 'red';
+            this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.data.avatar));
             this.#checkSpectate();
         }
         else {
@@ -208,14 +208,14 @@ export class Lobby extends Component {
         // save configuration
         if (this.mine) {
             delete config.online;
-            this.db.set(this.get('mode') + ':config', config);
+            this.db.set(this.data.mode + ':config', config);
         }
 
         // update spectators
         if (config.np) {
             // make sure npmax is set
             setTimeout(() => {
-                for (let i = 0; i < this.get('npmax'); i++) {
+                for (let i = 0; i < this.data.npmax; i++) {
                     this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
                 }
                 this.#checkSpectate();
@@ -249,7 +249,7 @@ export class Lobby extends Component {
                 const toggle = this.configToggles.get('np');
                 if (toggle) {
                     const nps = Array.from(toggle.choices!.keys());
-                    const idx = nps.indexOf(this.get('config').np);
+                    const idx = nps.indexOf(this.data.config.np);
                     const delta = player.node.classList.contains('blurred') ? 1 : -1;
                     const np = nps[idx + delta];
                     if (typeof np === 'number') {
@@ -318,10 +318,10 @@ export class Lobby extends Component {
             this.spectateButton.classList.remove('disabled');
         }
         else {
-            const np = this.get('config').np;
+            const np = this.data.config.np;
             let n = 0;
             for (const player of this.players) {
-                if (player.get('heroName')) {
+                if (player.data.heroName) {
                     n++;
                 }
             }
