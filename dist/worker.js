@@ -1,11 +1,6 @@
 (function () {
     'use strict';
 
-    /** Internal context. */
-    const globals = {};
-    ////// debug
-    globalThis.globals = globals;
-
     /** Deep copy plain object. */
     function copy(from) {
         const to = {};
@@ -97,6 +92,111 @@
         rng: rng,
         readJSON: readJSON
     });
+
+    /** Late binding of room and hub. */
+    const globals = {};
+    /** Entries to be ticked. */
+    const ticks = [];
+    /** Send a message to a client. */
+    function send(to, tick) {
+        if (to === globals.room.uid) {
+            self.postMessage(tick);
+        }
+        else if (globals.peers) {
+            // send tick to a remote client
+            globals.connection.send('to:' + JSON.stringify([
+                to, JSON.stringify(tick)
+            ]));
+        }
+    }
+    /** Send a message to all clients. */
+    function broadcast(tick) {
+        if (globals.peers) {
+            globals.connection.send('bcast:' + JSON.stringify(tick));
+        }
+        self.postMessage(tick);
+    }
+    /** Add component update (called by Link). */
+    function tick(id, item) {
+        if (ticks.length === 0) {
+            // schedule a UITick if no pending UITick exists
+            setTimeout(() => commit());
+        }
+        ticks.push([globals.room.currentStage.id, id, item]);
+    }
+    /** Generate UITick(s) from this.#ticks. */
+    function commit() {
+        // split UITick by stage change
+        const stages = [];
+        for (const entry of ticks) {
+            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
+                stages.push([entry[0], []]);
+            }
+            stages[stages.length - 1][1].push(entry);
+        }
+        // generate UITick(s)
+        for (const [stageID, entries] of stages) {
+            const tagChanges = {};
+            const propChanges = {};
+            const calls = {};
+            // merge updates from different ticks
+            for (const [, id, item] of entries) {
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    Object.assign(propChanges[id], item);
+                }
+                else {
+                    tagChanges[id] = item;
+                }
+            }
+            // sync and save UITick
+            const tick = [stageID, tagChanges, propChanges, calls];
+            broadcast(tick);
+        }
+        ticks.length = 0;
+    }
+    /** Dispatch message from client. */
+    async function dispatch(data) {
+        try {
+            const [uid, sid, id, result, done] = data;
+            const stage = globals.room.currentStage;
+            const link = globals.room.links.get(id);
+            if (id === -1) {
+                // reload UI upon error
+                send(uid, globals.room.pack());
+            }
+            else if (id === -2) {
+                // disconnect from remote hub
+                globals.hub.disconnect();
+            }
+            else if (sid === stage.id && link && link[1].owner === uid) {
+                // send result to listener
+                if (done && stage.awaits.has(id)) {
+                    // results: component.respond() -> link.await()
+                    const key = stage.awaits.get(id);
+                    if (key) {
+                        stage.results[key] = result;
+                    }
+                    stage.awaits.delete(id);
+                    if (!stage.awaits.size) {
+                        globals.room.loop();
+                    }
+                }
+                else if (!done && stage.monitors.has(id)) {
+                    // results: component.yield() -> link.monitor()
+                    const method = stage.monitors.get(id);
+                    stage.task[method](result, link[0]);
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
 
     class Stage {
         /** Stage ID. */
@@ -220,7 +320,7 @@
         /** Do not trigger before / after / skip event. */
         silent = false;
         get game() {
-            return globals.game;
+            return globals.room.game;
         }
         get path() {
             return this.#stage.path;
@@ -238,7 +338,7 @@
         main() { }
         /** Create a link. */
         create(tag) {
-            return globals.game.create(tag);
+            return globals.room.game.create(tag);
         }
         /** Add a step in current stage. */
         add(step, ...args) {
@@ -297,33 +397,10 @@
         }
     }
 
-    /** Hub related functions. */
-    class Hub {
-        connect(url) {
-            globals.worker.connect(url);
-        }
-        disconnect() {
-            globals.worker.disconnect();
-        }
-        update() {
-            globals.room.update();
-        }
-        get peers() {
-            return globals.worker.getPeers();
-        }
-        get players() {
-            return globals.worker.getPeers({ playing: true });
-        }
-        get spectators() {
-            return globals.worker.getPeers({ playing: false });
-        }
-    }
     /** Game object used by stages. */
     class Game {
-        /** Communication with remote hub. */
-        #hub = new Hub();
         get owner() {
-            return globals.worker.uid;
+            return globals.room.uid;
         }
         get arena() {
             return globals.room.arena;
@@ -338,7 +415,7 @@
             return globals.room.packs;
         }
         get hub() {
-            return this.#hub;
+            return globals.hub;
         }
         get utils() {
             return utils;
@@ -363,12 +440,12 @@
         start() {
             freeze(this.config);
             globals.room.progress = 1;
-            this.#hub.update();
+            globals.hub.update();
         }
         /** Mark game as over. */
         over() {
             globals.room.progress = 2;
-            this.#hub.update();
+            globals.hub.update();
         }
     }
 
@@ -389,6 +466,10 @@
 
     /** Room that controlls game flow and classes. */
     class Room {
+        /** Owner ID. */
+        uid;
+        /** Owner nickname and avatar. */
+        info;
         /** Root game stage. */
         rootStage;
         /** Current game stage. */
@@ -401,6 +482,8 @@
         packs;
         /** Link to Arena. */
         arena;
+        /** Game object. */
+        game;
         /** Game progress.
          * 0: waiting
          * 1: gaming
@@ -425,7 +508,9 @@
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        async init(mode, packs, config) {
+        async init(uid, [mode, packs, config, info]) {
+            this.uid = uid;
+            this.info = info;
             this.packs = new Set(packs);
             this.config = config;
             // load extensions
@@ -441,7 +526,7 @@
             this.mode.extension = mode;
             freeze(this.mode);
             // start game
-            globals.game = new (this.getClass('game'))();
+            this.game = new (this.getClass('game'))();
             this.rootStage = this.currentStage = this.createStage('main');
             this.arena = this.create('arena');
             this.arena.ruleset = this.#ruleset;
@@ -455,10 +540,10 @@
             const reserved = {
                 id, tag,
                 call: (method, arg) => {
-                    globals.worker.tick(id, [method, arg]);
+                    tick(id, [method, arg]);
                 },
                 unlink: () => {
-                    globals.worker.tick(id, null);
+                    tick(id, null);
                     this.links.delete(id);
                 },
                 update: (items) => {
@@ -466,7 +551,7 @@
                         const val = items[key] ?? null;
                         val === null ? delete obj[key] : obj[key] = val;
                     }
-                    globals.worker.tick(id, items);
+                    tick(id, items);
                 }
             };
             const link = new Proxy(obj, {
@@ -488,7 +573,7 @@
                     }
                 }
             });
-            globals.worker.tick(id, tag);
+            tick(id, tag);
             this.links.set(id, [link, obj]);
             return link;
         }
@@ -517,25 +602,6 @@
         /** Get a game class. */
         getClass(path) {
             return this.#gameClasses.get(path);
-        }
-        /** Update room info for idle clients. */
-        update(push = true) {
-            const room = JSON.stringify([
-                // mode name
-                this.mode.name,
-                // joined players
-                globals.worker.getPeers({ playing: true })?.length ?? 1,
-                // number of players in a game
-                this.config.np,
-                // nickname and avatar of owner
-                globals.worker.info,
-                // game state
-                this.progress
-            ]);
-            if (push) {
-                globals.worker.connection?.send('edit:' + room);
-            }
-            return room;
         }
         /** Get a UITick of all links. */
         pack() {
@@ -588,86 +654,57 @@
         }
     }
 
-    const version = '2.0.0dev1';
-
-    /**
-     * Manager of component syncing between client and server.
-     */
-    class Worker {
-        /** Worker version. */
-        version = version;
-        /** User identifier. */
-        uid;
-        /** User nickname and avatar. */
-        info;
-        /** Connected hub. */
-        connection = null;
-        /** Links of connected clients. */
-        peers = null;
-        /** Ticked history items with timestamp. */
-        #history = [];
-        /** Entries to be ticked. */
-        #ticks = [];
-        /**
-         * Setup communication.
-         */
-        constructor() {
-            self.onmessage = ({ data }) => {
-                if (data[1] === 0) {
-                    self.onmessage = ({ data }) => this.#dispatch(data);
-                    const [mode, packs, config, info] = data[3];
-                    this.uid = data[0];
-                    this.info = info;
-                    globals.room.init(mode, packs, config);
-                }
-            };
-            self.postMessage('ready');
+    /** Hub related operations. */
+    class Hub {
+        get peers() {
+            return this.#getPeers();
         }
-        /** Send a message to all clients. */
-        broadcast(tick) {
-            if (this.peers) {
-                // broadcast tick
-                this.connection.send('bcast:' + JSON.stringify(tick));
-            }
-            self.postMessage(tick);
+        get players() {
+            return this.#getPeers({ playing: true });
         }
-        /** Send a message to a client. */
-        send(uid, tick) {
-            if (uid === this.uid) {
-                self.postMessage(tick);
-            }
-            else if (this.peers) {
-                // send tick to a remote client
-                this.connection.send('to:' + JSON.stringify([
-                    uid, JSON.stringify(tick)
-                ]));
-            }
+        get spectators() {
+            return this.#getPeers({ playing: false });
         }
         /** Connect to remote hub. */
         connect(url) {
-            if (this.connection) {
+            if (globals.connection) {
                 return;
             }
-            const ws = this.connection = new WebSocket('wss://' + url);
+            const ws = globals.connection = new WebSocket('wss://' + url);
             ws.onerror = ws.onclose = () => {
-                if (this.connection === ws) {
-                    this.connection = null;
-                    if (this.peers) {
-                        for (const peer of this.peers.values()) {
+                if (globals.connection === ws) {
+                    delete globals.connection;
+                    if (globals.peers) {
+                        for (const peer of globals.peers.values()) {
                             peer.unlink();
                         }
                     }
-                    this.peers = null;
-                    this.sync();
+                    delete globals.peers;
+                    this.#sync();
                 }
             };
             ws.onopen = () => {
-                ws.send('init:' + JSON.stringify([this.uid, this.info, globals.room.update(false)]));
+                ws.send('init:' + JSON.stringify([
+                    globals.room.uid, globals.room.info, this.update(false)
+                ]));
             };
             ws.onmessage = ({ data }) => {
                 try {
                     const [method, arg] = split(data);
-                    this[method](arg);
+                    switch (method) {
+                        case 'ready':
+                            this.#ready();
+                            break;
+                        case 'join':
+                            this.#join(arg);
+                            break;
+                        case 'leave':
+                            this.#leave(arg);
+                            break;
+                        case 'resp':
+                            this.#resp(arg);
+                            break;
+                    }
                 }
                 catch (e) {
                     console.log(e, data);
@@ -676,60 +713,79 @@
         }
         /** Disconnect from remote hub. */
         disconnect() {
-            const ws = this.connection;
+            const ws = globals.connection;
             if (ws) {
                 ws.send('edit:close');
                 setTimeout(() => {
-                    if (ws === this.connection) {
+                    if (ws === globals.connection) {
                         ws.close();
                     }
                 }, 1000);
             }
         }
-        /** Tell registered components about client update. */
-        sync() {
-            let peers = null;
-            if (this.peers) {
-                peers = [];
-                for (const peer of this.peers.values()) {
-                    peers.push(peer.id);
-                }
+        /** Update room info for idle clients. */
+        update(push = true) {
+            const state = JSON.stringify([
+                // mode name
+                globals.room.mode.name,
+                // joined players
+                this.players?.length ?? 1,
+                // number of players in a game
+                globals.room.config.np,
+                // nickname and avatar of owner
+                globals.room.info,
+                // game state
+                globals.room.progress
+            ]);
+            if (push) {
+                globals.connection?.send('edit:' + state);
             }
-            globals.game.arena.update({ peers });
+            return state;
         }
         /** The room is ready for clients to join. */
-        ready() {
-            this.peers = new Map();
-            this.#createPeer(this.uid, this.info);
+        #ready() {
+            globals.peers = new Map();
+            this.#createPeer(globals.room.uid, globals.room.info);
         }
         /** A remote client joins the room. */
-        join(msg) {
+        #join(msg) {
             // join as player or spectator
             const [uid, info] = JSON.parse(msg);
             this.#createPeer(uid, info);
-            globals.room.update();
-            this.send(uid, globals.room.pack());
+            this.update();
+            send(uid, globals.room.pack());
         }
         /** A remote client leaves the room. */
-        leave(uid) {
-            if (this.peers?.has(uid)) {
-                this.peers.get(uid).unlink();
-                this.peers.delete(uid);
-                this.sync();
-                globals.room.update();
+        #leave(uid) {
+            if (globals.peers?.has(uid)) {
+                globals.peers.get(uid).unlink();
+                globals.peers.delete(uid);
+                this.#sync();
+                this.update();
             }
         }
         /** A remote client sends a response message. */
-        resp(msg) {
-            this.#dispatch(JSON.parse(msg));
+        #resp(msg) {
+            dispatch(JSON.parse(msg));
+        }
+        /** Tell registered components about client update. */
+        #sync() {
+            let links = null;
+            if (globals.peers) {
+                links = [];
+                for (const peer of globals.peers.values()) {
+                    links.push(peer.id);
+                }
+            }
+            globals.room.arena.peers = links;
         }
         /** Get peers that match certain condition. */
-        getPeers(filter) {
-            if (!this.peers) {
+        #getPeers(filter) {
+            if (!globals.peers) {
                 return null;
             }
-            const peers = [];
-            for (const peer of this.peers.values()) {
+            const links = [];
+            for (const peer of globals.peers.values()) {
                 let skip = false;
                 for (const key in filter) {
                     if (peer[key] !== filter[key]) {
@@ -738,18 +794,10 @@
                     }
                 }
                 if (!skip) {
-                    peers.push(peer);
+                    links.push(peer);
                 }
             }
-            return peers;
-        }
-        /** Add component update (called by Link). */
-        tick(id, item) {
-            if (this.#ticks.length === 0) {
-                // schedule a UITick if no pending UITick exists
-                setTimeout(() => this.#commit());
-            }
-            this.#ticks.push([globals.room.currentStage.id, id, item]);
+            return links;
         }
         /** Create a peer component. */
         #createPeer(uid, info) {
@@ -758,89 +806,21 @@
                 owner: uid,
                 nickname: info[0],
                 avatar: info[1],
-                playing: this.getPeers({ playing: true }).length < globals.room.config.np
+                playing: this.players.length < globals.room.config.np
             });
-            this.peers.set(uid, peer);
-            this.sync();
-        }
-        /** Generate UITick(s) from this.#ticks. */
-        #commit() {
-            // split UITick by stage change
-            const stages = [];
-            const now = Date.now();
-            for (const entry of this.#ticks) {
-                if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
-                    stages.push([entry[0], []]);
-                }
-                stages[stages.length - 1][1].push(entry);
-            }
-            // generate UITick(s)
-            for (const [stageID, entries] of stages) {
-                const tagChanges = {};
-                const propChanges = {};
-                const calls = {};
-                // merge updates from different ticks
-                for (const [, id, item] of entries) {
-                    if (Array.isArray(item)) {
-                        calls[id] ??= [];
-                        calls[id].push(item);
-                    }
-                    else if (item && typeof item === 'object') {
-                        propChanges[id] ??= {};
-                        Object.assign(propChanges[id], item);
-                    }
-                    else {
-                        tagChanges[id] = item;
-                    }
-                }
-                // sync and save UITick
-                const tick = [stageID, tagChanges, propChanges, calls];
-                this.broadcast(tick);
-                this.#history.push([now, tick]);
-            }
-            this.#ticks.length = 0;
-        }
-        /** Dispatch message from client. */
-        async #dispatch(data) {
-            try {
-                const [uid, sid, id, result, done] = data;
-                const stage = globals.room.currentStage;
-                const link = globals.room.links.get(id);
-                if (id === -1) {
-                    // reload UI upon error
-                    this.send(uid, globals.room.pack());
-                }
-                else if (id === -2) {
-                    // disconnect from remote hub
-                    this.disconnect();
-                }
-                else if (sid === stage.id && link && link[1].owner === uid) {
-                    // send result to listener
-                    if (done && stage.awaits.has(id)) {
-                        // results: component.respond() -> link.await()
-                        const key = stage.awaits.get(id);
-                        if (key) {
-                            stage.results[key] = result;
-                        }
-                        stage.awaits.delete(id);
-                        if (!stage.awaits.size) {
-                            globals.room.loop();
-                        }
-                    }
-                    else if (!done && stage.monitors.has(id)) {
-                        // results: component.yield() -> link.monitor()
-                        const method = stage.monitors.get(id);
-                        stage.task[method](result, link[0]);
-                    }
-                }
-            }
-            catch (e) {
-                console.log(e);
-            }
+            globals.peers.set(uid, peer);
+            this.#sync();
         }
     }
 
-    globals.worker = new Worker();
     globals.room = new Room();
+    globals.hub = new Hub();
+    self.onmessage = ({ data }) => {
+        if (data[1] === 0) {
+            self.onmessage = ({ data }) => dispatch(data);
+            globals.room.init(data[0], data[3]);
+        }
+    };
+    self.postMessage('ready');
 
 }());

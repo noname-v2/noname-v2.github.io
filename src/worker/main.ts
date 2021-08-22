@@ -1,12 +1,15 @@
 import { Room } from './room'
-import { ClientMessage, dispatch, enter } from './worker';
+import { Hub } from './hub';
+import { ClientMessage, globals, dispatch } from './worker';
+
+globals.room = new Room();
+globals.hub = new Hub();
 
 self.onmessage = ({data}: {data: ClientMessage}) => {
     if (data[1] === 0) {
         self.onmessage = ({data}: {data: ClientMessage}) => dispatch(data);
-        const room = new Room();
-        enter(room);
-        room.init(data[0], data[3]);
+        globals.room.init(data[0], data[3]);
     }
 }
+
 (self as any).postMessage('ready');

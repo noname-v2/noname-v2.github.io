@@ -1,5 +1,5 @@
-import { globals } from './globals';
 import { apply } from '../utils';
+import { globals } from './worker';
 import type { Task } from './task';
 import type { Dict } from '../types';
 

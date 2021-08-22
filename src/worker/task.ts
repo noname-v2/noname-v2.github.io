@@ -1,4 +1,4 @@
-import { globals } from './globals';
+import { globals } from './worker';
 import type { Stage } from './stage';
 import type { Game } from './game';
 import type { Link, Dict } from '../types';
@@ -11,7 +11,7 @@ export class Task<T extends Game = Game> {
     [key: string]: any;
 
     get game(): T {
-        return globals.game as T;
+        return globals.room.game as T;
     }
 
     get path(): string {
@@ -35,7 +35,7 @@ export class Task<T extends Game = Game> {
 
     /** Create a link. */
     create(tag: string): Link {
-        return globals.game.create(tag);
+        return globals.room.game.create(tag);
     }
 
     /** Add a step in current stage. */

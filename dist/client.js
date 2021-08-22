@@ -590,6 +590,7 @@
         return extensions.get(extname);
     }
 
+    const version = '2.0.0dev1';
     const hub$1 = {
         "url": "ws.noname.pub:8080",
         "nickname": "无名玩家",
@@ -879,6 +880,7 @@
         /** Create node. */
         constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
+            // property accessor
             this.#data = new Proxy({}, {
                 get: (_, key) => {
                     return this.#props.get(key) ?? null;
@@ -2389,7 +2391,7 @@
         }
         async #resetGame() {
             if (window['caches']) {
-                await window['caches'].delete(this.app.version);
+                await window['caches'].delete(version);
             }
             for (const file of await this.db.readdir()) {
                 if (file.endsWith('.json') || file.endsWith('.js') || file.endsWith('.css')) {
