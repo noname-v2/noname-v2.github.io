@@ -1,4 +1,4 @@
-import { globals } from './worker';
+import { room } from './globals';
 import type { Stage } from './stage';
 import type { Game } from './game';
 import type { Link, Dict } from '../types';
@@ -11,7 +11,7 @@ export class Task<T extends Game = Game> {
     [key: string]: any;
 
     get game(): T {
-        return globals.room.game as T;
+        return room.game as T;
     }
 
     get path(): string {
@@ -27,7 +27,7 @@ export class Task<T extends Game = Game> {
     }
 
     get #stage(): Stage {
-        return globals.room.tasks.get(this)!;
+        return room.tasks.get(this)!;
     }
 
     /** Main function. */
@@ -35,7 +35,7 @@ export class Task<T extends Game = Game> {
 
     /** Create a link. */
     create(tag: string): Link {
-        return globals.room.game.create(tag);
+        return room.game.create(tag);
     }
 
     /** Add a step in current stage. */
@@ -45,14 +45,14 @@ export class Task<T extends Game = Game> {
 
     /** Add a child stage in current stage. */
     addTask<T extends Task>(this: T, path: string, data?: Dict): T {
-        const stage = globals.room.createStage(path, data, this.#stage);
+        const stage = room.createStage(path, data, this.#stage);
         this.#stage.steps.push(stage);
         return stage.task as T;
     }
 
     /** Add a sibline stage next to current stage. */
     addSiblingTask<T extends Task>(this: T, path: string, data?: Dict): T {
-        const stage = globals.room.createStage(path, data, this.#stage.parent!);
+        const stage = room.createStage(path, data, this.#stage.parent!);
         const idx = this.#stage.steps.indexOf(this.#stage.parent!);
         if (idx !== -1) {
             this.#stage.steps.splice(idx + 1, 0, stage);

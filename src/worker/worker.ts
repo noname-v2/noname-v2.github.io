@@ -1,6 +1,5 @@
-import type { Room } from './room';
-import type { Hub } from './hub';
-import type { Dict, Link } from '../types';
+import { peers, connection, room, hub } from './globals';
+import type { Dict } from '../types';
 
 /** An update to client side. */
 export type UITick = [
@@ -20,14 +19,6 @@ type TickItem = string | null | Dict | [string, any];
 /** Stage ID, component ID and UITick section. */
 type TickEntry = [number, number, TickItem];
 
-/** Late binding of room and hub. */
-export const globals = {} as {
-    room: Room;
-    hub: Hub;
-    connection?: WebSocket;
-    peers?: Map<string, Link>;
-}
-
 /** Client-side message.
  * 0: uid
  * 1: stage ID
@@ -45,12 +36,12 @@ const ticks: TickEntry[] = [];
 
 /** Send a message to a client. */
 export function send(to: string, tick: UITick) {
-    if (to === globals.room.uid) {
+    if (to === room.uid) {
         (self as any).postMessage(tick);
     }
-    else if (globals.peers) {
+    else if (peers) {
         // send tick to a remote client
-        globals.connection!.send('to:' + JSON.stringify([
+        connection!.send('to:' + JSON.stringify([
             to, JSON.stringify(tick)
         ]))
     }
@@ -58,8 +49,8 @@ export function send(to: string, tick: UITick) {
 
 /** Send a message to all clients. */
 function broadcast(tick: UITick) {
-    if (globals.peers) {
-        globals.connection!.send('bcast:' + JSON.stringify(tick));
+    if (peers) {
+        connection!.send('bcast:' + JSON.stringify(tick));
     }
     (self as any).postMessage(tick);
 }
@@ -70,7 +61,7 @@ export function tick(id: number, item: TickItem) {
         // schedule a UITick if no pending UITick exists
         setTimeout(() => commit());
     }
-    ticks.push([globals.room.currentStage.id, id, item]);
+    ticks.push([room.currentStage.id, id, item]);
 }
 
 /** Generate UITick(s) from this.#ticks. */
@@ -119,15 +110,15 @@ function commit() {
 export async function dispatch(data: ClientMessage) {
     try {
         const [uid, sid, id, result, done] = data;
-        const stage = globals.room.currentStage;
-        const link = globals.room.links.get(id);
+        const stage = room.currentStage;
+        const link = room.links.get(id);
         if (id === -1) {
             // reload UI upon error
-            send(uid, globals.room.pack());
+            send(uid, room.pack());
         }
         else if (id === -2) {
             // disconnect from remote hub
-            globals.hub.disconnect();
+            hub.disconnect();
         }
         else if (sid === stage.id && link && link[1].owner === uid) {
             // send result to listener
@@ -139,7 +130,7 @@ export async function dispatch(data: ClientMessage) {
                 }
                 stage.awaits.delete(id);
                 if (!stage.awaits.size) {
-                    globals.room.loop();
+                    room.loop();
                 }
             }
             else if (!done && stage.monitors.has(id)) {

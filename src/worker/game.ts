@@ -1,30 +1,30 @@
-import { globals } from './worker';
+import { hub, room } from './globals';
 import * as utils from '../utils';
 
 /** Game object used by stages. */
 export abstract class Game {
     get owner() {
-        return globals.room.uid;
+        return room.uid;
     }
 
     get arena() {
-        return globals.room.arena;
+        return room.arena;
     }
 
     get mode() {
-        return globals.room.mode;
+        return room.mode;
     }
 
     get config() {
-        return globals.room.config;
+        return room.config;
     }
 
     get packs() {
-        return globals.room.packs;
+        return room.packs;
     }
 
     get hub() {
-        return globals.hub;
+        return hub;
     }
 
     get utils() {
@@ -33,35 +33,35 @@ export abstract class Game {
 
     /** Get a link. */
     get(id: number) {
-        return globals.room.links.get(id);
+        return room.links.get(id);
     }
 
     /** Create a link. */
     create(tag: string) {
-        return globals.room.create(tag);
+        return room.create(tag);
     }
 
     /** Creata a class in game.#gameClasses. */
     createInstance(name: string, ...args: any[]) {
-        return new (globals.room.getClass(name))(...args);
+        return new (room.getClass(name))(...args);
     }
 
     /** Access extension content. */
     getExtension(path: string) {
-        return globals.room.getExtension(path);
+        return room.getExtension(path);
     }
 
     /** Mark game as started and disallow changing configuration. */
     start() {
         utils.freeze(this.config);
-        globals.room.progress = 1;
-        globals.hub.update();
+        room.progress = 1;
+        hub.update();
     }
 
     /** Mark game as over. */
     over() {
-        globals.room.progress = 2;
-        globals.hub.update();
+        room.progress = 2;
+        hub.update();
     }
 
     /** Backup game state. */

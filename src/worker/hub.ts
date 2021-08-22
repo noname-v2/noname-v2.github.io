@@ -1,6 +1,7 @@
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
-import { dispatch, send, globals } from './worker';
+import { dispatch, send } from './worker';
+import { connection, peers, room, set } from './globals';
 import type { Dict } from '../types';
 
 /** Hub related operations. */
@@ -19,25 +20,26 @@ export class Hub {
 
     /** Connect to remote hub. */
     connect(url: string) {
-        if (globals.connection) {
+        if (connection) {
             return;
         }
-        const ws = globals.connection = new WebSocket('wss://' + url);
+        const ws = new WebSocket('wss://' + url);
+        set('connection', ws);
         ws.onerror = ws.onclose = () => {
-            if (globals.connection === ws) {
-                delete globals.connection;
-                if (globals.peers) {
-                    for (const peer of globals.peers.values()) {
+            if (connection === ws) {
+                set('connection', null);
+                if (peers) {
+                    for (const peer of peers.values()) {
                         peer.unlink();
                     }
                 }
-                delete globals.peers;
+                set('peers', null);
                 this.#sync();
             }
         };
         ws.onopen = () => {
             ws.send('init:' + JSON.stringify([
-                globals.room.uid, globals.room.info, this.update(false)
+                room.uid, room.info, this.update(false)
             ]));
         };
         ws.onmessage = ({data}) => {
@@ -59,11 +61,11 @@ export class Hub {
 
     /** Disconnect from remote hub. */
     disconnect() {
-        const ws = globals.connection;
+        const ws = connection;
         if (ws) {
             ws.send('edit:close');
             setTimeout(() => {
-                if (ws === globals.connection) {
+                if (ws === connection) {
                     ws.close();
                 }
             }, 1000);
@@ -74,26 +76,26 @@ export class Hub {
     update(push=true) {
         const state = JSON.stringify([
             // mode name
-            globals.room.mode.name,
+            room.mode.name,
             // joined players
             this.players?.length ?? 1,
             // number of players in a game
-            globals.room.config.np,
+            room.config.np,
             // nickname and avatar of owner
-            globals.room.info,
+            room.info,
             // game state
-            globals.room.progress
+            room.progress
         ]);
         if (push) {
-            globals.connection?.send('edit:' + state);
+            connection?.send('edit:' + state);
         }
         return state;
     }
 
     /** The room is ready for clients to join. */
     #ready() {
-        globals.peers = new Map();
-        this.#createPeer(globals.room.uid, globals.room.info);
+        set('peers', new Map());
+        this.#createPeer(room.uid, room.info);
     }
 
     /** A remote client joins the room. */
@@ -102,14 +104,14 @@ export class Hub {
         const [uid, info]: [string, [string, string]] = JSON.parse(msg);
         this.#createPeer(uid, info);
         this.update();
-        send(uid, globals.room.pack());
+        send(uid, room.pack());
     }
 
     /** A remote client leaves the room. */
     #leave(uid: string) {
-        if (globals.peers?.has(uid)) {
-            globals.peers.get(uid)!.unlink();
-            globals.peers.delete(uid);
+        if (peers?.has(uid)) {
+            peers.get(uid)!.unlink();
+            peers.delete(uid);
             this.#sync();
             this.update();
         }
@@ -123,22 +125,22 @@ export class Hub {
     /** Tell registered components about client update. */
     #sync() {
         let links = null;
-        if (globals.peers) {
+        if (peers) {
             links = [];
-            for (const peer of globals.peers.values()) {
+            for (const peer of peers.values()) {
                 links.push(peer.id);
             }
         }
-        globals.room.arena.peers = links;
+        room.arena.peers = links;
     }
 
     /** Get peers that match certain condition. */
     #getPeers(filter?: Dict) {
-        if (!globals.peers) {
+        if (!peers) {
             return null;
         }
         const links = [];
-        for (const peer of globals.peers.values()) {
+        for (const peer of peers.values()) {
             let skip = false;
             for (const key in filter) {
                 if (peer[key] !== filter[key]) {
@@ -155,14 +157,14 @@ export class Hub {
 
     /** Create a peer component. */
     #createPeer(uid: string, info: [string, string]) {
-        const peer = globals.room.create('peer');
+        const peer = room.create('peer');
         peer.update({
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: this.players!.length < globals.room.config.np
+            playing: this.players!.length < room.config.np
         });
-        globals.peers!.set(uid, peer);
+        peers!.set(uid, peer);
         this.#sync();
     }
 }
