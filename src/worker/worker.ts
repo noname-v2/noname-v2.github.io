@@ -1,7 +1,6 @@
-import { version } from '../meta';
-import { globals } from './globals';
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
+import type { Room } from './room';
 import type { Link, Dict } from '../types';
 
 /** An update to client side. */
@@ -22,6 +21,18 @@ type TickItem = string | null | Dict | [string, any];
 /** Stage ID, component ID and UITick section. */
 type TickEntry = [number, number, TickItem];
 
+/** Room that controlls a game. */
+export let room: Room;
+export function enter(r: Room) {
+    room = r;
+}
+
+/** Connected hub. */
+let connection: WebSocket | null = null;
+
+/** Links of connected clients. */
+let peers: Map<string, Link> | null = null;
+
 /** Client-side message.
  * 0: uid
  * 1: stage ID
@@ -31,94 +42,106 @@ type TickEntry = [number, number, TickItem];
  */
 export type ClientMessage = [string, number, number, any, boolean];
 
-/**
- * Manager of component syncing between client and server.
- */
-export class Worker {
-    /** Worker version. */
-    version = version;
+/** Ticked history items with timestamp. */
+const history: [number, UITick][] = [];
 
-    /** User identifier. */
-    uid!: string;
+/** Entries to be ticked. */
+const ticks: TickEntry[] = [];
 
-    /** User nickname and avatar. */
-    info!: [string, string];
-
-    /** Connected hub. */
-    connection: WebSocket | null = null;
-
-    /** Links of connected clients. */
-    peers: Map<string, Link> | null = null;
-
-    /** Ticked history items with timestamp. */
-    #history: [number, UITick][] = [];
-
-    /** Entries to be ticked. */
-    #ticks: TickEntry[] = [];
-
-    /**
-     * Setup communication.
-     */
-    constructor() {
-        self.onmessage = ({data}: {data: ClientMessage}) => {
-            if (data[1] === 0) {
-                self.onmessage = ({data}: {data: ClientMessage}) => this.#dispatch(data);
-                const [mode, packs, config, info] = data[3];
-                this.uid = data[0];
-                this.info = info;
-                globals.room.init(mode, packs, config);
-            }
-        }
-        (self as any).postMessage('ready');
+/** Send a message to all clients. */
+export function broadcast(tick: UITick) {
+    if (peers) {
+        // broadcast tick
+        connection!.send('bcast:' + JSON.stringify(tick));
     }
+    (self as any).postMessage(tick);
+}
 
-    /** Send a message to all clients. */
-    broadcast(tick: UITick) {
-        if (this.peers) {
-            // broadcast tick
-            this.connection!.send('bcast:' + JSON.stringify(tick));
-        }
+/** Send a message to a client. */
+export function send(to: string, tick: UITick) {
+    if (to === room.uid) {
         (self as any).postMessage(tick);
     }
+    else if (peers) {
+        // send tick to a remote client
+        connection!.send('to:' + JSON.stringify([
+            to, JSON.stringify(tick)
+        ]))
+    }
+}
 
-    /** Send a message to a client. */
-    send(uid: string, tick: UITick) {
-        if (uid === this.uid) {
-            (self as any).postMessage(tick);
+/** Handler of hub messages. */
+const messages = {
+    /** The room is ready for clients to join. */
+    ready() {
+        peers = new Map();
+        createPeer(room.uid, room.info);
+    },
+
+    /** A remote client joins the room. */
+    join(msg: string) {
+        // join as player or spectator
+        const [uid, info]: [string, [string, string]] = JSON.parse(msg);
+        createPeer(uid, info);
+        hub.update();
+        send(uid, room.pack());
+    },
+
+    /** A remote client leaves the room. */
+    leave(uid: string) {
+        if (peers?.has(uid)) {
+            peers.get(uid)!.unlink();
+            peers.delete(uid);
+            sync();
+            hub.update();
         }
-        else if (this.peers) {
-            // send tick to a remote client
-            this.connection!.send('to:' + JSON.stringify([
-                uid, JSON.stringify(tick)
-            ]))
-        }
+    },
+
+    /** A remote client sends a response message. */
+    resp(msg: string) {
+        dispatch(JSON.parse(msg));
+    }
+}
+
+/** Hub related operations. */
+class Hub {
+    get peers() {
+        return getPeers();
+    }
+
+    get players() {
+        return getPeers({playing: true});
+    }
+
+    get spectators() {
+        return getPeers({playing: false});
     }
 
     /** Connect to remote hub. */
     connect(url: string) {
-        if (this.connection) {
+        if (connection) {
             return;
         }
-        const ws = this.connection = new WebSocket('wss://' + url);
+        const ws = connection = new WebSocket('wss://' + url);
         ws.onerror = ws.onclose = () => {
-            if (this.connection === ws) {
-                this.connection = null;
-                if (this.peers) {
-                    for (const peer of this.peers.values()) {
+            if (connection === ws) {
+                connection = null;
+                if (peers) {
+                    for (const peer of peers.values()) {
                         peer.unlink();
                     }
                 }
-                this.peers = null;
-                this.sync();
+                peers = null;
+                sync();
             }
         };
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([this.uid, this.info, globals.room.update(false)]));
+            ws.send('init:' + JSON.stringify([room.uid, room.info, this.update(false)]));
         };
         ws.onmessage = ({data}) => {
             try {
                 const [method, arg] = split<typeof hub2owner[number]>(data);
-                this[method](arg);
+                messages[method](arg);
             }
             catch (e) {
                 console.log(e, data);
@@ -128,180 +151,172 @@ export class Worker {
 
     /** Disconnect from remote hub. */
     disconnect() {
-        const ws = this.connection;
+        const ws = connection;
         if (ws) {
             ws.send('edit:close');
             setTimeout(() => {
-                if (ws === this.connection) {
+                if (ws === connection) {
                     ws.close();
                 }
             }, 1000);
         }
     }
 
-    /** Tell registered components about client update. */
-    sync() {
-        let peers = null;
-        if (this.peers) {
-            peers = [];
-            for (const peer of this.peers.values()) {
-                peers.push(peer.id);
+    /** Update room info for idle clients. */
+    update(push=true) {
+        const state = JSON.stringify([
+            // mode name
+            room.mode.name,
+            // joined players
+            this.players!.length ?? 1,
+            // number of players in a game
+            room.config.np,
+            // nickname and avatar of owner
+            room.info,
+            // game state
+            room.progress
+        ]);
+        if (push) {
+            connection?.send('edit:' + state);
+        }
+        return state;
+    }
+}
+
+export const hub = new Hub();
+
+/** Tell registered components about client update. */
+function sync() {
+    let links = null;
+    if (peers) {
+        links = [];
+        for (const peer of peers.values()) {
+            links.push(peer.id);
+        }
+    }
+    room.arena.peers.links;
+}
+
+/** Get peers that match certain condition. */
+function getPeers(filter?: Dict) {
+    if (!peers) {
+        return null;
+    }
+    const links = [];
+    for (const peer of peers.values()) {
+        let skip = false;
+        for (const key in filter) {
+            if (peer[key] !== filter[key]) {
+                skip = true;
+                continue;
             }
         }
-        globals.game.arena.update({peers});
-    }
-
-    /** The room is ready for clients to join. */
-    ready() {
-        this.peers = new Map();
-        this.#createPeer(this.uid, this.info);
-    }
-
-    /** A remote client joins the room. */
-    join(msg: string) {
-        // join as player or spectator
-        const [uid, info]: [string, [string, string]] = JSON.parse(msg);
-        this.#createPeer(uid, info);
-        globals.room.update();
-        this.send(uid, globals.room.pack());
-    }
-
-    /** A remote client leaves the room. */
-    leave(uid: string) {
-        if (this.peers?.has(uid)) {
-            this.peers.get(uid)!.unlink();
-            this.peers.delete(uid);
-            this.sync();
-            globals.room.update();
+        if (!skip) {
+            links.push(peer);
         }
     }
+    return links;
+}
 
-    /** A remote client sends a response message. */
-    resp(msg: string) {
-        this.#dispatch(JSON.parse(msg));
+/** Create a peer component. */
+function createPeer(uid: string, info: [string, string]) {
+    const peer = room.create('peer');
+    peer.update({
+        owner: uid,
+        nickname: info[0],
+        avatar: info[1],
+        playing: getPeers({playing: true})!.length < room.config.np
+    });
+    peers!.set(uid, peer);
+    sync();
+}
+
+/** Add component update (called by Link). */
+export function tick(id: number, item: TickItem) {
+    if (ticks.length === 0) {
+        // schedule a UITick if no pending UITick exists
+        setTimeout(() => commit());
+    }
+    ticks.push([room.currentStage.id, id, item]);
+}
+
+/** Generate UITick(s) from this.#ticks. */
+function commit() {
+    // split UITick by stage change
+    const stages: [number, TickEntry[]][] = [];
+    const now = Date.now();
+    for (const entry of ticks) {
+        if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
+            stages.push([entry[0], []]);
+        }
+        stages[stages.length - 1][1].push(entry);
     }
 
-    /** Get peers that match certain condition. */
-    getPeers(filter?: Dict) {
-        if (!this.peers) {
-            return null;
+    // generate UITick(s)
+    for (const [stageID, entries] of stages) {
+        const tagChanges: Dict<string | null> = {};
+        const propChanges: Dict<Dict> = {};
+        const calls: Dict<[string, any][]> = {};
+
+        // merge updates from different ticks
+        for (const [, id, item] of entries) {
+            if (Array.isArray(item)) {
+                calls[id] ??= [];
+                calls[id].push(item);
+            }
+            else if (item && typeof item === 'object') {
+                propChanges[id] ??= {};
+                Object.assign(propChanges[id], item);
+            }
+            else {
+                tagChanges[id] = item;
+            }
         }
-        const peers = [];
-        for (const peer of this.peers.values()) {
-            let skip = false;
-            for (const key in filter) {
-                if (peer[key] !== filter[key]) {
-                    skip = true;
-                    continue;
+
+        // sync and save UITick
+        const tick: UITick = [stageID, tagChanges, propChanges, calls];
+        broadcast(tick);
+        history.push([now, tick]);
+    }
+
+    ticks.length = 0;
+}
+
+/** Dispatch message from client. */
+export async function dispatch(data: ClientMessage) {
+    try {
+        const [uid, sid, id, result, done] = data;
+        const stage = room.currentStage;
+        const link = room.links.get(id);
+        if (id === -1) {
+            // reload UI upon error
+            send(uid, room.pack());
+        }
+        else if (id === -2) {
+            // disconnect from remote hub
+            hub.disconnect();
+        }
+        else if (sid === stage.id && link && link[1].owner === uid) {
+            // send result to listener
+            if (done && stage.awaits.has(id)) {
+                // results: component.respond() -> link.await()
+                const key = stage.awaits.get(id);
+                if (key) {
+                    stage.results[key] = result;
+                }
+                stage.awaits.delete(id);
+                if (!stage.awaits.size) {
+                    room.loop();
                 }
             }
-            if (!skip) {
-                peers.push(peer);
+            else if (!done && stage.monitors.has(id)) {
+                // results: component.yield() -> link.monitor()
+                const method = stage.monitors.get(id)!;
+                (stage.task as any)[method](result, link[0]);
             }
         }
-        return peers;
     }
-
-    /** Add component update (called by Link). */
-    tick(id: number, item: TickItem) {
-        if (this.#ticks.length === 0) {
-            // schedule a UITick if no pending UITick exists
-            setTimeout(() => this.#commit());
-        }
-        this.#ticks.push([globals.room.currentStage.id, id, item]);
-    }
-
-    /** Create a peer component. */
-    #createPeer(uid: string, info: [string, string]) {
-        const peer = globals.room.create('peer');
-        peer.update({
-            owner: uid,
-            nickname: info[0],
-            avatar: info[1],
-            playing: this.getPeers({playing: true})!.length < globals.room.config.np
-        });
-        this.peers!.set(uid, peer);
-        this.sync();
-    }
-
-    /** Generate UITick(s) from this.#ticks. */
-    #commit() {
-        // split UITick by stage change
-        const stages: [number, TickEntry[]][] = [];
-        const now = Date.now();
-        for (const entry of this.#ticks) {
-            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
-                stages.push([entry[0], []]);
-            }
-            stages[stages.length - 1][1].push(entry);
-        }
-
-        // generate UITick(s)
-        for (const [stageID, entries] of stages) {
-            const tagChanges: Dict<string | null> = {};
-            const propChanges: Dict<Dict> = {};
-            const calls: Dict<[string, any][]> = {};
-
-            // merge updates from different ticks
-            for (const [, id, item] of entries) {
-                if (Array.isArray(item)) {
-                    calls[id] ??= [];
-                    calls[id].push(item);
-                }
-                else if (item && typeof item === 'object') {
-                    propChanges[id] ??= {};
-                    Object.assign(propChanges[id], item);
-                }
-                else {
-                    tagChanges[id] = item;
-                }
-            }
-
-            // sync and save UITick
-            const tick: UITick = [stageID, tagChanges, propChanges, calls];
-            this.broadcast(tick);
-            this.#history.push([now, tick]);
-        }
-
-        this.#ticks.length = 0;
-    }
-
-    /** Dispatch message from client. */
-    async #dispatch(data: ClientMessage) {
-        try {
-            const [uid, sid, id, result, done] = data;
-            const stage = globals.room.currentStage;
-            const link = globals.room.links.get(id);
-            if (id === -1) {
-                // reload UI upon error
-                this.send(uid, globals.room.pack());
-            }
-            else if (id === -2) {
-                // disconnect from remote hub
-                this.disconnect();
-            }
-            else if (sid === stage.id && link && link[1].owner === uid) {
-                // send result to listener
-                if (done && stage.awaits.has(id)) {
-                    // results: component.respond() -> link.await()
-                    const key = stage.awaits.get(id);
-                    if (key) {
-                        stage.results[key] = result;
-                    }
-                    stage.awaits.delete(id);
-                    if (!stage.awaits.size) {
-                        globals.room.loop();
-                    }
-                }
-                else if (!done && stage.monitors.has(id)) {
-                    // results: component.yield() -> link.monitor()
-                    const method = stage.monitors.get(id)!;
-                    (stage.task as any)[method](result, link[0]);
-                }
-            }
-        }
-        catch (e) {
-            console.log(e);
-        }
+    catch (e) {
+        console.log(e);
     }
 }

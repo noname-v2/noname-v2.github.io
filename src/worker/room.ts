@@ -2,13 +2,19 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Game } from './game';
+import { tick } from './worker';
 import { importExtension, getExtension } from '../extension';
-import { globals } from './globals';
 import type { UITick } from './worker';
 import type { Mode, Link, Dict } from '../types';
 
 /** Room that controlls game flow and classes. */
 export class Room {
+    /** Owner ID. */
+    uid!: string;
+
+    /** Owner nickname and avatar. */
+    info!: [string, string];
+
     /** Root game stage. */
     rootStage!: Stage;
 
@@ -26,6 +32,9 @@ export class Room {
 
     /** Link to Arena. */
     arena!: Link;
+
+    /** Game object. */
+    game!: Game;
 
     /** Game progress.
      * 0: waiting
@@ -61,7 +70,9 @@ export class Room {
     /** Currently paused by stage.awaits. */
     #paused = true;
 
-    async init(mode: string, packs: string[], config: Dict) {
+    async init(uid: string, [mode, packs, config, info]:  [string, string[], Dict, [string, string]]) {
+        this.uid = uid;
+        this.info = info;
         this.packs = new Set(packs);
         this.config = config;
 
@@ -82,7 +93,7 @@ export class Room {
         freeze(this.mode);
         
         // start game
-        globals.game = new (this.getClass('game'))();
+        this.game = new (this.getClass('game'))();
         this.rootStage = this.currentStage = this.createStage('main');
         this.arena = this.create('arena');
         this.arena.ruleset = this.#ruleset;
@@ -98,10 +109,10 @@ export class Room {
         const reserved: Link = {
             id, tag,
             call: (method: string, arg?: any) => {
-                globals.worker.tick(id, [method, arg]);
+                tick(id, [method, arg]);
             },
             unlink: () => {
-                globals.worker.tick(id, null);
+                tick(id, null);
                 this.links.delete(id);
             },
             update: (items: Dict) => {
@@ -109,7 +120,7 @@ export class Room {
                     const val = items[key] ?? null;
                     val === null ? delete obj[key] : obj[key] = val;
                 }
-                globals.worker.tick(id, items);
+                tick(id, items);
             }
         };
 
@@ -133,7 +144,7 @@ export class Room {
             }
         }) as Link;
 
-        globals.worker.tick(id, tag);
+        tick(id, tag);
         this.links.set(id, [link, obj]);
         return link;
     }
@@ -166,26 +177,6 @@ export class Room {
     /** Get a game class. */
     getClass(path: string) {
         return this.#gameClasses.get(path);
-    }
-
-    /** Update room info for idle clients. */
-    update(push=true) {
-        const room = JSON.stringify([
-            // mode name
-            this.mode.name,
-            // joined players
-            globals.worker.getPeers({playing: true})?.length ?? 1,
-            // number of players in a game
-            this.config.np,
-            // nickname and avatar of owner
-            globals.worker.info,
-            // game state
-            this.progress
-        ]);
-        if (push) {
-            globals.worker.connection?.send('edit:' + room);
-        }
-        return room;
     }
 
     /** Get a UITick of all links. */

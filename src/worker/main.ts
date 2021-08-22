@@ -1,6 +1,12 @@
-import { Room } from './room';
-import { Worker } from './worker';
-import { globals } from './globals';
+import { Room } from './room'
+import { ClientMessage, dispatch, enter } from './worker';
 
-globals.worker = new Worker();
-globals.room = new Room();
+self.onmessage = ({data}: {data: ClientMessage}) => {
+    if (data[1] === 0) {
+        self.onmessage = ({data}: {data: ClientMessage}) => dispatch(data);
+        const room = new Room();
+        enter(room);
+        room.init(data[0], data[3]);
+    }
+}
+(self as any).postMessage('ready');

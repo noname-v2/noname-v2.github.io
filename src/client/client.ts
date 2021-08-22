@@ -56,7 +56,7 @@ db.ready.then(() => {
 });
 
 /** Components managed by worker. */
-export const components = new Map<number, Component>();
+export const components = new Map<number | 'app' | 'splash' | 'arena', Component>();
 export const componentIDs = new Map<Component, number>();
 
 /** ID of current stage. */
