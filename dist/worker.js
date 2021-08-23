@@ -15,9 +15,12 @@
         return to;
     }
     /** Merge two objects. */
-    function apply(to, from) {
+    function apply(to, from, exclude) {
         for (const key in from) {
-            if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+            if (exclude?.includes(key)) {
+                continue;
+            }
+            else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
                 apply(to[key], from[key]);
             }
             else if (from[key] !== null && from[key] !== undefined) {
@@ -108,6 +111,9 @@
                 connection = val;
                 break;
         }
+        //////
+        if (target === 'room')
+            self.room = val;
     }
 
     class Stage {
@@ -149,7 +155,7 @@
             this.path = path;
             this.parent = parent;
             this.task = apply(new (room.getTask(path))(), data);
-            room.tasks.set(this.task, this);
+            room.taskMap.set(this.task, this);
         }
         /** Execute the next step.
          * @returns {boolean | null}
@@ -244,7 +250,7 @@
             return this.#stage.results;
         }
         get #stage() {
-            return room.tasks.get(this);
+            return room.taskMap.get(this);
         }
         /** Main function. */
         main() { }
@@ -311,20 +317,17 @@
 
     /** Game object used by stages. */
     class Game {
+        /** Game mode. */
+        mode;
+        /** Game configuration. */
+        config;
+        /** Hero packages. */
+        packs;
         get owner() {
             return room.uid;
         }
         get arena() {
             return room.arena;
-        }
-        get mode() {
-            return room.mode;
-        }
-        get config() {
-            return room.config;
-        }
-        get packs() {
-            return room.packs;
         }
         get hub() {
             return hub;
@@ -533,12 +536,6 @@
         rootStage;
         /** Current game stage. */
         currentStage;
-        /** Game mode. */
-        mode = {};
-        /** Game configuration. */
-        config;
-        /** Hero packages. */
-        packs;
         /** Link to Arena. */
         arena;
         /** Game object. */
@@ -549,10 +546,10 @@
          * 2: over
         */
         progress = 0;
-        /** Map from a task to the stage containing the task. */
-        tasks = new Map();
         /** Links to components. */
         links = new Map();
+        /** Map from a task to the stage containing the task. */
+        taskMap = new Map();
         /** All created stages. */
         #stages = new Map();
         /** Array of packages that define mode tasks (priority: high -> low). */
@@ -567,25 +564,20 @@
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        async init(uid, [mode, packs, config, info]) {
+        async init(uid, [name, packs, config, info]) {
             this.uid = uid;
             this.info = info;
-            this.packs = new Set(packs);
-            this.config = config;
             // load extensions
             await Promise.all(packs.map(pack => importExtension(pack)));
             // Get list of packages that define game classes
-            await this.#getRuleset(mode);
+            await this.#getRuleset(name);
             // merge mode objects and game classes from extensions
-            await this.#getClasses();
-            // finalize and freez mode object
-            delete this.mode.tasks;
-            delete this.mode.components;
-            delete this.mode.classes;
-            this.mode.extension = mode;
-            freeze(this.mode);
+            const mode = await this.#loadRuleset();
             // start game
             this.game = new (this.getClass('game'))();
+            this.game.mode = mode;
+            this.game.config = config;
+            this.game.packs = new Set(packs);
             this.rootStage = this.currentStage = this.createStage('main');
             this.arena = this.create('arena');
             this.arena.ruleset = this.#ruleset;
@@ -641,6 +633,7 @@
                 this.#paused = true;
             }
         }
+        /** Get and load all extensions relevant to current mode. */
         async #getRuleset(mode) {
             while (mode) {
                 if (this.#ruleset.includes(mode)) {
@@ -650,18 +643,21 @@
                 mode = (await importExtension(mode)).mode?.inherit;
             }
         }
-        async #getClasses() {
+        /** Update extension-defined classes and game mode. */
+        async #loadRuleset() {
+            const mode = {};
             const modeTasks = [];
+            const exclude = ['tasks', 'components', 'classes'];
             for (const pack of this.#ruleset) {
-                const mode = copy(getExtension(pack)?.mode ?? {});
+                const extMode = copy(getExtension(pack)?.mode ?? {});
                 // update game classes (including base Task class)
-                for (const name in mode.classes) {
+                for (const name in extMode.classes) {
                     const cls = this.#gameClasses.get(name);
-                    this.#gameClasses.set(name, mode.classes[name](cls));
+                    this.#gameClasses.set(name, extMode.classes[name](cls));
                 }
                 // update task classes after Task class is finalized
-                modeTasks.push(mode.tasks);
-                apply(this.mode, mode);
+                modeTasks.push(extMode.tasks);
+                apply(mode, extMode, exclude);
             }
             // update task classes
             for (const tasks of modeTasks) {
@@ -670,6 +666,9 @@
                     this.#taskClasses.set(task, tasks[task](cls));
                 }
             }
+            // save mode extension name
+            mode.extension = this.#ruleset[this.#ruleset.length - 1];
+            return freeze(mode);
         }
     }
 
@@ -677,9 +676,6 @@
     class Hub {
         /** IDs and links of connected clients. */
         #peers = null;
-        get connected() {
-            return this.#peers ? true : false;
-        }
         get peers() {
             return this.#getPeers();
         }
@@ -688,6 +684,9 @@
         }
         get spectators() {
             return this.#getPeers({ playing: false });
+        }
+        get connected() {
+            return this.#peers ? true : false;
         }
         /** Connect to remote hub. */
         connect(url) {
@@ -755,11 +754,11 @@
         update(push = true) {
             const state = JSON.stringify([
                 // mode name
-                room.mode.name,
+                room.game.mode.name,
                 // joined players
                 this.players?.length ?? 1,
                 // number of players in a game
-                room.config.np,
+                room.game.config.np,
                 // nickname and avatar of owner
                 room.info,
                 // game state
@@ -798,14 +797,14 @@
         }
         /** Tell registered components about client update. */
         #sync() {
-            let links = null;
+            let ids = null;
             if (this.#peers) {
-                links = [];
+                ids = [];
                 for (const peer of this.#peers.values()) {
-                    links.push(peer.id);
+                    ids.push(peer.id);
                 }
             }
-            room.arena.peers = links;
+            room.arena.peers = ids;
         }
         /** Get peers that match certain condition. */
         #getPeers(filter) {
@@ -834,7 +833,7 @@
                 owner: uid,
                 nickname: info[0],
                 avatar: info[1],
-                playing: this.players.length < room.config.np
+                playing: this.players.length < room.game.config.np
             });
             this.#peers.set(uid, peer);
             this.#sync();

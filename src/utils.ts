@@ -15,9 +15,12 @@ export function copy(from: Dict) {
 }
 
 /** Merge two objects. */
-export function apply<T extends Dict = Dict>(to: T, from: Dict): T {
+export function apply<T extends Dict = Dict>(to: T, from: Dict, exclude?: string[]): T {
     for (const key in from) {
-        if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+        if (exclude?.includes(key)) {
+            continue;
+        }
+        else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
             apply(to[key], from[key])
         }
         else if (from[key] !== null && from[key] !== undefined) {

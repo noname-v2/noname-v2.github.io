@@ -506,9 +506,12 @@
         return to;
     }
     /** Merge two objects. */
-    function apply(to, from) {
+    function apply(to, from, exclude) {
         for (const key in from) {
-            if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+            if (exclude?.includes(key)) {
+                continue;
+            }
+            else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
                 apply(to[key], from[key]);
             }
             else if (from[key] !== null && from[key] !== undefined) {

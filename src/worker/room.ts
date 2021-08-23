@@ -21,15 +21,6 @@ export class Room {
     /** Current game stage. */
     currentStage!: Stage;
 
-    /** Game mode. */
-    mode: Mode = {};
-
-    /** Game configuration. */
-    config!: Dict;
-
-    /** Hero packages. */
-    packs!: Set<string>;
-
     /** Link to Arena. */
     arena!: Link;
 
@@ -43,11 +34,11 @@ export class Room {
     */
     progress = 0;
 
-    /** Map from a task to the stage containing the task. */
-    tasks = new Map<Task, Stage>();
-
     /** Links to components. */
     links = new Map<number, [Link, Dict]>();
+
+    /** Map from a task to the stage containing the task. */
+    taskMap = new Map<Task, Stage>();
 
     /** All created stages. */
     #stages = new Map<number, Stage>();
@@ -70,30 +61,24 @@ export class Room {
     /** Currently paused by stage.awaits. */
     #paused = true;
 
-    async init(uid: string, [mode, packs, config, info]:  [string, string[], Dict, [string, string]]) {
+    async init(uid: string, [name, packs, config, info]:  [string, string[], Dict, [string, string]]) {
         this.uid = uid;
         this.info = info;
-        this.packs = new Set(packs);
-        this.config = config;
 
         // load extensions
         await Promise.all(packs.map(pack => importExtension(pack)));
 
         // Get list of packages that define game classes
-        await this.#getRuleset(mode);
+        await this.#getRuleset(name);
 
         // merge mode objects and game classes from extensions
-        await this.#getClasses();
-
-        // finalize and freez mode object
-        delete this.mode.tasks;
-        delete this.mode.components;
-        delete this.mode.classes;
-        this.mode.extension = mode;
-        freeze(this.mode);
+        const mode = await this.#loadRuleset();
         
         // start game
         this.game = new (this.getClass('game'))();
+        this.game.mode = mode;
+        this.game.config = config;
+        this.game.packs = new Set(packs);
         this.rootStage = this.currentStage = this.createStage('main');
         this.arena = this.create('arena');
         this.arena.ruleset = this.#ruleset;
@@ -156,6 +141,7 @@ export class Room {
         }
     }
 
+    /** Get and load all extensions relevant to current mode. */
     async #getRuleset(mode: string) {
         while (mode) {
             if (this.#ruleset.includes(mode)) {
@@ -166,20 +152,24 @@ export class Room {
         }
     }
 
-    async #getClasses() {
+    /** Update extension-defined classes and game mode. */
+    async #loadRuleset() {
+        const mode: Mode = {};
         const modeTasks = [];
+        const exclude = ['tasks', 'components', 'classes'];
+
         for (const pack of this.#ruleset) {
-            const mode: Mode = copy(getExtension(pack)?.mode ?? {});
+            const extMode: Mode = copy(getExtension(pack)?.mode ?? {});
 
             // update game classes (including base Task class)
-            for (const name in mode.classes) {
+            for (const name in extMode.classes) {
                 const cls = this.#gameClasses.get(name);
-                this.#gameClasses.set(name, mode.classes[name](cls));
+                this.#gameClasses.set(name, extMode.classes[name](cls));
             }
 
             // update task classes after Task class is finalized
-            modeTasks.push(mode.tasks);            
-            apply(this.mode, mode);
+            modeTasks.push(extMode.tasks);            
+            apply(mode, extMode, exclude);
         }
 
         // update task classes
@@ -189,5 +179,10 @@ export class Room {
                 this.#taskClasses.set(task, (tasks[task] as any)(cls));
             }
         }
+
+        // save mode extension name
+        mode.extension = this.#ruleset[this.#ruleset.length - 1];
+
+        return freeze(mode);
     }
 }

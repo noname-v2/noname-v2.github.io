@@ -89,11 +89,11 @@ export class Hub {
     update(push=true) {
         const state = JSON.stringify([
             // mode name
-            room.mode.name,
+            room.game.mode.name,
             // joined players
             this.players?.length ?? 1,
             // number of players in a game
-            room.config.np,
+            room.game.config.np,
             // nickname and avatar of owner
             room.info,
             // game state
@@ -175,7 +175,7 @@ export class Hub {
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: this.players!.length < room.config.np
+            playing: this.players!.length < room.game.config.np
         });
         this.#peers!.set(uid, peer);
         this.#sync();

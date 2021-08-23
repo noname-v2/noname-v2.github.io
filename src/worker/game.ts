@@ -1,26 +1,24 @@
 import { hub, room } from './globals';
 import * as utils from '../utils';
+import type { Mode, Dict } from '../types';
 
 /** Game object used by stages. */
 export abstract class Game {
+    /** Game mode. */
+    mode!: Mode;
+
+    /** Game configuration. */
+    config!: Dict;
+
+    /** Hero packages. */
+    packs!: Set<string>;
+
     get owner() {
         return room.uid;
     }
 
     get arena() {
         return room.arena;
-    }
-
-    get mode() {
-        return room.mode;
-    }
-
-    get config() {
-        return room.config;
-    }
-
-    get packs() {
-        return room.packs;
     }
 
     get hub() {

@@ -11,4 +11,7 @@ export function set(target: 'room' | 'hub' | 'connection', val: any) {
         case 'hub': hub = val; break;
         case 'connection': connection = val; break;
     }
+
+    //////
+    if (target === 'room') (self as any).room = val;
 }

@@ -28,7 +28,7 @@ export class Task<T extends Game = Game> {
     }
 
     get #stage(): Stage {
-        return room.tasks.get(this)!;
+        return room.taskMap.get(this)!;
     }
 
     /** Main function. */
