@@ -1,6 +1,5 @@
-import { debug } from '../../client/client';
 import { splash } from '../../client/globals';
-import { version } from '../../meta';
+import { version, debug } from '../../meta';
 import { Component, Button, ButtonColor } from '../../components';
 
 export class SplashBar extends Component {

@@ -96,6 +96,9 @@
         readJSON: readJSON
     });
 
+    /** Enable debug mode in http */
+    const debug = globalThis.location.protocol === 'http:';
+
     let room;
     let hub;
     let connection = null;
@@ -111,9 +114,9 @@
                 connection = val;
                 break;
         }
-        //////
-        if (target === 'room')
-            self.room = val;
+        if (debug) {
+            self[target] = val;
+        }
     }
 
     class Stage {

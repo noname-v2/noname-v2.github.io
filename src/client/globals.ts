@@ -1,4 +1,5 @@
 import type { Component, App, Arena, Splash } from '../components';
+import { debug } from '../meta';
 
 /** Map of component constructors no extension loaded. */
 export const backups = new Map<string, typeof Component>();
@@ -25,5 +26,9 @@ export function set(target: 'app' | 'splash' | 'arena', val: any) {
         case 'app': app = val; break;
         case 'splash': splash = val; break;
         case 'arena': arena = val; break;
+    }
+
+    if (debug) {
+        (window as any)[target] = val;
     }
 }

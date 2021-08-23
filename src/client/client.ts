@@ -14,9 +14,6 @@ export const hub = new Proxy(meta.hub, {
     }
 });
 
-/** Debug mode */
-export let debug: boolean = true;
-
 /** Worker object. */
 export let connection: Worker | WebSocket | null = null;
 

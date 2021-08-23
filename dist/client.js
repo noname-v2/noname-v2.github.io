@@ -19,6 +19,16 @@
         linux: linux
     });
 
+    const version = '2.0.0dev1';
+    const hub$1 = {
+        "url": "ws.noname.pub:8080",
+        "nickname": "无名玩家",
+        "avatar": "standard:caocao"
+    };
+
+    /** Enable debug mode in http */
+    const debug = globalThis.location.protocol === 'http:';
+
     /** Map of component constructors no extension loaded. */
     const backups = new Map();
     /** Map of component constructors. */
@@ -46,6 +56,9 @@
             case 'arena':
                 arena = val;
                 break;
+        }
+        if (debug) {
+            window[target] = val;
         }
     }
 
@@ -597,13 +610,6 @@
         }
         return extensions.get(extname);
     }
-
-    const version = '2.0.0dev1';
-    const hub$1 = {
-        "url": "ws.noname.pub:8080",
-        "nickname": "无名玩家",
-        "avatar": "standard:caocao"
-    };
 
     /** Hub configuration. */
     const hub = new Proxy(hub$1, {
@@ -2369,7 +2375,7 @@
         /** Button names and components. */
         buttons = new Map();
         init() {
-            {
+            if (debug) {
                 this.addButton('reset', '重置', 'red', () => this.#resetGame()).node.classList.remove('disabled');
                 if (this.platform.mobile) {
                     this.addButton('refresh', '刷新', 'purple', () => window.location.reload()).node.classList.remove('disabled');

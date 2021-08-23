@@ -1,3 +1,4 @@
+import { debug } from '../meta';
 import type { Room } from './room';
 import type { Hub } from './hub';
 
@@ -12,6 +13,7 @@ export function set(target: 'room' | 'hub' | 'connection', val: any) {
         case 'connection': connection = val; break;
     }
 
-    //////
-    if (target === 'room') (self as any).room = val;
+    if (debug) {
+        (self as any)[target] = val;
+    }
 }
