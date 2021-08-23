@@ -2,10 +2,10 @@ import { Stage } from './stage';
 import { copy, apply, freeze, access } from '../utils';
 import { Task } from './task';
 import { Game } from './game';
-import { tick } from './worker';
+import { Link, createLink } from './link';
 import { importExtension, getExtension } from '../extension';
 import type { UITick } from './worker';
-import type { Mode, Link, Dict } from '../types';
+import type { Mode, Dict } from '../types';
 
 /** Room that controlls game flow and classes. */
 export class Room {
@@ -103,50 +103,7 @@ export class Room {
     /** Create a link. */
     create(tag: string) {
         const id = ++this.#linkCount;
-        const obj: Dict = {};
-
-        // reserved link keys
-        const reserved: Link = {
-            id, tag,
-            call: (method: string, arg?: any) => {
-                tick(id, [method, arg]);
-            },
-            unlink: () => {
-                tick(id, null);
-                this.links.delete(id);
-            },
-            update: (items: Dict) => {
-                for (const key in items) {
-                    const val = items[key] ?? null;
-                    val === null ? delete obj[key] : obj[key] = val;
-                }
-                tick(id, items);
-            }
-        };
-
-        const link = new Proxy(obj, {
-            get(_, key: string) {
-                if (key in reserved) {
-                    return reserved[key];
-                }
-                else {
-                    return obj[key];
-                }
-            },
-            set(_, key: string, val: any) {
-                if (key in reserved) {
-                    return false;
-                }
-                else {
-                    reserved.update({[key]: val});
-                    return true;
-                }
-            }
-        }) as Link;
-
-        tick(id, tag);
-        this.links.set(id, [link, obj]);
-        return link;
+        return createLink(id, tag);
     }
 
     /** Create a stage. */

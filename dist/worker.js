@@ -468,6 +468,50 @@
         }
     }
 
+    function createLink(id, tag) {
+        const obj = {};
+        // reserved link keys
+        const reserved = {
+            id, tag,
+            call: (method, arg) => {
+                tick(id, [method, arg]);
+            },
+            unlink: () => {
+                tick(id, null);
+                room.links.delete(id);
+            },
+            update: (items) => {
+                for (const key in items) {
+                    const val = items[key] ?? null;
+                    val === null ? delete obj[key] : obj[key] = val;
+                }
+                tick(id, items);
+            }
+        };
+        const link = new Proxy(obj, {
+            get(_, key) {
+                if (key in reserved) {
+                    return reserved[key];
+                }
+                else {
+                    return obj[key];
+                }
+            },
+            set(_, key, val) {
+                if (key in reserved) {
+                    return false;
+                }
+                else {
+                    reserved.update({ [key]: val });
+                    return true;
+                }
+            }
+        });
+        tick(id, tag);
+        room.links.set(id, [link, obj]);
+        return link;
+    }
+
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
@@ -554,47 +598,7 @@
         /** Create a link. */
         create(tag) {
             const id = ++this.#linkCount;
-            const obj = {};
-            // reserved link keys
-            const reserved = {
-                id, tag,
-                call: (method, arg) => {
-                    tick(id, [method, arg]);
-                },
-                unlink: () => {
-                    tick(id, null);
-                    this.links.delete(id);
-                },
-                update: (items) => {
-                    for (const key in items) {
-                        const val = items[key] ?? null;
-                        val === null ? delete obj[key] : obj[key] = val;
-                    }
-                    tick(id, items);
-                }
-            };
-            const link = new Proxy(obj, {
-                get(_, key) {
-                    if (key in reserved) {
-                        return reserved[key];
-                    }
-                    else {
-                        return obj[key];
-                    }
-                },
-                set(_, key, val) {
-                    if (key in reserved) {
-                        return false;
-                    }
-                    else {
-                        reserved.update({ [key]: val });
-                        return true;
-                    }
-                }
-            });
-            tick(id, tag);
-            this.links.set(id, [link, obj]);
-            return link;
+            return createLink(id, tag);
         }
         /** Create a stage. */
         createStage(path, data, parent) {

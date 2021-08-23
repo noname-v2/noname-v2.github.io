@@ -1,6 +1,6 @@
 import type { Room } from './room';
 import type { Hub } from './hub';
-import type { Link } from '../types';
+import type { Link } from './link';
 
 export let room: Room;
 export let hub: Hub;

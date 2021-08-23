@@ -3,7 +3,8 @@ import type { task } from './classes/task';
 import type { game } from './classes/game';
 
 /** Built-in types that may be used by extensions. */
-export type { Config, Link } from '../../types';
+export type { Link } from '../../worker/link';
+export type { Config } from '../../types';
 export type { Dict }
 
 /** Type for SGS Game. */

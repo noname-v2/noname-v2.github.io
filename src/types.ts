@@ -9,34 +9,6 @@ export interface Class<T=any> {
     (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
 };
 
-/** A link to client component. */
-export interface Link {
-    /** Component ID. */
-    readonly id: number;
-
-    /** Component tag. */
-    readonly tag: string;
-
-    /** Call a component method. */
-    readonly call: (method: string, arg?: any) => void;
-
-    /** Update multiple properties. */
-    readonly update: (items: Dict) => void;
-
-    /** Remove reference to a component. */
-    readonly unlink: () => void;
-
-    [key: string]: any;
-}
-
-/** Format of extension meta data. */
-export interface ExtensionMeta {
-	mode: string;
-	pack: boolean;
-	tags: string[];
-	images: string[];
-}
-
 /** Mode configuration entry. */
 export interface Config {
     name?: string;
@@ -70,4 +42,12 @@ export interface Extension<T extends Task = Task> {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
+}
+
+/** Format of extension meta data. */
+export interface ExtensionMeta {
+	mode: string;
+	pack: boolean;
+	tags: string[];
+	images: string[];
 }

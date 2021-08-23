@@ -1,7 +1,8 @@
 import { room } from './globals';
 import type { Stage } from './stage';
 import type { Game } from './game';
-import type { Link, Dict } from '../types';
+import type { Link } from './link';
+import type { Dict } from '../types';
 
 export class Task<T extends Game = Game> {
     /** Do not trigger before / after / skip event. */
