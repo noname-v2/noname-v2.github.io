@@ -2,9 +2,9 @@ import * as ui from './ui';
 import * as db from './db';
 import * as platform from '../platform';
 import * as utils from '../utils';
+import * as client from './client';
 import { app } from './globals';
-import { uid, send, listeners, components, componentIDs } from './client';
-import type { Listeners } from './client';
+import { debug } from '../meta';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
 
@@ -69,7 +69,7 @@ export class Component {
     }
 
     get mine() {
-        return this.owner === uid;
+        return this.owner === client.uid;
     }
 
     /** Create node. */
@@ -99,7 +99,7 @@ export class Component {
 
     /** Get compnent by ID. */
     getComponent(id: number) {
-        return components.get(id) ?? null;
+        return client.components.get(id) ?? null;
     }
 
     /** Update properties. Reserved key:
@@ -128,23 +128,23 @@ export class Component {
 
     /** Send update to worker (component must be monitored). */
     yield(result: any) {
-        if (!componentIDs.has(this)) {
+        if (!client.componentIDs.has(this)) {
             throw('element is has no ID');
         }
-        send(componentIDs.get(this)!, result, false);
+        client.send(client.componentIDs.get(this)!, result, false);
     }
 
     /** Send return value to worker (component must be monitored). */
     respond(result?: any) {
-        if (!componentIDs.has(this)) {
+        if (!client.componentIDs.has(this)) {
             throw('element is has no ID');
         }
-        send(componentIDs.get(this)!, result, true);
+        client.send(client.componentIDs.get(this)!, result, true);
     }
 
     /** Add component event listener. */
-    listen<T extends keyof Listeners>(this: Listeners[T], event: T) {
-        listeners[event].add(this);
+    listen<T extends keyof client.Listeners>(this: client.Listeners[T], event: T) {
+        client.listeners[event].add(this);
     }
 
     /** Delay for a time period. */
@@ -169,4 +169,8 @@ export class Component {
             this.node.remove();
         }
     }
+}
+
+if (debug) {
+    (window as any).client = client;
 }

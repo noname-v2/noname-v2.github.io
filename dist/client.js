@@ -623,7 +623,10 @@
     const listeners = Object.freeze({
         sync: new Set(), resize: new Set(), key: new Set(), stage: new Set()
     });
+    /** Service worker. */
+    let registration = null;
     navigator.serviceWorker?.register('/service.js').then(reg => {
+        registration = reg;
     });
     /** User identifier. */
     let uid;
@@ -635,6 +638,7 @@
     });
     /** Components managed by worker. */
     const components = new Map();
+    /** Map from a component to its ID. */
     const componentIDs = new Map();
     /** ID of current stage. */
     let stageID = 0;
@@ -704,14 +708,19 @@
     }
     /** Clear currently connection status without disconnecting. */
     function clear(back = true) {
+        // clear listeners
         for (const cmp of components.values()) {
             removeListeners(cmp);
         }
+        // clear components
         components.clear();
         componentIDs.clear();
+        // clear arena and popups
         app.clearPopups();
         app.arena?.remove();
+        // restore original component classes
         restore();
+        // back to splash screen
         if (back) {
             splash.show();
             stageID = 0;
@@ -723,8 +732,19 @@
             cmp[event](arg);
         }
     }
-    /** Overwrite component constructors by mode. */
-    async function loadComponents(ruleset) {
+    /** Load arena. */
+    async function loadArena(ruleset) {
+        // fade out current arena
+        const arena = app.arena;
+        if (arena && app.popups.size) {
+            arena.faded = true;
+        }
+        clear(false);
+        loaded = Date.now();
+        if (arena) {
+            await app.sleep('fast');
+        }
+        // overwrite component constructors by mode
         for (const pack of ruleset) {
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
@@ -743,16 +763,7 @@
             const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    const arena = app.arena;
-                    if (arena && app.popups.size) {
-                        arena.faded = true;
-                    }
-                    clear(false);
-                    loaded = Date.now();
-                    if (arena) {
-                        await app.sleep('fast');
-                    }
-                    await loadComponents(props[key].ruleset);
+                    await loadArena(props[key].ruleset);
                     break;
                 }
             }
@@ -845,6 +856,23 @@
             listeners[key].delete(cmp);
         }
     }
+
+    var client = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        hub: hub,
+        get connection () { return connection; },
+        listeners: listeners,
+        get registration () { return registration; },
+        get uid () { return uid; },
+        components: components,
+        componentIDs: componentIDs,
+        connect: connect,
+        disconnect: disconnect,
+        send: send,
+        dispatch: dispatch,
+        clear: clear,
+        trigger: trigger
+    });
 
     class Component {
         /** HTMLElement tag  name */
@@ -976,6 +1004,9 @@
                 this.node.remove();
             }
         }
+    }
+    if (debug) {
+        window.client = client;
     }
 
     class App extends Component {

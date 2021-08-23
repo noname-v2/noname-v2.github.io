@@ -23,7 +23,7 @@ export function setup(T: TaskClass) {
 
         /** Assign clients to players. */
         assignPeers() {
-
+            
         }
 
         /** Create card pile. */

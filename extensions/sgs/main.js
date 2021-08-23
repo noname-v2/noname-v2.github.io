@@ -555,7 +555,6 @@ const components = {
 
 var main = {
     mode: {
-        np: 0,
         config,
         tasks,
         classes,

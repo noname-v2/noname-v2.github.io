@@ -34,11 +34,6 @@ export class Task<T extends Game = Game> {
     /** Main function. */
     main(): void | Promise<void> {}
 
-    /** Create a link. */
-    create(tag: string): Link {
-        return room.game.create(tag);
-    }
-
     /** Add a step in current stage. */
     add(step: string, ...args: any[]) {
         this.#stage.steps.push([step, false, args]);

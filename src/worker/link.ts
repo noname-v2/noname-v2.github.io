@@ -28,14 +28,14 @@ export function createLink(id: number, tag: string) {
     // reserved link keys
     const reserved: Link = {
         id, tag,
-        call: (method: string, arg?: any) => {
+        call(method: string, arg?: any) {
             tick(id, [method, arg]);
         },
-        unlink: () => {
+        unlink() {
             tick(id, null);
             room.links.delete(id);
         },
-        update: (items: Dict) => {
+        update(items: Dict) {
             for (const key in items) {
                 const val = items[key] ?? null;
                 val === null ? delete obj[key] : obj[key] = val;

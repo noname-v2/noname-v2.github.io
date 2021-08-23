@@ -80,7 +80,7 @@ export class Room {
         this.game.config = config;
         this.game.packs = new Set(packs);
         this.rootStage = this.currentStage = this.createStage('main');
-        this.arena = this.create('arena');
+        this.arena = this.game.create('arena');
         this.arena.ruleset = this.#ruleset;
         this.loop();
     }

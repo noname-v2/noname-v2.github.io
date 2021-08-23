@@ -6,7 +6,6 @@ import { components } from './components';
 
 export default {
     mode: {
-        np: 0,
         config,
         tasks,
         classes,

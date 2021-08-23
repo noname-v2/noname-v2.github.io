@@ -53,7 +53,9 @@ db.ready.then(() => {
 });
 
 /** Components managed by worker. */
-export const components = new Map<number | 'app' | 'splash' | 'arena', Component>();
+export const components = new Map<number, Component>();
+
+/** Map from a component to its ID. */
 export const componentIDs = new Map<Component, number>();
 
 /** ID of current stage. */
@@ -133,16 +135,23 @@ export function dispatch(data: UITick) {
 
 /** Clear currently connection status without disconnecting. */
 export function clear(back: boolean = true) {
+    // clear listeners
     for (const cmp of components.values()) {
         removeListeners(cmp);
     }
 
+    // clear components
     components.clear();
     componentIDs.clear();
+
+    // clear arena and popups
     app.clearPopups();
     app.arena?.remove();
+
+    // restore original component classes
     restore();
 
+    // back to splash screen
     if (back) {
         splash.show();
         stageID = 0;
@@ -156,8 +165,20 @@ export function trigger(event: keyof Listeners, arg?: any) {
     }
 } 
 
-/** Overwrite component constructors by mode. */
-async function loadComponents(ruleset: string[]) {
+/** Load arena. */
+async function loadArena(ruleset: string[]) {
+    // fade out current arena
+    const arena = app.arena;
+    if (arena && app.popups.size) {
+        arena.faded = true;
+    }
+    clear(false);
+    loaded = Date.now();
+    if (arena) {
+        await app.sleep('fast');
+    }
+
+    // overwrite component constructors by mode
     for (const pack of ruleset) {
         const ext = await importExtension(pack);
         for (const tag in ext.mode?.components) {
@@ -177,16 +198,7 @@ async function render() {
         const [sid, tags, props, calls] = tick;
         for (const key in tags) {
             if (tags[key] === 'arena') {
-                const arena = app.arena;
-                if (arena && app.popups.size) {
-                    arena.faded = true;
-                }
-                clear(false);
-                loaded = Date.now();
-                if (arena) {
-                    await app.sleep('fast');
-                }
-                await loadComponents(props[key].ruleset);
+                await loadArena(props[key].ruleset);
                 break;
             }
         }

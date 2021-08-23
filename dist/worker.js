@@ -257,10 +257,6 @@
         }
         /** Main function. */
         main() { }
-        /** Create a link. */
-        create(tag) {
-            return room.game.create(tag);
-        }
         /** Add a step in current stage. */
         add(step, ...args) {
             this.#stage.steps.push([step, false, args]);
@@ -475,14 +471,14 @@
         // reserved link keys
         const reserved = {
             id, tag,
-            call: (method, arg) => {
+            call(method, arg) {
                 tick(id, [method, arg]);
             },
-            unlink: () => {
+            unlink() {
                 tick(id, null);
                 room.links.delete(id);
             },
-            update: (items) => {
+            update(items) {
                 for (const key in items) {
                     const val = items[key] ?? null;
                     val === null ? delete obj[key] : obj[key] = val;
@@ -582,7 +578,7 @@
             this.game.config = config;
             this.game.packs = new Set(packs);
             this.rootStage = this.currentStage = this.createStage('main');
-            this.arena = this.create('arena');
+            this.arena = this.game.create('arena');
             this.arena.ruleset = this.#ruleset;
             this.loop();
         }
