@@ -1,4 +1,4 @@
-import { peers, connection, room, hub } from './globals';
+import { connection, room, hub } from './globals';
 import type { Dict } from '../types';
 
 /** An update to client side. */
@@ -39,7 +39,7 @@ export function send(to: string, tick: UITick) {
     if (to === room.uid) {
         (self as any).postMessage(tick);
     }
-    else if (peers) {
+    else if (hub.connected) {
         // send tick to a remote client
         connection!.send('to:' + JSON.stringify([
             to, JSON.stringify(tick)
@@ -49,7 +49,7 @@ export function send(to: string, tick: UITick) {
 
 /** Send a message to all clients. */
 function broadcast(tick: UITick) {
-    if (peers) {
+    if (hub.connected) {
         connection!.send('bcast:' + JSON.stringify(tick));
     }
     (self as any).postMessage(tick);

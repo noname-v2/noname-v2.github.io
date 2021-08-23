@@ -20,8 +20,8 @@ export let splash: Splash;
 export let arena: Arena | null = null;
 
 /** Set the value of main components. */
-export function set(name: string, val: any) {
-    switch (name) {
+export function set(target: 'app' | 'splash' | 'arena', val: any) {
+    switch (target) {
         case 'app': app = val; break;
         case 'splash': splash = val; break;
         case 'arena': arena = val; break;

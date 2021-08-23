@@ -96,9 +96,8 @@
     let room;
     let hub;
     let connection = null;
-    let peers = null;
-    function set(name, val) {
-        switch (name) {
+    function set(target, val) {
+        switch (target) {
             case 'room':
                 room = val;
                 break;
@@ -107,9 +106,6 @@
                 break;
             case 'connection':
                 connection = val;
-                break;
-            case 'peers':
-                peers = val;
                 break;
         }
     }
@@ -372,7 +368,7 @@
         if (to === room.uid) {
             self.postMessage(tick);
         }
-        else if (peers) {
+        else if (hub.connected) {
             // send tick to a remote client
             connection.send('to:' + JSON.stringify([
                 to, JSON.stringify(tick)
@@ -381,7 +377,7 @@
     }
     /** Send a message to all clients. */
     function broadcast(tick) {
-        if (peers) {
+        if (hub.connected) {
             connection.send('bcast:' + JSON.stringify(tick));
         }
         self.postMessage(tick);
@@ -679,6 +675,11 @@
 
     /** Hub related operations. */
     class Hub {
+        /** IDs and links of connected clients. */
+        #peers = null;
+        get connected() {
+            return this.#peers ? true : false;
+        }
         get peers() {
             return this.#getPeers();
         }
@@ -695,23 +696,26 @@
             }
             const ws = new WebSocket('wss://' + url);
             set('connection', ws);
+            // connection closed
             ws.onerror = ws.onclose = () => {
                 if (connection === ws) {
                     set('connection', null);
-                    if (peers) {
-                        for (const peer of peers.values()) {
+                    if (this.#peers) {
+                        for (const peer of this.#peers.values()) {
                             peer.unlink();
                         }
                     }
-                    set('peers', null);
+                    this.#peers = null;
                     this.#sync();
                 }
             };
+            // send room info to hub
             ws.onopen = () => {
                 ws.send('init:' + JSON.stringify([
                     room.uid, room.info, this.update(false)
                 ]));
             };
+            // handle messages
             ws.onmessage = ({ data }) => {
                 try {
                     const [method, arg] = split(data);
@@ -768,7 +772,7 @@
         }
         /** The room is ready for clients to join. */
         #ready() {
-            set('peers', new Map());
+            this.#peers = new Map();
             this.#createPeer(room.uid, room.info);
         }
         /** A remote client joins the room. */
@@ -781,9 +785,9 @@
         }
         /** A remote client leaves the room. */
         #leave(uid) {
-            if (peers?.has(uid)) {
-                peers.get(uid).unlink();
-                peers.delete(uid);
+            if (this.#peers?.has(uid)) {
+                this.#peers.get(uid).unlink();
+                this.#peers.delete(uid);
                 this.#sync();
                 this.update();
             }
@@ -795,9 +799,9 @@
         /** Tell registered components about client update. */
         #sync() {
             let links = null;
-            if (peers) {
+            if (this.#peers) {
                 links = [];
-                for (const peer of peers.values()) {
+                for (const peer of this.#peers.values()) {
                     links.push(peer.id);
                 }
             }
@@ -805,11 +809,11 @@
         }
         /** Get peers that match certain condition. */
         #getPeers(filter) {
-            if (!peers) {
+            if (!this.#peers) {
                 return null;
             }
             const links = [];
-            for (const peer of peers.values()) {
+            for (const peer of this.#peers.values()) {
                 let skip = false;
                 for (const key in filter) {
                     if (peer[key] !== filter[key]) {
@@ -832,7 +836,7 @@
                 avatar: info[1],
                 playing: this.players.length < room.config.np
             });
-            peers.set(uid, peer);
+            this.#peers.set(uid, peer);
             this.#sync();
         }
     }
@@ -840,9 +844,8 @@
     self.onmessage = ({ data }) => {
         if (data[1] === 0) {
             self.onmessage = ({ data }) => dispatch(data);
-            const room = new Room();
-            set('room', room);
             set('hub', new Hub());
+            set('room', new Room());
             room.init(data[0], data[3]);
         }
     };

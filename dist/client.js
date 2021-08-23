@@ -35,8 +35,8 @@
     let splash;
     let arena = null;
     /** Set the value of main components. */
-    function set$1(name, val) {
-        switch (name) {
+    function set$1(target, val) {
+        switch (target) {
             case 'app':
                 app = val;
                 break;

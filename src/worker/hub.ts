@@ -1,11 +1,15 @@
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
 import { dispatch, send } from './worker';
-import { connection, peers, room, set } from './globals';
+import { connection, room, set } from './globals';
+import type { Link } from './link';
 import type { Dict } from '../types';
 
 /** Hub related operations. */
 export class Hub {
+    /** IDs and links of connected clients. */
+    #peers: Map<string, Link> | null = null;
+
     get peers() {
         return this.#getPeers();
     }
@@ -18,6 +22,10 @@ export class Hub {
         return this.#getPeers({playing: false});
     }
 
+    get connected() {
+        return this.#peers ? true : false;
+    }
+
     /** Connect to remote hub. */
     connect(url: string) {
         if (connection) {
@@ -25,27 +33,32 @@ export class Hub {
         }
         const ws = new WebSocket('wss://' + url);
         set('connection', ws);
+
+        // connection closed
         ws.onerror = ws.onclose = () => {
             if (connection === ws) {
                 set('connection', null);
-                if (peers) {
-                    for (const peer of peers.values()) {
+                if (this.#peers) {
+                    for (const peer of this.#peers.values()) {
                         peer.unlink();
                     }
                 }
-                set('peers', null);
+                this.#peers = null;
                 this.#sync();
             }
         };
+
+        // send room info to hub
         ws.onopen = () => {
             ws.send('init:' + JSON.stringify([
                 room.uid, room.info, this.update(false)
             ]));
         };
+
+        // handle messages
         ws.onmessage = ({data}) => {
             try {
                 const [method, arg] = split<typeof hub2owner[number]>(data);
-
                 switch (method) {
                     case 'ready': this.#ready(); break;
                     case 'join': this.#join(arg); break;
@@ -94,7 +107,7 @@ export class Hub {
 
     /** The room is ready for clients to join. */
     #ready() {
-        set('peers', new Map());
+        this.#peers = new Map();
         this.#createPeer(room.uid, room.info);
     }
 
@@ -109,9 +122,9 @@ export class Hub {
 
     /** A remote client leaves the room. */
     #leave(uid: string) {
-        if (peers?.has(uid)) {
-            peers.get(uid)!.unlink();
-            peers.delete(uid);
+        if (this.#peers?.has(uid)) {
+            this.#peers.get(uid)!.unlink();
+            this.#peers.delete(uid);
             this.#sync();
             this.update();
         }
@@ -124,23 +137,23 @@ export class Hub {
 
     /** Tell registered components about client update. */
     #sync() {
-        let links = null;
-        if (peers) {
-            links = [];
-            for (const peer of peers.values()) {
-                links.push(peer.id);
+        let ids = null;
+        if (this.#peers) {
+            ids = [];
+            for (const peer of this.#peers.values()) {
+                ids.push(peer.id);
             }
         }
-        room.arena.peers = links;
+        room.arena.peers = ids;
     }
 
     /** Get peers that match certain condition. */
     #getPeers(filter?: Dict) {
-        if (!peers) {
+        if (!this.#peers) {
             return null;
         }
         const links = [];
-        for (const peer of peers.values()) {
+        for (const peer of this.#peers.values()) {
             let skip = false;
             for (const key in filter) {
                 if (peer[key] !== filter[key]) {
@@ -164,7 +177,7 @@ export class Hub {
             avatar: info[1],
             playing: this.players!.length < room.config.np
         });
-        peers!.set(uid, peer);
+        this.#peers!.set(uid, peer);
         this.#sync();
     }
 }
