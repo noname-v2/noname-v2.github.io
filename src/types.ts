@@ -24,7 +24,7 @@ export interface Mode<T extends Task = Task> {
     name?: string;
     intro?: string;
     extension?: string;
-    tasks?: Dict<Class<T>>;
+    tasks?: Dict<Class<T> | Dict<Class<any>>>;
     components?: Dict<(cls: any) => typeof Component>;
     classes?: Dict<Class>;
     config?: Dict<Config>;

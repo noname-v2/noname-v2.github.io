@@ -13,6 +13,6 @@ import { moveTo } from './tasks/card/move-to';
 
 export const tasks = {
     trigger, setup, loop, lobby,
-    choose, chooseHero,
+    choose: {choose, chooseHero},
     moveTo
 };

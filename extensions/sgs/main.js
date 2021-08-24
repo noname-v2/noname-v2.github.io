@@ -281,7 +281,7 @@ function moveTo(T) {
 /** Game tasks. */
 const tasks = {
     trigger, setup, loop, lobby,
-    choose, chooseHero,
+    choose: { choose, chooseHero },
     moveTo
 };
 
