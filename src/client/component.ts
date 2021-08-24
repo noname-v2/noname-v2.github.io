@@ -28,7 +28,7 @@ export class Component {
     #props = new Map<string, any>();
 
     /** Property accessor. */
-    #data: Dict;
+    data: Dict;
 
     [key: string]: any;
 
@@ -38,10 +38,6 @@ export class Component {
 
     get ready() {
         return this.#ready;
-    }
-
-    get data() {
-        return this.#data;
     }
 
     get app() {
@@ -77,7 +73,7 @@ export class Component {
         this.#ready = Promise.resolve().then(() => this.init());
 
         // property accessor
-        this.#data = new Proxy({}, {
+        this.data = new Proxy({}, {
             get: (_, key: string) => {
                 return this.#props.get(key) ?? null;
             },

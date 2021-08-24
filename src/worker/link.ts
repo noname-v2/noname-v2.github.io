@@ -4,6 +4,9 @@ import type { Dict } from '../types';
 
 /** A link to client component. */
 export interface Link {
+    /** Component owner. */
+    owner?: string;
+    
     /** Component ID. */
     readonly id: number;
 

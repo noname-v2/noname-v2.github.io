@@ -5,9 +5,10 @@ import type { Skill } from './skill';
 
 export function game(A: typeof Game) {
     return class Game extends A {
-        players: Player[] = [];
-        cards: Card[] = [];
-        skills: Skill[] = [];
+        /** Map of all players, cards and skills. */
+        players = new Map<number, Player>();
+        cards = new Map<number, Card>();
+        skills = new Map<number, Skill>();
 
         backup() {
 
@@ -18,11 +19,15 @@ export function game(A: typeof Game) {
         }
 
         createPlayer() {
-            return this.createInstance('player', this) as Player;
+            const player = this.createInstance('player', this, 'player') as Player;
+            this.players.set(player.id, player);
+            return player;
         }
 
         createCard() {
-            return this.createInstance('card', this) as Card;
+            const card = this.createInstance('card', this, 'card') as Card;
+            this.cards.set(card.id, card);
+            return card;
         }
     } 
 }

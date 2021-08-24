@@ -83,6 +83,22 @@
             });
         });
     }
+    /** Randomly get an item from an array. */
+    function rget(iterable) {
+        const arr = Array.from(iterable);
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    /** Randomly get itema from an array. */
+    function rgets(iterable, n = 1) {
+        const set = new Set(iterable);
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            const item = rget(set);
+            set.delete(item);
+            arr.push(item);
+        }
+        return arr;
+    }
 
     var utils = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -93,7 +109,9 @@
         split: split,
         sleep: sleep,
         rng: rng,
-        readJSON: readJSON
+        readJSON: readJSON,
+        rget: rget,
+        rgets: rgets
     });
 
     /** Enable debug mode in http */

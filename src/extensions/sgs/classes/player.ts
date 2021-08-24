@@ -1,24 +1,12 @@
-import type { Link, Game } from '../types';
+import { Base } from './base';
+import type { Link } from '../types';
 
-class Player {
-    /** Game object. */
-    game: Game;
+export interface PlayerLink extends Link {
+    seat: number;
+}
 
-    /** Link to player component. */
-    link: Link;
-
-    get id() {
-        return this.link.id;
-    }
-
-    get owner() {
-        return this.link.owner;
-    }
-
-    constructor(game: Game) {
-        this.game = game;
-        this.link = game.create('player');
-    }
+class Player extends Base<PlayerLink> {
+    
 }
 
 export type { Player };

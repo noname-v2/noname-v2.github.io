@@ -60,23 +60,43 @@ function setup(T) {
     return class Setup extends T {
         main() {
             this.add('createPlayers');
-            this.add('assignPeers');
+            this.add('assignSeat');
+            this.add('takeSeat');
             this.add('createCards');
         }
         /** Create all players and add to arena. */
         createPlayers() {
-            // set total player number for arena
-            const np = this.game.arena.np = this.game.config.np;
+            for (let i = 0; i < this.game.config.np; i++) {
+                this.game.createPlayer().link.seat = i;
+            }
+        }
+        /** Assign clients to players. */
+        assignSeat() {
+            const players = this.game.utils.rgets(this.game.players.values(), this.game.hub.players?.length || 1);
+            const peers = this.game.hub.players;
+            for (const player of players) {
+                if (peers?.length) {
+                    const peer = peers.pop();
+                    player.link.owner = peer.owner;
+                    player.link.nickname = peer.nickname;
+                }
+                else {
+                    if (!peers) {
+                        player.link.owner = this.game.owner;
+                    }
+                    break;
+                }
+            }
+        }
+        /** Update locations of players in arena. */
+        takeSeat() {
             const ids = [];
-            for (let i = 0; i < np; i++) {
-                const player = this.game.createPlayer();
-                player.link.seat = i;
+            for (const player of this.game.players.values()) {
+                console.log(player.link.seat, player.owner);
                 ids.push(player.id);
             }
             this.game.arena.players = ids;
-        }
-        /** Assign clients to players. */
-        assignPeers() {
+            this.game.arena.np = this.game.config.np;
         }
         /** Create card pile. */
         createCards() {
@@ -267,18 +287,23 @@ const tasks = {
 
 function game(A) {
     return class Game extends A {
-        players = [];
-        cards = [];
-        skills = [];
+        /** Map of all players, cards and skills. */
+        players = new Map();
+        cards = new Map();
+        skills = new Map();
         backup() {
         }
         restore() {
         }
         createPlayer() {
-            return this.createInstance('player', this);
+            const player = this.createInstance('player', this, 'player');
+            this.players.set(player.id, player);
+            return player;
         }
         createCard() {
-            return this.createInstance('card', this);
+            const card = this.createInstance('card', this, 'card');
+            this.cards.set(card.id, card);
+            return card;
         }
     };
 }
@@ -291,7 +316,7 @@ function task(T) {
     };
 }
 
-class Player {
+class Base {
     /** Game object. */
     game;
     /** Link to player component. */
@@ -302,14 +327,17 @@ class Player {
     get owner() {
         return this.link.owner;
     }
-    constructor(game) {
+    constructor(game, tag) {
         this.game = game;
-        this.link = game.create('player');
+        this.link = game.create(tag);
     }
+}
+
+class Player extends Base {
 }
 const player$1 = () => Player;
 
-class Card {
+class Card extends Base {
 }
 const card = () => Card;
 
@@ -517,7 +545,7 @@ function arena(T) {
                     this.ui.animate(this.players, { opacity: [0, 1] });
                 }
                 if (player.mine) {
-                    this.perspective = player.get('seat');
+                    this.perspective = player.data.seat;
                 }
             }
             // remove players that no longer exist

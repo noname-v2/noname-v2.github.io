@@ -587,6 +587,22 @@
             });
         });
     }
+    /** Randomly get an item from an array. */
+    function rget(iterable) {
+        const arr = Array.from(iterable);
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    /** Randomly get itema from an array. */
+    function rgets(iterable, n = 1) {
+        const set = new Set(iterable);
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            const item = rget(set);
+            set.delete(item);
+            arr.push(item);
+        }
+        return arr;
+    }
 
     var utils = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -597,7 +613,9 @@
         split: split,
         sleep: sleep,
         rng: rng,
-        readJSON: readJSON
+        readJSON: readJSON,
+        rget: rget,
+        rgets: rgets
     });
 
     /** Map of loaded extensions. */
@@ -888,15 +906,12 @@
         /** Properties synced with worker. */
         #props = new Map();
         /** Property accessor. */
-        #data;
+        data;
         get node() {
             return this.#node;
         }
         get ready() {
             return this.#ready;
-        }
-        get data() {
-            return this.#data;
         }
         get app() {
             return app;
@@ -923,7 +938,7 @@
         constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
             // property accessor
-            this.#data = new Proxy({}, {
+            this.data = new Proxy({}, {
                 get: (_, key) => {
                     return this.#props.get(key) ?? null;
                 },
@@ -1989,6 +2004,8 @@
         heroName = this.ui.createElement('caption', this.content);
         /** Vice hero name. */
         viceName = this.ui.createElement('caption.vice', this.content);
+        // nickname of hero's controller
+        nickname = this.ui.createElement('span', this.content);
         init() {
             this.node.classList.add('hero-hidden');
             this.node.classList.add('vice-hidden');
@@ -2005,6 +2022,10 @@
         }
         $heroName(name) {
             this.heroName.innerHTML = name ?? '';
+        }
+        // set nickname
+        $nickname(name) {
+            this.nickname.innerHTML = name ?? '';
         }
     }
 

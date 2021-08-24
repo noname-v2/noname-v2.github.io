@@ -208,7 +208,7 @@ export function arena(T: typeof Arena) {
                     this.ui.animate(this.players, {opacity: [0, 1]});
                 }
                 if (player.mine) {
-                    this.perspective = player.get('seat');
+                    this.perspective = player.data.seat;
                 }
             }
 

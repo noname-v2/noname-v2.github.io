@@ -4,26 +4,47 @@ export function setup(T: TaskClass) {
     return class Setup extends T {
         main() {
             this.add('createPlayers');
-            this.add('assignPeers')
+            this.add('assignSeat')
+            this.add('takeSeat')
             this.add('createCards');
         }
 
         /** Create all players and add to arena. */
         createPlayers() {
-            // set total player number for arena
-            const np = this.game.arena.np = this.game.config.np;
-            const ids = [];
-            for (let i = 0; i < np; i++) {
-                const player = this.game.createPlayer();
-                player.link.seat = i;
-                ids.push(player.id);
+            for (let i = 0; i < this.game.config.np; i++) {
+                this.game.createPlayer().link.seat = i;
             }
-            this.game.arena.players = ids;
         }
 
         /** Assign clients to players. */
-        assignPeers() {
-            
+        assignSeat() {
+            const players = this.game.utils.rgets(this.game.players.values(), this.game.hub.players?.length || 1);
+            const peers = this.game.hub.players;
+
+            for (const player of players) {
+                if (peers?.length) {
+                    const peer = peers.pop()!;
+                    player.link.owner = peer.owner;
+                    player.link.nickname = peer.nickname;
+                }
+                else {
+                    if (!peers) {
+                        player.link.owner = this.game.owner;
+                    }
+                    break;
+                }
+            }
+        }
+
+        /** Update locations of players in arena. */
+        takeSeat() {
+            const ids = [];
+            for (const player of this.game.players.values()) {
+                console.log(player.link.seat, player.owner);
+                ids.push(player.id);
+            }
+            this.game.arena.players = ids;
+            this.game.arena.np = this.game.config.np;
         }
 
         /** Create card pile. */

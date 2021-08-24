@@ -89,3 +89,21 @@ export function readJSON<T>(...args: string[]) {
         });
     });
 }
+
+/** Randomly get an item from an array. */
+export function rget<T>(iterable: Iterable<T>): T {
+    const arr = Array.from(iterable);
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+/** Randomly get itema from an array. */
+export function rgets<T>(iterable: Iterable<T>, n: number = 1): T[] {
+    const set = new Set(iterable);
+    const arr = [];
+    for (let i = 0; i < n; i++) {
+        const item = rget(set);
+        set.delete(item);
+        arr.push(item);
+    }
+    return arr;
+}

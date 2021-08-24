@@ -19,6 +19,9 @@ export class Player extends Component {
 	/** Vice hero name. */
 	viceName = this.ui.createElement('caption.vice', this.content);
 
+	// nickname of hero's controller
+	nickname = this.ui.createElement('span', this.content);
+
     init() {
         this.node.classList.add('hero-hidden');
         this.node.classList.add('vice-hidden');
@@ -38,4 +41,9 @@ export class Player extends Component {
     $heroName(name: string | null) {
         this.heroName.innerHTML = name ?? '';
     }
+
+	// set nickname
+	$nickname(name?: string) {
+		this.nickname.innerHTML = name ?? '';
+	}
 }

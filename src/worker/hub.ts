@@ -5,10 +5,17 @@ import { connection, room, set } from './globals';
 import type { Link } from './link';
 import type { Dict } from '../types';
 
+interface Peer extends Link {
+    owner: string;
+    nickname: string;
+    avatar: string;
+    playing: boolean;
+}
+
 /** Hub related operations. */
 export class Hub {
     /** IDs and links of connected clients. */
-    #peers: Map<string, Link> | null = null;
+    #peers: Map<string, Peer> | null = null;
 
     get peers() {
         return this.#getPeers();
@@ -170,7 +177,7 @@ export class Hub {
 
     /** Create a peer component. */
     #createPeer(uid: string, info: [string, string]) {
-        const peer = room.create('peer');
+        const peer = room.create('peer') as Peer;
         peer.update({
             owner: uid,
             nickname: info[0],
