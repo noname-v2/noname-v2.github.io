@@ -21,12 +21,6 @@ const config = {
         ],
         requires: 'online'
     },
-    online_specify: {
-        name: '点将',
-        intro: '允许玩家在游戏开始前自由选择武将。',
-        init: false,
-        requires: 'online'
-    },
     online_mulligan: {
         name: '手气卡',
         intro: '游戏开始时玩家可以更换一至两次手牌。',
@@ -42,6 +36,18 @@ const config = {
         name: '手气卡',
         intro: '游戏开始时玩家可以更换任意次手牌。',
         init: false,
+        requires: '!online'
+    },
+    online_choose: {
+        name: '点将',
+        intro: '允许玩家自由选择武将。',
+        init: false,
+        requires: 'online'
+    },
+    choose: {
+        name: '点将',
+        intro: '允许玩家自由选择武将。',
+        init: true,
         requires: '!online'
     }
 };

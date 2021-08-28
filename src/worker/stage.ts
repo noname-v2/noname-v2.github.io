@@ -13,6 +13,9 @@ export class Stage {
     /** Main task object. */
     task: Task;
 
+    /** Task data (applied upon execution). */
+    data: Dict;
+
     /** Child steps of task objects.
      * Stage: child stage
      * array: [function name, executed, function arguments]
@@ -51,7 +54,8 @@ export class Stage {
         this.id = id;
         this.path = path;
         this.parent = parent;
-        this.task = apply(new (room.getTask(path))(), data);
+        this.task = new (room.getTask(path))();
+        this.data = data;
         room.taskMap.set(this.task, this);
     }
 
@@ -65,6 +69,11 @@ export class Stage {
         // check if stage is done or cancelled
         if (this.progress < 0 || this.progress >= 6) {
             return false;
+        }
+
+        // apply data
+        if (this.progress === 0) {
+            apply(this.task, this.data);
         }
 
         // check if current step is skipped
