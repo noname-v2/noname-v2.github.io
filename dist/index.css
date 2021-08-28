@@ -53,6 +53,38 @@ noname-arena > noname-zoom > noname-players {
 noname-arena > noname-zoom > noname-players > noname-player {
   position: absolute;
 }
+noname-arena > noname-zoom > noname-pop {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  background: var(--widget-background);
+  border-radius: var(--widget-radius);
+  box-shadow: var(--widget-shadow);
+  z-index: 20;
+}
+noname-arena > noname-zoom > noname-pop > noname-image {
+  position: absolute;
+  width: calc(100% - 2 * var(--widget-image-margin));
+  height: calc(100% - 2 * var(--widget-image-margin));
+  left: var(--widget-image-margin);
+  top: var(--widget-image-margin);
+  border-radius: var(--widget-image-radius);
+  box-shadow: var(--widget-image-shadow);
+}
+noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item {
+  width: var(--pop-width);
+  aspect-ratio: 1/var(--pop-ratio);
+}
+noname-arena > noname-zoom > noname-pop > noname-pane > noname-bar {
+  margin: 12px 0 14px 0;
+}
+noname-arena > noname-zoom > noname-pop > noname-pane > noname-caption {
+  margin: 14px 0 12px 0;
+}
 
 noname-button {
   width: 52px;
@@ -644,7 +676,7 @@ noname-pane > noname-text:last-child {
 
 noname-player {
   width: var(--player-width);
-  aspect-ratio: var(--player-ratio);
+  aspect-ratio: 1/var(--player-ratio);
 }
 noname-player > noname-background > *, noname-player > noname-content > * {
   position: absolute;
@@ -1220,7 +1252,7 @@ noname-splash > noname-gallery noname-item {
   margin-left: var(--app-splash-margin);
   margin-right: var(--app-splash-margin);
   width: var(--player-width);
-  aspect-ratio: var(--card-ratio);
+  aspect-ratio: 1/var(--card-ratio);
 }
 noname-splash > noname-gallery noname-item > noname-widget {
   cursor: pointer;

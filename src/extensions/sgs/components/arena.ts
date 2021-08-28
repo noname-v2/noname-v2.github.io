@@ -114,7 +114,7 @@ export function arena(T: typeof Arena) {
                 const xn0 = (n: number) => (150 + dx2) * n + dx1;
                 const xn = (n: number) => (150 + dx3) * n + dx1;
                 const yn = (n: number) => {
-                    switch(n) {
+                    switch (n) {
                         case 0: return dy1;
                         case 1: return dy1 * 1.8;
                         case 2: return dy1 * 2 + dy2;

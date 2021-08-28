@@ -35,7 +35,7 @@
 
 	"player": {
 		"width": "150px",
-		"ratio": "1 / 1.4",
+		"ratio": "1.4",
 		"background": "rgba(0, 0, 0, 0.4)",
 		"back-background": "rgba(0, 0, 0, 0.4)",
 		"radius": "8px",
@@ -57,7 +57,7 @@
 
 	"card": {
 		"width": "105px",
-		"ratio": "1 / 1.4",
+		"ratio": "1.4",
 		"background": "@(card.webp)",
 		"back-background": "@(cardback.webp)",
 		"entry-background": "@(wood.webp)",
@@ -67,6 +67,12 @@
 		"caption-shadow": "rgb(237, 232, 219) 0 0 3px, rgb(237, 232, 219) 0 0 3px, rgb(237, 232, 219) 0 0 3px, rgb(237, 232, 219) 0 0 3px, rgb(237, 232, 219) 0 0 3px, rgb(237, 232, 219) 0 0 3px",
 		"glow-shadow": "rgb(237, 232, 219) 0 0 4px, rgb(237, 232, 219) 0 0 4px, rgb(237, 232, 219) 0 0 4px, rgb(237, 232, 219) 0 0 4px, rgb(237, 232, 219) 0 0 4px, rgb(237, 232, 219) 0 0 4px",
 		"color": "rgba(0, 0, 0, 0.8)"
+	},
+
+	"pop": {
+		"width": "85px",
+		"ratio": "1.4",
+		"margin": "10"
 	},
 
 	"widget": {

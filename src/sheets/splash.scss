@@ -20,7 +20,7 @@ noname-splash {
 			margin-left: var(--app-splash-margin);
 			margin-right: var(--app-splash-margin);
 			width: var(--player-width);
-			aspect-ratio: var(--card-ratio);
+			aspect-ratio: 1 / var(--card-ratio);
 			
 			> noname-widget {
 				cursor: pointer;

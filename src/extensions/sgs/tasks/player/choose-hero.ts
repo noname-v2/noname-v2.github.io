@@ -8,7 +8,11 @@ export function createHero(T: ReturnType<typeof createPop>) {
         main() {
             this.pop = new Map();
             for (const [id, heros] of this.heros) {
-                this.pop.set(id, [['caption', '选择武将'], ['hero', heros]]);
+                this.pop.set(id, [
+                    ['caption', '选择武将'],
+                    ['hero', heros],
+                    ['confirm', !this.forced]
+                ]);
             }
             super.main();
         }

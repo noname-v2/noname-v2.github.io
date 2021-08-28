@@ -8,6 +8,9 @@ export function createChoose(T: TaskClass) {
         /** Has time limit. */
         timeout: number | null = null;
 
+        /** Allow not choosing. */
+        forced: boolean = false;
+
         /** Start timer for players. */
         startTimer() {
 

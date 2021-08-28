@@ -92,7 +92,6 @@ function setup(T) {
         takeSeat() {
             const ids = [];
             for (const player of this.game.players.values()) {
-                console.log(player.link.seat, player.owner);
                 ids.push(player.id);
             }
             this.game.arena.players = ids;
@@ -266,6 +265,7 @@ function createPop(T) {
                 if (player?.owner) {
                     const pop = this.game.create('pop');
                     pop.owner = player.owner;
+                    pop.content = content;
                 }
             }
         }
@@ -278,7 +278,11 @@ function createHero(T) {
         main() {
             this.pop = new Map();
             for (const [id, heros] of this.heros) {
-                this.pop.set(id, [['caption', '选择武将'], ['hero', heros]]);
+                this.pop.set(id, [
+                    ['caption', '选择武将'],
+                    ['hero', heros],
+                    ['confirm', !this.forced]
+                ]);
             }
             super.main();
         }
@@ -301,6 +305,8 @@ function createChoose(T) {
     return class Choose extends T {
         /** Has time limit. */
         timeout = null;
+        /** Allow not choosing. */
+        forced = false;
         /** Start timer for players. */
         startTimer() {
         }

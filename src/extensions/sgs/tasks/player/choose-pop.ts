@@ -17,6 +17,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 if (player?.owner) {
                     const pop = this.game.create('pop');
                     pop.owner = player.owner;
+                    pop.content = content;
                 }
             }
         }

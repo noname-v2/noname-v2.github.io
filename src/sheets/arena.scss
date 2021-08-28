@@ -9,4 +9,25 @@ noname-arena {
             position: absolute;
         }
     }
+
+    > noname-zoom > noname-pop {
+        @include layer;
+        @include widget;
+        z-index: 20;
+
+        > noname-pane {
+            > noname-gallery noname-item {
+                width: var(--pop-width);
+                aspect-ratio: 1 / var(--pop-ratio);
+            }
+
+            > noname-bar {
+                margin: 12px 0 14px 0;
+            }
+
+            > noname-caption {
+                margin: 14px 0 12px 0;
+            }
+        }
+    }
 }

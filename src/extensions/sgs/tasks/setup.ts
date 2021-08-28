@@ -40,7 +40,6 @@ export function setup(T: TaskClass) {
         takeSeat() {
             const ids = [];
             for (const player of this.game.players.values()) {
-                console.log(player.link.seat, player.owner);
                 ids.push(player.id);
             }
             this.game.arena.players = ids;

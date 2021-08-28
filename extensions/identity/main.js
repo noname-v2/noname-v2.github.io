@@ -17,7 +17,7 @@ var main = {
                         const choices = this.game.getHeros();
                         const heros = new Map();
                         for (const id of this.game.players.keys()) {
-                            heros.set(id, this.game.utils.rgets(choices, this.nheros, true));
+                            heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
                         }
                         this.addTask('chooseHero', { heros });
                     }

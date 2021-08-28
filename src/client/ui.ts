@@ -436,7 +436,7 @@ function toCN(str: string | number, two: boolean = true): string {
     if(num == Infinity) return '∞';
     if(num < 0 || num > 99) return num.toString();
     if(num <= 10){
-        switch(num){
+        switch (num) {
             case 0: return '〇';
             case 1: return '一';
             case 2: return two ? '二' : '两';

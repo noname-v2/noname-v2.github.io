@@ -1,6 +1,6 @@
 noname-player {
 	width: var(--player-width);
-	aspect-ratio: var(--player-ratio);
+	aspect-ratio: 1 / var(--player-ratio);
 
 	// absolute positioning
 	> noname-background, > noname-content {
