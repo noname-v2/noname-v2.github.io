@@ -80,7 +80,14 @@ noname-arena > noname-zoom > noname-pop > noname-image {
 }
 noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item {
   width: var(--pop-width);
-  aspect-ratio: 1/var(--pop-ratio);
+  aspect-ratio: 1/var(--player-ratio);
+}
+noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-background, noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-content {
+  width: var(--player-width);
+  height: auto;
+  aspect-ratio: 1/var(--player-ratio);
+  transform: scale(var(--pop-scale));
+  transform-origin: top left;
 }
 noname-arena > noname-zoom > noname-pop > noname-pane > noname-bar {
   margin: 12px 0 14px 0;

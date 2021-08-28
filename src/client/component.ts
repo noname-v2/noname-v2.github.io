@@ -5,6 +5,7 @@ import * as utils from '../utils';
 import * as client from './client';
 import { app } from './globals';
 import { debug } from '../meta';
+import { accessExtension } from '../extension';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
 
@@ -58,6 +59,10 @@ export class Component {
 
     get ui() {
         return ui;
+    }
+
+    get accessExtension() {
+        return accessExtension;
     }
 
     get owner(): string | null {
@@ -115,7 +120,7 @@ export class Component {
 
         if (hook) {
             for (const [hook, cmp, newVal, oldVal] of hooks) {
-                hook.apply(cmp, [newVal, oldVal]);
+                this.ready.then(() => hook.apply(cmp, [newVal, oldVal]));
             }
         }
 

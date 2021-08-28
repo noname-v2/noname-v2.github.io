@@ -122,8 +122,8 @@ function lobby(T) {
             const configs = {};
             Object.assign(configs, this.game.mode.config);
             for (const name of this.game.packs) {
-                const heropack = this.game.getExtension(name + ':heropack');
-                const cardpack = this.game.getExtension(name + ':cardpack');
+                const heropack = this.game.accessExtension(name, 'heropack');
+                const cardpack = this.game.accessExtension(name, 'cardpack');
                 if (heropack) {
                     heropacks[name] = heropack;
                 }
@@ -361,7 +361,7 @@ function game(A) {
         getHeros() {
             const heros = new Set();
             for (const pack of this.packs) {
-                const ext = this.getExtension(pack);
+                const ext = this.accessExtension(pack);
                 for (const name in ext?.hero) {
                     heros.add(pack + ':' + name);
                 }

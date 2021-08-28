@@ -333,6 +333,31 @@
         }
     }
 
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+    /** Access extension content. */
+    function accessExtension(path, ...paths) {
+        if (paths.length) {
+            if (!path.includes(':')) {
+                path += ':';
+            }
+            else {
+                path += '.';
+            }
+            path += paths.join('.');
+        }
+        const [ext, keys] = path.split(':');
+        return access(extensions.get(ext), keys) ?? null;
+    }
+
     /** Game object used by stages. */
     class Game {
         /** Game mode. */
@@ -353,6 +378,9 @@
         get utils() {
             return utils;
         }
+        get accessExtension() {
+            return accessExtension;
+        }
         /** Get a link. */
         get(id) {
             return room.links.get(id);
@@ -364,10 +392,6 @@
         /** Creata a class in game.#gameClasses. */
         createInstance(name, ...args) {
             return new (room.getClass(name))(...args);
-        }
-        /** Access extension content. */
-        getExtension(path) {
-            return room.getExtension(path);
         }
         /** Mark game as started and disallow changing configuration. */
         start() {
@@ -540,21 +564,6 @@
         return link;
     }
 
-    /** Map of loaded extensions. */
-    const extensions = new Map();
-    /** Load extension. */
-    async function importExtension(extname) {
-        if (!extensions.has(extname)) {
-            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
-            extensions.set(extname, ext);
-        }
-        return extensions.get(extname);
-    }
-    /** Get imported extension. */
-    function getExtension(extname) {
-        return extensions.get(extname);
-    }
-
     /** Room that controlls game flow and classes. */
     class Room {
         /** Owner ID. */
@@ -610,6 +619,7 @@
             this.rootStage = this.currentStage = this.createStage('main');
             this.arena = this.game.create('arena');
             this.arena.ruleset = this.#ruleset;
+            this.arena.packs = packs;
             this.loop();
         }
         /** Create a link. */
@@ -624,16 +634,11 @@
             this.#stages.set(id, stage);
             return stage;
         }
-        /** Access extension content. */
-        getExtension(path) {
-            const [ext, keys] = path.split(':');
-            return access(getExtension(ext), keys) ?? null;
-        }
         /** Get or create task constructor. */
         getTask(path) {
             if (!this.#taskClasses.has(path)) {
                 // get task from extension sections
-                const section = this.getExtension(path);
+                const section = accessExtension(path);
                 const cls = section.inherit ? this.getTask(section.inherit) : Task;
                 this.#taskClasses.set(path, section.task(cls));
             }
@@ -678,7 +683,7 @@
             const modeTasks = [];
             const exclude = ['tasks', 'components', 'classes'];
             for (const pack of this.#ruleset) {
-                const extMode = copy(getExtension(pack)?.mode ?? {});
+                const extMode = copy(accessExtension(pack)?.mode ?? {});
                 // update game classes (including base Task class)
                 for (const name in extMode.classes) {
                     const cls = this.#gameClasses.get(name);

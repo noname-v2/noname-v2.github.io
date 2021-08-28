@@ -1,4 +1,5 @@
 import { hub, room } from './globals';
+import { accessExtension } from '../extension';
 import * as utils from '../utils';
 import type { Mode, Dict } from '../types';
 
@@ -29,6 +30,10 @@ export abstract class Game {
         return utils;
     }
 
+    get accessExtension() {
+        return accessExtension;
+    }
+
     /** Get a link. */
     get(id: number) {
         return room.links.get(id);
@@ -42,11 +47,6 @@ export abstract class Game {
     /** Creata a class in game.#gameClasses. */
     createInstance(name: string, ...args: any[]) {
         return new (room.getClass(name))(...args);
-    }
-
-    /** Access extension content. */
-    getExtension(path: string) {
-        return room.getExtension(path);
     }
 
     /** Mark game as started and disallow changing configuration. */

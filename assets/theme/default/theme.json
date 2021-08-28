@@ -71,8 +71,8 @@
 
 	"pop": {
 		"width": "85px",
-		"ratio": "1.4",
-		"margin": "10"
+		"scale": "0.567",
+		"margin": "8"
 	},
 
 	"widget": {

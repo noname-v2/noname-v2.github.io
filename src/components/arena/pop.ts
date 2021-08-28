@@ -58,7 +58,7 @@ export class Pop extends Component {
 
     addHero(heros: string[]) {
         const width = parseInt(this.app.css.pop.width);
-        const height = parseFloat(this.app.css.pop.ratio) * width;
+        const height = parseFloat(this.app.css.player.ratio) * width;
         const margin = parseInt(this.app.css.pop.margin);
         const currentHeight = this.height;
 
@@ -87,7 +87,9 @@ export class Pop extends Component {
         for (const hero of heros) {
             gallery.add(() => {
                 const player = this.ui.create('player');
+                const [ext, name] = hero.split(':');
                 player.data.heroImage = hero;
+                player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
                 return player.node;
             });
         }

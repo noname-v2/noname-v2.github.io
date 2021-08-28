@@ -166,7 +166,7 @@ export function trigger(event: keyof Listeners, arg?: any) {
 } 
 
 /** Load arena. */
-async function loadArena(ruleset: string[]) {
+async function loadArena(ruleset: string[], packs: string[]) {
     // fade out current arena
     const arena = app.arena;
     if (arena && app.popups.size) {
@@ -186,6 +186,11 @@ async function loadArena(ruleset: string[]) {
             componentClasses.set(tag, ext.mode!.components[tag](cls));
         }
     }
+    
+    // import packs
+    for (const pack of packs) {
+        await importExtension(pack);
+    }
 }
 
 /**
@@ -198,7 +203,7 @@ async function render() {
         const [sid, tags, props, calls] = tick;
         for (const key in tags) {
             if (tags[key] === 'arena') {
-                await loadArena(props[key].ruleset);
+                await loadArena(props[key].ruleset, props[key].packs);
                 break;
             }
         }

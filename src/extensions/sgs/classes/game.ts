@@ -16,7 +16,7 @@ export function game(A: typeof Game) {
             const heros = new Set<string>();
 
             for (const pack of this.packs) {
-                const ext = this.getExtension(pack) as SGS;
+                const ext = this.accessExtension(pack) as SGS;
                 for (const name in ext?.hero) {
                     heros.add(pack + ':' + name);
                 }

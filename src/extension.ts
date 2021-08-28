@@ -1,4 +1,4 @@
-import { freeze } from './utils';
+import { freeze, access } from './utils';
 import type { Extension } from './types';
 
 /** Map of loaded extensions. */
@@ -13,7 +13,17 @@ export async function importExtension(extname: string) {
     return extensions.get(extname)!;
 }
 
-/** Get imported extension. */
-export function getExtension(extname: string) {
-    return extensions.get(extname);
+/** Access extension content. */
+export function accessExtension(path: string, ...paths: string[]): any {
+    if (paths.length) {
+        if (!path.includes(':')) {
+            path += ':'
+        }
+        else {
+            path += '.'
+        }
+        path += paths.join('.');
+    }
+    const [ext, keys] = path.split(':');
+    return access(extensions.get(ext)!, keys) ?? null;
 }

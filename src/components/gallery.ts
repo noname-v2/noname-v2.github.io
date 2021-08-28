@@ -168,6 +168,9 @@ export class Gallery extends Component {
 
     /** Callback when window resize. */
     resize() {
+        if (!document.contains(this.node)) {
+            return;
+        }
         if (!this.#currentSize) {
             this.getSize();
         }

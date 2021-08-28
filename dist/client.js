@@ -706,6 +706,20 @@
         }
         return extensions.get(extname);
     }
+    /** Access extension content. */
+    function accessExtension(path, ...paths) {
+        if (paths.length) {
+            if (!path.includes(':')) {
+                path += ':';
+            }
+            else {
+                path += '.';
+            }
+            path += paths.join('.');
+        }
+        const [ext, keys] = path.split(':');
+        return access(extensions.get(ext), keys) ?? null;
+    }
 
     /** Hub configuration. */
     const hub = new Proxy(hub$1, {
@@ -829,7 +843,7 @@
         }
     }
     /** Load arena. */
-    async function loadArena(ruleset) {
+    async function loadArena(ruleset, packs) {
         // fade out current arena
         const arena = app.arena;
         if (arena && app.popups.size) {
@@ -848,6 +862,10 @@
                 componentClasses$1.set(tag, ext.mode.components[tag](cls));
             }
         }
+        // import packs
+        for (const pack of packs) {
+            await importExtension(pack);
+        }
     }
     /**
      * Render the next UITick.
@@ -859,7 +877,7 @@
             const [sid, tags, props, calls] = tick;
             for (const key in tags) {
                 if (tags[key] === 'arena') {
-                    await loadArena(props[key].ruleset);
+                    await loadArena(props[key].ruleset, props[key].packs);
                     break;
                 }
             }
@@ -1006,6 +1024,9 @@
         get ui() {
             return ui;
         }
+        get accessExtension() {
+            return accessExtension;
+        }
         get owner() {
             return this.data.owner;
         }
@@ -1054,7 +1075,7 @@
             }
             if (hook) {
                 for (const [hook, cmp, newVal, oldVal] of hooks) {
-                    hook.apply(cmp, [newVal, oldVal]);
+                    this.ready.then(() => hook.apply(cmp, [newVal, oldVal]));
                 }
             }
             return hooks;
@@ -2159,7 +2180,7 @@
         }
         addHero(heros) {
             const width = parseInt(this.app.css.pop.width);
-            const height = parseFloat(this.app.css.pop.ratio) * width;
+            const height = parseFloat(this.app.css.player.ratio) * width;
             const margin = parseInt(this.app.css.pop.margin);
             const currentHeight = this.height;
             let nrows;
@@ -2184,7 +2205,9 @@
             for (const hero of heros) {
                 gallery.add(() => {
                     const player = this.ui.create('player');
+                    const [ext, name] = hero.split(':');
                     player.data.heroImage = hero;
+                    player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
                     return player.node;
                 });
             }
@@ -2398,6 +2421,9 @@
         }
         /** Callback when window resize. */
         resize() {
+            if (!document.contains(this.node)) {
+                return;
+            }
             if (!this.#currentSize) {
                 this.getSize();
             }

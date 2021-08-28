@@ -14,7 +14,7 @@ var main = {
                         this.addTask('setup');
                         this.add('sleep', 0.5);
                         this.add('getHeros');
-                        this.addTask('chooseHero', { heros: this.heros });
+                        this.addTask('chooseHero', { heros: this.heros, forced: true });
                         this.addTask('loop');
                     }
                     getHeros() {

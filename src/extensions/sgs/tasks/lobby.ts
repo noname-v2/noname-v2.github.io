@@ -14,8 +14,8 @@ export function lobby(T: TaskClass) {
             Object.assign(configs, this.game.mode.config);
 
             for (const name of this.game.packs) {
-                const heropack = this.game.getExtension(name + ':heropack');
-                const cardpack = this.game.getExtension(name + ':cardpack');
+                const heropack = this.game.accessExtension(name, 'heropack');
+                const cardpack = this.game.accessExtension(name, 'cardpack');
                 if (heropack) {
                     heropacks[name] = heropack;
                 }
