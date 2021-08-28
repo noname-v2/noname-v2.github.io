@@ -7,20 +7,21 @@ var main = {
                 return class Identity extends Task {
                     /** Number of hero choices. */
                     nheros = 10;
+                    /** Option for chooseHero. */
+                    heros = new Map();
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
                         this.add('sleep', 0.5);
-                        this.add('chooseHero');
+                        this.add('getHeros');
+                        this.addTask('chooseHero', { heros: this.heros });
                         this.addTask('loop');
                     }
-                    chooseHero() {
+                    getHeros() {
                         const choices = this.game.getHeros();
-                        const heros = new Map();
                         for (const id of this.game.players.keys()) {
-                            heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
+                            this.heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
                         }
-                        this.addTask('chooseHero', { heros });
                     }
                 };
             }

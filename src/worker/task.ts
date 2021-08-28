@@ -8,6 +8,9 @@ export class Task<T extends Game = Game> {
     /** Do not trigger before / after / skip event. */
     silent: boolean = false;
 
+    /** Map containing custom results. */
+    results = new Map<string | number, any>();
+
     /** Leave annotation for subclass. */
     [key: string]: any;
 

@@ -255,19 +255,33 @@ function createPop(T) {
     return class ChoosePop extends T {
         /** Player IDs and their pop contents. */
         pop;
+        /** Created popups. */
+        pops = new Set();
         main() {
-            this.openDialog();
             this.startTimer();
+            this.add('openDialog');
+            this.add('getResults');
         }
         openDialog() {
+            console.log(1);
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
                     const pop = this.game.create('pop');
                     pop.owner = player.owner;
                     pop.content = content;
+                    pop.await();
+                    this.pops.add(pop);
                 }
             }
+        }
+        getResults() {
+            console.log(2);
+            for (const pop of this.pops) {
+                this.results.set(pop.owner, pop.result);
+                pop.unlink();
+            }
+            console.log(this.results);
         }
     };
 }

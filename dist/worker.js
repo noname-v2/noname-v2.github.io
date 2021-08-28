@@ -264,6 +264,8 @@
     class Task {
         /** Do not trigger before / after / skip event. */
         silent = false;
+        /** Map containing custom results. */
+        results = new Map();
         get game() {
             return room.game;
         }
@@ -513,7 +515,7 @@
             get(_, key) {
                 if (key in reserved) {
                     if (key === 'result') {
-                        return reserved[key]() ?? '#auto';
+                        return reserved[key]() ?? null;
                     }
                     else {
                         return reserved[key];
