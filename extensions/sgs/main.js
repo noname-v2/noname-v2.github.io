@@ -252,7 +252,39 @@ function lobby(T) {
     };
 }
 
-function choose(T) {
+function createPop(T) {
+    return class ChoosePop extends T {
+        // player IDs and their pop contents
+        pop;
+        main() {
+            console.log('choosePop', this.select);
+        }
+        test() {
+        }
+    };
+}
+
+function createHero(T) {
+    return class ChoosePop extends T {
+        main() {
+            console.log('choosePop', this.pop, this.test, this.select);
+        }
+    };
+}
+
+function createTarget(T) {
+    return class ChooseTarget extends T {
+        // player IDs and their pop contents
+        pop;
+        main() {
+            console.log('chooseTarget', this.select);
+        }
+        test2() {
+        }
+    };
+}
+
+function createChoose(T) {
     return class Choose extends T {
         main() {
             console.log('choose', this.np);
@@ -261,13 +293,12 @@ function choose(T) {
         }
     };
 }
-
-function chooseHero(T) {
-    return class ChooseHero extends T {
-        main() {
-            console.log('chooseHero', this.np, this.select);
-        }
-    };
+function choose(T) {
+    const choose = createChoose(T);
+    const choosePop = createPop(choose);
+    const chooseTarget = createTarget(choose);
+    const chooseHero = createHero(choosePop);
+    return { choose, choosePop, chooseTarget, chooseHero };
 }
 
 function moveTo(T) {
@@ -281,7 +312,7 @@ function moveTo(T) {
 /** Game tasks. */
 const tasks = {
     trigger, setup, loop, lobby,
-    choose: { choose, chooseHero },
+    choose,
     moveTo
 };
 

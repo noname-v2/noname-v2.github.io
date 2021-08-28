@@ -6,7 +6,7 @@ export type Dict<T=any> = {[key: string]: T};
 
 /** Creator of a subclass. */
 export interface Class<T=any> {
-    (cls: {new(...args: any[]): T}): {new(...args: any[]): T};
+    (cls: {new(...args: any[]): T}): {new(...args: any[]): T} | Dict<{new(...args: any[]): T}>;
 };
 
 /** Mode configuration entry. */
@@ -24,7 +24,7 @@ export interface Mode<T extends Task = Task> {
     name?: string;
     intro?: string;
     extension?: string;
-    tasks?: Dict<Class<T> | Dict<Class<any>>>;
+    tasks?: Dict<Class<T>>;
     components?: Dict<(cls: any) => typeof Component>;
     classes?: Dict<Class>;
     config?: Dict<Config>;

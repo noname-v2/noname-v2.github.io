@@ -175,28 +175,14 @@ export class Room {
         // update task classes
         for (const tasks of modeTasks) {
             for (const task in tasks) {
-                let cls = this.#taskClasses.get(task) ?? this.getClass('task');
-
-                if (typeof tasks[task] === 'function') {
-                    // tasks that inherit from base Task class
-                    this.#taskClasses.set(task, (tasks[task] as any)(cls));
+                const cls = this.#taskClasses.get(task) ?? this.getClass('task');
+                const constructor = (tasks[task] as any)(cls);
+                if (typeof constructor === 'function') {
+                    this.#taskClasses.set(task, constructor);
                 }
-                else if (tasks[task]?.constructor === Object) {
-                    // group of tasks that all inherit from this.#taskClasses.get(task)
-                    const dict = tasks[task] as Dict;
-
-                    // get the class to inherit from
-                    if (dict[task]) {
-                        cls = dict[task](cls);
-                        this.#taskClasses.set(task, cls);
-                    }
-
-                    // create inherited classes
-                    for (const subtask in dict) {
-                        if (subtask === task) {
-                            continue;
-                        }
-                        this.#taskClasses.set(subtask, dict[subtask](cls));
+                else {
+                    for (const name in constructor) {
+                        this.#taskClasses.set(name, constructor[name]);
                     }
                 }
             }

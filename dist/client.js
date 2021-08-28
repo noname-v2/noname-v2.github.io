@@ -1991,6 +1991,14 @@
         }
     }
 
+    class Peer extends Component {
+        $playing() {
+            if (this.app.arena?.peers) {
+                trigger('sync');
+            }
+        }
+    }
+
     class Player extends Component {
         /** Player background. */
         background = this.ui.createElement('background', this.node);
@@ -2027,6 +2035,9 @@
         $nickname(name) {
             this.nickname.innerHTML = name ?? '';
         }
+    }
+
+    class Pop extends Popup {
     }
 
     class Button extends Component {
@@ -2409,14 +2420,6 @@
             for (const span of this.node.querySelectorAll('noname-pane > noname-text > noname-span')) {
                 const dx = (this.width - span.offsetWidth) / 2;
                 span.parentNode.style.transform = `translateX(${dx}px)`;
-            }
-        }
-    }
-
-    class Peer extends Component {
-        $playing() {
-            if (this.app.arena?.peers) {
-                trigger('sync');
             }
         }
     }
@@ -3284,12 +3287,13 @@
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
     componentClasses.set('lobby', Lobby);
+    componentClasses.set('peer', Peer);
     componentClasses.set('player', Player);
+    componentClasses.set('pop', Pop);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
-    componentClasses.set('peer', Peer);
     componentClasses.set('popup', Popup);
     componentClasses.set('splash-bar', SplashBar);
     componentClasses.set('splash-gallery', SplashGallery);

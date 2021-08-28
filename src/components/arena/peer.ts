@@ -1,5 +1,5 @@
-import { trigger } from '../client/client';
-import { Component } from '../components';
+import { trigger } from '../../client/client';
+import { Component } from '../../components';
 
 export class Peer extends Component {
 	$playing() {

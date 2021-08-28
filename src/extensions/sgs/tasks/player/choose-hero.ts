@@ -1,9 +1,9 @@
-import type { choose } from './choose';
+import type { createPop } from './choose-pop';
 
-export function chooseHero(T: ReturnType<typeof choose>) {
-    return class ChooseHero extends T {
+export function createHero(T: ReturnType<typeof createPop>) {
+    return class ChoosePop extends T {
         main() {
-            console.log('chooseHero', this.np, this.select);
+            console.log('choosePop', this.pop, this.test, this.select);
         }
     }
 }
