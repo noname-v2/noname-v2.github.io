@@ -287,6 +287,9 @@ export class Lobby extends Component {
         for (let i = 0; i < n; i++) {
             const img = this.ui.createElement('image.avatar');
             this.ui.setImage(img, names[i]);
+            if (n > 10) {
+                img.style.marginRight = `${560 / n - 40}px`;
+            }
             frag.appendChild(img);
         }
         (this.spectateBar as any).replaceChildren(frag);
