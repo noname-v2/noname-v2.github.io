@@ -11,21 +11,24 @@ export default {
                     nheros = 10;
 
                     /** Option for chooseHero. */
-                    heros = new Map<number, string[]>();
+                    choose = {
+                        heros: new Map<number, string[]>(),
+                        forced: true
+                    };
 
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
                         this.add('sleep', 0.5);
-                        this.add('getHeros');
-                        this.addTask('chooseHero', {heros: this.heros, forced: true});
+                        this.add('setChoose');
+                        this.addTask('chooseHero', this.choose);
                         this.addTask('loop');
                     }
 
-                    getHeros() {
+                    setChoose() {
                         const choices = this.game.getHeros();
                         for (const id of this.game.players.keys()) {
-                            this.heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
+                            this.choose.heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
                         }
                     }
                 }

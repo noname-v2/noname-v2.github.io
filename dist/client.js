@@ -2167,10 +2167,18 @@
     }
 
     class Pop extends Component {
+        /** Height based on content height. */
         height = 24;
+        /** Width based on content width. */
         width = 0;
+        /** Content container. */
         pane = this.ui.create('pane', this.node);
+        /** Galleries in this.pane. */
         galleries = new Set();
+        /** Confirm button. */
+        ok;
+        /** Cancel button. */
+        cancel;
         get selected() {
             return [];
         }
@@ -2213,24 +2221,39 @@
             }
             this.galleries.add(gallery);
         }
-        addConfirm(cancel) {
+        addConfirm(content) {
             this.height += 50;
             this.width = Math.max(this.width, 230);
             const bar = this.pane.add('bar');
-            const ok = this.ui.createElement('widget.button', bar);
-            ok.dataset.fill = 'red';
-            ok.innerHTML = '确定';
-            this.ui.bind(ok, () => {
-                this.respond(this.selected);
-                this.remove();
-            });
-            if (cancel) {
-                const cancel = this.ui.createElement('widget.button', bar);
-                cancel.innerHTML = '取消';
-                this.ui.bind(cancel, () => {
-                    this.respond(false);
-                    this.remove();
-                });
+            for (const item of content) {
+                if (item === 'ok') {
+                    const ok = this.ok = this.ui.createElement('widget.button', bar);
+                    ok.dataset.fill = 'red';
+                    ok.innerHTML = '确定';
+                    this.ui.bind(ok, () => {
+                        this.respond(this.selected);
+                        this.remove();
+                    });
+                }
+                else if (item === 'cancel') {
+                    const cancel = this.cancel = this.ui.createElement('widget.button', bar);
+                    cancel.innerHTML = '取消';
+                    this.ui.bind(cancel, () => {
+                        this.respond(false);
+                        this.remove();
+                    });
+                }
+                else {
+                    const button = this.ui.createElement('widget.button', bar);
+                    const [id, text, color] = item;
+                    button.innerHTML = text;
+                    if (color) {
+                        button.dataset.fill = color;
+                    }
+                    this.ui.bind(button, () => {
+                        this.yield(id);
+                    });
+                }
             }
         }
         /** Remove with fade out animation. */

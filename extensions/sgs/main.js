@@ -287,13 +287,21 @@ function createPop(T) {
 function createHero(T) {
     return class ChoosePop extends T {
         heros;
+        freeChoose = false;
         main() {
             this.pop = new Map();
             for (const [id, heros] of this.heros) {
+                const confirm = ['ok'];
+                if (!this.forced) {
+                    confirm.push('cancel');
+                }
+                if (this.freeChoose) {
+                    confirm.push(['free', '点将', 'blue']);
+                }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
                     ['hero', heros],
-                    ['confirm', !this.forced]
+                    ['confirm', confirm]
                 ]);
             }
             super.main();
