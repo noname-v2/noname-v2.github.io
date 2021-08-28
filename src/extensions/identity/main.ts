@@ -10,33 +10,50 @@ export default {
                     /** Number of hero choices. */
                     nheros = 10;
 
-                    /** Options for chooseHero. */
-                    config = {
-                        heros: new Map<number, string[]>(),
-                        forced: true,
-                        freeChoose: false
-                    };
+                    /** Choice of heros for players. */
+                    choices!: Set<string>;
+
+                    get freeChoose() {
+                        if (this.game.hub.connected) {
+                            return this.game.config.online_choose;
+                        }
+                        else {
+                            return this.game.config.choose;
+                        }
+                    }
 
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
                         this.add('sleep', 0.5);
-                        this.add('setConfig');
-                        this.addTask('chooseHero', this.config);
+                        this.add('chooseZhu');
+                        this.add('chooseRest');
                         this.addTask('loop');
                     }
 
-                    setConfig() {
-                        const choices = this.game.getHeros();
+                    chooseZhu() {
+                        this.choices = this.game.getHeros();
+                        const zhu = this.game.utils.rget(this.game.players.values());
+                        zhu.link.identity = '主';
+                        const heros = new Map<number, string[]>();
+                        heros.set(zhu.id, this.getChoices());
+                        this.addTask('chooseHero', {
+                            heros, forced: true, freeChoose: this.freeChoose
+                        });
+                    }
+
+                    chooseRest() {
+                        const heros = new Map<number, string[]>();
                         for (const id of this.game.players.keys()) {
-                            this.config.heros.set(id, Array.from(this.game.utils.rgets(choices, this.nheros, true)));
+                            heros.set(id, this.getChoices());
                         }
-                        if (this.game.hub.connected) {
-                            this.config.freeChoose = this.game.config.online_choose;
-                        }
-                        else {
-                            this.config.freeChoose = this.game.config.choose;
-                        }
+                        this.addTask('chooseHero', {
+                            heros, forced: true, freeChoose: this.freeChoose
+                        });
+                    }
+
+                    getChoices() {
+                        return Array.from(this.game.utils.rgets(this.choices, this.nheros, true));
                     }
                 }
             }

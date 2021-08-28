@@ -264,11 +264,11 @@ function createPop(T) {
         /** Created popups. */
         pops = new Set();
         main() {
-            this.startTimer();
             this.add('openDialog');
             this.add('getResults');
         }
         openDialog() {
+            this.startTimer();
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {

@@ -150,8 +150,6 @@
         path;
         /** Main task object. */
         task;
-        /** Task data (applied upon execution). */
-        data;
         /** Child steps of task objects.
          * Stage: child stage
          * array: [function name, executed, function arguments]
@@ -183,8 +181,7 @@
             this.id = id;
             this.path = path;
             this.parent = parent;
-            this.task = new (room.getTask(path))();
-            this.data = data;
+            this.task = apply(new (room.getTask(path))(), data);
             room.taskMap.set(this.task, this);
         }
         /** Execute the next step.
@@ -197,10 +194,6 @@
             // check if stage is done or cancelled
             if (this.progress < 0 || this.progress >= 6) {
                 return false;
-            }
-            // apply data
-            if (this.progress === 0) {
-                apply(this.task, this.data);
             }
             // check if current step is skipped
             room.currentStage = this;

@@ -11,12 +11,12 @@ export function createPop(T: ReturnType<typeof createChoose>) {
         pops = new Set<Link>();
 
         main() {
-            this.startTimer();
             this.add('openDialog');
             this.add('getResults');
         }
 
         openDialog() {
+            this.startTimer();
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
