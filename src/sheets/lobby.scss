@@ -34,30 +34,25 @@ noname-lobby {
 		}
 
 		> noname-bar {
+			display: flex;
 			text-align: center;
 			flex-basis: 100%;
 			height: 40px;
-			> noname-dock {
-				width: 230px;
+			justify-content: center;
+			
+			> noname-image {
+				box-shadow: var(--widget-shadow);
+				width: 40px;
 				height: 40px;
-				position: absolute;
-				&:first-child {
-					left: 20px;
-				}
-				&:last-child {
-					right: 20px;
-				}
-				> noname-image {
-					box-shadow: var(--widget-shadow);
-					width: 40px;
-					height: 40px;
-					border-radius: 100%;
-					position: absolute;
-					display: inline-block;
-				}
+				border-radius: 100%;
+				display: inline-block;
+				margin-right: 12px;
 			}
-			> noname-widget {
+			
+			> noname-widget.button {
+				width: 60px;
 				height: 30px;
+				margin-right: 20px;
 			}
 		}
 	}

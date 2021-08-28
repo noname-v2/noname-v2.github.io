@@ -31,13 +31,7 @@ export class Lobby extends Component {
     spectateButton = this.ui.createElement('widget.button');
 
     /** Container of spectators. */
-    spectateDock = this.ui.createElement('dock');
-
-    /** Button to choose hero. */
-    heroButton = this.ui.createElement('widget.button');
-
-    /** Container of chosen heros. */
-    heroDock = this.ui.createElement('dock');
+    spectateBar = this.ui.createElement('bar');
 
     init() {
         const arena = this.app.arena!;
@@ -103,7 +97,7 @@ export class Lobby extends Component {
         if (peer) {
             this.seats.classList.remove('offline');
             this.spectateButton.dataset.fill = peer.data.playing ? '' : 'red';
-            this.#alignAvatars(this.spectateDock, spectators.map(peer => peer.data.avatar));
+            this.#alignAvatars(spectators.map(peer => peer.data.avatar));
             this.#checkSpectate();
         }
         else {
@@ -269,15 +263,10 @@ export class Lobby extends Component {
         const div = document.createElement('div');
         div.classList.add('bar');
         this.seats.appendChild(div);
-        const bar = this.ui.createElement('bar');
         this.seats.classList.add('offline');
-        this.seats.appendChild(bar);
-        bar.appendChild(this.spectateDock);
-        bar.appendChild(this.spectateButton);
-        bar.appendChild(this.heroButton);
-        bar.appendChild(this.heroDock);
+        this.seats.appendChild(this.spectateBar);
+        this.spectateBar.appendChild(this.spectateButton);
         this.spectateButton.innerHTML = '旁观';
-        this.heroButton.innerHTML = '点将';
         
         // toggle between spectator and player
         this.ui.bind(this.spectateButton, () => {
@@ -291,25 +280,16 @@ export class Lobby extends Component {
     }
 
     /** Calculate the location of spectators and specified heros. */
-    #alignAvatars(dock: HTMLElement, names: string[]) {
+    #alignAvatars(names: string[]) {
         const frag = document.createDocumentFragment();
+        frag.appendChild(this.spectateButton);
         const n = names.length;
         for (let i = 0; i < n; i++) {
             const img = this.ui.createElement('image.avatar');
-            if (n < 4) {
-                img.style.left = `${230 / (n + 1) * (i + 1) - 20}px`;
-            }
-            else if (n === 4) {
-                const left = (230 - n * 40 - (n - 1) * 15) / 2;
-                img.style.left = `${left + i * 55}px`;
-            }
-            else {
-                img.style.left = `${190 / (n - 1) * i}px`;
-            }
             this.ui.setImage(img, names[i]);
             frag.appendChild(img);
         }
-        (dock as any).replaceChildren(frag);
+        (this.spectateBar as any).replaceChildren(frag);
     }
 
     /** Enable or disable spectate button. */
