@@ -36,6 +36,10 @@ export type PopSection<T extends keyof PopSectionContent> = [T, PopSectionConten
 export type PopContent = PopSection<keyof PopSectionContent>[];
 
 export class Pop extends Component {
+    init() {
+        
+    }
+
     $pop(pop: PopContent) {
         console.log('>>>', pop)
     }

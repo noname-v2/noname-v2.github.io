@@ -254,13 +254,20 @@ function lobby(T) {
 
 function createPop(T) {
     return class ChoosePop extends T {
-        // player IDs and their pop contents
+        /** Player IDs and their pop contents. */
         pop;
         main() {
             this.openDialog();
+            this.startTimer();
         }
         openDialog() {
-            console.log(this.pop);
+            for (const [id, content] of this.pop) {
+                const player = this.game.players.get(id);
+                if (player?.owner) {
+                    const pop = this.game.create('pop');
+                    pop.owner = player.owner;
+                }
+            }
         }
     };
 }
@@ -292,15 +299,15 @@ function createTarget(T) {
 
 function createChoose(T) {
     return class Choose extends T {
-        main() {
-            console.log('choose', this.np);
-        }
-        select(key) {
+        /** Has time limit. */
+        timeout = null;
+        /** Start timer for players. */
+        startTimer() {
         }
     };
 }
 function choose(T) {
-    // base class
+    // abstract base class
     const choose = createChoose(T);
     // choose from a popup dialog
     const choosePop = createPop(choose);
@@ -452,8 +459,8 @@ function arena(T) {
             if (seat < 0) {
                 seat += np;
             }
-            const width = this.app.width;
-            const height = this.app.height;
+            const width = this.arenaZoom.width;
+            const height = this.arenaZoom.height;
             if (this.layout === 1) {
                 let dx1 = 25;
                 let dx2 = (width - dx1 * 2 - 150 * (np - 3)) / (np - 4);

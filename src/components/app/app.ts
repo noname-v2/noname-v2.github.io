@@ -85,8 +85,10 @@ export class App extends Component {
     }
 
     get #currentZoom(): Zoom {
-        if (!this.popups.size && this.arena?.arenaZoom.node.childNodes.length) {
-            return this.arena.arenaZoom;
+        if (!this.popups.size &&
+            this.ui.countActive(this.arena?.arenaZoom.node) &&
+            !this.ui.countActive(this.arena?.appZoom.node)) {
+            return this.arena!.arenaZoom;
         }
         return this.#zoom;
     }

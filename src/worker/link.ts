@@ -69,7 +69,7 @@ export function createLink(id: number, tag: string) {
         get(_, key: string) {
             if (key in reserved) {
                 if (key === 'result') {
-                    return reserved[key]();
+                    return reserved[key]() ?? '#auto';
                 }
                 else {
                     return reserved[key];

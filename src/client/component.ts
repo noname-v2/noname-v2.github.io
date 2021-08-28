@@ -156,8 +156,10 @@ export class Component {
 
         if (after) {
             this.#removing = true;
+            this.node.classList.add('removing');
             after.then(() => {
                 this.node.remove();
+                this.node.classList.remove('removing');
                 this.#removing = false;
             });
         }

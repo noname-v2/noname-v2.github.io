@@ -5,18 +5,18 @@ import type { TaskClass } from '../../types';
 
 export function createChoose(T: TaskClass) {
     return class Choose extends T {
-        main() {
-            console.log('choose', this.np);
-        }
+        /** Has time limit. */
+        timeout: number | null = null;
 
-        select(key: string) {
+        /** Start timer for players. */
+        startTimer() {
 
         }
     }
 }
 
 export function choose(T: TaskClass) {
-    // base class
+    // abstract base class
     const choose = createChoose(T);
 
     // choose from a popup dialog

@@ -550,6 +550,21 @@
     function registerKeyword(name, content) {
         keywords.set(name, content);
     }
+    /** Count active childNodes. */
+    function countActive(node) {
+        if (!node) {
+            return 0;
+        }
+        let n = 0;
+        for (const child of Array.from(node.childNodes)) {
+            if (!child.classList.contains('removing') &&
+                !child.classList.contains('blurred') &&
+                !child.classList.contains('defer')) {
+                n++;
+            }
+        }
+        return n;
+    }
 
     var ui = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -564,7 +579,8 @@
         dispatchMoveEnd: dispatchMoveEnd,
         animate: animate,
         format: format,
-        registerKeyword: registerKeyword
+        registerKeyword: registerKeyword,
+        countActive: countActive
     });
 
     /** Opened indexedDB object. */
@@ -1072,8 +1088,10 @@
             }
             if (after) {
                 this.#removing = true;
+                this.node.classList.add('removing');
                 after.then(() => {
                     this.node.remove();
+                    this.node.classList.remove('removing');
                     this.#removing = false;
                 });
             }
@@ -1132,7 +1150,9 @@
             return this.#zoom.node;
         }
         get #currentZoom() {
-            if (!this.popups.size && this.arena?.arenaZoom.node.childNodes.length) {
+            if (!this.popups.size &&
+                this.ui.countActive(this.arena?.arenaZoom.node) &&
+                !this.ui.countActive(this.arena?.appZoom.node)) {
                 return this.arena.arenaZoom;
             }
             return this.#zoom;
@@ -2100,6 +2120,8 @@
     }
 
     class Pop extends Component {
+        init() {
+        }
         $pop(pop) {
             console.log('>>>', pop);
         }

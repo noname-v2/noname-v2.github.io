@@ -29,7 +29,7 @@ export interface Listeners {
      key: {key: (e: KeyboardEvent) => void};
 
      // stage change
-     stage: {key: () => void};
+     stage: {stage: () => void};
 }
 
 /** Event listeners. */

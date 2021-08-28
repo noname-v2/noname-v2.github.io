@@ -3,15 +3,22 @@ import type { createChoose } from './choose';
 
 export function createPop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {
-        // player IDs and their pop contents
+        /** Player IDs and their pop contents. */
         pop!: Map<number, PopContent>;
 
         main() {
             this.openDialog();
+            this.startTimer();
         }
 
         openDialog() {
-            console.log(this.pop);
+            for (const [id, content] of this.pop) {
+                const player = this.game.players.get(id);
+                if (player?.owner) {
+                    const pop = this.game.create('pop');
+                    pop.owner = player.owner;
+                }
+            }
         }
     }
 }

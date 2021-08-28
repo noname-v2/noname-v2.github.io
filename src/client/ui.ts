@@ -483,3 +483,19 @@ export function format(node: HTMLElement, content: string) {
 export function registerKeyword(name: string, content: Keyword) {
     keywords.set(name, content);
 }
+
+/** Count active childNodes. */
+export function countActive(node?: HTMLElement) {
+    if (!node) {
+        return 0;
+    }
+    let n = 0;
+    for (const child of Array.from(node.childNodes) as HTMLElement[]) {
+        if (!child.classList.contains('removing') &&
+            !child.classList.contains('blurred') &&
+            !child.classList.contains('defer')) {
+            n++;
+        }
+    }
+    return n;
+}

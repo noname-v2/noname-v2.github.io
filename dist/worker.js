@@ -509,7 +509,7 @@
             get(_, key) {
                 if (key in reserved) {
                     if (key === 'result') {
-                        return reserved[key]();
+                        return reserved[key]() ?? '#auto';
                     }
                     else {
                         return reserved[key];

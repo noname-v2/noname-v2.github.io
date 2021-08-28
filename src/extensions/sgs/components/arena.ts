@@ -55,8 +55,8 @@ export function arena(T: typeof Arena) {
                 seat += np;
             }
     
-            const width = this.app.width;
-            const height = this.app.height;
+            const width = this.arenaZoom.width;
+            const height = this.arenaZoom.height;
     
             if (this.layout === 1) {
                 let dx1 = 25;
