@@ -60,7 +60,7 @@ export class SplashGallery extends Gallery {
 		
 		// set caption
 		const caption = this.ui.createElement('caption', entry);
-		caption.innerHTML = name;
+		this.ui.format(caption, name);
 
 		// bind click
 		this.ui.bind(entry, () => {

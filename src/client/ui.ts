@@ -1,6 +1,8 @@
 import { android } from '../platform';
 import { app, componentClasses } from './globals';
+import { split } from '../utils';
 import type { ComponentTagMap } from '../classes';
+import type { TextColor } from '../components';
 
 /** Type for point location */
 export type Point = {x: number, y: number};
@@ -417,4 +419,67 @@ export function animate(node: HTMLElement, animation: {
     }
 
     return anim;
+}
+
+/** Map of keywords.
+ * [0]: keyword name
+ * [1]: keyword intro
+ * [2]: keyword text color
+ */
+type Keyword = [string, string, TextColor?];
+const keywords = new Map<string, Keyword>();
+
+/** Translate number to zh-CN. */
+function toCN(str: string | number, two: boolean = true): string {
+    const num = parseInt(str as any);
+    if(isNaN(num)) return '';
+    if(num == Infinity) return '∞';
+    if(num < 0 || num > 99) return num.toString();
+    if(num <= 10){
+        switch(num){
+            case 0: return '〇';
+            case 1: return '一';
+            case 2: return two ? '二' : '两';
+            case 3: return '三';
+            case 4: return '四';
+            case 5: return '五';
+            case 6: return '六';
+            case 7: return '七';
+            case 8: return '八';
+            case 9: return '九';
+            case 10: return '十';
+        }
+    }
+    if (num < 20) {
+        return '十' + toCN(num - 10);
+    }
+    const x = Math.floor(num/10);
+    return toCN(x) + '十' + (num > 10 * x ? toCN(num- 10 * x) : '');
+}
+
+/** Format text with keywords. */
+export function format(node: HTMLElement, content: string) {
+    if (!content) {
+        node.innerHTML = '';
+        return;
+    }
+    const sections = content.split('@(');
+    for (let i = 0; i < sections.length; i++) {
+        let [name, content] = split(sections[i], ')');
+        if (content) {
+            if (keywords.has(name)) {
+                //////
+            }
+            else if (!isNaN(name as any)) {
+                content = toCN(name) + content;
+            }
+            sections[i] = content;
+        }
+    }
+    node.innerHTML = sections.join('');
+}
+
+/** Register a keyword. */
+export function registerKeyword(name: string, content: Keyword) {
+    keywords.set(name, content);
 }

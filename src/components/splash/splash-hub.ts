@@ -231,7 +231,7 @@ export class SplashHub extends Popup {
         this.numSection.classList.add('hidden');
         this.roomGroup.classList.add('hidden');
         if (caption) {
-            this.caption.innerHTML = caption;
+            this.ui.format(this.caption, caption);
         }
         this.caption.classList[caption ? 'remove' : 'add']('hidden');
     }

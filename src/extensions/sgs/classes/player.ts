@@ -3,6 +3,8 @@ import type { Link } from '../types';
 
 export interface PlayerLink extends Link {
     seat: number;
+    heroName: string;
+    viceName: string;
 }
 
 class Player extends Base<PlayerLink> {

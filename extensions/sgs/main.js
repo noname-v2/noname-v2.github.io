@@ -257,17 +257,21 @@ function createPop(T) {
         // player IDs and their pop contents
         pop;
         main() {
-            console.log('choosePop', this.select);
+            this.openDialog();
         }
-        test() {
+        openDialog() {
+            console.log(this.pop);
         }
     };
 }
 
 function createHero(T) {
     return class ChoosePop extends T {
+        heros;
         main() {
-            console.log('choosePop', this.pop, this.test, this.select);
+            console.log(this.game.getHeros());
+            this.pop = { test: [] };
+            super.main();
         }
     };
 }
@@ -294,9 +298,13 @@ function createChoose(T) {
     };
 }
 function choose(T) {
+    // base class
     const choose = createChoose(T);
+    // choose from a popup dialog
     const choosePop = createPop(choose);
+    // choose players and / or cards
     const chooseTarget = createTarget(choose);
+    // choose from a list of heros
     const chooseHero = createHero(choosePop);
     return { choose, choosePop, chooseTarget, chooseHero };
 }
@@ -322,15 +330,30 @@ function game(A) {
         players = new Map();
         cards = new Map();
         skills = new Map();
+        /** A list of all heros. */
+        getHeros() {
+            const heros = new Set();
+            for (const pack of this.packs) {
+                const ext = this.getExtension(pack);
+                for (const name in ext?.hero) {
+                    heros.add(pack + ':' + name);
+                }
+            }
+            return heros;
+        }
+        /** Backup game progress. */
         backup() {
         }
+        /** Restore game progress. */
         restore() {
         }
+        /** Create a new player. */
         createPlayer() {
             const player = this.createInstance('player', this, 'player');
             this.players.set(player.id, player);
             return player;
         }
+        /** Create a new card. */
         createCard() {
             const card = this.createInstance('card', this, 'card');
             this.cards.set(card.id, card);
@@ -604,6 +627,9 @@ function player(T) {
             seat ??= this.data.seat;
             [this.x, this.y] = this.app.arena.locatePlayer(seat);
             this.locate();
+            if (!this.data.heroName) {
+                this.$heroName(`@(${seat + 1})号位`);
+            }
         }
     };
 }

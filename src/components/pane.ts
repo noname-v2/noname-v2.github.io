@@ -7,7 +7,7 @@ export class Pane extends Component {
     /** Section title. */
 	addSection(content: string) {
 		const node = this.ui.createElement('section', this.node);
-		this.ui.createElement('span', node).innerHTML = content;
+		this.ui.format(this.ui.createElement('span', node), content);
 		return node;
 	}
 
@@ -17,14 +17,14 @@ export class Pane extends Component {
 		if (large) {
 			node.classList.add('large');
 		}
-		node.innerHTML = content;
+		this.ui.format(node, content);
 		return node;
 	}
 
     /** Caption text. */
 	addText(content: string) {
 		const node = this.ui.createElement('text', this.node);
-		this.ui.createElement('span', node).innerHTML = content;
+		this.ui.format(this.ui.createElement('span', node), content);
 		return node;
 	}
 
@@ -46,7 +46,7 @@ export class Pane extends Component {
 	addOption(caption: string, onclick: () => void) {
 		this.node.classList.add('menu');
 		const option = this.ui.createElement('option');
-		option.innerHTML = caption;
+		this.ui.format(option, caption);
 		this.ui.bind(option, onclick);
 		this.node.appendChild(option);
 		return option;

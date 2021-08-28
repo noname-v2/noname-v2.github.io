@@ -1,4 +1,4 @@
-import { Popup } from '../popup';
+import { Component } from '../../components';
 
 /** Possible contents of pop sections. */
 interface PopSectionContent {
@@ -35,6 +35,6 @@ export type PopSection<T extends keyof PopSectionContent> = [T, PopSectionConten
 /** Full content of a pop. */
 export type PopContent = PopSection<any>[];
 
-export class Pop extends Popup {
-
+export class Pop extends Component {
+    
 }

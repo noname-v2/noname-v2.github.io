@@ -39,11 +39,11 @@ export class Player extends Component {
     }
 
     $heroName(name: string | null) {
-        this.heroName.innerHTML = name ?? '';
+        this.ui.format(this.heroName, name ?? '');
     }
 
 	// set nickname
 	$nickname(name?: string) {
-		this.nickname.innerHTML = name ?? '';
+		this.ui.format(this.nickname, name ?? '');
 	}
 }

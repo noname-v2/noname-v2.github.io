@@ -16,6 +16,9 @@ export function player(T: typeof Player) {
             seat ??= this.data.seat;
             [this.x, this.y] = this.app.arena!.locatePlayer(seat);
             this.locate();
+            if (!this.data.heroName) {
+                this.$heroName(`@(${seat+1})号位`);
+            }
         }
     }
 }

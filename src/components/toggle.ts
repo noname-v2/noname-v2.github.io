@@ -17,7 +17,7 @@ export class Toggle extends Component {
     confirm = new Map<string | number | boolean, [string | null, string?]>();
 
     setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
-        this.span.innerHTML = caption;
+        this.ui.format(this.span, caption);
         
         if (choices) {
             // menu based switcher
@@ -74,7 +74,7 @@ export class Toggle extends Component {
         }
         else if (this.text && this.choices) {
             // menu based switcher
-            this.text.innerHTML = this.choices.get(value) || '';
+            this.ui.format(this.text, this.choices.get(value) ?? '');
         }
     }
 }

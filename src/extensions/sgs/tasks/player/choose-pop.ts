@@ -1,17 +1,18 @@
 import type { PopContent } from '../../../../components/arena/pop';
 import type { createChoose } from './choose';
+import type { Dict } from '../../types';
 
 export function createPop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {
         // player IDs and their pop contents
-        pop!: PopContent;
+        pop!: Dict<PopContent>;
 
         main() {
-            console.log('choosePop', this.select);
+            this.openDialog();
         }
 
-        test() {
-
+        openDialog() {
+            console.log(this.pop);
         }
     }
 }

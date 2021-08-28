@@ -20,13 +20,13 @@ export class Sidebar extends Component {
     /** Button at the top. */
     setHeader(caption: string, onclick: () => void) {
         this.ui.bind(this.header, onclick);
-        (this.header.firstChild as HTMLElement).innerHTML = caption;
+        this.ui.format(this.header.firstChild as HTMLElement, caption);
     }
 
     /** Button at the bottom. */
     setFooter(caption: string, onclick: () => void) {
         this.ui.bind(this.footer, onclick);
-        (this.footer.firstChild as HTMLElement).innerHTML = caption;
+        this.ui.format(this.footer.firstChild as HTMLElement, caption);
     }
 
     /** Show button at the bottom. */

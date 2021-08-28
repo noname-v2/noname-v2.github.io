@@ -62,6 +62,119 @@
         }
     }
 
+    /** Deep copy plain object. */
+    function copy(from) {
+        const to = {};
+        for (const key in from) {
+            if (from[key]?.constructor === Object) {
+                to[key] = copy(from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Merge two objects. */
+    function apply(to, from, exclude) {
+        for (const key in from) {
+            if (exclude?.includes(key)) {
+                continue;
+            }
+            else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
+                apply(to[key], from[key]);
+            }
+            else if (from[key] !== null && from[key] !== undefined) {
+                to[key] = from[key];
+            }
+        }
+        return to;
+    }
+    /** Deep freeze object. */
+    function freeze(obj) {
+        const propNames = Object.getOwnPropertyNames(obj);
+        for (const name of propNames) {
+            const value = obj[name];
+            if (value && typeof value === 'object') {
+                freeze(value);
+            }
+        }
+        return Object.freeze(obj);
+    }
+    /** Access key of a nested object. */
+    function access(obj, keys) {
+        if (keys && obj) {
+            for (const key of keys.split('.')) {
+                obj = obj[key] ?? null;
+                if (obj === null) {
+                    break;
+                }
+            }
+        }
+        return obj ?? null;
+    }
+    /** Split string with `:`. */
+    function split(msg, delimiter = ':') {
+        const idx = msg.indexOf(delimiter);
+        if (idx === -1) {
+            return [msg, ''];
+        }
+        else {
+            return [msg.slice(0, idx), msg.slice(idx + 1)];
+        }
+    }
+    /** Return a promise that resolves after n seconds. */
+    function sleep(n) {
+        return new Promise(resolve => setTimeout(resolve, n * 1000));
+    }
+    /** Generate a unique string based on current Date.now().
+     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
+     */
+    function rng() {
+        return new Date().getTime().toString().split('').map(n => {
+            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
+            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
+        }).join('');
+    }
+    /** Fetch and parse json file. */
+    function readJSON(...args) {
+        return new Promise(resolve => {
+            fetch(args.join('/')).then(response => {
+                response.json().then(resolve);
+            });
+        });
+    }
+    /** Randomly get an item from an array. */
+    function rget(iterable) {
+        const arr = Array.from(iterable);
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+    /** Randomly get itema from an array. */
+    function rgets(iterable, n = 1) {
+        const set = new Set(iterable);
+        const arr = [];
+        for (let i = 0; i < n; i++) {
+            const item = rget(set);
+            set.delete(item);
+            arr.push(item);
+        }
+        return arr;
+    }
+
+    var utils = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        copy: copy,
+        apply: apply,
+        freeze: freeze,
+        access: access,
+        split: split,
+        sleep: sleep,
+        rng: rng,
+        readJSON: readJSON,
+        rget: rget,
+        rgets: rgets
+    });
+
     /** Bindings for DOM events. */
     const bindings = new Map();
     /** Temperoary disable event trigger after pointerup to prevent unintended clicks. */
@@ -377,6 +490,60 @@
         }
         return anim;
     }
+    const keywords = new Map();
+    /** Translate number to zh-CN. */
+    function toCN(str, two = true) {
+        const num = parseInt(str);
+        if (isNaN(num))
+            return '';
+        if (num == Infinity)
+            return '∞';
+        if (num < 0 || num > 99)
+            return num.toString();
+        if (num <= 10) {
+            switch (num) {
+                case 0: return '〇';
+                case 1: return '一';
+                case 2: return two ? '二' : '两';
+                case 3: return '三';
+                case 4: return '四';
+                case 5: return '五';
+                case 6: return '六';
+                case 7: return '七';
+                case 8: return '八';
+                case 9: return '九';
+                case 10: return '十';
+            }
+        }
+        if (num < 20) {
+            return '十' + toCN(num - 10);
+        }
+        const x = Math.floor(num / 10);
+        return toCN(x) + '十' + (num > 10 * x ? toCN(num - 10 * x) : '');
+    }
+    /** Format text with keywords. */
+    function format(node, content) {
+        if (!content) {
+            node.innerHTML = '';
+            return;
+        }
+        const sections = content.split('@(');
+        for (let i = 0; i < sections.length; i++) {
+            let [name, content] = split(sections[i], ')');
+            if (content) {
+                if (keywords.has(name)) ;
+                else if (!isNaN(name)) {
+                    content = toCN(name) + content;
+                }
+                sections[i] = content;
+            }
+        }
+        node.innerHTML = sections.join('');
+    }
+    /** Register a keyword. */
+    function registerKeyword(name, content) {
+        keywords.set(name, content);
+    }
 
     var ui = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -389,7 +556,9 @@
         dispatchClick: dispatchClick,
         dispatchMove: dispatchMove,
         dispatchMoveEnd: dispatchMoveEnd,
-        animate: animate
+        animate: animate,
+        format: format,
+        registerKeyword: registerKeyword
     });
 
     /** Opened indexedDB object. */
@@ -503,119 +672,6 @@
         readFile: readFile,
         writeFile: writeFile,
         readdir: readdir
-    });
-
-    /** Deep copy plain object. */
-    function copy(from) {
-        const to = {};
-        for (const key in from) {
-            if (from[key]?.constructor === Object) {
-                to[key] = copy(from[key]);
-            }
-            else if (from[key] !== null && from[key] !== undefined) {
-                to[key] = from[key];
-            }
-        }
-        return to;
-    }
-    /** Merge two objects. */
-    function apply(to, from, exclude) {
-        for (const key in from) {
-            if (exclude?.includes(key)) {
-                continue;
-            }
-            else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
-                apply(to[key], from[key]);
-            }
-            else if (from[key] !== null && from[key] !== undefined) {
-                to[key] = from[key];
-            }
-        }
-        return to;
-    }
-    /** Deep freeze object. */
-    function freeze(obj) {
-        const propNames = Object.getOwnPropertyNames(obj);
-        for (const name of propNames) {
-            const value = obj[name];
-            if (value && typeof value === 'object') {
-                freeze(value);
-            }
-        }
-        return Object.freeze(obj);
-    }
-    /** Access key of a nested object. */
-    function access(obj, keys) {
-        if (keys && obj) {
-            for (const key of keys.split('.')) {
-                obj = obj[key] ?? null;
-                if (obj === null) {
-                    break;
-                }
-            }
-        }
-        return obj ?? null;
-    }
-    /** Split string with `:`. */
-    function split(msg, delimiter = ':') {
-        const idx = msg.indexOf(delimiter);
-        if (idx === -1) {
-            return [msg, ''];
-        }
-        else {
-            return [msg.slice(0, idx), msg.slice(idx + 1)];
-        }
-    }
-    /** Return a promise that resolves after n seconds. */
-    function sleep(n) {
-        return new Promise(resolve => setTimeout(resolve, n * 1000));
-    }
-    /** Generate a unique string based on current Date.now().
-     * Mapping: Date.now(): [0-9] -> [0-62] -> [A-Z] | [a-z] | [0-9]
-     */
-    function rng() {
-        return new Date().getTime().toString().split('').map(n => {
-            const c = Math.floor((parseInt(n) + Math.random()) * 6.2);
-            return String.fromCharCode(c < 26 ? c + 65 : (c < 52 ? c + 71 : c - 4));
-        }).join('');
-    }
-    /** Fetch and parse json file. */
-    function readJSON(...args) {
-        return new Promise(resolve => {
-            fetch(args.join('/')).then(response => {
-                response.json().then(resolve);
-            });
-        });
-    }
-    /** Randomly get an item from an array. */
-    function rget(iterable) {
-        const arr = Array.from(iterable);
-        return arr[Math.floor(Math.random() * arr.length)];
-    }
-    /** Randomly get itema from an array. */
-    function rgets(iterable, n = 1) {
-        const set = new Set(iterable);
-        const arr = [];
-        for (let i = 0; i < n; i++) {
-            const item = rget(set);
-            set.delete(item);
-            arr.push(item);
-        }
-        return arr;
-    }
-
-    var utils = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        copy: copy,
-        apply: apply,
-        freeze: freeze,
-        access: access,
-        split: split,
-        sleep: sleep,
-        rng: rng,
-        readJSON: readJSON,
-        rget: rget,
-        rgets: rgets
     });
 
     /** Map of loaded extensions. */
@@ -1258,7 +1314,7 @@
         /** Display confirm message. */
         choose(caption, config = {}) {
             const dialog = this.ui.create('dialog');
-            dialog.update({ caption, content: config.content, buttons: config.buttons });
+            dialog.update({ caption, content: config.content ?? '', buttons: config.buttons });
             const promise = new Promise(resolve => {
                 dialog.onclose = () => {
                     resolve(dialog.result);
@@ -1524,10 +1580,10 @@
             this.pane.width = parseInt(this.app.css.popup['dialog-width']) - 20;
         }
         $caption(val) {
-            this.caption.innerHTML = val;
+            this.ui.format(this.caption, val);
         }
         $content(val) {
-            this.text.firstChild.innerHTML = val;
+            this.ui.format(this.text.firstChild, val);
             this.node.classList[val ? 'add' : 'remove']('with-content');
             this.pane.alignText();
         }
@@ -1538,7 +1594,7 @@
                 if (color) {
                     button.dataset.fill = color;
                 }
-                button.innerHTML = text;
+                this.ui.format(button, text);
                 this.ui.bind(button, () => {
                     this.result = id;
                     this.close();
@@ -1565,12 +1621,12 @@
         /** Button at the top. */
         setHeader(caption, onclick) {
             this.ui.bind(this.header, onclick);
-            this.header.firstChild.innerHTML = caption;
+            this.ui.format(this.header.firstChild, caption);
         }
         /** Button at the bottom. */
         setFooter(caption, onclick) {
             this.ui.bind(this.footer, onclick);
-            this.footer.firstChild.innerHTML = caption;
+            this.ui.format(this.footer.firstChild, caption);
         }
         /** Show button at the bottom. */
         showFooter() {
@@ -2029,15 +2085,15 @@
             }
         }
         $heroName(name) {
-            this.heroName.innerHTML = name ?? '';
+            this.ui.format(this.heroName, name ?? '');
         }
         // set nickname
         $nickname(name) {
-            this.nickname.innerHTML = name ?? '';
+            this.ui.format(this.nickname, name ?? '');
         }
     }
 
-    class Pop extends Popup {
+    class Pop extends Component {
     }
 
     class Button extends Component {
@@ -2369,7 +2425,7 @@
         /** Section title. */
         addSection(content) {
             const node = this.ui.createElement('section', this.node);
-            this.ui.createElement('span', node).innerHTML = content;
+            this.ui.format(this.ui.createElement('span', node), content);
             return node;
         }
         /** Caption text. */
@@ -2378,13 +2434,13 @@
             if (large) {
                 node.classList.add('large');
             }
-            node.innerHTML = content;
+            this.ui.format(node, content);
             return node;
         }
         /** Caption text. */
         addText(content) {
             const node = this.ui.createElement('text', this.node);
-            this.ui.createElement('span', node).innerHTML = content;
+            this.ui.format(this.ui.createElement('span', node), content);
             return node;
         }
         /** Add a group of custom elements. */
@@ -2403,7 +2459,7 @@
         addOption(caption, onclick) {
             this.node.classList.add('menu');
             const option = this.ui.createElement('option');
-            option.innerHTML = caption;
+            this.ui.format(option, caption);
             this.ui.bind(option, onclick);
             this.node.appendChild(option);
             return option;
@@ -2518,7 +2574,7 @@
             this.ui.setBackground(bg, 'extensions', mode, 'mode');
             // set caption
             const caption = this.ui.createElement('caption', entry);
-            caption.innerHTML = name;
+            this.ui.format(caption, name);
             // bind click
             this.ui.bind(entry, () => {
                 if (splash.hidden) {
@@ -2777,7 +2833,7 @@
             this.numSection.classList.add('hidden');
             this.roomGroup.classList.add('hidden');
             if (caption) {
-                this.caption.innerHTML = caption;
+                this.ui.format(this.caption, caption);
             }
             this.caption.classList[caption ? 'remove' : 'add']('hidden');
         }
@@ -3191,7 +3247,7 @@
         /** Requires confirmation when toggling to a value. */
         confirm = new Map();
         setup(caption, onclick, choices) {
-            this.span.innerHTML = caption;
+            this.ui.format(this.span, caption);
             if (choices) {
                 // menu based switcher
                 const popup = this.ui.createElement('text', this.node);
@@ -3245,7 +3301,7 @@
             }
             else if (this.text && this.choices) {
                 // menu based switcher
-                this.text.innerHTML = this.choices.get(value) || '';
+                this.ui.format(this.text, this.choices.get(value) ?? '');
             }
         }
     }

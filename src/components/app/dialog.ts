@@ -28,11 +28,11 @@ export class Dialog extends Popup {
     }
 
     $caption(val: string) {
-        this.caption.innerHTML = val;
+        this.ui.format(this.caption, val);
     }
 
     $content(val: string) {
-        (this.text.firstChild as HTMLElement).innerHTML = val;
+        this.ui.format(this.text.firstChild as HTMLElement, val);
         this.node.classList[val ? 'add' : 'remove']('with-content');
         this.pane.alignText();
     }
@@ -44,7 +44,7 @@ export class Dialog extends Popup {
             if (color) {
                 button.dataset.fill = color;
             }
-            button.innerHTML = text;
+            this.ui.format(button, text);
             this.ui.bind(button, () => {
                 this.result = id;
                 this.close();
