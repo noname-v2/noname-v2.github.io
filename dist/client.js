@@ -1793,30 +1793,6 @@
                 disconnect();
             }
         }
-        /** Add a pop. */
-        addPop(pop) {
-            this.ui.animate(pop.node, {
-                scale: ['var(--app-zoom-scale)', 1],
-                opacity: [0, 1]
-            });
-            if (!this.pops.size) {
-                this.arenaZoom.node.classList.add('blurred');
-            }
-            this.pops.add(pop);
-        }
-        /** Remove a pop. */
-        removePop(pop) {
-            this.pops.delete(pop);
-            if (!this.pops.size) {
-                this.arenaZoom.node.classList.remove('blurred');
-            }
-            return new Promise(resolve => {
-                this.ui.animate(pop.node, {
-                    scale: [1, 'var(--app-zoom-scale)'],
-                    opacity: [1, 0]
-                }).onfinish = resolve;
-            });
-        }
         /** Connection status change. */
         $peers() {
             if (!this.peers && this.exiting) {
@@ -2163,6 +2139,14 @@
                 this.timer?.remove();
             }
         }
+        $owner() {
+            if (this.mine) {
+                this.node.classList.add('mine');
+            }
+            else {
+                this.node.classList.remove('mine');
+            }
+        }
     }
 
     class Pop extends Component {
@@ -2174,10 +2158,10 @@
         pane = this.ui.create('pane', this.node);
         /** Galleries in this.pane. */
         galleries = new Set();
+        /** Timer bar. */
+        timer = null;
         /** Confirm button. */
         ok;
-        /** Cancel button. */
-        cancel;
         get selected() {
             return [];
         }
@@ -2235,7 +2219,7 @@
                     });
                 }
                 else if (item === 'cancel') {
-                    const cancel = this.cancel = this.ui.createElement('widget.button', bar);
+                    const cancel = this.ui.createElement('widget.button', bar);
                     cancel.innerHTML = '取消';
                     this.ui.bind(cancel, () => {
                         this.respond(false);
@@ -2257,7 +2241,26 @@
         }
         /** Remove with fade out animation. */
         remove() {
-            super.remove(this.app.arena.removePop(this));
+            super.remove(this.ui.animate(this.node, {
+                scale: [1, 'var(--app-zoom-scale)'],
+                opacity: [1, 0]
+            }));
+            this.app.arena.pops.delete(this);
+            this.checkPops();
+            // remove the hidden player timer bar
+            if (this.mine) {
+                for (const id of this.app.arena.data.players) {
+                    const player = this.getComponent(id);
+                    if (player?.mine) {
+                        player.timer?.node.remove();
+                    }
+                }
+            }
+        }
+        /** Update arena classes. */
+        checkPops() {
+            const arena = this.app.arena;
+            arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
         }
         $content(content) {
             if (this.mine) {
@@ -2272,38 +2275,28 @@
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
                 }
-                this.app.arena.addPop(this);
+                this.app.arena.pops.add(this);
+                this.checkPops();
+                this.ui.animate(this.node, {
+                    scale: ['var(--app-zoom-scale)', 1],
+                    opacity: [0, 1]
+                });
             }
-            else if (this.app.arena?.pops.size === 0) {
-                this.app.arena.arenaZoom.node.classList.remove('blurred');
+            else {
+                setTimeout(() => this.checkPops());
             }
         }
         $timer(config) {
-            const removeTimer = () => {
-                const timer = this.timer;
-                if (timer) {
-                    this.timer = null;
-                    this.ui.animate(timer, { opacity: [1, 0] }).onfinish = () => timer.remove();
-                }
-            };
             if (config) {
-                const [timeout, now] = config;
-                this.timer?.remove();
-                const timer = this.timer = this.ui.createElement('timer', this.content);
-                const bar = this.ui.createElement('div', timer);
-                this.ui.animate(timer, { opacity: [0, 1] }).onfinish = () => {
-                    const remaining = timeout - (Date.now() - now) / 1000;
-                    this.ui.animate(bar, { x: [-100 * (1 - remaining / timeout), -100] }, {
-                        duration: remaining * 1000, easing: 'linear'
-                    }).onfinish = () => {
-                        if (timer === this.timer) {
-                            removeTimer();
-                        }
-                    };
-                };
+                setTimeout(() => {
+                    const timer = this.ui.create('timer', this.node);
+                    timer.width = this.width;
+                    timer.start(config, this);
+                    this.app.arena.node.classList.add('pop-timer');
+                });
             }
             else {
-                removeTimer();
+                this.timer?.remove();
             }
         }
     }
@@ -2313,18 +2306,20 @@
         parent;
         /** Progress bar. */
         bar = this.ui.createElement('div', this.node);
+        /** Progress bar width. */
+        width = 100;
         start(config, parent) {
             const [timeout, now] = config;
             this.parent = parent;
             this.parent.timer?.node.remove();
             this.parent.timer = this;
             const remaining = timeout - (Date.now() - now) / 1000;
-            const x = -100 * (1 - remaining / timeout);
+            const x = -this.width * (1 - remaining / timeout);
             this.bar.style.transform = `translateX(${x}px)`;
             this.ui.animate(this.node, { opacity: [0, 1] }).onfinish = () => {
                 const remaining = timeout - (Date.now() - now) / 1000;
-                this.ui.animate(this.bar, { x: [x, -100] }, {
-                    duration: remaining * 1000, easing: 'linear'
+                this.ui.animate(this.bar, { x: [x, -this.width] }, {
+                    duration: remaining * 1000, easing: 'linear', fill: 'forwards'
                 }).onfinish = () => this.remove();
             };
         }

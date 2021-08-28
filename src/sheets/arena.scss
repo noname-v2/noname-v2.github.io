@@ -16,12 +16,17 @@ noname-arena {
                 position: absolute;
             }   
         }
+
+        &.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
+            visibility: hidden;
+        }
     }
 
     > noname-zoom > noname-pop {
         @include layer;
         @include widget;
         z-index: 20;
+        overflow: hidden;
 
         > noname-pane {
             > noname-gallery noname-item {
@@ -45,6 +50,18 @@ noname-arena {
 
             > noname-caption {
                 margin: 14px 0 12px 0;
+            }
+        }
+
+        > noname-timer {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            bottom: 0;
+            background: var(--pop-timer-background);
+
+            > noname-div {
+                background: var(--pop-timer-bar-background);
             }
         }
     }

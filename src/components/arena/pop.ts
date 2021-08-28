@@ -1,4 +1,4 @@
-import { Component, Gallery, Timer } from '../../components';
+import { Component, Gallery, Timer, Player } from '../../components';
 
 /** Possible contents of pop sections. */
 interface PopSectionContent {
@@ -57,11 +57,11 @@ export class Pop extends Component {
     /** Galleries in this.pane. */
     galleries = new Set<Gallery>();
 
+    /** Timer bar. */
+    timer: Timer | null = null;
+
     /** Confirm button. */
     ok?: HTMLElement;
-
-    /** Cancel button. */
-    cancel?: HTMLElement;
 
     get selected() {
         return [];
@@ -129,7 +129,7 @@ export class Pop extends Component {
                 });
             }
             else if (item === 'cancel') {
-                const cancel = this.cancel = this.ui.createElement('widget.button', bar);
+                const cancel = this.ui.createElement('widget.button', bar);
                 cancel.innerHTML = '取消';
                 this.ui.bind(cancel, () => {
                     this.respond(false);
@@ -152,7 +152,28 @@ export class Pop extends Component {
 
     /** Remove with fade out animation. */
     remove() {
-        super.remove(this.app.arena!.removePop(this));
+        super.remove(this.ui.animate(this.node, {
+            scale: [1, 'var(--app-zoom-scale)'],
+            opacity: [1, 0]
+        }));
+        this.app.arena!.pops.delete(this);
+        this.checkPops();
+
+        // remove the hidden player timer bar
+        if (this.mine) {
+            for (const id of this.app.arena!.data.players) {
+                const player = this.getComponent(id) as (Player | undefined);
+                if (player?.mine) {
+                    player.timer?.node.remove();
+                }
+            }
+        }
+    }
+
+    /** Update arena classes. */
+    checkPops() {
+        const arena = this.app.arena!;
+        arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
     }
 
     $content(content: PopContent) {
@@ -170,40 +191,29 @@ export class Pop extends Component {
                 gallery.checkPage();
             }
 
-            this.app.arena!.addPop(this);
+            this.app.arena!.pops.add(this);
+            this.checkPops();
+            this.ui.animate(this.node, {
+                scale: ['var(--app-zoom-scale)', 1],
+                opacity: [0, 1]
+            });
         }
-        else if (this.app.arena?.pops.size === 0) {
-            this.app.arena.arenaZoom.node.classList.remove('blurred');
+        else {
+            setTimeout(() => this.checkPops())
         }
     }
 
     $timer(config?: [number, number]) {
-        const removeTimer = () => {
-            const timer = this.timer;
-            if (timer) {
-                this.timer = null;
-                this.ui.animate(timer, {opacity: [1, 0]}).onfinish = () => timer.remove();
-            }
-        };
-
         if (config) {
-            const [timeout, now] = config;
-            this.timer?.remove();
-            const timer = this.timer = this.ui.createElement('timer', this.content);
-            const bar = this.ui.createElement('div', timer);
-            this.ui.animate(timer, {opacity: [0, 1]}).onfinish = () => {
-                const remaining = timeout - (Date.now() - now) / 1000;
-                this.ui.animate(bar, {x: [-100 * (1 - remaining / timeout), -100]}, {
-                    duration: remaining * 1000, easing: 'linear'
-                }).onfinish = () => {
-                    if (timer === this.timer) {
-                        removeTimer();
-                    }
-                };
-            };
+            setTimeout(() => {
+                const timer = this.ui.create('timer', this.node);
+                timer.width = this.width;
+                timer.start(config, this);
+                this.app.arena!.node.classList.add('pop-timer');
+            });
         }
         else {
-            removeTimer();
+            this.timer?.remove();
         }
     }
 }

@@ -118,32 +118,6 @@ export class Arena extends Component {
         }
     }
 
-    /** Add a pop. */
-    addPop(pop: Pop) {
-        this.ui.animate(pop.node, {
-            scale: ['var(--app-zoom-scale)', 1],
-            opacity: [0, 1]
-        });
-        if (!this.pops.size) {
-            this.arenaZoom.node.classList.add('blurred');
-        }
-        this.pops.add(pop);
-    }
-
-    /** Remove a pop. */
-    removePop(pop: Pop) {
-        this.pops.delete(pop);
-        if (!this.pops.size) {
-            this.arenaZoom.node.classList.remove('blurred');
-        }
-        return new Promise(resolve => {
-            this.ui.animate(pop.node, {
-                scale: [1, 'var(--app-zoom-scale)'],
-                opacity: [1, 0]
-            }).onfinish = resolve;
-        });
-    }
-
     /** Connection status change. */
     $peers() {
         if (!this.peers && this.exiting) {

@@ -72,7 +72,9 @@
 	"pop": {
 		"width": "85px",
 		"scale": "0.567",
-		"margin": "8"
+		"margin": "8",
+		"timer-background": "rgba(0, 0, 0, 0.2)",
+		"timer-bar-background": "rgb(231, 116, 50)"
 	},
 
 	"widget": {

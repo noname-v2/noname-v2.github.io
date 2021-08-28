@@ -60,6 +60,9 @@ noname-arena > noname-zoom > noname-players {
 noname-arena > noname-zoom > noname-players > noname-player {
   position: absolute;
 }
+noname-arena > noname-zoom.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
+  visibility: hidden;
+}
 noname-arena > noname-zoom > noname-pop {
   width: 100%;
   height: 100%;
@@ -72,6 +75,7 @@ noname-arena > noname-zoom > noname-pop {
   border-radius: var(--widget-radius);
   box-shadow: var(--widget-shadow);
   z-index: 20;
+  overflow: hidden;
 }
 noname-arena > noname-zoom > noname-pop > noname-image {
   position: absolute;
@@ -98,6 +102,16 @@ noname-arena > noname-zoom > noname-pop > noname-pane > noname-bar {
 }
 noname-arena > noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;
+}
+noname-arena > noname-zoom > noname-pop > noname-timer {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  bottom: 0;
+  background: var(--pop-timer-background);
+}
+noname-arena > noname-zoom > noname-pop > noname-timer > noname-div {
+  background: var(--pop-timer-bar-background);
 }
 
 noname-button {
@@ -760,33 +774,7 @@ noname-player > noname-content > noname-hp[data-condition=low] > noname-image:no
   background-image: var(--player-hp-low);
 }
 noname-player > noname-content > noname-timer {
-  width: 100px;
-  height: 5px;
   bottom: calc(var(--player-image-margin) + 2px);
-  left: calc(50% - 50px);
-  border-radius: 5px;
-  background: var(--player-timer-background);
-  overflow: hidden;
-  transition: opacity var(--app-transition);
-  overflow: hidden;
-  mask-image: -webkit-radial-gradient(white, black);
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-}
-noname-player > noname-content > noname-timer > noname-div {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  left: 0;
-  top: 0;
-  position: absolute;
-  background: var(--player-timer-bar-background);
-  transition-timing-function: linear;
-  border-radius: 5px;
-  box-shadow: var(--player-timer-shadow);
-}
-noname-player > noname-content > noname-timer > noname-div.translate {
-  transform: translateX(-100px);
 }
 noname-player > noname-content noname-hand-count {
   z-index: 1;
@@ -1305,6 +1293,35 @@ noname-splash > noname-bar.splash-bar > noname-button > noname-content > noname-
 }
 noname-splash.label-font-loaded > noname-bar.splash-bar > noname-button > noname-content > noname-caption, noname-splash.caption-font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
   opacity: 1;
+}
+
+noname-timer {
+  width: 100px;
+  height: 5px;
+  left: calc(50% - 50px);
+  border-radius: 5px;
+  background: var(--player-timer-background);
+  overflow: hidden;
+  transition: opacity var(--app-transition);
+  overflow: hidden;
+  mask-image: -webkit-radial-gradient(white, black);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+noname-timer > noname-div {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  background: var(--player-timer-bar-background);
+  transition-timing-function: linear;
+  border-radius: 5px;
+  box-shadow: var(--player-timer-shadow);
+}
+noname-timer > noname-div.translate {
+  transform: translateX(-100px);
 }
 
 noname-toggle {

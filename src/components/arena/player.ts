@@ -58,4 +58,13 @@ export class Player extends Component {
             this.timer?.remove();
         }
     }
+
+    $owner() {
+        if (this.mine) {
+            this.node.classList.add('mine');
+        }
+        else {
+            this.node.classList.remove('mine');
+        }
+    }
 }

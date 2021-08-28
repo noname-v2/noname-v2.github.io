@@ -99,28 +99,7 @@ noname-player {
 
 		// timer
 		> noname-timer {
-			width: 100px;
-			height: 5px;
 			bottom: calc(var(--player-image-margin) + 2px);
-			left: calc(50% - 50px);
-			border-radius: 5px;
-			background: var(--player-timer-background);
-			overflow: hidden;
-			transition: opacity var(--app-transition);
-
-			// workaround for safari transition bug
-			@include mask;
-
-			> noname-div {
-				@include layer;
-				background: var(--player-timer-bar-background);
-				transition-timing-function: linear;
-				border-radius: 5px;
-				box-shadow: var(--player-timer-shadow);
-				&.translate {
-					transform: translateX(-100px);
-				}
-			}
 		}
 
 		// hand card count
