@@ -5,11 +5,21 @@ var main = {
         tasks: {
             main(Task) {
                 return class Identity extends Task {
+                    /** Number of hero choices. */
+                    nheros = 10;
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
-                        this.addTask('chooseHero', { np: 7 });
+                        this.add('chooseHero');
                         this.addTask('loop');
+                    }
+                    chooseHero() {
+                        const choices = this.game.getHeros();
+                        const heros = new Map();
+                        for (const id of this.game.players.keys()) {
+                            heros.set(id, this.game.utils.rgets(choices, this.nheros, true));
+                        }
+                        this.addTask('chooseHero', { heros });
                     }
                 };
             }

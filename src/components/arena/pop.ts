@@ -33,8 +33,10 @@ interface PopSectionContent {
 export type PopSection<T extends keyof PopSectionContent> = [T, PopSectionContent[T]];
 
 /** Full content of a pop. */
-export type PopContent = PopSection<any>[];
+export type PopContent = PopSection<keyof PopSectionContent>[];
 
 export class Pop extends Component {
-    
+    $pop(pop: PopContent) {
+        console.log('>>>', pop)
+    }
 }

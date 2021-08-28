@@ -11,7 +11,7 @@ export function game(A: typeof Game) {
         cards = new Map<number, Card>();
         skills = new Map<number, Skill>();
 
-        /** A list of all heros. */
+        /** Get a list of all heros. */
         getHeros() {
             const heros = new Set<string>();
 
@@ -21,7 +21,7 @@ export function game(A: typeof Game) {
                     heros.add(pack + ':' + name);
                 }
             }
-
+            
             return heros;
         }
 

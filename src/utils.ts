@@ -96,14 +96,20 @@ export function rget<T>(iterable: Iterable<T>): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/** Randomly get itema from an array. */
-export function rgets<T>(iterable: Iterable<T>, n: number = 1): T[] {
-    const set = new Set(iterable);
-    const arr = [];
+/** Randomly get items from an array. */
+export function rgets<T>(iterable: Iterable<T>, n: number = 1, inplace: boolean = false): Set<T> {
+    let set;
+    if (inplace && iterable instanceof Set) {
+        set = iterable;
+    }
+    else {
+        set = new Set(iterable);
+    }
+    const setChosen = new Set<T>();
     for (let i = 0; i < n; i++) {
         const item = rget(set);
         set.delete(item);
-        arr.push(item);
+        setChosen.add(item);
     }
-    return arr;
+    return setChosen;
 }

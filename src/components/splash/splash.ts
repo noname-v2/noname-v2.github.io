@@ -22,7 +22,7 @@ export class Splash extends Component {
 		}
 		this.hidden = true;
 		this.ui.animate(this.node, {
-			scale: [faded ? 'var(--app-splash-transform)' : 1, 'var(--app-splash-transform)'],
+			scale: [faded ? 'var(--app-zoom-scale)' : 1, 'var(--app-zoom-scale)'],
 			opacity: [faded ? 'var(--app-blurred-opacity)' : 1, 0]
 		}).onfinish = () => {
 			this.node.remove();
@@ -38,7 +38,7 @@ export class Splash extends Component {
 		this.gallery.checkPage();
 		return new Promise(resolve => {
 			this.ui.animate(this.node, {
-				scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]
+				scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1]
 			}).onfinish = resolve;
 		});
 	}

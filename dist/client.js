@@ -149,16 +149,22 @@
         const arr = Array.from(iterable);
         return arr[Math.floor(Math.random() * arr.length)];
     }
-    /** Randomly get itema from an array. */
-    function rgets(iterable, n = 1) {
-        const set = new Set(iterable);
-        const arr = [];
+    /** Randomly get items from an array. */
+    function rgets(iterable, n = 1, inplace = false) {
+        let set;
+        if (inplace && iterable instanceof Set) {
+            set = iterable;
+        }
+        else {
+            set = new Set(iterable);
+        }
+        const setChosen = new Set();
         for (let i = 0; i < n; i++) {
             const item = rget(set);
             set.delete(item);
-            arr.push(item);
+            setChosen.add(item);
         }
-        return arr;
+        return setChosen;
     }
 
     var utils = /*#__PURE__*/Object.freeze({
@@ -1788,7 +1794,7 @@
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
-            this.ui.animate(this.seats, { scale: ['var(--app-splash-transform)', 1], opacity: [0, 1] });
+            this.ui.animate(this.seats, { scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1] });
         }
         /** Update connected players. */
         sync() {
@@ -2094,6 +2100,9 @@
     }
 
     class Pop extends Component {
+        $pop(pop) {
+            console.log('>>>', pop);
+        }
     }
 
     class Button extends Component {
@@ -3214,7 +3223,7 @@
             }
             this.hidden = true;
             this.ui.animate(this.node, {
-                scale: [faded ? 'var(--app-splash-transform)' : 1, 'var(--app-splash-transform)'],
+                scale: [faded ? 'var(--app-zoom-scale)' : 1, 'var(--app-zoom-scale)'],
                 opacity: [faded ? 'var(--app-blurred-opacity)' : 1, 0]
             }).onfinish = () => {
                 this.node.remove();
@@ -3229,7 +3238,7 @@
             this.gallery.checkPage();
             return new Promise(resolve => {
                 this.ui.animate(this.node, {
-                    scale: ['var(--app-splash-transform)', 1], opacity: [0, 1]
+                    scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1]
                 }).onfinish = resolve;
             });
         }

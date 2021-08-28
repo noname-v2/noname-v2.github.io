@@ -1207,7 +1207,7 @@ noname-splash {
   transition-duration: var(--app-transition);
 }
 noname-splash.blurred {
-  transform: scale(var(--app-splash-transform));
+  transform: scale(var(--app-zoom-scale));
   pointer-events: none;
 }
 noname-splash > noname-gallery {

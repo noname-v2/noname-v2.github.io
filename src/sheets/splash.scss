@@ -4,7 +4,7 @@ noname-splash {
 
 	// zoom effect when settings is open
 	&.blurred {
-		transform: scale(var(--app-splash-transform));
+		transform: scale(var(--app-zoom-scale));
 		pointer-events: none;
 	}
 

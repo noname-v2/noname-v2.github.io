@@ -269,8 +269,10 @@ function createHero(T) {
     return class ChoosePop extends T {
         heros;
         main() {
-            console.log(this.game.getHeros());
-            this.pop = { test: [] };
+            this.pop = new Map();
+            for (const [id, heros] of this.heros) {
+                this.pop.set(id, [['caption', ''], ['hero', heros]]);
+            }
             super.main();
         }
     };
@@ -330,7 +332,7 @@ function game(A) {
         players = new Map();
         cards = new Map();
         skills = new Map();
-        /** A list of all heros. */
+        /** Get a list of all heros. */
         getHeros() {
             const heros = new Set();
             for (const pack of this.packs) {
@@ -611,6 +613,7 @@ function arena(T) {
             // append player region
             if (!this.players.parentNode) {
                 this.arenaZoom.node.appendChild(this.players);
+                this.ui.animate(this.players, { scale: ['var(--app-zoom-scale)', 1] });
             }
         }
     };
