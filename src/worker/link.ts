@@ -29,7 +29,7 @@ export interface Link {
     readonly monitor: (callback: string) => void;
 
     /** Pause current until receiving value from component.respond(). */
-    readonly await: () => void;
+    readonly await: (timeout?: number | null) => void;
 
     [key: string]: any;
 }
@@ -57,11 +57,23 @@ export function createLink(id: number, tag: string) {
         monitor(callback: string) {
             room.currentStage.monitors.set(link.id, callback);
         },
-        await() {
-            room.currentStage.awaits.add(link.id);
+        await(timeout?: number | null) {
+            const stage = room.currentStage;
+            stage.awaits.set(link.id, timeout || null);
+            if (timeout) {
+                setTimeout(() => {
+                    if (stage === room.currentStage && stage.awaits.has(id)) {
+                        stage.results.delete(id);
+                        stage.awaits.delete(id);
+                        if (!stage.awaits.size) {
+                            room.loop();
+                        }
+                    }
+                }, timeout * 1000);
+            }
         },
         result() {
-            return room.currentStage.results.get(link.id);
+            return room.currentStage.results.get(link.id) ?? null;
         }
     };
 

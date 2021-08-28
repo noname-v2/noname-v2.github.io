@@ -14,6 +14,8 @@ export abstract class Game {
     /** Hero packages. */
     packs!: Set<string>;
 
+    [key: string]: any;
+
     get owner() {
         return room.uid;
     }

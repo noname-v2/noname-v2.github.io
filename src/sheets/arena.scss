@@ -4,6 +4,11 @@ noname-arena {
 
     > noname-zoom {
         transition: opacity var(--app-transition);
+        pointer-events: none;
+
+        > * {
+            pointer-events: auto;
+        }
         
         > noname-players {
             @include layer;

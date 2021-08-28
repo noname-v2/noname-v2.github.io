@@ -43,6 +43,10 @@ noname-arena {
 }
 noname-arena > noname-zoom {
   transition: opacity var(--app-transition);
+  pointer-events: none;
+}
+noname-arena > noname-zoom > * {
+  pointer-events: auto;
 }
 noname-arena > noname-zoom > noname-players {
   width: 100%;

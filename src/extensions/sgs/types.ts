@@ -7,6 +7,11 @@ export type { Link } from '../../worker/link';
 export type { Config } from '../../types';
 export type { Dict }
 
+/** Game classes */
+export type { Player } from './classes/player';
+export type { Card } from './classes/card';
+export type { Skill } from './classes/skill';
+
 /** Type for SGS Game. */
 export type GameClass = ReturnType<typeof game>;
 export type Game = InstanceType<GameClass>;

@@ -172,5 +172,8 @@ export class Pop extends Component {
 
             this.app.arena!.addPop(this);
         }
+        else if (this.app.arena?.pops.size === 0) {
+            this.app.arena.arenaZoom.node.classList.remove('blurred');
+        }
     }
 }

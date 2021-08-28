@@ -11,9 +11,11 @@ export function createChoose(T: TaskClass) {
         /** Allow not choosing. */
         forced: boolean = false;
 
-        /** Start timer for players. */
-        startTimer() {
-
+        getTimeout(): number | null {
+            if (this.timeout === null && this.game.hub.connected) {
+                return this.game.config.online_timeout ?? null;
+            }
+            return this.timeout;
         }
     }
 }

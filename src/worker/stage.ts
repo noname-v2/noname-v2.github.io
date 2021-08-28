@@ -42,7 +42,7 @@ export class Stage {
     monitors = new Map<number, string>();
 
     /** Awaiting values from component.respond(). */
-    awaits = new Set<number>();
+    awaits = new Map<number, number | null>();
 
     /** Values from component.respond(). */
     results = new Map<number, any>();

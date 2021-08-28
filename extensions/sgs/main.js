@@ -268,20 +268,31 @@ function createPop(T) {
             this.add('getResults');
         }
         openDialog() {
-            this.startTimer();
+            const timer = [this.getTimeout(), Date.now()];
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
                     const pop = this.game.create('pop');
                     pop.owner = player.owner;
                     pop.content = content;
-                    pop.await();
+                    pop.await(timer[0]);
                     this.pops.add(pop);
+                    if (timer[0]) {
+                        pop.timer = timer;
+                        player.link.timer = timer;
+                    }
                 }
             }
         }
         getResults() {
+            for (const id of this.pop.keys()) {
+                const player = this.game.players.get(id);
+                if (player?.link.timer) {
+                    player.link.timer = null;
+                }
+            }
             for (const pop of this.pops) {
+                pop.timer = null;
                 this.results.set(pop.owner, pop.result);
                 pop.unlink();
             }
@@ -333,8 +344,11 @@ function createChoose(T) {
         timeout = null;
         /** Allow not choosing. */
         forced = false;
-        /** Start timer for players. */
-        startTimer() {
+        getTimeout() {
+            if (this.timeout === null && this.game.hub.connected) {
+                return this.game.config.online_timeout ?? null;
+            }
+            return this.timeout;
         }
     };
 }

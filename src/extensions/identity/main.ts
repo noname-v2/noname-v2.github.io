@@ -28,28 +28,35 @@ export default {
                         this.add('sleep', 0.5);
                         this.add('chooseZhu');
                         this.add('chooseRest');
-                        this.addTask('loop');
                     }
 
                     chooseZhu() {
                         this.choices = this.game.getHeros();
-                        const zhu = this.game.utils.rget(this.game.players.values());
-                        zhu.link.identity = '主';
                         const heros = new Map<number, string[]>();
-                        heros.set(zhu.id, this.getChoices());
-                        this.addTask('chooseHero', {
-                            heros, forced: true, freeChoose: this.freeChoose
-                        });
+                        for (const [id, player] of this.game.players) {
+                            if (player.link.seat === 0) {
+                                this.game.zhu = player;
+                                player.link.identity = 'zhu';
+                                heros.set(id, this.getChoices());
+                                this.addTask('chooseHero', {
+                                    heros, forced: true, freeChoose: this.freeChoose
+                                });
+                                break;
+                            }
+                        }
                     }
 
                     chooseRest() {
                         const heros = new Map<number, string[]>();
                         for (const id of this.game.players.keys()) {
-                            heros.set(id, this.getChoices());
+                            if (id !== this.game.zhu.id) {
+                                heros.set(id, this.getChoices());
+                            }
                         }
                         this.addTask('chooseHero', {
                             heros, forced: true, freeChoose: this.freeChoose
                         });
+                        this.addTask('loop');
                     }
 
                     getChoices() {

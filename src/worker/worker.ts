@@ -124,7 +124,12 @@ export async function dispatch(data: ClientMessage) {
             // send result to listener
             if (done && stage.awaits.has(id)) {
                 // results: component.respond() -> link.await()
-                stage.results.set(id, result);
+                if (result === null || result === undefined) {
+                    stage.results.delete(id);
+                }
+                else {
+                    stage.results.set(id, result);
+                }
                 stage.awaits.delete(id);
                 if (!stage.awaits.size) {
                     room.loop();

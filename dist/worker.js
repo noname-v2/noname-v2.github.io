@@ -174,7 +174,7 @@
         /** Handler of component.yield(). */
         monitors = new Map();
         /** Awaiting values from component.respond(). */
-        awaits = new Set();
+        awaits = new Map();
         /** Values from component.respond(). */
         results = new Map();
         constructor(id, path, data, parent) {
@@ -488,7 +488,12 @@
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
                     // results: component.respond() -> link.await()
-                    stage.results.set(id, result);
+                    if (result === null || result === undefined) {
+                        stage.results.delete(id);
+                    }
+                    else {
+                        stage.results.set(id, result);
+                    }
                     stage.awaits.delete(id);
                     if (!stage.awaits.size) {
                         room.loop();
@@ -528,11 +533,23 @@
             monitor(callback) {
                 room.currentStage.monitors.set(link.id, callback);
             },
-            await() {
-                room.currentStage.awaits.add(link.id);
+            await(timeout) {
+                const stage = room.currentStage;
+                stage.awaits.set(link.id, timeout || null);
+                if (timeout) {
+                    setTimeout(() => {
+                        if (stage === room.currentStage && stage.awaits.has(id)) {
+                            stage.results.delete(id);
+                            stage.awaits.delete(id);
+                            if (!stage.awaits.size) {
+                                room.loop();
+                            }
+                        }
+                    }, timeout * 1000);
+                }
             },
             result() {
-                return room.currentStage.results.get(link.id);
+                return room.currentStage.results.get(link.id) ?? null;
             }
         };
         const link = new Proxy(obj, {
