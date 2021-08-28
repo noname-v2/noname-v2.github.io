@@ -30,6 +30,7 @@ export interface Mode<T extends Task = Task> {
     config?: Dict<Config>;
     inherit?: string;
     np?: number | number[];
+    duration?: number;
     [key: string]: any;
 }
 

@@ -420,6 +420,8 @@ const classes = {
 
 function arena(T) {
     return class ArenaSGS extends T {
+        /** Blur arena on start. */
+        initBlur = true;
         /** Layout mode. */
         layout = 0;
         /** Player that is under control. */
@@ -428,6 +430,12 @@ function arena(T) {
         cards = this.ui.createElement('cards');
         /** Player container. */
         players = this.ui.createElement('players');
+        init() {
+            super.init();
+            if (this.initBlur) {
+                this.arenaZoom.node.classList.add('blurred');
+            }
+        }
         /** Update arena layout. */
         resize(ax, ay, width, height) {
             const np = this.data.np;
@@ -656,6 +664,7 @@ const components = {
 
 var main = {
     mode: {
+        duration: 0.3,
         config,
         tasks,
         classes,

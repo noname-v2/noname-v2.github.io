@@ -111,6 +111,16 @@ export class Pop extends Component {
         }
     }
 
+    /** Remove with fade out animation. */
+    remove() {
+        super.remove(new Promise(resolve => {
+            this.ui.animate(this.node, {
+                scale: [1, 'var(--app-zoom-scale)'],
+                opacity: [1, 0]
+            }).onfinish = resolve;
+        }));
+    }
+
     $content(content: PopContent) {
         if (this.mine) {
             for (const [type, arg] of content as any) {
@@ -125,6 +135,12 @@ export class Pop extends Component {
             for (const gallery of this.galleries) {
                 gallery.checkPage();
             }
+
+            this.ui.animate(this.node, {
+                scale: ['var(--app-zoom-scale)', 1],
+                opacity: [0, 1]
+            });
+            this.app.arena?.arenaZoom.node.classList.add('blurred');
         }
     }
 }

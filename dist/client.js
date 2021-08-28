@@ -2178,6 +2178,15 @@
                 this.ui.bind(cancel, () => this.respond(false));
             }
         }
+        /** Remove with fade out animation. */
+        remove() {
+            super.remove(new Promise(resolve => {
+                this.ui.animate(this.node, {
+                    scale: [1, 'var(--app-zoom-scale)'],
+                    opacity: [1, 0]
+                }).onfinish = resolve;
+            }));
+        }
         $content(content) {
             if (this.mine) {
                 for (const [type, arg] of content) {
@@ -2191,6 +2200,11 @@
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
                 }
+                this.ui.animate(this.node, {
+                    scale: ['var(--app-zoom-scale)', 1],
+                    opacity: [0, 1]
+                });
+                this.app.arena?.arenaZoom.node.classList.add('blurred');
             }
         }
     }

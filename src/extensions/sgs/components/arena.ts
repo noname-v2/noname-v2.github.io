@@ -2,6 +2,9 @@ import type { Arena } from '../../../components';
 
 export function arena(T: typeof Arena) {
     return class ArenaSGS extends T {
+        /** Blur arena on start. */
+        initBlur = true;
+
         /** Layout mode. */
         layout = 0;
     
@@ -13,6 +16,14 @@ export function arena(T: typeof Arena) {
     
         /** Player container. */
         players = this.ui.createElement('players');
+
+        init() {
+            super.init();
+
+            if (this.initBlur) {
+                this.arenaZoom.node.classList.add('blurred');
+            }
+        }
 
         /** Update arena layout. */
         resize(ax: number, ay: number, width: number, height: number) {

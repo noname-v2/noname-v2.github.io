@@ -10,6 +10,7 @@ var main = {
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
+                        this.add('sleep', 0.5);
                         this.add('chooseHero');
                         this.addTask('loop');
                     }

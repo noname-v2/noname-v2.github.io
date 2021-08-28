@@ -41,6 +41,9 @@ noname-arena {
   transition-property: opacity, transform;
   transition-duration: var(--app-transition);
 }
+noname-arena > noname-zoom {
+  transition: opacity var(--app-transition);
+}
 noname-arena > noname-zoom > noname-players {
   width: 100%;
   height: 100%;

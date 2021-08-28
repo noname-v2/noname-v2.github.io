@@ -325,6 +325,10 @@
             }
             this.#stage.trigger(name);
         }
+        /** Delay for a given time. */
+        async sleep(duration = 1) {
+            await this.game.utils.sleep(duration * (this.game.mode.duration ?? 0.5));
+        }
     }
 
     /** Game object used by stages. */

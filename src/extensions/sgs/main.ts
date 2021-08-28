@@ -6,6 +6,7 @@ import { components } from './components';
 
 export default {
     mode: {
+        duration: 0.3,
         config,
         tasks,
         classes,

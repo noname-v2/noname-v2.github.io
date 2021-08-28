@@ -2,11 +2,14 @@ noname-arena {
     @include layer;
 	@include transit;
 
-    > noname-zoom > noname-players {
-        @include layer;
+    > noname-zoom {
+        transition: opacity var(--app-transition);
         
-        > noname-player {
-            position: absolute;
+        > noname-players {
+            @include layer;
+            > noname-player {
+                position: absolute;
+            }   
         }
     }
 
