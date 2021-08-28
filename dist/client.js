@@ -1110,11 +1110,17 @@
             if (after) {
                 this.#removing = true;
                 this.node.classList.add('removing');
-                after.then(() => {
+                const onfinish = () => {
                     this.node.remove();
                     this.node.classList.remove('removing');
                     this.#removing = false;
-                });
+                };
+                if (after instanceof Animation) {
+                    after.onfinish = onfinish;
+                }
+                else {
+                    after.then(onfinish);
+                }
             }
             else {
                 this.node.remove();
@@ -1743,10 +1749,8 @@
                     history.back();
                 }
             }
-            super.remove(new Promise(resolve => {
-                this.ui.animate(this.node, {
-                    opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
-                }).onfinish = resolve;
+            super.remove(this.ui.animate(this.node, {
+                opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
             }));
         }
         /** Back to splash screen. */
@@ -2151,31 +2155,12 @@
             this.ui.format(this.nickname, name ?? '');
         }
         $timer(config) {
-            const removeTimer = () => {
-                const timer = this.timer;
-                if (timer) {
-                    this.timer = null;
-                    this.ui.animate(timer, { opacity: [1, 0] }).onfinish = () => timer.remove();
-                }
-            };
             if (config) {
-                const [timeout, now] = config;
-                this.timer?.remove();
-                const timer = this.timer = this.ui.createElement('timer', this.content);
-                const bar = this.ui.createElement('div', timer);
-                this.ui.animate(timer, { opacity: [0, 1] }).onfinish = () => {
-                    const remaining = timeout - (Date.now() - now) / 1000;
-                    this.ui.animate(bar, { x: [-100 * (1 - remaining / timeout), -100] }, {
-                        duration: remaining * 1000, easing: 'linear'
-                    }).onfinish = () => {
-                        if (timer === this.timer) {
-                            removeTimer();
-                        }
-                    };
-                };
+                const timer = this.ui.create('timer', this.content);
+                timer.start(config, this);
             }
             else {
-                removeTimer();
+                this.timer?.remove();
             }
         }
     }
@@ -2291,6 +2276,65 @@
             }
             else if (this.app.arena?.pops.size === 0) {
                 this.app.arena.arenaZoom.node.classList.remove('blurred');
+            }
+        }
+        $timer(config) {
+            const removeTimer = () => {
+                const timer = this.timer;
+                if (timer) {
+                    this.timer = null;
+                    this.ui.animate(timer, { opacity: [1, 0] }).onfinish = () => timer.remove();
+                }
+            };
+            if (config) {
+                const [timeout, now] = config;
+                this.timer?.remove();
+                const timer = this.timer = this.ui.createElement('timer', this.content);
+                const bar = this.ui.createElement('div', timer);
+                this.ui.animate(timer, { opacity: [0, 1] }).onfinish = () => {
+                    const remaining = timeout - (Date.now() - now) / 1000;
+                    this.ui.animate(bar, { x: [-100 * (1 - remaining / timeout), -100] }, {
+                        duration: remaining * 1000, easing: 'linear'
+                    }).onfinish = () => {
+                        if (timer === this.timer) {
+                            removeTimer();
+                        }
+                    };
+                };
+            }
+            else {
+                removeTimer();
+            }
+        }
+    }
+
+    class Timer extends Component {
+        /** Parent component. */
+        parent;
+        /** Progress bar. */
+        bar = this.ui.createElement('div', this.node);
+        start(config, parent) {
+            const [timeout, now] = config;
+            this.parent = parent;
+            this.parent.timer?.node.remove();
+            this.parent.timer = this;
+            const remaining = timeout - (Date.now() - now) / 1000;
+            const x = -100 * (1 - remaining / timeout);
+            this.bar.style.transform = `translateX(${x}px)`;
+            this.ui.animate(this.node, { opacity: [0, 1] }).onfinish = () => {
+                const remaining = timeout - (Date.now() - now) / 1000;
+                this.ui.animate(this.bar, { x: [x, -100] }, {
+                    duration: remaining * 1000, easing: 'linear'
+                }).onfinish = () => this.remove();
+            };
+        }
+        remove() {
+            if (this.parent.timer === this) {
+                this.parent.timer = null;
+                super.remove(this.ui.animate(this.node, { opacity: [1, 0] }));
+            }
+            else {
+                super.remove();
             }
         }
     }
@@ -3548,6 +3592,7 @@
     componentClasses.set('peer', Peer);
     componentClasses.set('player', Player);
     componentClasses.set('pop', Pop);
+    componentClasses.set('timer', Timer);
     componentClasses.set('button', Button);
     componentClasses.set('gallery', Gallery);
     componentClasses.set('input', Input);

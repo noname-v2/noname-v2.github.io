@@ -154,7 +154,7 @@ export class Component {
     }
 
     /** Remove element. */
-    remove(after?: Promise<any>) {
+    remove(after?: Promise<any> | Animation) {
         if (this.#removing) {
             return;
         }
@@ -162,11 +162,17 @@ export class Component {
         if (after) {
             this.#removing = true;
             this.node.classList.add('removing');
-            after.then(() => {
+            const onfinish = () => {
                 this.node.remove();
                 this.node.classList.remove('removing');
                 this.#removing = false;
-            });
+            };
+            if (after instanceof Animation) {
+                after.onfinish = onfinish
+            }
+            else {
+                after.then(onfinish);
+            }
         }
         else {
             this.node.remove();

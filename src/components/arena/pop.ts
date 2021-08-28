@@ -1,4 +1,4 @@
-import { Component, Gallery } from '../../components';
+import { Component, Gallery, Timer } from '../../components';
 
 /** Possible contents of pop sections. */
 interface PopSectionContent {
@@ -174,6 +174,36 @@ export class Pop extends Component {
         }
         else if (this.app.arena?.pops.size === 0) {
             this.app.arena.arenaZoom.node.classList.remove('blurred');
+        }
+    }
+
+    $timer(config?: [number, number]) {
+        const removeTimer = () => {
+            const timer = this.timer;
+            if (timer) {
+                this.timer = null;
+                this.ui.animate(timer, {opacity: [1, 0]}).onfinish = () => timer.remove();
+            }
+        };
+
+        if (config) {
+            const [timeout, now] = config;
+            this.timer?.remove();
+            const timer = this.timer = this.ui.createElement('timer', this.content);
+            const bar = this.ui.createElement('div', timer);
+            this.ui.animate(timer, {opacity: [0, 1]}).onfinish = () => {
+                const remaining = timeout - (Date.now() - now) / 1000;
+                this.ui.animate(bar, {x: [-100 * (1 - remaining / timeout), -100]}, {
+                    duration: remaining * 1000, easing: 'linear'
+                }).onfinish = () => {
+                    if (timer === this.timer) {
+                        removeTimer();
+                    }
+                };
+            };
+        }
+        else {
+            removeTimer();
         }
     }
 }

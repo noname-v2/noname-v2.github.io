@@ -71,10 +71,8 @@ export class Arena extends Component {
                 history.back();
             }
         }
-        super.remove(new Promise(resolve => {
-            this.ui.animate(this.node, {
-                opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
-            }).onfinish = resolve;
+        super.remove(this.ui.animate(this.node, {
+            opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
         }));
     }
     
