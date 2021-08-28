@@ -102,23 +102,24 @@ export class Pop extends Component {
         const ok = this.ui.createElement('widget.button', bar);
         ok.dataset.fill = 'red';
         ok.innerHTML = '确定';
-        this.ui.bind(ok, () => this.respond(this.selected));
+        this.ui.bind(ok, () => {
+            this.respond(this.selected);
+            this.remove();
+        });
         
         if (cancel) {
             const cancel = this.ui.createElement('widget.button', bar);
             cancel.innerHTML = '取消';
-            this.ui.bind(cancel, () => this.respond(false));
+            this.ui.bind(cancel, () => {
+                this.respond(false);
+                this.remove();
+            });
         }
     }
 
     /** Remove with fade out animation. */
     remove() {
-        super.remove(new Promise(resolve => {
-            this.ui.animate(this.node, {
-                scale: [1, 'var(--app-zoom-scale)'],
-                opacity: [1, 0]
-            }).onfinish = resolve;
-        }));
+        super.remove(this.app.arena!.removePop(this));
     }
 
     $content(content: PopContent) {
@@ -136,11 +137,7 @@ export class Pop extends Component {
                 gallery.checkPage();
             }
 
-            this.ui.animate(this.node, {
-                scale: ['var(--app-zoom-scale)', 1],
-                opacity: [0, 1]
-            });
-            this.app.arena?.arenaZoom.node.classList.add('blurred');
+            this.app.arena!.addPop(this);
         }
     }
 }

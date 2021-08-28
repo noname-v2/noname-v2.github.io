@@ -1665,6 +1665,8 @@
     }
 
     class Arena extends Component {
+        /** Set of all pops. */
+        pops = new Set();
         /** A dialog has been popped before this.remove() is called. */
         faded = false;
         /** Confirming exit. */
@@ -1765,6 +1767,30 @@
             else {
                 disconnect();
             }
+        }
+        /** Add a pop. */
+        addPop(pop) {
+            this.ui.animate(pop.node, {
+                scale: ['var(--app-zoom-scale)', 1],
+                opacity: [0, 1]
+            });
+            if (!this.pops.size) {
+                this.arenaZoom.node.classList.add('blurred');
+            }
+            this.pops.add(pop);
+        }
+        /** Remove a pop. */
+        removePop(pop) {
+            this.pops.delete(pop);
+            if (!this.pops.size) {
+                this.arenaZoom.node.classList.remove('blurred');
+            }
+            return new Promise(resolve => {
+                this.ui.animate(pop.node, {
+                    scale: [1, 'var(--app-zoom-scale)'],
+                    opacity: [1, 0]
+                }).onfinish = resolve;
+            });
         }
         /** Connection status change. */
         $peers() {
@@ -2171,21 +2197,22 @@
             const ok = this.ui.createElement('widget.button', bar);
             ok.dataset.fill = 'red';
             ok.innerHTML = '确定';
-            this.ui.bind(ok, () => this.respond(this.selected));
+            this.ui.bind(ok, () => {
+                this.respond(this.selected);
+                this.remove();
+            });
             if (cancel) {
                 const cancel = this.ui.createElement('widget.button', bar);
                 cancel.innerHTML = '取消';
-                this.ui.bind(cancel, () => this.respond(false));
+                this.ui.bind(cancel, () => {
+                    this.respond(false);
+                    this.remove();
+                });
             }
         }
         /** Remove with fade out animation. */
         remove() {
-            super.remove(new Promise(resolve => {
-                this.ui.animate(this.node, {
-                    scale: [1, 'var(--app-zoom-scale)'],
-                    opacity: [1, 0]
-                }).onfinish = resolve;
-            }));
+            super.remove(this.app.arena.removePop(this));
         }
         $content(content) {
             if (this.mine) {
@@ -2200,11 +2227,7 @@
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
                 }
-                this.ui.animate(this.node, {
-                    scale: ['var(--app-zoom-scale)', 1],
-                    opacity: [0, 1]
-                });
-                this.app.arena?.arenaZoom.node.classList.add('blurred');
+                this.app.arena.addPop(this);
             }
         }
     }

@@ -1,8 +1,11 @@
 import * as client from '../../client/client';
 import { set } from '../../client/globals';
-import { Component, Peer } from '../../components';
+import { Component, Peer, Pop } from '../../components';
 
 export class Arena extends Component {
+    /** Set of all pops. */
+    pops = new Set();
+
     /** A dialog has been popped before this.remove() is called. */
     faded = false;
 
@@ -115,6 +118,32 @@ export class Arena extends Component {
         else {
             client.disconnect();
         }
+    }
+
+    /** Add a pop. */
+    addPop(pop: Pop) {
+        this.ui.animate(pop.node, {
+            scale: ['var(--app-zoom-scale)', 1],
+            opacity: [0, 1]
+        });
+        if (!this.pops.size) {
+            this.arenaZoom.node.classList.add('blurred');
+        }
+        this.pops.add(pop);
+    }
+
+    /** Remove a pop. */
+    removePop(pop: Pop) {
+        this.pops.delete(pop);
+        if (!this.pops.size) {
+            this.arenaZoom.node.classList.remove('blurred');
+        }
+        return new Promise(resolve => {
+            this.ui.animate(pop.node, {
+                scale: [1, 'var(--app-zoom-scale)'],
+                opacity: [1, 0]
+            }).onfinish = resolve;
+        });
     }
 
     /** Connection status change. */

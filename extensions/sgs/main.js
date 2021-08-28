@@ -263,7 +263,6 @@ function createPop(T) {
             this.add('getResults');
         }
         openDialog() {
-            console.log(1);
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
@@ -276,7 +275,6 @@ function createPop(T) {
             }
         }
         getResults() {
-            console.log(2);
             for (const pop of this.pops) {
                 this.results.set(pop.owner, pop.result);
                 pop.unlink();
