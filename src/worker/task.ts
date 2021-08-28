@@ -23,10 +23,6 @@ export class Task<T extends Game = Game> {
         return this.#stage.parent?.task ?? null;
     }
 
-    get results(): Dict {
-        return this.#stage.results;
-    }
-
     get #stage(): Stage {
         return room.taskMap.get(this)!;
     }
@@ -55,16 +51,6 @@ export class Task<T extends Game = Game> {
             return stage.task as T;
         }
         throw('failed to add sibling to ' + path);
-    }
-
-    /** Add a callback for component function call. */
-    monitor(link: Link, callback: string) {
-        this.#stage.monitors.set(link.id, callback);
-    }
-
-    /** Pause step 2 until a return value is received. */
-    await(link: Link, tag?: string) {
-        this.#stage.awaits.set(link.id, tag ?? null);
     }
 
     /** Skip stage (may trigger skip event). */

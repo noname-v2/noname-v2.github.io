@@ -174,9 +174,9 @@
         /** Handler of component.yield(). */
         monitors = new Map();
         /** Awaiting values from component.respond(). */
-        awaits = new Map();
+        awaits = new Set();
         /** Values from component.respond(). */
-        results = {};
+        results = new Map();
         constructor(id, path, data, parent) {
             this.id = id;
             this.path = path;
@@ -273,9 +273,6 @@
         get parent() {
             return this.#stage.parent?.task ?? null;
         }
-        get results() {
-            return this.#stage.results;
-        }
         get #stage() {
             return room.taskMap.get(this);
         }
@@ -300,14 +297,6 @@
                 return stage.task;
             }
             throw ('failed to add sibling to ' + path);
-        }
-        /** Add a callback for component function call. */
-        monitor(link, callback) {
-            this.#stage.monitors.set(link.id, callback);
-        }
-        /** Pause step 2 until a return value is received. */
-        await(link, tag) {
-            this.#stage.awaits.set(link.id, tag ?? null);
         }
         /** Skip stage (may trigger skip event). */
         skip() {
@@ -469,10 +458,7 @@
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
                     // results: component.respond() -> link.await()
-                    const key = stage.awaits.get(id);
-                    if (key) {
-                        stage.results[key] = result;
-                    }
+                    stage.results.set(id, result);
                     stage.awaits.delete(id);
                     if (!stage.awaits.size) {
                         room.loop();
@@ -508,12 +494,26 @@
                     val === null ? delete obj[key] : obj[key] = val;
                 }
                 tick(id, items);
+            },
+            monitor(callback) {
+                room.currentStage.monitors.set(link.id, callback);
+            },
+            await() {
+                room.currentStage.awaits.add(link.id);
+            },
+            result() {
+                return room.currentStage.results.get(link.id);
             }
         };
         const link = new Proxy(obj, {
             get(_, key) {
                 if (key in reserved) {
-                    return reserved[key];
+                    if (key === 'result') {
+                        return reserved[key]();
+                    }
+                    else {
+                        return reserved[key];
+                    }
                 }
                 else {
                     return obj[key];

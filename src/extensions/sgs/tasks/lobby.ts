@@ -64,8 +64,8 @@ export function lobby(T: TaskClass) {
             lobby.mode = this.game.mode.extension;
             lobby.config = this.game.config;
             lobby.config.banned ??= {};
-            this.monitor(lobby, 'updateLobby');
-            this.await(lobby);
+            lobby.monitor('updateLobby');
+            lobby.await();
         }
 
         /** Update game configuration. */
@@ -79,7 +79,7 @@ export function lobby(T: TaskClass) {
                 const peers = this.game.hub.peers;
                 if (peers) {
                     for (const peer of peers) {
-                        this.monitor(peer, 'updatePeer');
+                        peer.monitor('updatePeer');
                     }
                 }
             }

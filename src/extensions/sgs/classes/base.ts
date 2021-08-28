@@ -13,7 +13,7 @@ export class Base<T extends Link> {
     }
 
     get owner() {
-        return this.link.owner;
+        return this.link.owner ?? null;
     }
 
     constructor(game: Game, tag: string) {

@@ -169,8 +169,8 @@ function lobby(T) {
             lobby.mode = this.game.mode.extension;
             lobby.config = this.game.config;
             lobby.config.banned ??= {};
-            this.monitor(lobby, 'updateLobby');
-            this.await(lobby);
+            lobby.monitor('updateLobby');
+            lobby.await();
         }
         /** Update game configuration. */
         updateLobby([type, key, val]) {
@@ -182,7 +182,7 @@ function lobby(T) {
                 const peers = this.game.hub.peers;
                 if (peers) {
                     for (const peer of peers) {
-                        this.monitor(peer, 'updatePeer');
+                        peer.monitor('updatePeer');
                     }
                 }
             }
@@ -271,7 +271,7 @@ function createHero(T) {
         main() {
             this.pop = new Map();
             for (const [id, heros] of this.heros) {
-                this.pop.set(id, [['caption', ''], ['hero', heros]]);
+                this.pop.set(id, [['caption', '选择武将'], ['hero', heros]]);
             }
             super.main();
         }
@@ -381,7 +381,7 @@ class Base {
         return this.link.id;
     }
     get owner() {
-        return this.link.owner;
+        return this.link.owner ?? null;
     }
     constructor(game, tag) {
         this.game = game;

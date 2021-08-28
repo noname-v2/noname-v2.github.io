@@ -42,10 +42,10 @@ export class Stage {
     monitors = new Map<number, string>();
 
     /** Awaiting values from component.respond(). */
-    awaits = new Map<number, string | null>();
+    awaits = new Set<number>();
 
     /** Values from component.respond(). */
-    results: Dict = {};
+    results = new Map<number, any>();
 
     constructor(id: number, path: string, data: Dict, parent: Stage | null) {
         this.id = id;

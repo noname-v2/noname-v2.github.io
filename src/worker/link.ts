@@ -13,6 +13,9 @@ export interface Link {
     /** Component tag. */
     readonly tag: string;
 
+    /** Return value from component.respond(). */
+    readonly result: any;
+
     /** Call a component method. */
     readonly call: (method: string, arg?: any) => void;
 
@@ -21,6 +24,12 @@ export interface Link {
 
     /** Remove reference to a component. */
     readonly unlink: () => void;
+
+    /** Monitor values from component.yield(). */
+    readonly monitor: (callback: string) => void;
+
+    /** Pause current until receiving value from component.respond(). */
+    readonly await: () => void;
 
     [key: string]: any;
 }
@@ -44,13 +53,27 @@ export function createLink(id: number, tag: string) {
                 val === null ? delete obj[key] : obj[key] = val;
             }
             tick(id, items);
+        },
+        monitor(callback: string) {
+            room.currentStage.monitors.set(link.id, callback);
+        },
+        await() {
+            room.currentStage.awaits.add(link.id);
+        },
+        result() {
+            return room.currentStage.results.get(link.id);
         }
     };
 
     const link = new Proxy(obj, {
         get(_, key: string) {
             if (key in reserved) {
-                return reserved[key];
+                if (key === 'result') {
+                    return reserved[key]();
+                }
+                else {
+                    return reserved[key];
+                }
             }
             else {
                 return obj[key];
