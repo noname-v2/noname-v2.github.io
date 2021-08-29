@@ -169,7 +169,7 @@ export class Pop extends Component {
             }
             
             for (let i = 0; i < n; i++) {
-                tray.add(() => null);
+                tray.add(() => this.ui.createElement('widget'));
             }
         }
     }

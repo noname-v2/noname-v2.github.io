@@ -2412,7 +2412,7 @@
                     tray.node.style.left = `calc(50% - ${trayWidth / 2}px)`;
                 }
                 for (let i = 0; i < n; i++) {
-                    tray.add(() => null);
+                    tray.add(() => this.ui.createElement('widget'));
                 }
             }
         }

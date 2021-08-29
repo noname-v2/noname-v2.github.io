@@ -26,8 +26,8 @@ noname-arena noname-zoom > noname-pop {
 
                 noname-item {
                     @include transit;
-                    width: calc(var(--pop-tray-width) - 2px);
-                    aspect-ratio: 1;
+                    width: calc(var(--pop-tray-width) - 4px);
+                    height: calc(var(--pop-tray-width) - 4px);
                     overflow: visible;
                     border: var(--pop-border);
                     border-radius: 100%;
@@ -38,10 +38,10 @@ noname-arena noname-zoom > noname-pop {
                         display: block;
                         position: absolute;
                         width: var(--pop-tray-width);
+                        height: var(--pop-tray-width);
                         border-radius: 100%;
-                        aspect-ratio: 1;
-                        left: -1px;
-                        top: -1px;
+                        left: -2px;
+                        top: -2px;
                     }
                 }
             }
