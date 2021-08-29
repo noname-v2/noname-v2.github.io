@@ -189,6 +189,7 @@
      * [0]: Element that is clicked.
      * [1]: Location of pointerdown.
      * [2]: true: started by a touch event, false: started by a mouse event.
+     * [3]: mousedown is triggered by non-left click.
      */
     let clicking = null;
     /** Handler for current move event.
@@ -215,9 +216,10 @@
         const dispatchDown = (e, touch) => {
             const origin = locate(e);
             // initialize click event
-            if (binding.onclick && !clicking) {
+            const right = e.button ? true : false;
+            if (((binding.onclick && !right) || (binding.oncontext && right)) && !clicking) {
                 node.classList.add('clickdown');
-                clicking = [node, origin, touch];
+                clicking = [node, origin, touch, right];
             }
             // initialize move event
             if (binding.movable && !moving) {
@@ -383,9 +385,9 @@
     }
     /** Fire click event. */
     function dispatchClick(node) {
-        // onclick
         const binding = bindings.get(node);
-        if (binding?.onclick) {
+        // trigger left click
+        if (binding?.onclick && (!clicking || !clicking[3])) {
             if (clicking && clicking[0] === node) {
                 // use the location of clicking if applicable
                 binding.onclick.call(node, clicking[1]);
@@ -394,6 +396,10 @@
                 // a pseudo click event without location info
                 binding.onclick.call(node, { x: 0, y: 0 });
             }
+        }
+        // trigger right click
+        if (binding?.oncontext && clicking && clicking[3]) {
+            binding.oncontext.call(node, clicking[1]);
         }
         // avoid duplicate trigger
         resetClick(node);
@@ -2202,12 +2208,21 @@
             }
             const gallery = this.pane.addGallery(nrows, ncols);
             gallery.node.style.height = `${this.height - currentHeight}px`;
+            gallery.node.addEventListener('mousedown', e => e.stopPropagation());
             for (const hero of heros) {
                 gallery.add(() => {
                     const player = this.ui.create('player');
                     const [ext, name] = hero.split(':');
                     player.data.heroImage = hero;
                     player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
+                    this.ui.bind(player.node, {
+                        onclick: e => {
+                            player.data.heroName = 'Left';
+                        },
+                        oncontext: e => {
+                            player.data.heroName = 'Right';
+                        }
+                    });
                     return player.node;
                 });
             }
@@ -2281,7 +2296,6 @@
             this.ui.bind(this.node, {
                 movable: { x: [-dx, dx], y: [-dy, dy] }
             });
-            console.log(dx, dy);
         }
         $content(content) {
             if (this.mine) {

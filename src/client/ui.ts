@@ -11,7 +11,7 @@ export type Point = {x: number, y: number};
 export type Region = {x: [number, number], y: [number, number]};
 
 /** Type for point location from an event. */
-type EventPoint = {clientX: number, clientY: number}
+type EventPoint = {clientX: number, clientY: number, button?: number}
 
 /** Callback for click or drag event. */
 interface Binding {
@@ -35,6 +35,9 @@ interface Binding {
 
 	// callback for pointerdown
 	ondown?: (e: Point) => void;
+
+    // callback for right click or long press
+    oncontext?: (e: Point) => void;
 }
 
 /** Bindings for DOM events. */
@@ -47,8 +50,9 @@ let dispatched = false;
  * [0]: Element that is clicked.
  * [1]: Location of pointerdown.
  * [2]: true: started by a touch event, false: started by a mouse event.
+ * [3]: mousedown is triggered by non-left click.
  */
-let clicking: [HTMLElement, Point, boolean] | null = null;
+let clicking: [HTMLElement, Point, boolean, boolean] | null = null;
 
 /** Handler for current move event.
  * [0]: Element that is moved.
@@ -78,9 +82,10 @@ function register(node: HTMLElement) {
         const origin = locate(e);
 
         // initialize click event
-        if (binding.onclick && !clicking) {
+        const right = e.button ? true : false;
+        if (((binding.onclick && !right) || (binding.oncontext && right)) && !clicking) {
             node.classList.add('clickdown');
-            clicking = [node, origin, touch];
+            clicking = [node, origin, touch, right];
         }
 
         // initialize move event
@@ -281,10 +286,10 @@ export function bind(node: HTMLElement, config: Binding | ((e: Point) => void)) 
 
 /** Fire click event. */
 export function dispatchClick(node: HTMLElement) {
-    // onclick
     const binding = bindings.get(node);
 
-    if (binding?.onclick) {
+    // trigger left click
+    if (binding?.onclick && (!clicking || !clicking[3])) {
         if (clicking && clicking[0] === node) {
             // use the location of clicking if applicable
             binding.onclick.call(node, clicking[1]);
@@ -293,6 +298,11 @@ export function dispatchClick(node: HTMLElement) {
             // a pseudo click event without location info
             binding.onclick.call(node, {x: 0, y: 0});
         }
+    }
+
+    // trigger right click
+    if (binding?.oncontext && clicking && clicking[3]) {
+        binding.oncontext.call(node, clicking[1]);
     }
 
     // avoid duplicate trigger

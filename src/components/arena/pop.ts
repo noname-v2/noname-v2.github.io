@@ -100,12 +100,21 @@ export class Pop extends Component {
 
         const gallery = this.pane.addGallery(nrows, ncols);
         gallery.node.style.height = `${this.height - currentHeight}px`;
+        gallery.node.addEventListener('mousedown', e => e.stopPropagation());
         for (const hero of heros) {
             gallery.add(() => {
                 const player = this.ui.create('player');
                 const [ext, name] = hero.split(':');
                 player.data.heroImage = hero;
                 player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
+                this.ui.bind(player.node, {
+                    onclick: e => {
+                        player.data.heroName = 'Left';
+                    },
+                    oncontext: e => {
+                        player.data.heroName = 'Right';
+                    }
+                })
                 return player.node;
             });
         }
@@ -187,7 +196,6 @@ export class Pop extends Component {
         this.ui.bind(this.node, {
             movable: {x: [-dx, dx], y: [-dy, dy]}
         });
-        console.log(dx, dy)
     }
 
     $content(content: PopContent) {
