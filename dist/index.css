@@ -825,30 +825,34 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item
 noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player.selected {
   opacity: var(--app-defer-opacity);
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
+  margin: 12px 0 14px 0;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray {
+  margin: 14px 0 18px 0;
   text-align: center;
+  border: var(--pop-border);
+  border-radius: var(--widget-radius);
+  width: calc(100% - 36px);
+  left: 16px;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages {
-  left: 0;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item {
   width: var(--pop-tray-width);
   height: var(--pop-tray-width);
   margin-left: -2px;
   margin-right: -2px;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item.filled > noname-container {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item.filled > noname-container {
   opacity: 0;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-container {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-container {
   transition: opacity var(--app-transition);
   position: absolute;
   width: calc(var(--pop-tray-width) - 4px);
   height: calc(var(--pop-tray-width) - 4px);
-  border: var(--pop-border);
   border-radius: 100%;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-widget {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-widget {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -858,9 +862,6 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname
   position: absolute;
   border-radius: 100%;
   background-position: var(--widget-avatar-position) !important;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
-  margin: 12px 0 14px 0;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;

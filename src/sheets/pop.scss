@@ -22,14 +22,18 @@ noname-arena noname-zoom > noname-pop {
             }
         }
 
-        > noname-gallery.tray {
-            // margin: 18px 0 24px 0;
-            text-align: center;
+        > noname-bar {
+            margin: 12px 0 14px 0;
 
-            noname-pages {
-                left: 0;
-
-                noname-item {
+            &.tray {
+                margin: 14px 0 18px 0;
+                text-align: center;
+                border: var(--pop-border);
+                border-radius: var(--widget-radius);
+                width: calc(100% - 36px);
+                left: 16px;
+    
+                > noname-item {
                     width: var(--pop-tray-width);
                     height: var(--pop-tray-width);
                     margin-left: -2px;
@@ -44,7 +48,6 @@ noname-arena noname-zoom > noname-pop {
                         position: absolute;
                         width: calc(var(--pop-tray-width) - 4px);
                         height: calc(var(--pop-tray-width) - 4px);
-                        border: var(--pop-border);
                         border-radius: 100%;
                     }
     
@@ -55,10 +58,6 @@ noname-arena noname-zoom > noname-pop {
                     }
                 }
             }
-        }
-
-        > noname-bar {
-            margin: 12px 0 14px 0;
         }
 
         > noname-caption {

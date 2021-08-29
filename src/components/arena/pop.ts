@@ -115,7 +115,6 @@ export class Pop extends Component {
             }
         }
 
-        let tray: Gallery;
         const gallery = this.pane.addGallery(nrows, ncols);
         const trayItems: HTMLElement[] = [];
         const selected = new Map<HTMLElement, HTMLElement>();
@@ -174,32 +173,16 @@ export class Pop extends Component {
             const width = parseInt(this.app.css.pop['tray-width']);
             const margin = parseInt(this.app.css.pop['tray-margin']);
             const n = Array.isArray(select.num) ? select.num[1] : select.num;
-            const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
-            tray = this.pane.addGallery(1, ncols);
-            tray.node.classList.add('tray');
-            this.height += width;
+            const tray = this.pane.add('bar');
+            tray.classList.add('tray');
+            tray.style.height = `${width}px`;
+            this.height += width + 26;
             
-            if (n > ncols) {
-                this.height += 36;
-                tray.node.style.height = `${width + 24}px`;
-                tray.node.style.width = '100%';
-            }
-            else {
-                this.height += 24;
-                tray.node.style.height = `${width + 12}px`;
-                const trayWidth = (width + margin) * ncols + margin * 2;
-                tray.node.style.width = `${trayWidth}px`;
-                tray.node.style.left = `calc(50% - ${trayWidth / 2}px)`;
-            }
-            
-            for (let i = 0; i < n; i++) {
-                tray.add((item) => {
-                    this.ui.createElement('container', item);
-                    trayItems.push(item);
-                });
-            }
-
-            tray.renderAll();
+            // for (let i = 0; i < n; i++) {
+            //     const item = this.ui.createElement('item', tray);
+            //     this.ui.createElement('container', item);
+            //     trayItems.push(item);
+            // }
         }
     }
 

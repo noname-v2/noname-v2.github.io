@@ -2363,7 +2363,6 @@
                     this.height += 12;
                 }
             }
-            let tray;
             const gallery = this.pane.addGallery(nrows, ncols);
             const trayItems = [];
             const selected = new Map();
@@ -2392,21 +2391,19 @@
                                 for (const item of trayItems) {
                                     if (!item.classList.contains('filled')) {
                                         const widget = this.ui.createElement('widget', item);
-                                        const rect1 = player.node.getBoundingClientRect();
-                                        const rect2 = item.getBoundingClientRect();
-                                        tray.pages.style.overflow = 'visible';
-                                        this.ui.animate(widget, {
-                                            x: [rect1.x - rect2.x, 0],
-                                            y: [rect1.y - rect2.y, 0],
-                                            opacity: [0, 1]
-                                        }).onfinish = () => {
-                                            tray.pages.style.overflow = '';
-                                        };
                                         this.ui.setImage(widget, hero);
                                         item.classList.add('filled');
                                         selected.set(player.node, widget);
                                         player.node.classList.add('selected');
                                         this.ui.bind(widget, unselect);
+                                        const clone = widget.cloneNode(true);
+                                        const rect1 = player.node.getBoundingClientRect();
+                                        const rect2 = item.getBoundingClientRect();
+                                        this.ui.animate(clone, {
+                                            x: [rect1.x - rect2.x, 0],
+                                            y: [rect1.y - rect2.y, 0],
+                                            opacity: [0, 1]
+                                        });
                                         break;
                                     }
                                 }
@@ -2421,31 +2418,17 @@
             }
             if (!Array.isArray(select)) {
                 const width = parseInt(this.app.css.pop['tray-width']);
-                const margin = parseInt(this.app.css.pop['tray-margin']);
-                const n = Array.isArray(select.num) ? select.num[1] : select.num;
-                const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
-                tray = this.pane.addGallery(1, ncols);
-                tray.node.classList.add('tray');
-                this.height += width;
-                if (n > ncols) {
-                    this.height += 36;
-                    tray.node.style.height = `${width + 24}px`;
-                    tray.node.style.width = '100%';
-                }
-                else {
-                    this.height += 24;
-                    tray.node.style.height = `${width + 12}px`;
-                    const trayWidth = (width + margin) * ncols + margin * 2;
-                    tray.node.style.width = `${trayWidth}px`;
-                    tray.node.style.left = `calc(50% - ${trayWidth / 2}px)`;
-                }
-                for (let i = 0; i < n; i++) {
-                    tray.add((item) => {
-                        this.ui.createElement('container', item);
-                        trayItems.push(item);
-                    });
-                }
-                tray.renderAll();
+                parseInt(this.app.css.pop['tray-margin']);
+                Array.isArray(select.num) ? select.num[1] : select.num;
+                const tray = this.pane.add('bar');
+                tray.classList.add('tray');
+                tray.style.height = `${width}px`;
+                this.height += width + 26;
+                // for (let i = 0; i < n; i++) {
+                //     const item = this.ui.createElement('item', tray);
+                //     this.ui.createElement('container', item);
+                //     trayItems.push(item);
+                // }
             }
         }
         addConfirm(content) {
