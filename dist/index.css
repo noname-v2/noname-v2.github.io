@@ -821,25 +821,34 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item
   transform: scale(var(--pop-scale));
   transform-origin: top left;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
-  margin: 12px 0 14px 0;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray {
-  margin: 10px 0 16px 0;
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray {
   text-align: center;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item {
-  width: var(--pop-tray-width);
-  aspect-ratio: 1/var(--player-ratio);
-  position: relative;
-  display: inline-block;
-  margin-left: 6px;
-  margin-right: 6px;
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages {
+  left: 0;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-player {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item {
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
+  width: calc(var(--pop-tray-width) - 2px);
+  aspect-ratio: 1;
+  overflow: visible;
+  border: var(--pop-border);
+  border-radius: 100%;
+  margin-left: -2px;
+  margin-right: -2px;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-widget {
   display: block;
-  transform: scale(var(--pop-tray-scale));
-  transform-origin: top left;
+  position: absolute;
+  width: var(--pop-tray-width);
+  border-radius: 100%;
+  aspect-ratio: 1;
+  left: -1px;
+  top: -1px;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
+  margin: 12px 0 14px 0;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;

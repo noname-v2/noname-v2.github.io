@@ -75,8 +75,10 @@
 		"scale": "0.567",
 		"tray-scale": "0.4",
 		"margin": "8",
+		"tray-margin": "17",
 		"timer-background": "rgba(0, 0, 0, 0.2)",
-		"timer-bar-background": "rgb(231, 116, 50)"
+		"timer-bar-background": "rgb(231, 116, 50)",
+		"border": "2px dashed rgba(0, 0, 0, 0.4)"
 	},
 
 	"widget": {

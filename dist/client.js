@@ -2364,6 +2364,7 @@
                 }
             }
             const gallery = this.pane.addGallery(nrows, ncols);
+            this.galleries.add(gallery);
             gallery.node.style.height = `${this.height - currentHeight}px`;
             gallery.node.addEventListener('mousedown', e => e.stopPropagation());
             for (const hero of heros) {
@@ -2373,8 +2374,13 @@
                     player.data.heroImage = hero;
                     player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
                     this.ui.bind(player.node, {
-                        onclick: e => {
-                            player.data.heroName = 'Left';
+                        onclick: () => {
+                            // if (player.node.classList.toggle('selected')) {
+                            //     const occupied = 
+                            // }
+                            // else {
+                            //     console.log(2);
+                            // }
                         },
                         oncontext: e => {
                             player.data.heroName = 'Right';
@@ -2383,22 +2389,32 @@
                     return player.node;
                 });
             }
-            this.galleries.add(gallery);
             if (!Array.isArray(select)) {
-                const tray = this.pane.add('bar');
-                tray.classList.add('tray');
-                this.height += height * 0.7 + margin * 2;
-                tray.style.height = `${height * 0.7}px`;
+                const width = parseInt(this.app.css.pop['tray-width']);
+                const margin = parseInt(this.app.css.pop['tray-margin']);
                 const n = Array.isArray(select.num) ? select.num[1] : select.num;
+                const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
+                const tray = this.pane.addGallery(1, ncols);
+                this.galleries.add(tray);
+                console.log(ncols);
+                tray.node.classList.add('tray');
+                this.height += width;
+                if (n > ncols) {
+                    this.height += 36;
+                    tray.node.style.height = `${width + 24}px`;
+                    tray.node.style.width = '100%';
+                }
+                else {
+                    this.height += 24;
+                    tray.node.style.height = `${width + 12}px`;
+                    const trayWidth = (width + margin) * ncols + margin * 2;
+                    tray.node.style.width = `${trayWidth}px`;
+                    tray.node.style.left = `calc(50% - ${trayWidth / 2}px)`;
+                }
                 for (let i = 0; i < n; i++) {
-                    const item = this.ui.createElement('item', tray);
-                    this.ui.create('player', item);
+                    tray.add(() => null);
                 }
             }
-            // this.height += height + margin * 2;
-            // tray.node.style.height = `${height + margin * 2}px`;
-            // tray.add(() => this.ui.create('player').node);
-            // this.galleries.add(tray);
         }
         addConfirm(content) {
             this.height += 50;
