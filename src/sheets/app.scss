@@ -1,7 +1,7 @@
 noname-app {
 	@include layer;
 	
-	> noname-zoom, > noname-arena > noname-zoom {
+	noname-zoom {
 		position: absolute;
 		left: 0;
 		top: 0;

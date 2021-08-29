@@ -1736,10 +1736,12 @@
         control = this.ui.create('control');
         /** Layer for swipe gesture to reveal control panel. */
         swipe = this.ui.createElement('layer.swipe', this.node);
+        /** Layer for swipe gesture to reveal control panel. */
+        main = this.ui.createElement('layer.main', this.node);
         /** Layer using arena zoom. */
-        arenaZoom = this.ui.create('zoom', this.node);
+        arenaZoom = this.ui.create('zoom');
         /** Layer using app zoom. */
-        appZoom = this.ui.create('zoom', this.node);
+        appZoom = this.ui.create('zoom');
         /** Layer containing control panel. */
         controlZoom = this.ui.create('zoom', this.node);
         /** Connected remote clients. */
@@ -1777,6 +1779,8 @@
         }
         init() {
             set$1('arena', this);
+            this.main.appendChild(this.arenaZoom.node);
+            this.main.appendChild(this.appZoom.node);
             this.app.node.insertBefore(this.node, this.app.zoomNode);
             // make android back button function as returning to splash screen
             if (this.platform.android && history.state === null) {
@@ -1935,41 +1939,38 @@
             });
         }
         show(x = 0) {
-            this.app.arena.arenaZoom.node.classList.add('control-blurred');
-            this.app.arena.appZoom.node.classList.add('control-blurred');
             this.ui.moveTo(this.node, { x: 220, y: 0 }, false);
             this.node.style.opacity = '1';
             this.node.classList.remove('exclude');
             this.ui.animate(this.node, {
                 x: [x, 220], opacity: [x / 220, 1]
             });
-            this.#resetZoom();
+            this.ui.animate(this.app.arena.main, {
+                opacity: [this.getOpacity(x), 'var(--app-blurred-opacity)']
+            });
+            this.app.arena.main.style.opacity = 'var(--app-blurred-opacity)';
         }
         hide(x = 220) {
-            this.app.arena.arenaZoom.node.classList.remove('control-blurred');
-            this.app.arena.appZoom.node.classList.remove('control-blurred');
             this.ui.moveTo(this.node, { x: 0, y: 0 }, false);
             this.node.style.opacity = '';
             this.node.classList.add('exclude');
             this.ui.animate(this.node, {
                 x: [x, 0], opacity: [x / 220, 0]
             });
-            this.#resetZoom();
+            this.ui.animate(this.app.arena.main, {
+                opacity: [this.getOpacity(x), 1]
+            });
+            this.app.arena.main.style.opacity = '';
         }
         updateZoom(x) {
             this.ui.moveTo(this.node, { x, y: 0 }, false);
             this.node.style.opacity = (x / 220).toString();
             // update arena opacity
-            const blurred = parseFloat(this.app.css.app['blurred-opacity']);
-            const opacity = (1 - Math.max(0, x - 20) / 200 * (1 - blurred)).toString();
-            this.app.arena.node.classList.add('no-transit');
-            this.app.arena.arenaZoom.node.style.opacity = opacity;
-            this.app.arena.appZoom.node.style.opacity = opacity;
+            this.app.arena.main.style.opacity = this.getOpacity(x).toString();
         }
-        #resetZoom() {
-            this.app.arena.node.classList.remove('no-transit');
-            this.app.arena.arenaZoom.node.style.opacity = '';
-            this.app.arena.appZoom.node.style.opacity = '';
+        getOpacity(x) {
+            const blurred = parseFloat(this.app.css.app['blurred-opacity']);
+            return (1 - Math.max(0, x - 20) / 200 * (1 - blurred));
         }
     }
 

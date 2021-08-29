@@ -8,23 +8,12 @@ noname-arena {
         left: -220px;
     }
 
-    // disable transition for control panel swipe
-    &.no-transit > noname-zoom {
-        transition: none;
+    > noname-layer.main {
+        @include hollow;
     }
 
-    > noname-zoom {
+    noname-zoom {
         transition: opacity var(--app-transition);
-        pointer-events: none;
-
-        // add opacity for control panel
-        &.control-blurred {
-            opacity: var(--app-blurred-opacity);
-        }
-
-        > * {
-            pointer-events: auto;
-        }
         
         > noname-players {
             @include layer;
@@ -35,52 +24,52 @@ noname-arena {
             }   
         }
 
-        &.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
-            visibility: hidden;
-        }
-    }
-
-    > noname-zoom > noname-pop {
-        @include layer;
-        @include widget;
-        z-index: 20;
-        overflow: hidden;
-
-        > noname-pane {
-            > noname-gallery noname-item {
-                width: var(--pop-width);
-                aspect-ratio: 1 / var(--player-ratio);
-                
-                > noname-player {
-                    > noname-background, > noname-content {
-                        width:  var(--player-width);
-                        height: auto;
-                        aspect-ratio: 1 / var(--player-ratio);
-                        transform: scale(var(--pop-scale));
-                        transform-origin: top left;
+        > noname-pop {
+            @include layer;
+            @include widget;
+            z-index: 20;
+            overflow: hidden;
+    
+            > noname-pane {
+                > noname-gallery noname-item {
+                    width: var(--pop-width);
+                    aspect-ratio: 1 / var(--player-ratio);
+                    
+                    > noname-player {
+                        > noname-background, > noname-content {
+                            width:  var(--player-width);
+                            height: auto;
+                            aspect-ratio: 1 / var(--player-ratio);
+                            transform: scale(var(--pop-scale));
+                            transform-origin: top left;
+                        }
                     }
                 }
+    
+                > noname-bar {
+                    margin: 12px 0 14px 0;
+                }
+    
+                > noname-caption {
+                    margin: 14px 0 12px 0;
+                }
             }
-
-            > noname-bar {
-                margin: 12px 0 14px 0;
-            }
-
-            > noname-caption {
-                margin: 14px 0 12px 0;
+    
+            > noname-timer {
+                position: absolute;
+                left: 0;
+                width: 100%;
+                bottom: 0;
+                background: var(--pop-timer-background);
+    
+                > noname-div {
+                    background: var(--pop-timer-bar-background);
+                }
             }
         }
 
-        > noname-timer {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            bottom: 0;
-            background: var(--pop-timer-background);
-
-            > noname-div {
-                background: var(--pop-timer-bar-background);
-            }
+        &.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
+            visibility: hidden;
         }
     }
 }

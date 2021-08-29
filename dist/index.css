@@ -11,7 +11,7 @@ noname-app {
   font-family: var(--app-font), sans-serif;
   cursor: default;
 }
-noname-app > noname-zoom, noname-app > noname-arena > noname-zoom {
+noname-app noname-zoom {
   position: absolute;
   left: 0;
   top: 0;
@@ -21,7 +21,7 @@ noname-app > noname-zoom, noname-app > noname-arena > noname-zoom {
   transform: scale(var(--zoom-scale));
   pointer-events: none !important;
 }
-noname-app > noname-zoom > *:not(.blurred):not(.defer):not(.hidden), noname-app > noname-arena > noname-zoom > *:not(.blurred):not(.defer):not(.hidden) {
+noname-app noname-zoom > *:not(.blurred):not(.defer):not(.hidden) {
   pointer-events: all;
 }
 noname-app > noname-background {
@@ -47,20 +47,16 @@ noname-arena > noname-layer.swipe {
   width: calc(100% + 220px);
   left: -220px;
 }
-noname-arena.no-transit > noname-zoom {
-  transition: none;
+noname-arena > noname-layer.main {
+  pointer-events: none !important;
 }
-noname-arena > noname-zoom {
+noname-arena > noname-layer.main > *:not(.blurred):not(.defer):not(.hidden) {
+  pointer-events: all;
+}
+noname-arena noname-zoom {
   transition: opacity var(--app-transition);
-  pointer-events: none;
 }
-noname-arena > noname-zoom.control-blurred {
-  opacity: var(--app-blurred-opacity);
-}
-noname-arena > noname-zoom > * {
-  pointer-events: auto;
-}
-noname-arena > noname-zoom > noname-players {
+noname-arena noname-zoom > noname-players {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -70,16 +66,13 @@ noname-arena > noname-zoom > noname-players {
   position: absolute;
   pointer-events: none !important;
 }
-noname-arena > noname-zoom > noname-players > *:not(.blurred):not(.defer):not(.hidden) {
+noname-arena noname-zoom > noname-players > *:not(.blurred):not(.defer):not(.hidden) {
   pointer-events: all;
 }
-noname-arena > noname-zoom > noname-players > noname-player {
+noname-arena noname-zoom > noname-players > noname-player {
   position: absolute;
 }
-noname-arena > noname-zoom.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
-  visibility: hidden;
-}
-noname-arena > noname-zoom > noname-pop {
+noname-arena noname-zoom > noname-pop {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -93,7 +86,7 @@ noname-arena > noname-zoom > noname-pop {
   z-index: 20;
   overflow: hidden;
 }
-noname-arena > noname-zoom > noname-pop > noname-image {
+noname-arena noname-zoom > noname-pop > noname-image {
   position: absolute;
   width: calc(100% - 2 * var(--widget-image-margin));
   height: calc(100% - 2 * var(--widget-image-margin));
@@ -102,32 +95,35 @@ noname-arena > noname-zoom > noname-pop > noname-image {
   border-radius: var(--widget-image-radius);
   box-shadow: var(--widget-image-shadow);
 }
-noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item {
   width: var(--pop-width);
   aspect-ratio: 1/var(--player-ratio);
 }
-noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-background, noname-arena > noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-content {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-background, noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player > noname-content {
   width: var(--player-width);
   height: auto;
   aspect-ratio: 1/var(--player-ratio);
   transform: scale(var(--pop-scale));
   transform-origin: top left;
 }
-noname-arena > noname-zoom > noname-pop > noname-pane > noname-bar {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
   margin: 12px 0 14px 0;
 }
-noname-arena > noname-zoom > noname-pop > noname-pane > noname-caption {
+noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;
 }
-noname-arena > noname-zoom > noname-pop > noname-timer {
+noname-arena noname-zoom > noname-pop > noname-timer {
   position: absolute;
   left: 0;
   width: 100%;
   bottom: 0;
   background: var(--pop-timer-background);
 }
-noname-arena > noname-zoom > noname-pop > noname-timer > noname-div {
+noname-arena noname-zoom > noname-pop > noname-timer > noname-div {
   background: var(--pop-timer-bar-background);
+}
+noname-arena noname-zoom.blurred > noname-players > noname-player.mine > noname-content > noname-timer {
+  visibility: hidden;
 }
 
 noname-button {

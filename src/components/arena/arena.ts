@@ -21,11 +21,14 @@ export class Arena extends Component {
     /** Layer for swipe gesture to reveal control panel. */
     swipe = this.ui.createElement('layer.swipe', this.node);
 
+    /** Layer for swipe gesture to reveal control panel. */
+    main = this.ui.createElement('layer.main', this.node);
+
     /** Layer using arena zoom. */
-    arenaZoom = this.ui.create('zoom', this.node);
+    arenaZoom = this.ui.create('zoom');
 
     /** Layer using app zoom. */
-    appZoom = this.ui.create('zoom', this.node);
+    appZoom = this.ui.create('zoom');
 
     /** Layer containing control panel. */
     controlZoom = this.ui.create('zoom', this.node);
@@ -69,6 +72,8 @@ export class Arena extends Component {
 
     init() {
         set('arena', this);
+        this.main.appendChild(this.arenaZoom.node);
+        this.main.appendChild(this.appZoom.node);
         this.app.node.insertBefore(this.node, this.app.zoomNode);
 
         // make android back button function as returning to splash screen
