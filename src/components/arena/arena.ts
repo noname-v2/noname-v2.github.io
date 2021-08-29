@@ -87,8 +87,6 @@ export class Arena extends Component {
                 movable: {x: [0, 220], y: [0, 0]},
                 onmove: e => {
                     xmax = Math.max(xmax, e.x);
-                    this.control.node.style.transform = `translateX(${e.x}px)`;
-                    this.control.node.style.opacity = (e.x / 220).toString();
                     this.control.updateZoom(e.x);
                     return e.x;
                 },
@@ -108,6 +106,7 @@ export class Arena extends Component {
                 oncontext: () => {
                     if (blocked) return;
                     blocked = true;
+                    xmax = 0;
                     setTimeout(() => blocked = false, 200);
                     this.control.show();
                 }
