@@ -32,7 +32,7 @@ export default {
 
                     chooseZhu() {
                         this.choices = this.game.getHeros();
-                        const heros = new Map<number, string[]>();
+                        const heros = new Map();
                         for (const [id, player] of this.game.players) {
                             if (player.link.seat === 0) {
                                 this.game.zhu = player;
@@ -47,7 +47,7 @@ export default {
                     }
 
                     chooseRest() {
-                        const heros = new Map<number, string[]>();
+                        const heros = new Map();
                         for (const id of this.game.players.keys()) {
                             if (id !== this.game.zhu.id) {
                                 heros.set(id, this.getChoices());
@@ -60,7 +60,11 @@ export default {
                     }
 
                     getChoices() {
-                        return Array.from(this.game.utils.rgets(this.choices, this.nheros, true));
+                        return {
+                            items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
+                            filter: true,
+                            num: 2
+                        };
                     }
                 }
             }

@@ -2340,7 +2340,8 @@
             this.pane.addCaption(caption);
             this.height += 50;
         }
-        addHero(heros) {
+        addHero(select) {
+            const heros = Array.isArray(select) ? select : select.items;
             const width = parseInt(this.app.css.pop.width);
             const height = parseFloat(this.app.css.player.ratio) * width;
             const margin = parseInt(this.app.css.pop.margin);
@@ -2383,6 +2384,21 @@
                 });
             }
             this.galleries.add(gallery);
+            if (!Array.isArray(select)) {
+                const tray = this.pane.add('bar');
+                tray.classList.add('tray');
+                this.height += height * 0.7 + margin * 2;
+                tray.style.height = `${height * 0.7}px`;
+                const n = Array.isArray(select.num) ? select.num[1] : select.num;
+                for (let i = 0; i < n; i++) {
+                    const item = this.ui.createElement('item', tray);
+                    this.ui.create('player', item);
+                }
+            }
+            // this.height += height + margin * 2;
+            // tray.node.style.height = `${height + margin * 2}px`;
+            // tray.add(() => this.ui.create('player').node);
+            // this.galleries.add(tray);
         }
         addConfirm(content) {
             this.height += 50;

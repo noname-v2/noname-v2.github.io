@@ -1,0 +1,60 @@
+noname-arena noname-zoom > noname-pop {
+    @include layer;
+    @include widget;
+    z-index: 20;
+    overflow: hidden;
+
+    > noname-pane {
+        > noname-gallery noname-item {
+            width: var(--pop-width);
+            aspect-ratio: 1 / var(--player-ratio);
+            
+            > noname-player {
+                width:  var(--player-width);
+                height: auto;
+                transform: scale(var(--pop-scale));
+                transform-origin: top left;
+            }
+        }
+
+        > noname-bar {
+            margin: 12px 0 14px 0;
+
+            &.tray {
+                margin: 10px 0 16px 0;
+                text-align: center;
+
+                > noname-item {
+                    width: var(--pop-tray-width);
+                    aspect-ratio: 1 / var(--player-ratio);
+                    position: relative;
+                    display: inline-block;
+                    margin-left: 6px;
+                    margin-right: 6px;
+
+                    > noname-player {
+                        display: block;
+                        transform: scale(var(--pop-tray-scale));
+                        transform-origin: top left;
+                    }
+                }
+            }
+        }
+
+        > noname-caption {
+            margin: 14px 0 12px 0;
+        }
+    }
+
+    > noname-timer {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        bottom: 0;
+        background: var(--pop-timer-background);
+
+        > noname-div {
+            background: var(--pop-timer-bar-background);
+        }
+    }
+}

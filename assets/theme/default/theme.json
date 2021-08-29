@@ -71,7 +71,9 @@
 
 	"pop": {
 		"width": "85px",
+		"tray-width": "60px",
 		"scale": "0.567",
+		"tray-scale": "0.4",
 		"margin": "8",
 		"timer-background": "rgba(0, 0, 0, 0.2)",
 		"timer-bar-background": "rgb(231, 116, 50)"

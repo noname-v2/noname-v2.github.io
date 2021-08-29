@@ -1,5 +1,21 @@
 import { Component, Gallery, Timer, Player } from '../../components';
 
+/**  */
+export interface Select<T> {
+    /** Items to choose from. */
+    items: T[];
+
+    /** Check if item can be selected.
+     * string: filter function
+     * true: all selectable
+     * false: ask worker each time
+     */
+    filter: string | boolean;
+
+    /** Required number of selected items. */
+    num: number | number;
+}
+
 /** Possible contents of pop sections. */
 interface PopSectionContent {
     /** Caption text. */
@@ -12,7 +28,7 @@ interface PopSectionContent {
     text: string;
 
     /** Hero gallery. */
-    hero: string[];
+    hero: string[] | Select<string>;
 
     /** Card gallery. */
     card: string[];
@@ -72,7 +88,8 @@ export class Pop extends Component {
         this.height += 50;
     }
 
-    addHero(heros: string[]) {
+    addHero(select: string[] | Select<string>) {
+        const heros = Array.isArray(select) ? select : select.items;
         const width = parseInt(this.app.css.pop.width);
         const height = parseFloat(this.app.css.player.ratio) * width;
         const margin = parseInt(this.app.css.pop.margin);
@@ -119,6 +136,24 @@ export class Pop extends Component {
             });
         }
         this.galleries.add(gallery);
+
+        if (!Array.isArray(select)) {
+            const tray = this.pane.add('bar');
+            tray.classList.add('tray');
+            this.height += height * 0.7 + margin * 2;
+            tray.style.height = `${height * 0.7}px`;
+            const n = Array.isArray(select.num) ? select.num[1] : select.num;
+            const trayItems = [];
+            for (let i = 0; i < n; i++) {
+                const item = this.ui.createElement('item', tray);
+                const player = this.ui.create('player', item);
+                trayItems.push(player);
+            }
+        }
+        // this.height += height + margin * 2;
+        // tray.node.style.height = `${height + margin * 2}px`;
+        // tray.add(() => this.ui.create('player').node);
+        // this.galleries.add(tray);
     }
 
     addConfirm(content: PopConfirm) {

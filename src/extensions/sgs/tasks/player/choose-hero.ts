@@ -1,9 +1,9 @@
 import type { createPop } from './choose-pop';
-import type { PopConfirm } from '../../../../components/arena/pop';
+import type { PopConfirm, Select } from '../../../../components/arena/pop';
 
 export function createHero(T: ReturnType<typeof createPop>) {
     return class ChoosePop extends T {
-        heros!: Map<number, string[]>;
+        heros!: Map<number, string[] | Select<string>>;
         freeChoose = false;
 
         main() {
