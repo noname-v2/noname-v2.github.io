@@ -9,10 +9,7 @@ noname-app {
 		width: var(--zoom-width);
 		height: var(--zoom-height);
 		transform: scale(var(--zoom-scale));
-
-		&:empty {
-			pointer-events: none;
-		}
+		@include hollow;
 	}
 
 	// text and cursor styles

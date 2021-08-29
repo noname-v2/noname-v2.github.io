@@ -19,9 +19,10 @@ noname-app > noname-zoom, noname-app > noname-arena > noname-zoom {
   width: var(--zoom-width);
   height: var(--zoom-height);
   transform: scale(var(--zoom-scale));
+  pointer-events: none !important;
 }
-noname-app > noname-zoom:empty, noname-app > noname-arena > noname-zoom:empty {
-  pointer-events: none;
+noname-app > noname-zoom > *:not(.blurred):not(.defer):not(.hidden), noname-app > noname-arena > noname-zoom > *:not(.blurred):not(.defer):not(.hidden) {
+  pointer-events: all;
 }
 noname-app > noname-background {
   background: var(--app-background);
@@ -40,10 +41,21 @@ noname-arena {
   position: absolute;
   transition-property: opacity, transform;
   transition-duration: var(--app-transition);
+  overflow: hidden;
+}
+noname-arena > noname-layer.swipe {
+  width: calc(100% + 220px);
+  left: -220px;
+}
+noname-arena.no-transit > noname-zoom {
+  transition: none;
 }
 noname-arena > noname-zoom {
   transition: opacity var(--app-transition);
   pointer-events: none;
+}
+noname-arena > noname-zoom.control-blurred {
+  opacity: var(--app-blurred-opacity);
 }
 noname-arena > noname-zoom > * {
   pointer-events: auto;
@@ -56,6 +68,10 @@ noname-arena > noname-zoom > noname-players {
   left: 0;
   top: 0;
   position: absolute;
+  pointer-events: none !important;
+}
+noname-arena > noname-zoom > noname-players > *:not(.blurred):not(.defer):not(.hidden) {
+  pointer-events: all;
 }
 noname-arena > noname-zoom > noname-players > noname-player {
   position: absolute;
@@ -164,6 +180,18 @@ noname-button > noname-content > noname-caption:last-child {
   right: -5px;
 }
 
+noname-control {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  left: -220px;
+  opacity: 0;
+}
+
 noname-gallery {
   width: 100%;
 }
@@ -270,9 +298,8 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   background-color: #3c3c3c;
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -webkit-touch-callout: none !important;
+  user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -299,6 +326,10 @@ noname-image.avatar {
 }
 
 .hidden, .hidden * {
+  pointer-events: none !important;
+}
+
+.exclude {
   pointer-events: none !important;
 }
 

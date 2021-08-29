@@ -13,6 +13,13 @@
 	transition-duration: var(--app-transition);
 }
 
+@mixin hollow {
+	pointer-events: none !important;
+	> *:not(.blurred):not(.defer):not(.hidden) {
+		pointer-events: all;
+	}
+}
+
 @mixin transit-slow {
 	transition-property: opacity, transform;
 	transition-duration: var(--app-transition-slow);

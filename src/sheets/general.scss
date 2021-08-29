@@ -28,6 +28,10 @@ noname-image.avatar {
 	pointer-events: none !important;
 }
 
+.exclude {
+	pointer-events: none !important;
+}
+
 .blurred:not(.hidden) {
 	opacity: var(--app-blurred-opacity) !important;
 }

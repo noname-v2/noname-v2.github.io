@@ -7,7 +7,7 @@ import { importExtension, accessExtension } from '../extension';
 import type { UITick } from './worker';
 import type { Mode, Dict } from '../types';
 
-/** Room that controlls game flow and classes. */
+/** Room that controls game flow and classes. */
 export class Room {
     /** Owner ID. */
     uid!: string;

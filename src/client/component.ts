@@ -108,7 +108,7 @@ export class Component {
     }
 
     /** Update properties. Reserved key:
-     * owner: uid of client that controlls the component
+     * owner: uid of client that controls the component
     */
     update(items: Dict, hook: boolean = true) {
         const hooks = [];

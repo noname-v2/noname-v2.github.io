@@ -15,11 +15,20 @@ export class Arena extends Component {
     /** Trying to exit. */
     exiting = false;
 
+    /** Control panel. */
+    control = this.ui.create('control');
+
+    /** Layer for swipe gesture to reveal control panel. */
+    swipe = this.ui.createElement('layer.swipe', this.node);
+
     /** Layer using arena zoom. */
     arenaZoom = this.ui.create('zoom', this.node);
 
     /** Layer using app zoom. */
     appZoom = this.ui.create('zoom', this.node);
+
+    /** Layer containing control panel. */
+    controlZoom = this.ui.create('zoom', this.node);
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
@@ -36,6 +45,16 @@ export class Arena extends Component {
             }
         }
         return peers;
+    }
+
+    /** Currently active zoom element. */
+    get currentZoom() {
+        if (!this.app.popups.size &&
+            this.control.node.classList.contains('exclude') &&
+            this.ui.countActive(this.arenaZoom.node) &&
+            !this.ui.countActive(this.appZoom.node)) {
+            return this.arenaZoom;
+        }
     }
 
     /** Peer component representing current client. */
@@ -56,6 +75,64 @@ export class Arena extends Component {
         if (this.platform.android && history.state === null) {
             history.pushState('arena', '');
         }
+
+        // setup control panel
+        this.control.ready.then(() => {
+            this.controlZoom.node.appendChild(this.control.node);
+            const blurred = parseFloat(this.app.css.app['blurred-opacity']);
+
+            // setup swipe area
+            let xmax = 0;
+            let blocked = false;
+            const reset = () => {
+                this.app.arena!.node.classList.remove('no-transit');
+                this.app.arena!.arenaZoom.node.style.opacity = '';
+                this.app.arena!.appZoom.node.style.opacity = '';
+            };
+            this.ui.bind(this.swipe, {
+                movable: {x: [0, 220], y: [0, 0]},
+                onmove: e => {
+                    xmax = Math.max(xmax, e.x);
+                    this.control.node.style.transform = `translateX(${e.x}px)`;
+                    this.control.node.style.opacity = (e.x / 220).toString();
+                    const opacity = (1 - Math.max(0, e.x - 20) / 200 * (1 - blurred)).toString();
+                    this.app.arena!.node.classList.add('no-transit');
+                    this.app.arena!.arenaZoom.node.style.opacity = opacity;
+                    this.app.arena!.appZoom.node.style.opacity = opacity;
+                    return e.x;
+                },
+                onmoveend: x => {
+                    if (!x || blocked) return;
+                    blocked = true;
+                    setTimeout(() => blocked = false, 200);
+                    this.ui.moveTo(this.swipe, {x: 0, y: 0}, false);
+                    reset();
+                    if (xmax > 50 && x > xmax - 5) {
+                        this.control.show();
+                        this.ui.animate(this.control.node, {
+                            x: [x, 220], opacity: [x / 220, 1]
+                        });
+                    }
+                    else {
+                        this.control.hide();
+                        this.ui.animate(this.control.node, {
+                            x: [x, 0], opacity: [x / 220, 0]
+                        });
+                    }
+                    xmax = 0;
+                },
+                oncontext: () => {
+                    if (blocked) return;
+                    blocked = true;
+                    setTimeout(() => blocked = false, 200);
+                    reset();
+                    this.control.show();
+                    this.ui.animate(this.control.node, {
+                        x: [0, 220], opacity: [0, 1]
+                    });
+                }
+            });
+        });
     }
 
     /** Update arena layout (intended to be inherited by mode). */

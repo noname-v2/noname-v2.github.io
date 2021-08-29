@@ -1,10 +1,26 @@
 noname-arena {
     @include layer;
 	@include transit;
+    overflow: hidden;
+
+    > noname-layer.swipe {
+        width: calc(100% + 220px);
+        left: -220px;
+    }
+
+    // disable transition for control panel swipe
+    &.no-transit > noname-zoom {
+        transition: none;
+    }
 
     > noname-zoom {
         transition: opacity var(--app-transition);
         pointer-events: none;
+
+        // add opacity for control panel
+        &.control-blurred {
+            opacity: var(--app-blurred-opacity);
+        }
 
         > * {
             pointer-events: auto;
@@ -12,6 +28,8 @@ noname-arena {
         
         > noname-players {
             @include layer;
+            @include hollow;
+
             > noname-player {
                 position: absolute;
             }   

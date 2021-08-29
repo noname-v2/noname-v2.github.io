@@ -421,12 +421,14 @@
         resetMove(node);
     }
     /** Move an element with animation. */
-    function moveTo(node, location) {
+    function moveTo(node, location, transit = true) {
         const binding = bindings.get(node);
         if (binding) {
             const offset = binding.offset ?? { x: 0, y: 0 };
             node.style.transform = `translate(${location.x}px, ${location.y}px)`;
-            animate(node, { x: [offset.x, location.x], y: [offset.y, location.y] });
+            if (transit) {
+                animate(node, { x: [offset.x, location.x], y: [offset.y, location.y] });
+            }
             binding.offset = location;
         }
     }
@@ -1095,7 +1097,7 @@
             return components.get(id) ?? null;
         }
         /** Update properties. Reserved key:
-         * owner: uid of client that controlls the component
+         * owner: uid of client that controls the component
         */
         update(items, hook = true) {
             const hooks = [];
@@ -1212,12 +1214,7 @@
             return this.#zoom.node;
         }
         get #currentZoom() {
-            if (!this.popups.size &&
-                this.ui.countActive(this.arena?.arenaZoom.node) &&
-                !this.ui.countActive(this.arena?.appZoom.node)) {
-                return this.arena.arenaZoom;
-            }
-            return this.#zoom;
+            return this.arena?.currentZoom ?? this.#zoom;
         }
         async init() {
             document.head.appendChild(this.#themeNode);
@@ -1735,10 +1732,16 @@
         confirming = false;
         /** Trying to exit. */
         exiting = false;
+        /** Control panel. */
+        control = this.ui.create('control');
+        /** Layer for swipe gesture to reveal control panel. */
+        swipe = this.ui.createElement('layer.swipe', this.node);
         /** Layer using arena zoom. */
         arenaZoom = this.ui.create('zoom', this.node);
         /** Layer using app zoom. */
         appZoom = this.ui.create('zoom', this.node);
+        /** Layer containing control panel. */
+        controlZoom = this.ui.create('zoom', this.node);
         /** Connected remote clients. */
         get peers() {
             const ids = this.data.peers;
@@ -1753,6 +1756,15 @@
                 }
             }
             return peers;
+        }
+        /** Currently active zoom element. */
+        get currentZoom() {
+            if (!this.app.popups.size &&
+                this.control.node.classList.contains('exclude') &&
+                this.ui.countActive(this.arenaZoom.node) &&
+                !this.ui.countActive(this.appZoom.node)) {
+                return this.arenaZoom;
+            }
         }
         /** Peer component representing current client. */
         get peer() {
@@ -1770,6 +1782,64 @@
             if (this.platform.android && history.state === null) {
                 history.pushState('arena', '');
             }
+            // setup control panel
+            this.control.ready.then(() => {
+                this.controlZoom.node.appendChild(this.control.node);
+                const blurred = parseFloat(this.app.css.app['blurred-opacity']);
+                // setup swipe area
+                let xmax = 0;
+                let blocked = false;
+                const reset = () => {
+                    this.app.arena.node.classList.remove('no-transit');
+                    this.app.arena.arenaZoom.node.style.opacity = '';
+                    this.app.arena.appZoom.node.style.opacity = '';
+                };
+                this.ui.bind(this.swipe, {
+                    movable: { x: [0, 220], y: [0, 0] },
+                    onmove: e => {
+                        xmax = Math.max(xmax, e.x);
+                        this.control.node.style.transform = `translateX(${e.x}px)`;
+                        this.control.node.style.opacity = (e.x / 220).toString();
+                        const opacity = (1 - Math.max(0, e.x - 20) / 200 * (1 - blurred)).toString();
+                        this.app.arena.node.classList.add('no-transit');
+                        this.app.arena.arenaZoom.node.style.opacity = opacity;
+                        this.app.arena.appZoom.node.style.opacity = opacity;
+                        return e.x;
+                    },
+                    onmoveend: x => {
+                        if (!x || blocked)
+                            return;
+                        blocked = true;
+                        setTimeout(() => blocked = false, 200);
+                        this.ui.moveTo(this.swipe, { x: 0, y: 0 }, false);
+                        reset();
+                        if (xmax > 50 && x > xmax - 5) {
+                            this.control.show();
+                            this.ui.animate(this.control.node, {
+                                x: [x, 220], opacity: [x / 220, 1]
+                            });
+                        }
+                        else {
+                            this.control.hide();
+                            this.ui.animate(this.control.node, {
+                                x: [x, 0], opacity: [x / 220, 0]
+                            });
+                        }
+                        xmax = 0;
+                    },
+                    oncontext: () => {
+                        if (blocked)
+                            return;
+                        blocked = true;
+                        setTimeout(() => blocked = false, 200);
+                        reset();
+                        this.control.show();
+                        this.ui.animate(this.control.node, {
+                            x: [0, 220], opacity: [0, 1]
+                        });
+                    }
+                });
+            });
         }
         /** Update arena layout (intended to be inherited by mode). */
         resize(ax, ay, width, height) {
@@ -1841,6 +1911,37 @@
                 // wait until other properties have been updated
                 setTimeout(() => trigger('sync'));
             }
+        }
+    }
+
+    class Control extends Component {
+        /** Sidebar for configurations. */
+        sidebar = this.ui.create('sidebar', this.node);
+        init() {
+            this.node.classList.add('exclude');
+            this.sidebar.ready.then(() => {
+                this.sidebar.setHeader('返回', () => this.app.arena.back());
+            });
+            this.ui.bind(this.node, () => {
+                this.hide();
+                this.ui.animate(this.node, {
+                    x: [220, 0], opacity: [1, 0]
+                });
+            });
+        }
+        show() {
+            this.app.arena.arenaZoom.node.classList.add('control-blurred');
+            this.app.arena.appZoom.node.classList.add('control-blurred');
+            this.node.style.transform = 'translateX(220px)';
+            this.node.style.opacity = '1';
+            this.node.classList.remove('exclude');
+        }
+        hide() {
+            this.app.arena.arenaZoom.node.classList.remove('control-blurred');
+            this.app.arena.appZoom.node.classList.remove('control-blurred');
+            this.node.style.transform = '';
+            this.node.style.opacity = '';
+            this.node.classList.add('exclude');
         }
     }
 
@@ -3661,6 +3762,7 @@
     componentClasses.set('dialog', Dialog);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
+    componentClasses.set('control', Control);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('peer', Peer);
     componentClasses.set('player', Player);

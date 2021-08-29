@@ -581,7 +581,7 @@
         return link;
     }
 
-    /** Room that controlls game flow and classes. */
+    /** Room that controls game flow and classes. */
     class Room {
         /** Owner ID. */
         uid;
