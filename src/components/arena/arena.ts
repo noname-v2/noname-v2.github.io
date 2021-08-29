@@ -65,6 +65,10 @@ export class Arena extends Component {
 
     /** Remove with fade out animation. */
     remove() {
+        if (this.removing) {
+            return;
+        }
+        
         if (this.app.arena === this) {
             set('arena', null);
             if (this.platform.android && history.state === 'arena') {

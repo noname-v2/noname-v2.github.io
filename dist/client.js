@@ -1033,6 +1033,9 @@
         get mine() {
             return this.owner === uid;
         }
+        get removing() {
+            return this.#removing;
+        }
         /** Create node. */
         constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
@@ -1743,6 +1746,9 @@
         ;
         /** Remove with fade out animation. */
         remove() {
+            if (this.removing) {
+                return;
+            }
             if (this.app.arena === this) {
                 set$1('arena', null);
                 if (this.platform.android && history.state === 'arena') {
@@ -1903,6 +1909,9 @@
         }
         /** Remove with fade and slide animation. */
         remove() {
+            if (this.removing) {
+                return;
+            }
             super.remove(new Promise(resolve => {
                 let done = 0;
                 const onfinish = () => {
@@ -2241,18 +2250,21 @@
         }
         /** Remove with fade out animation. */
         remove() {
+            if (this.removing) {
+                return;
+            }
             super.remove(this.ui.animate(this.node, {
                 scale: [1, 'var(--app-zoom-scale)'],
                 opacity: [1, 0]
             }));
             this.app.arena.pops.delete(this);
             this.checkPops();
-            // remove the hidden player timer bar
-            if (this.mine) {
+            // remove all timers of the same player with the same start time
+            if (this.mine && this.timer) {
                 for (const id of this.app.arena.data.players) {
                     const player = this.getComponent(id);
-                    if (player?.mine) {
-                        player.timer?.node.remove();
+                    if (player?.mine && player.timer?.starttime === this.timer.starttime) {
+                        player.timer.node.remove();
                     }
                 }
             }
@@ -2291,7 +2303,7 @@
                 setTimeout(() => {
                     const timer = this.ui.create('timer', this.node);
                     timer.width = this.width;
-                    timer.start(config, this);
+                    timer.start(config, this, false);
                     this.app.arena.node.classList.add('pop-timer');
                 });
             }
@@ -2308,11 +2320,17 @@
         bar = this.ui.createElement('div', this.node);
         /** Progress bar width. */
         width = 100;
-        start(config, parent) {
+        /** Start time of timer. */
+        starttime;
+        /** Change parent.timer when removed. */
+        linked;
+        start(config, parent, linked = true) {
             const [timeout, now] = config;
+            this.starttime = now;
             this.parent = parent;
             this.parent.timer?.node.remove();
             this.parent.timer = this;
+            this.linked = linked;
             const remaining = timeout - (Date.now() - now) / 1000;
             const x = -this.width * (1 - remaining / timeout);
             this.bar.style.transform = `translateX(${x}px)`;
@@ -2324,8 +2342,13 @@
             };
         }
         remove() {
+            if (this.removing) {
+                return;
+            }
             if (this.parent.timer === this) {
-                this.parent.timer = null;
+                if (this.linked) {
+                    this.parent.timer = null;
+                }
                 super.remove(this.ui.animate(this.node, { opacity: [1, 0] }));
             }
             else {

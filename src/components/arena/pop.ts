@@ -152,6 +152,10 @@ export class Pop extends Component {
 
     /** Remove with fade out animation. */
     remove() {
+        if (this.removing) {
+            return;
+        }
+        
         super.remove(this.ui.animate(this.node, {
             scale: [1, 'var(--app-zoom-scale)'],
             opacity: [1, 0]
@@ -159,12 +163,12 @@ export class Pop extends Component {
         this.app.arena!.pops.delete(this);
         this.checkPops();
 
-        // remove the hidden player timer bar
-        if (this.mine) {
+        // remove all timers of the same player with the same start time
+        if (this.mine && this.timer) {
             for (const id of this.app.arena!.data.players) {
                 const player = this.getComponent(id) as (Player | undefined);
-                if (player?.mine) {
-                    player.timer?.node.remove();
+                if (player?.mine && player.timer?.starttime === this.timer.starttime) {
+                    player.timer.node.remove();
                 }
             }
         }
@@ -208,7 +212,7 @@ export class Pop extends Component {
             setTimeout(() => {
                 const timer = this.ui.create('timer', this.node);
                 timer.width = this.width;
-                timer.start(config, this);
+                timer.start(config, this, false);
                 this.app.arena!.node.classList.add('pop-timer');
             });
         }

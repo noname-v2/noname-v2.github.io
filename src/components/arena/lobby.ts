@@ -117,6 +117,10 @@ export class Lobby extends Component {
 
     /** Remove with fade and slide animation. */
     remove() {
+        if (this.removing) {
+            return;
+        }
+        
         super.remove(new Promise<void>(resolve => {
             let done = 0;
             const onfinish = () => {

@@ -73,6 +73,10 @@ export class Component {
         return this.owner === client.uid;
     }
 
+    get removing() {
+        return this.#removing;
+    }
+
     /** Create node. */
     constructor(tag: string) {
         this.#ready = Promise.resolve().then(() => this.init());
