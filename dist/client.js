@@ -246,7 +246,7 @@
             }
         };
         node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), { passive: true });
-        if (!android) {
+        if (!ios && !android) {
             node.addEventListener('mousedown', e => dispatchDown(e, false), { passive: true });
         }
         return binding;
@@ -419,6 +419,16 @@
         // avoid duplicate trigger
         resetClick(node);
         resetMove(node);
+    }
+    /** Move an element with animation. */
+    function moveTo(node, location) {
+        const binding = bindings.get(node);
+        if (binding) {
+            const offset = binding.offset ?? { x: 0, y: 0 };
+            node.style.transform = `translate(${location.x}px, ${location.y}px)`;
+            animate(node, { x: [offset.x, location.x], y: [offset.y, location.y] });
+            binding.offset = location;
+        }
     }
     /** Fire move event. */
     function dispatchMove(node, location) {
@@ -596,6 +606,7 @@
         setImage: setImage,
         bind: bind,
         dispatchClick: dispatchClick,
+        moveTo: moveTo,
         dispatchMove: dispatchMove,
         dispatchMoveEnd: dispatchMoveEnd,
         animate: animate,
@@ -2321,6 +2332,9 @@
                 this.node.style.height = `${this.height}px`;
                 this.node.style.left = `calc(50% - ${this.width / 2}px)`;
                 this.node.style.top = `calc(50% - ${this.height / 2}px)`;
+                this.ui.bind(this.node, { oncontext: () => {
+                        this.ui.moveTo(this.node, { x: 0, y: 0 });
+                    } });
                 this.app.arena.appZoom.node.appendChild(this.node);
                 for (const gallery of this.galleries) {
                     gallery.checkPage();

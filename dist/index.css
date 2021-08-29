@@ -270,8 +270,9 @@ html, body {
   overflow: hidden;
   overscroll-behavior: none;
   background-color: #3c3c3c;
-  user-select: none;
-  -webkit-user-select: none;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
   -webkit-tap-highlight-color: transparent;
 }
 

@@ -1,4 +1,4 @@
-import { android } from '../platform';
+import { android, ios } from '../platform';
 import { app, componentClasses } from './globals';
 import { split } from '../utils';
 import type { ComponentTagMap } from '../classes';
@@ -117,7 +117,7 @@ function register(node: HTMLElement) {
 
     node.addEventListener('touchstart', e => dispatchDown(e.touches[0], true), {passive: true});
 
-    if (!android) {
+    if (!ios && !android) {
         node.addEventListener('mousedown', e => dispatchDown(e, false), {passive: true});
     }
 
@@ -324,6 +324,18 @@ export function dispatchClick(node: HTMLElement) {
     // avoid duplicate trigger
     resetClick(node);
     resetMove(node);
+}
+
+/** Move an element with animation. */
+export function moveTo(node: HTMLElement, location: Point) {
+    const binding = bindings.get(node);
+
+    if (binding) {
+        const offset = binding.offset ?? {x: 0, y: 0};
+        node.style.transform = `translate(${location.x}px, ${location.y}px)`;
+        animate(node, {x: [offset.x, location.x], y: [offset.y, location.y]});
+        binding.offset = location;
+    }
 }
 
 /** Fire move event. */
