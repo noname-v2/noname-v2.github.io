@@ -115,6 +115,7 @@ export class Pop extends Component {
             }
         }
 
+        let tray: Gallery;
         const gallery = this.pane.addGallery(nrows, ncols);
         const trayItems: HTMLElement[] = [];
         const selected = new Map<HTMLElement, HTMLElement>();
@@ -148,6 +149,14 @@ export class Pop extends Component {
                                     selected.set(player.node, widget);
                                     player.node.classList.add('selected');
                                     this.ui.bind(widget, unselect);
+                                    const clone = widget.cloneNode(true);
+                                    const rect1 = player.node.getBoundingClientRect();
+                                    const rect2 = item.getBoundingClientRect();
+                                    this.ui.animate(clone as HTMLElement, {
+                                        x: [rect1.x - rect2.x, 0],
+                                        y: [rect1.y - rect2.y, 0],
+                                        opacity: [0, 1]
+                                    });
                                     break;
                                 }
                             }
@@ -166,8 +175,7 @@ export class Pop extends Component {
             const margin = parseInt(this.app.css.pop['tray-margin']);
             const n = Array.isArray(select.num) ? select.num[1] : select.num;
             const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
-            const tray = this.pane.addGallery(1, ncols);
-            console.log(ncols);
+            tray = this.pane.addGallery(1, ncols);
             tray.node.classList.add('tray');
             this.height += width;
             

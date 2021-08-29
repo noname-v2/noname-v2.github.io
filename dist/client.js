@@ -2363,6 +2363,7 @@
                     this.height += 12;
                 }
             }
+            let tray;
             const gallery = this.pane.addGallery(nrows, ncols);
             const trayItems = [];
             const selected = new Map();
@@ -2391,6 +2392,16 @@
                                 for (const item of trayItems) {
                                     if (!item.classList.contains('filled')) {
                                         const widget = this.ui.createElement('widget', item);
+                                        const rect1 = player.node.getBoundingClientRect();
+                                        const rect2 = item.getBoundingClientRect();
+                                        tray.pages.style.overflow = 'visible';
+                                        this.ui.animate(widget, {
+                                            x: [rect1.x - rect2.x, 0],
+                                            y: [rect1.y - rect2.y, 0],
+                                            opacity: [0, 1]
+                                        }).onfinish = () => {
+                                            tray.pages.style.overflow = '';
+                                        };
                                         this.ui.setImage(widget, hero);
                                         item.classList.add('filled');
                                         selected.set(player.node, widget);
@@ -2413,8 +2424,7 @@
                 const margin = parseInt(this.app.css.pop['tray-margin']);
                 const n = Array.isArray(select.num) ? select.num[1] : select.num;
                 const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
-                const tray = this.pane.addGallery(1, ncols);
-                console.log(ncols);
+                tray = this.pane.addGallery(1, ncols);
                 tray.node.classList.add('tray');
                 this.height += width;
                 if (n > ncols) {
