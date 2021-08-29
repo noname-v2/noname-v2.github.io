@@ -1785,25 +1785,16 @@
             // setup control panel
             this.control.ready.then(() => {
                 this.controlZoom.node.appendChild(this.control.node);
-                const blurred = parseFloat(this.app.css.app['blurred-opacity']);
                 // setup swipe area
                 let xmax = 0;
                 let blocked = false;
-                const reset = () => {
-                    this.app.arena.node.classList.remove('no-transit');
-                    this.app.arena.arenaZoom.node.style.opacity = '';
-                    this.app.arena.appZoom.node.style.opacity = '';
-                };
                 this.ui.bind(this.swipe, {
                     movable: { x: [0, 220], y: [0, 0] },
                     onmove: e => {
                         xmax = Math.max(xmax, e.x);
                         this.control.node.style.transform = `translateX(${e.x}px)`;
                         this.control.node.style.opacity = (e.x / 220).toString();
-                        const opacity = (1 - Math.max(0, e.x - 20) / 200 * (1 - blurred)).toString();
-                        this.app.arena.node.classList.add('no-transit');
-                        this.app.arena.arenaZoom.node.style.opacity = opacity;
-                        this.app.arena.appZoom.node.style.opacity = opacity;
+                        this.control.updateZoom(e.x);
                         return e.x;
                     },
                     onmoveend: x => {
@@ -1812,18 +1803,11 @@
                         blocked = true;
                         setTimeout(() => blocked = false, 200);
                         this.ui.moveTo(this.swipe, { x: 0, y: 0 }, false);
-                        reset();
                         if (xmax > 50 && x > xmax - 5) {
-                            this.control.show();
-                            this.ui.animate(this.control.node, {
-                                x: [x, 220], opacity: [x / 220, 1]
-                            });
+                            this.control.show(x);
                         }
                         else {
-                            this.control.hide();
-                            this.ui.animate(this.control.node, {
-                                x: [x, 0], opacity: [x / 220, 0]
-                            });
+                            this.control.hide(x);
                         }
                         xmax = 0;
                     },
@@ -1832,11 +1816,7 @@
                             return;
                         blocked = true;
                         setTimeout(() => blocked = false, 200);
-                        reset();
                         this.control.show();
-                        this.ui.animate(this.control.node, {
-                            x: [0, 220], opacity: [0, 1]
-                        });
                     }
                 });
             });
@@ -1929,19 +1909,39 @@
                 });
             });
         }
-        show() {
+        show(x = 0) {
             this.app.arena.arenaZoom.node.classList.add('control-blurred');
             this.app.arena.appZoom.node.classList.add('control-blurred');
             this.node.style.transform = 'translateX(220px)';
             this.node.style.opacity = '1';
             this.node.classList.remove('exclude');
+            this.ui.animate(this.node, {
+                x: [x, 220], opacity: [x / 220, 1]
+            });
+            this.#resetZoom();
         }
-        hide() {
+        hide(x = 220) {
             this.app.arena.arenaZoom.node.classList.remove('control-blurred');
             this.app.arena.appZoom.node.classList.remove('control-blurred');
             this.node.style.transform = '';
             this.node.style.opacity = '';
             this.node.classList.add('exclude');
+            this.ui.animate(this.node, {
+                x: [x, 0], opacity: [x / 220, 0]
+            });
+            this.#resetZoom();
+        }
+        updateZoom(x) {
+            const blurred = parseFloat(this.app.css.app['blurred-opacity']);
+            const opacity = (1 - Math.max(0, x - 20) / 200 * (1 - blurred)).toString();
+            this.app.arena.node.classList.add('no-transit');
+            this.app.arena.arenaZoom.node.style.opacity = opacity;
+            this.app.arena.appZoom.node.style.opacity = opacity;
+        }
+        #resetZoom() {
+            this.app.arena.node.classList.remove('no-transit');
+            this.app.arena.arenaZoom.node.style.opacity = '';
+            this.app.arena.appZoom.node.style.opacity = '';
         }
     }
 
