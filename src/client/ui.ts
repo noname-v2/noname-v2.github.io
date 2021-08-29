@@ -83,9 +83,25 @@ function register(node: HTMLElement) {
 
         // initialize click event
         const right = e.button ? true : false;
-        if (((binding.onclick && !right) || (binding.oncontext && right)) && !clicking) {
-            node.classList.add('clickdown');
+        if (((binding.onclick && !right) || binding.oncontext) && !clicking) {
             clicking = [node, origin, touch, right];
+            if (!right) {
+                // click down effect for left click
+                if (binding.onclick) {
+                    node.classList.add('clickdown');
+                }
+
+                // simulate right click with long press
+                if (binding.oncontext) {
+                    const bak = clicking;
+                    setTimeout(() => {
+                        if (bak === clicking) {
+                            clicking[3] = true;
+                            pointerEnd(touch);
+                        }
+                    }, 500);
+                }
+            }
         }
 
         // initialize move event
