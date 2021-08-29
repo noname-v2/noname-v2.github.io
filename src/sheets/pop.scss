@@ -10,10 +10,15 @@ noname-arena noname-zoom > noname-pop {
             aspect-ratio: 1 / var(--player-ratio);
             
             > noname-player {
+                transition: opacity var(--app-transition);
                 width:  var(--player-width);
                 height: auto;
                 transform: scale(var(--pop-scale));
                 transform-origin: top left;
+
+                &.selected {
+                    opacity: var(--app-defer-opacity);
+                }
             }
         }
 
@@ -25,23 +30,28 @@ noname-arena noname-zoom > noname-pop {
                 left: 0;
 
                 noname-item {
-                    @include transit;
-                    width: calc(var(--pop-tray-width) - 4px);
-                    height: calc(var(--pop-tray-width) - 4px);
-                    overflow: visible;
-                    border: var(--pop-border);
-                    border-radius: 100%;
+                    width: var(--pop-tray-width);
+                    height: var(--pop-tray-width);
                     margin-left: -2px;
                     margin-right: -2px;
+
+                    &.filled > noname-container {
+                        opacity: 0;
+                    }
+
+                    > noname-container {
+                        transition: opacity var(--app-transition);
+                        position: absolute;
+                        width: calc(var(--pop-tray-width) - 4px);
+                        height: calc(var(--pop-tray-width) - 4px);
+                        border: var(--pop-border);
+                        border-radius: 100%;
+                    }
     
                     > noname-widget {
-                        display: block;
-                        position: absolute;
-                        width: var(--pop-tray-width);
-                        height: var(--pop-tray-width);
+                        @include layer;
                         border-radius: 100%;
-                        left: -2px;
-                        top: -2px;
+                        background-position: var(--widget-avatar-position) !important;
                     }
                 }
             }

@@ -816,10 +816,14 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item
   aspect-ratio: 1/var(--player-ratio);
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player {
+  transition: opacity var(--app-transition);
   width: var(--player-width);
   height: auto;
   transform: scale(var(--pop-scale));
   transform-origin: top left;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery noname-item > noname-player.selected {
+  opacity: var(--app-defer-opacity);
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray {
   text-align: center;
@@ -828,24 +832,32 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname
   left: 0;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item {
-  transition-property: opacity, transform;
-  transition-duration: var(--app-transition);
-  width: calc(var(--pop-tray-width) - 4px);
-  height: calc(var(--pop-tray-width) - 4px);
-  overflow: visible;
-  border: var(--pop-border);
-  border-radius: 100%;
+  width: var(--pop-tray-width);
+  height: var(--pop-tray-width);
   margin-left: -2px;
   margin-right: -2px;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-widget {
-  display: block;
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item.filled > noname-container {
+  opacity: 0;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-container {
+  transition: opacity var(--app-transition);
   position: absolute;
-  width: var(--pop-tray-width);
-  height: var(--pop-tray-width);
+  width: calc(var(--pop-tray-width) - 4px);
+  height: calc(var(--pop-tray-width) - 4px);
+  border: var(--pop-border);
   border-radius: 100%;
-  left: -2px;
-  top: -2px;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-gallery.tray noname-pages noname-item > noname-widget {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  border-radius: 100%;
+  background-position: var(--widget-avatar-position) !important;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
   margin: 12px 0 14px 0;

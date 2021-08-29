@@ -1,6 +1,6 @@
 import { Component } from '../components';
 
-type GalleryItem = HTMLElement | (() => HTMLElement | null);
+type GalleryItem = HTMLElement | ((item: HTMLElement) => HTMLElement | null | void);
 
 export class Gallery extends Component {
     /** Child classes use tag <noname-gallery> by default. */
@@ -150,6 +150,13 @@ export class Gallery extends Component {
         }
     }
 
+    /** Render all pages. */
+    renderAll() {
+        for (let i = 0; i < this.#pageCount; i++) {
+            this.#renderPage(i);
+        }
+    }
+
     /** Update indicator and render nearby pages. */
     turnPage(page: number) {
         if (page >= this.#pageCount || page < 0) {
@@ -250,7 +257,7 @@ export class Gallery extends Component {
             }
             if (typeof item === 'function') {
                 const container = this.ui.createElement('item');
-                const rendered = item();
+                const rendered = item(container);
                 if (rendered) {
                     container.appendChild(rendered);
                 }

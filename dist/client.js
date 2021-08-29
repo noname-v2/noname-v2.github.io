@@ -2364,6 +2364,8 @@
                 }
             }
             const gallery = this.pane.addGallery(nrows, ncols);
+            const trayItems = [];
+            const selected = new Map();
             this.galleries.add(gallery);
             gallery.node.style.height = `${this.height - currentHeight}px`;
             gallery.node.addEventListener('mousedown', e => e.stopPropagation());
@@ -2375,12 +2377,29 @@
                     player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
                     this.ui.bind(player.node, {
                         onclick: () => {
-                            // if (player.node.classList.toggle('selected')) {
-                            //     const occupied = 
-                            // }
-                            // else {
-                            //     console.log(2);
-                            // }
+                            const unselect = () => {
+                                const widget = selected.get(player.node);
+                                widget.parentNode.classList.remove('filled');
+                                widget.remove();
+                                selected.delete(player.node);
+                                player.node.classList.remove('selected');
+                            };
+                            if (selected.has(player.node)) {
+                                unselect();
+                            }
+                            else {
+                                for (const item of trayItems) {
+                                    if (!item.classList.contains('filled')) {
+                                        const widget = this.ui.createElement('widget', item);
+                                        this.ui.setImage(widget, hero);
+                                        item.classList.add('filled');
+                                        selected.set(player.node, widget);
+                                        player.node.classList.add('selected');
+                                        this.ui.bind(widget, unselect);
+                                        break;
+                                    }
+                                }
+                            }
                         },
                         oncontext: e => {
                             player.data.heroName = 'Right';
@@ -2395,7 +2414,6 @@
                 const n = Array.isArray(select.num) ? select.num[1] : select.num;
                 const ncols = Math.min(n, Math.floor((this.width - margin * 2) / (width + margin)));
                 const tray = this.pane.addGallery(1, ncols);
-                this.galleries.add(tray);
                 console.log(ncols);
                 tray.node.classList.add('tray');
                 this.height += width;
@@ -2412,8 +2430,12 @@
                     tray.node.style.left = `calc(50% - ${trayWidth / 2}px)`;
                 }
                 for (let i = 0; i < n; i++) {
-                    tray.add(() => this.ui.createElement('widget'));
+                    tray.add((item) => {
+                        this.ui.createElement('container', item);
+                        trayItems.push(item);
+                    });
                 }
+                tray.renderAll();
             }
         }
         addConfirm(content) {
@@ -2723,6 +2745,12 @@
                 this.turnPage(0);
             }
         }
+        /** Render all pages. */
+        renderAll() {
+            for (let i = 0; i < this.#pageCount; i++) {
+                this.#renderPage(i);
+            }
+        }
         /** Update indicator and render nearby pages. */
         turnPage(page) {
             if (page >= this.#pageCount || page < 0) {
@@ -2812,7 +2840,7 @@
                 }
                 if (typeof item === 'function') {
                     const container = this.ui.createElement('item');
-                    const rendered = item();
+                    const rendered = item(container);
                     if (rendered) {
                         container.appendChild(rendered);
                     }
