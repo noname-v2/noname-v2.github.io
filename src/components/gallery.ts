@@ -62,6 +62,9 @@ export class Gallery extends Component {
             this.node.classList.add('centerx');
             this.listen('resize');
         }
+
+        // avoid conflict with move operation
+        this.node.addEventListener('touchstart', e => e.stopPropagation());
     }
 
     /** Add an item or an item constructor. */

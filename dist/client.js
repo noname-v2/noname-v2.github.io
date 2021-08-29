@@ -2274,6 +2274,15 @@
             const arena = this.app.arena;
             arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
         }
+        /** Update move range. */
+        resize() {
+            const dx = (this.app.width - this.width) / 2;
+            const dy = (this.app.height - this.height) / 2;
+            this.ui.bind(this.node, {
+                movable: { x: [-dx, dx], y: [-dy, dy] }
+            });
+            console.log(dx, dy);
+        }
         $content(content) {
             if (this.mine) {
                 for (const [type, arg] of content) {
@@ -2292,7 +2301,8 @@
                 this.ui.animate(this.node, {
                     scale: ['var(--app-zoom-scale)', 1],
                     opacity: [0, 1]
-                });
+                }).onfinish = () => this.resize();
+                this.listen('resize');
             }
             else {
                 setTimeout(() => this.checkPops());
@@ -2434,6 +2444,8 @@
                 this.node.classList.add('centerx');
                 this.listen('resize');
             }
+            // avoid conflict with move operation
+            this.node.addEventListener('touchstart', e => e.stopPropagation());
         }
         /** Add an item or an item constructor. */
         add(item) {

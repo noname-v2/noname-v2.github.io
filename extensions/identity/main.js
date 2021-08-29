@@ -6,7 +6,7 @@ var main = {
             main(Task) {
                 return class Identity extends Task {
                     /** Number of hero choices. */
-                    nheros = 10;
+                    nheros = 15;
                     /** Choice of heros for players. */
                     choices;
                     get freeChoose() {

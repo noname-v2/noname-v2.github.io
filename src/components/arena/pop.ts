@@ -180,6 +180,16 @@ export class Pop extends Component {
         arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
     }
 
+    /** Update move range. */
+    resize() {
+        const dx = (this.app.width - this.width) / 2;
+        const dy = (this.app.height - this.height) / 2
+        this.ui.bind(this.node, {
+            movable: {x: [-dx, dx], y: [-dy, dy]}
+        });
+        console.log(dx, dy)
+    }
+
     $content(content: PopContent) {
         if (this.mine) {
             for (const [type, arg] of content as any) {
@@ -200,7 +210,8 @@ export class Pop extends Component {
             this.ui.animate(this.node, {
                 scale: ['var(--app-zoom-scale)', 1],
                 opacity: [0, 1]
-            });
+            }).onfinish = () => this.resize();
+            this.listen('resize');
         }
         else {
             setTimeout(() => this.checkPops())
