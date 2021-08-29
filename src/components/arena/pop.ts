@@ -116,6 +116,8 @@ export class Pop extends Component {
         }
 
         const gallery = this.pane.addGallery(nrows, ncols);
+        const trayItems = [];
+        this.galleries.add(gallery);
         gallery.node.style.height = `${this.height - currentHeight}px`;
         gallery.node.addEventListener('mousedown', e => e.stopPropagation());
         for (const hero of heros) {
@@ -135,7 +137,6 @@ export class Pop extends Component {
                 return player.node;
             });
         }
-        this.galleries.add(gallery);
 
         if (!Array.isArray(select)) {
             const tray = this.pane.add('bar');
@@ -143,7 +144,6 @@ export class Pop extends Component {
             this.height += height * 0.7 + margin * 2;
             tray.style.height = `${height * 0.7}px`;
             const n = Array.isArray(select.num) ? select.num[1] : select.num;
-            const trayItems = [];
             for (let i = 0; i < n; i++) {
                 const item = this.ui.createElement('item', tray);
                 const player = this.ui.create('player', item);

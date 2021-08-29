@@ -63,7 +63,7 @@ export default {
                         return {
                             items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
                             filter: true,
-                            num: 2
+                            num: 1
                         };
                     }
                 }
