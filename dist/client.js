@@ -2341,8 +2341,12 @@
         tray;
         /** Confirm button. */
         ok;
+        /** Operation blocked by animation. */
+        #blocked = null;
         /** Click on selectable items. */
         click(id) {
+            if (this.#blocked)
+                return;
             const [node, clone, gallery] = this.items.get(id);
             if (node.classList.contains('selected')) {
                 node.classList.remove('selected');
@@ -2353,53 +2357,6 @@
                 node.classList.add('selected');
                 this.#updateTray(id, true);
                 this.check();
-            }
-        }
-        /** Update tray item locations. */
-        #updateTray(id, add) {
-            const [item, clone, gallery] = this.items.get(id);
-            const d = parseInt(this.app.css.pop['tray-height']) - 8;
-            const margin = parseInt(this.app.css.pop['tray-margin']);
-            const width = this.tray.clientWidth;
-            const clones = [];
-            for (const node of Array.from(this.tray.childNodes)) {
-                if (node === clone) {
-                    continue;
-                }
-                clones.push(node);
-            }
-            if (add) {
-                clones.push(clone);
-            }
-            // determine spacing
-            const n = clones.length;
-            let spacing;
-            if ((width - margin) / (d + margin) > n) {
-                // use margin as spacing
-                spacing = margin;
-            }
-            else if ((width - 4) / (d + 4) > n) {
-                // spaced evenly
-                spacing = (width - n * d) / (n + 1);
-            }
-            else {
-                // leave 4px for left and right
-                spacing = (width - 8 - d) / (n - 1) - d;
-            }
-            // determine left most location
-            const length = d * n + spacing * (n - 1);
-            const left = (width - length) / 2;
-            // align items
-            for (let i = 0; i < clones.length; i++) {
-                const x = left + i * (d + spacing);
-                clones[i].style.transform = `translateX(${x}px)`;
-            }
-            // add or remove diff
-            if (add) {
-                this.tray.appendChild(clone);
-            }
-            else {
-                clone.remove();
             }
         }
         addCaption(caption) {
@@ -2642,6 +2599,84 @@
             }
             else {
                 this.timer?.remove();
+            }
+        }
+        /** Update tray item locations. */
+        #updateTray(id, add) {
+            const [item, clone, gallery] = this.items.get(id);
+            const d = parseInt(this.app.css.pop['tray-height']) - 8;
+            const margin = parseInt(this.app.css.pop['tray-margin']);
+            const width = this.tray.clientWidth;
+            const clones = [];
+            for (const node of Array.from(this.tray.childNodes)) {
+                if (node === clone) {
+                    continue;
+                }
+                clones.push(node);
+            }
+            if (add) {
+                clones.push(clone);
+            }
+            // determine spacing
+            const n = clones.length;
+            let spacing;
+            if ((width - margin) / (d + margin) > n) {
+                // use margin as spacing
+                spacing = margin;
+            }
+            else if ((width - 4) / (d + 4) > n) {
+                // spaced evenly
+                spacing = (width - n * d) / (n + 1);
+            }
+            else {
+                // leave 4px for left and right
+                spacing = (width - 8 - d) / (n - 1) - d;
+            }
+            // determine left most location
+            const length = d * n + spacing * (n - 1);
+            const left = (width - length) / 2;
+            // align items
+            for (let i = 0; i < clones.length; i++) {
+                const x = left + i * (d + spacing);
+                clones[i].style.transform = `translateX(${x}px)`;
+                clones[i]._x = x;
+            }
+            // add or remove diff
+            if (add) {
+                this.tray.appendChild(clone);
+            }
+            const rect1 = item.getBoundingClientRect();
+            const rect2 = clone.getBoundingClientRect();
+            let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
+            let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
+            let scale = 1.5;
+            const x = clone._x;
+            this.#blocked = clone;
+            const unblock = () => {
+                if (this.#blocked === clone) {
+                    this.#blocked = null;
+                }
+            };
+            setTimeout(unblock, 500);
+            if (add) {
+                this.ui.animate(clone, {
+                    x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
+                }).onfinish = unblock;
+            }
+            else {
+                const page = item.parentNode.parentNode.parentNode;
+                const indicator = page.parentNode.nextSibling;
+                const idx = Array.from(page.parentNode.childNodes).indexOf(page);
+                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
+                // skip translate animation if item is not in current gallery page
+                if (idx !== idx2) {
+                    dx = 0;
+                    dy = 0;
+                    scale = 'var(--app-zoom-scale)';
+                }
+                this.ui.animate(clone, {
+                    x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
+                }).onfinish = () => { clone.remove(); unblock(); };
             }
         }
     }
