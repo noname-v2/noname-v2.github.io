@@ -425,6 +425,9 @@
         const binding = bindings.get(node);
         if (binding) {
             const offset = binding.offset ?? { x: 0, y: 0 };
+            if (location.x === offset.x && location.y === offset.y) {
+                return;
+            }
             node.style.transform = `translate(${location.x}px, ${location.y}px)`;
             if (transit) {
                 animate(node, { x: [offset.x, location.x], y: [offset.y, location.y] });
