@@ -164,7 +164,7 @@ export class Pop extends Component {
 
                 // add to this.items
                 if (!Array.isArray(select)) {
-                    const clone = this.ui.createElement('widget');
+                    const clone = this.ui.createElement('widget.avatar');
                     const onclick = () => this.click(hero);
                     this.ui.setImage(clone, hero);
                     this.ui.bind(clone, onclick);
@@ -290,6 +290,9 @@ export class Pop extends Component {
             }
             else if (filter) {
                 //////
+            }
+            else {
+                item.classList.remove('defer');
             }
         }
         

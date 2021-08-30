@@ -2341,8 +2341,6 @@
         tray;
         /** Confirm button. */
         ok;
-        /** Number of sections used as section ID. */
-        #sectionCount = 0;
         /** Click on selectable items. */
         click(id) {
             const [node, clone, gallery] = this.items.get(id);
@@ -2412,7 +2410,7 @@
                         } });
                     // add to this.items
                     if (!Array.isArray(select)) {
-                        const clone = this.ui.createElement('widget');
+                        const clone = this.ui.createElement('widget.avatar');
                         const onclick = () => this.click(hero);
                         this.ui.setImage(clone, hero);
                         this.ui.bind(clone, onclick);
@@ -2523,6 +2521,10 @@
                 const selected = selections.get(gallery);
                 if (selected.size === num[1]) {
                     item.classList.add('defer');
+                }
+                else if (filter) ;
+                else {
+                    item.classList.remove('defer');
                 }
             }
             // check if ok can be pressed

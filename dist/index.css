@@ -836,28 +836,16 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray {
   width: calc(100% - 36px);
   left: 16px;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item {
-  width: var(--pop-tray-width);
-  height: var(--pop-tray-width);
-  margin-left: -2px;
-  margin-right: -2px;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-container {
-  transition: opacity var(--app-transition);
-  position: absolute;
-  width: calc(var(--pop-tray-width) - 4px);
-  height: calc(var(--pop-tray-width) - 4px);
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget {
+  cursor: pointer;
+  width: calc(var(--pop-tray-height) - 8px);
+  height: calc(var(--pop-tray-height) - 8px);
   border-radius: 100%;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-widget {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  left: 0;
-  top: 0;
   position: absolute;
-  border-radius: 100%;
+  top: 4px;
+  left: calc(50% - var(--pop-tray-height) / 2 + 4px);
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.avatar {
   background-position: var(--widget-avatar-position) !important;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {

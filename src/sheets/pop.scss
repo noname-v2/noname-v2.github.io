@@ -33,23 +33,16 @@ noname-arena noname-zoom > noname-pop {
                 width: calc(100% - 36px);
                 left: 16px;
     
-                > noname-item {
-                    width: var(--pop-tray-width);
-                    height: var(--pop-tray-width);
-                    margin-left: -2px;
-                    margin-right: -2px;
+                > noname-widget {
+                    cursor: pointer;
+                    width: calc(var(--pop-tray-height) - 8px);
+                    height: calc(var(--pop-tray-height) - 8px);
+                    border-radius: 100%;
+                    position: absolute;
+                    top: 4px;
+                    left: calc(50% - var(--pop-tray-height) / 2 + 4px);
 
-                    > noname-container {
-                        transition: opacity var(--app-transition);
-                        position: absolute;
-                        width: calc(var(--pop-tray-width) - 4px);
-                        height: calc(var(--pop-tray-width) - 4px);
-                        border-radius: 100%;
-                    }
-    
-                    > noname-widget {
-                        @include layer;
-                        border-radius: 100%;
+                    &.avatar {
                         background-position: var(--widget-avatar-position) !important;
                     }
                 }
