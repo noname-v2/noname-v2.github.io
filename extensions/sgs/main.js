@@ -276,6 +276,7 @@ function createPop(T) {
                     pop.owner = player.owner;
                     pop.content = content;
                     pop.await(timer[0]);
+                    pop.monitor('filter');
                     this.pops.add(pop);
                     if (timer[0]) {
                         pop.timer = timer;
@@ -297,6 +298,37 @@ function createPop(T) {
                 pop.unlink();
             }
             console.log(this.results);
+        }
+        filter(selections, pop) {
+            // map of sections and its selected items
+            const sections = new Map();
+            // get lists of all items and selected items
+            let all = [];
+            for (const section of pop.content) {
+                const sel = section[1];
+                if (Array.isArray(sel.items)) {
+                    all = all.concat(sel.items);
+                    for (const selection of selections) {
+                        if (selection.length && sel.items.includes(selection[0])) {
+                            sections.set(sel, [sel.items, selection]);
+                            break;
+                        }
+                    }
+                    if (!sections.has(sel)) {
+                        sections.set(sel, [sel.items, []]);
+                    }
+                }
+            }
+            // get selectable items
+            for (const [sel, selected] of sections) {
+            }
+            for (const section of pop.content) {
+                if (Array.isArray(section[1])) {
+                    for (const selected of selections) {
+                        console.log(selected);
+                    }
+                }
+            }
         }
     };
 }

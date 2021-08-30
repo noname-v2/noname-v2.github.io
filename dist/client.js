@@ -2368,9 +2368,9 @@
         #pending = false;
         /** Click on selectable items. */
         click(id) {
-            if (this.#blocked)
+            if (this.#blocked || this.#pending)
                 return;
-            const [node, clone, gallery] = this.items.get(id);
+            const [node] = this.items.get(id);
             if (this.selected.has(id)) {
                 this.selected.delete(id);
                 node.classList.remove('selected');
@@ -2537,11 +2537,21 @@
             // get selected items
             const selections = new Map();
             for (const [, [, , gallery]] of this.items) {
-                selections.set(gallery, []);
+                if (!selections.has(gallery)) {
+                    selections.set(gallery, []);
+                }
             }
             for (const id of this.selected) {
                 const [, , gallery] = this.items.get(id);
                 selections.get(gallery).push(id);
+            }
+            // get all items of a given section
+            const all = new Map();
+            for (const [id, [, , gallery]] of this.items) {
+                if (!all.has(gallery)) {
+                    all.set(gallery, []);
+                }
+                all.get(gallery).push(id);
             }
             // check if buttons can be selected
             for (const [id, [item, , gallery]] of this.items) {
@@ -2556,14 +2566,14 @@
                 else if (filter) {
                     let ask = false;
                     const func = this.app.accessExtension(filter);
-                    if (!func || func.length > 2) {
+                    if (!func || func.length > 1) {
                         ask = true;
                     }
                     else {
                         try {
                             const filterThis = {
                                 selected: selected,
-                                all: Array.from(this.items.keys()),
+                                all: all.get(gallery),
                                 getHero: this.app.getHero,
                                 getCard: this.app.getCard,
                                 accessExtension: this.app.accessExtension
@@ -2575,9 +2585,11 @@
                         }
                     }
                     if (ask) {
-                        //////
                         this.#pending = true;
-                        item.classList.add('defer');
+                        this.yield(Array.from(selections.values()));
+                        this.ok.classList.add('disabled');
+                        console.log('asking...');
+                        return;
                     }
                 }
                 else {

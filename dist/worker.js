@@ -357,6 +357,16 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
+    /** Get hero info. */
+    function getHero(hero) {
+        const [ext, name] = split(hero);
+        return accessExtension(ext, 'hero', name);
+    }
+    /** Get card info. */
+    function getCard(card) {
+        const [ext, name] = split(card);
+        return accessExtension(ext, 'card', name);
+    }
 
     /** Game object used by stages. */
     class Game {
@@ -380,6 +390,12 @@
         }
         get accessExtension() {
             return accessExtension;
+        }
+        get getHero() {
+            return getHero;
+        }
+        get getCard() {
+            return getCard;
         }
         /** Get a link. */
         get(id) {

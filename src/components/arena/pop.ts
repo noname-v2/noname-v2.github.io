@@ -85,8 +85,8 @@ export class Pop extends Component {
 
     /** Click on selectable items. */
     click(id: string | number) {
-        if (this.#blocked && this.#pending) return;
-        const [node, clone, gallery] = this.items.get(id)!;
+        if (this.#blocked || this.#pending) return;
+        const [node] = this.items.get(id)!;
         if (this.selected.has(id)) {
             this.selected.delete(id);
             node.classList.remove('selected');
@@ -275,11 +275,22 @@ export class Pop extends Component {
         // get selected items
         const selections = new Map<Gallery, (string | number)[]>();
         for (const [, [, , gallery]] of this.items) {
-            selections.set(gallery, []);
+            if (!selections.has(gallery)) {
+                selections.set(gallery, []);
+            }
         }
         for (const id of this.selected) {
             const [, , gallery] = this.items.get(id)!;
             selections.get(gallery)!.push(id);
+        }
+
+        // get all items of a given section
+        const all = new Map<Gallery, (string | number)[]>();
+        for (const [id, [, , gallery]] of this.items) {
+            if (!all.has(gallery)) {
+                all.set(gallery, []);
+            }
+            all.get(gallery)!.push(id);
         }
 
         // check if buttons can be selected
@@ -295,14 +306,14 @@ export class Pop extends Component {
             else if (filter) {
                 let ask = false;
                 const func = this.app.accessExtension(filter);
-                if (!func || func.length > 2) {
+                if (!func || func.length > 1) {
                     ask = true;
                 }
                 else {
                     try {
-                        const filterThis: FilterThis<string> = {
-                            selected: selected as string[],
-                            all: Array.from(this.items.keys()) as string[],
+                        const filterThis: FilterThis<any> = {
+                            selected: selected,
+                            all: all.get(gallery)!,
                             getHero: this.app.getHero,
                             getCard: this.app.getCard,
                             accessExtension: this.app.accessExtension
@@ -315,7 +326,7 @@ export class Pop extends Component {
                 }
                 if (ask) {
                     this.#pending = true;
-                    this.yield(selected);
+                    this.yield(Array.from(selections.values()));
                     this.ok.classList.add('disabled');
                     console.log('asking...');
                     return;

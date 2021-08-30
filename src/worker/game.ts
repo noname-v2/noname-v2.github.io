@@ -1,5 +1,5 @@
 import { hub, room } from './globals';
-import { accessExtension } from '../extension';
+import { accessExtension, getHero, getCard } from '../extension';
 import * as utils from '../utils';
 import type { Mode, Dict } from '../types';
 
@@ -34,6 +34,14 @@ export abstract class Game {
 
     get accessExtension() {
         return accessExtension;
+    }
+
+    get getHero() {
+        return getHero;
+    }
+
+    get getCard() {
+        return getCard;
     }
 
     /** Get a link. */

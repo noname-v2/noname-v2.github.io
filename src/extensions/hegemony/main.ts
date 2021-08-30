@@ -1,7 +1,7 @@
 import { hero } from './hero';
 import { card } from './card';
 import { skill } from './skill';
-import type { SGS, TaskClass, FilterThis } from '../sgs/types';
+import type { SGS, TaskClass, FilterThis, Task } from '../sgs/types';
 
 export default {
     mode: {
