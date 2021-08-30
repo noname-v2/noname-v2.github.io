@@ -16,8 +16,7 @@ const names = {
     buttonicon: 'ButtonColor',
     fill: 'FillColor',
     text: 'TextColor',
-    shadow: 'TextShadow',
-    glow: 'TextGlow'
+    glow: 'GlowColor'
 }
 let literals = '';
 for (const name in names) {
