@@ -1,12 +1,12 @@
-import type { SGS, Select } from '../sgs/types';
+import type { SGS, Select, TaskClass } from '../sgs/types';
 
 export default {
     mode: {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T: TaskClass) {
+                return class Identity extends T {
                     /** Number of hero choices. */
                     nheros = 15;
 
@@ -62,7 +62,7 @@ export default {
                     getChoices(): Select<string> {
                         return {
                             items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            num: 12
+                            num: 1
                         };
                     }
                 }

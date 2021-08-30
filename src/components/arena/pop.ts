@@ -1,16 +1,5 @@
 import { Component, Gallery, Timer, Player } from '../../components';
-
-/** Selectable items. */
-export interface Select<T> {
-    /** Items to choose from. */
-    items: T[];
-
-    /** Name of the function that checks if item can be selected. */
-    filter?: string;
-
-    /** Required number of selected items. */
-    num: number | [number, number];
-}
+import type { Select, FilterThis } from '../../types';
 
 /** Possible contents of pop sections. */
 interface PopSectionContent {
@@ -76,6 +65,9 @@ export class Pop extends Component {
      */
     items = new Map<string | number, [HTMLElement, HTMLElement, Gallery]>();
 
+    /** Selected items. */
+    selected = new Set<string | number>();
+
     /** Filters and expected number of selected items of galleries. */
     galleries = new Map<Gallery, [[number, number], string?]>();
 
@@ -88,16 +80,21 @@ export class Pop extends Component {
     /** Operation blocked by animation. */
     #blocked: HTMLElement | null = null;
 
+    /** Awaiting filter results from worker. */
+    #pending: boolean = false;
+
     /** Click on selectable items. */
     click(id: string | number) {
         if (this.#blocked) return;
         const [node, clone, gallery] = this.items.get(id)!;
-        if (node.classList.contains('selected')) {
+        if (this.selected.has(id)) {
+            this.selected.delete(id);
             node.classList.remove('selected');
             this.#updateTray(id, false);
             this.check();
         }
         else if (!node.classList.contains('defer')) {
+            this.selected.add(id);
             node.classList.add('selected');
             this.#updateTray(id, true);
             this.check();
@@ -156,9 +153,9 @@ export class Pop extends Component {
         for (const hero of heros) {
             gallery.add(() => {
                 const player = this.ui.create('player');
-                const [ext, name] = hero.split(':');
+                const info = this.app.getHero(hero);
                 player.data.heroImage = hero;
-                player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
+                player.data.heroName = info.name;
                 const node = player.node;
 
                 // bind context menu
@@ -271,29 +268,56 @@ export class Pop extends Component {
 
     /** Filter selectable items. */
     check() {
-        // get selected items
-        const selections = new Map<Gallery, Set<string | number>>();
-        for (const [, [, , gallery]] of this.items) {
-            selections.set(gallery, new Set());
+        if (this.#pending) {
+            return;
         }
-        for (const [id, [item, , gallery]] of this.items) {
-            if (item.classList.contains('selected')) {
-                selections.get(gallery)!.add(id);
-            }
+
+        // get selected items
+        const selections = new Map<Gallery, (string | number)[]>();
+        for (const [, [, , gallery]] of this.items) {
+            selections.set(gallery, []);
+        }
+        for (const id of this.selected) {
+            const [, , gallery] = this.items.get(id)!;
+            selections.get(gallery)!.push(id);
         }
 
         // check if buttons can be selected
         for (const [id, [item, , gallery]] of this.items) {
-            if (item.classList.contains('selected')) {
+            if (this.selected.has(id)) {
                 continue;
             }
             const [num, filter] = this.galleries.get(gallery)!;
             const selected = selections.get(gallery)!;
-            if (selected.size === num[1]) {
+            if (selected.length === num[1]) {
                 item.classList.add('defer');
             }
             else if (filter) {
-                //////
+                let ask = false;
+                const func = this.app.accessExtension(filter);
+                if (!func || func.length > 2) {
+                    ask = true;
+                }
+                else {
+                    try {
+                        const filterThis: FilterThis<string> = {
+                            selected: selected as string[],
+                            all: Array.from(this.items.keys()) as string[],
+                            getHero: this.app.getHero,
+                            getCard: this.app.getCard,
+                            accessExtension: this.app.accessExtension
+                        }
+                        item.classList[func.apply(filterThis, [id, selected]) ? 'remove' : 'add']('defer');
+                    }
+                    catch {
+                        ask = true;
+                    }
+                }
+                if (ask) {
+                    //////
+                    this.#pending = true;
+                    item.classList.add('defer');
+                }
             }
             else {
                 item.classList.remove('defer');
@@ -303,7 +327,7 @@ export class Pop extends Component {
         // check if ok can be pressed
         let ok = true;
         for (const [gallery, [num]] of this.galleries) {
-            const n = selections.get(gallery)!.size;
+            const n = selections.get(gallery)!.length;
             if (n < num[0] || n > num[1]) {
                 ok = false;
                 break;

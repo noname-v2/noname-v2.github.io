@@ -1,7 +1,7 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom } from '../../components';
-import { importExtension } from '../../extension';
+import { importExtension, accessExtension, getHero, getCard } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
 
 /** Transition duration names. */
@@ -82,6 +82,18 @@ export class App extends Component {
 
     get zoomNode() {
         return this.#zoom.node;
+    }
+
+    get accessExtension() {
+        return accessExtension;
+    }
+
+    get getHero() {
+        return getHero;
+    }
+
+    get getCard() {
+        return getCard;
     }
 
     get #currentZoom(): Zoom {

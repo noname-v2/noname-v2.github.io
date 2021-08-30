@@ -757,6 +757,16 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
+    /** Get hero info. */
+    function getHero(hero) {
+        const [ext, name] = split(hero);
+        return accessExtension(ext, 'hero', name);
+    }
+    /** Get card info. */
+    function getCard(card) {
+        const [ext, name] = split(card);
+        return accessExtension(ext, 'card', name);
+    }
 
     /** Hub configuration. */
     const hub = new Proxy(hub$1, {
@@ -1061,9 +1071,6 @@
         get ui() {
             return ui;
         }
-        get accessExtension() {
-            return accessExtension;
-        }
         get owner() {
             return this.data.owner;
         }
@@ -1215,6 +1222,15 @@
         }
         get zoomNode() {
             return this.#zoom.node;
+        }
+        get accessExtension() {
+            return accessExtension;
+        }
+        get getHero() {
+            return getHero;
+        }
+        get getCard() {
+            return getCard;
         }
         get #currentZoom() {
             return this.arena?.currentZoom ?? this.#zoom;
@@ -2338,6 +2354,8 @@
          * [2]: gallery that contains the item
          */
         items = new Map();
+        /** Selected items. */
+        selected = new Set();
         /** Filters and expected number of selected items of galleries. */
         galleries = new Map();
         /** Container of clones of selected items. */
@@ -2346,17 +2364,21 @@
         ok;
         /** Operation blocked by animation. */
         #blocked = null;
+        /** Awaiting filter results from worker. */
+        #pending = false;
         /** Click on selectable items. */
         click(id) {
             if (this.#blocked)
                 return;
             const [node, clone, gallery] = this.items.get(id);
-            if (node.classList.contains('selected')) {
+            if (this.selected.has(id)) {
+                this.selected.delete(id);
                 node.classList.remove('selected');
                 this.#updateTray(id, false);
                 this.check();
             }
             else if (!node.classList.contains('defer')) {
+                this.selected.add(id);
                 node.classList.add('selected');
                 this.#updateTray(id, true);
                 this.check();
@@ -2407,9 +2429,9 @@
             for (const hero of heros) {
                 gallery.add(() => {
                     const player = this.ui.create('player');
-                    const [ext, name] = hero.split(':');
+                    const info = this.app.getHero(hero);
                     player.data.heroImage = hero;
-                    player.data.heroName = this.accessExtension(ext, 'hero', name, 'name');
+                    player.data.heroName = info.name;
                     const node = player.node;
                     // bind context menu
                     this.ui.bind(node, { oncontext: () => {
@@ -2509,27 +2531,55 @@
         }
         /** Filter selectable items. */
         check() {
+            if (this.#pending) {
+                return;
+            }
             // get selected items
             const selections = new Map();
             for (const [, [, , gallery]] of this.items) {
-                selections.set(gallery, new Set());
+                selections.set(gallery, []);
             }
-            for (const [id, [item, , gallery]] of this.items) {
-                if (item.classList.contains('selected')) {
-                    selections.get(gallery).add(id);
-                }
+            for (const id of this.selected) {
+                const [, , gallery] = this.items.get(id);
+                selections.get(gallery).push(id);
             }
             // check if buttons can be selected
             for (const [id, [item, , gallery]] of this.items) {
-                if (item.classList.contains('selected')) {
+                if (this.selected.has(id)) {
                     continue;
                 }
                 const [num, filter] = this.galleries.get(gallery);
                 const selected = selections.get(gallery);
-                if (selected.size === num[1]) {
+                if (selected.length === num[1]) {
                     item.classList.add('defer');
                 }
-                else if (filter) ;
+                else if (filter) {
+                    let ask = false;
+                    const func = this.app.accessExtension(filter);
+                    if (!func || func.length > 2) {
+                        ask = true;
+                    }
+                    else {
+                        try {
+                            const filterThis = {
+                                selected: selected,
+                                all: Array.from(this.items.keys()),
+                                getHero: this.app.getHero,
+                                getCard: this.app.getCard,
+                                accessExtension: this.app.accessExtension
+                            };
+                            item.classList[func.apply(filterThis, [id, selected]) ? 'remove' : 'add']('defer');
+                        }
+                        catch {
+                            ask = true;
+                        }
+                    }
+                    if (ask) {
+                        //////
+                        this.#pending = true;
+                        item.classList.add('defer');
+                    }
+                }
                 else {
                     item.classList.remove('defer');
                 }
@@ -2537,7 +2587,7 @@
             // check if ok can be pressed
             let ok = true;
             for (const [gallery, [num]] of this.galleries) {
-                const n = selections.get(gallery).size;
+                const n = selections.get(gallery).length;
                 if (n < num[0] || n > num[1]) {
                     ok = false;
                     break;

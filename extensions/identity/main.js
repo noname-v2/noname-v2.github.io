@@ -3,8 +3,8 @@ var main = {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T) {
+                return class Identity extends T {
                     /** Number of hero choices. */
                     nheros = 15;
                     /** Choice of heros for players. */
@@ -54,7 +54,7 @@ var main = {
                     getChoices() {
                         return {
                             items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            num: 12
+                            num: 1
                         };
                     }
                 };

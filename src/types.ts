@@ -1,5 +1,6 @@
 import type { Task } from './worker/task';
 import type { Component } from './components';
+import type { accessExtension, getHero, getCard} from './extension';
 
 /** Plain object. */
 export type Dict<T=any> = {[key: string]: T};
@@ -51,4 +52,25 @@ export interface ExtensionMeta {
 	pack: boolean;
 	tags: string[];
 	images: string[];
+}
+
+/** Selectable items. */
+export interface Select<T> {
+    /** Items to choose from. */
+    items: T[];
+
+    /** Name of the function that checks if item can be selected. */
+    filter?: string;
+
+    /** Required number of selected items. */
+    num: number | [number, number];
+}
+
+/** <this> of filter functions. */
+export interface FilterThis<T extends string | number> {
+    getHero: typeof getHero;
+    getCard: typeof getCard;
+    accessExtension: typeof accessExtension;
+    selected: T[];
+    all: T[];
 }
