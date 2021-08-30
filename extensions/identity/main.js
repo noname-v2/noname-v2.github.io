@@ -54,7 +54,7 @@ var main = {
                     getChoices() {
                         return {
                             items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            num: 1
+                            num: 12
                         };
                     }
                 };

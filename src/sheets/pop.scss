@@ -40,7 +40,8 @@ noname-arena noname-zoom > noname-pop {
                     border-radius: 100%;
                     position: absolute;
                     top: 4px;
-                    left: calc(50% - var(--pop-tray-height) / 2 + 4px);
+                    left: 0;
+                    @include transit;
 
                     &.avatar {
                         background-position: var(--widget-avatar-position) !important;

@@ -843,7 +843,9 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-w
   border-radius: 100%;
   position: absolute;
   top: 4px;
-  left: calc(50% - var(--pop-tray-height) / 2 + 4px);
+  left: 0;
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.avatar {
   background-position: var(--widget-avatar-position) !important;

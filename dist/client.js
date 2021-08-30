@@ -2346,13 +2346,60 @@
             const [node, clone, gallery] = this.items.get(id);
             if (node.classList.contains('selected')) {
                 node.classList.remove('selected');
-                clone.remove();
+                this.#updateTray(id, false);
                 this.check();
             }
             else if (!node.classList.contains('defer')) {
                 node.classList.add('selected');
-                this.tray.appendChild(clone);
+                this.#updateTray(id, true);
                 this.check();
+            }
+        }
+        /** Update tray item locations. */
+        #updateTray(id, add) {
+            const [item, clone, gallery] = this.items.get(id);
+            const d = parseInt(this.app.css.pop['tray-height']) - 8;
+            const margin = parseInt(this.app.css.pop['tray-margin']);
+            const width = this.tray.clientWidth;
+            const clones = [];
+            for (const node of Array.from(this.tray.childNodes)) {
+                if (node === clone) {
+                    continue;
+                }
+                clones.push(node);
+            }
+            if (add) {
+                clones.push(clone);
+            }
+            // determine spacing
+            const n = clones.length;
+            let spacing;
+            if ((width - margin) / (d + margin) > n) {
+                // use margin as spacing
+                spacing = margin;
+            }
+            else if ((width - 4) / (d + 4) > n) {
+                // spaced evenly
+                spacing = (width - n * d) / (n + 1);
+            }
+            else {
+                // leave 4px for left and right
+                spacing = (width - 8 - d) / (n - 1) - d;
+            }
+            // determine left most location
+            const length = d * n + spacing * (n - 1);
+            const left = (width - length) / 2;
+            // align items
+            for (let i = 0; i < clones.length; i++) {
+                const x = left + i * (d + spacing);
+                clones[i].style.transform = `translateX(${x}px)`;
+            }
+            // add or remove diff
+            if (add) {
+                this.tray.appendChild(clone);
+            }
+            else {
+                clone.remove();
             }
         }
         addCaption(caption) {
