@@ -85,7 +85,7 @@ export class Pop extends Component {
 
     /** Click on selectable items. */
     click(id: string | number) {
-        if (this.#blocked) return;
+        if (this.#blocked && this.#pending) return;
         const [node, clone, gallery] = this.items.get(id)!;
         if (this.selected.has(id)) {
             this.selected.delete(id);
@@ -314,9 +314,11 @@ export class Pop extends Component {
                     }
                 }
                 if (ask) {
-                    //////
                     this.#pending = true;
-                    item.classList.add('defer');
+                    this.yield(selected);
+                    this.ok.classList.add('disabled');
+                    console.log('asking...');
+                    return;
                 }
             }
             else {
