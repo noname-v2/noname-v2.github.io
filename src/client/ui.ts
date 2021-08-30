@@ -157,10 +157,22 @@ function pointerMove(e: EventPoint, touch: boolean) {
     // get offset and trigger move event
     if (moving && moving[4] === touch) {
         const [node, origin, offset] = moving;
-        dispatchMove(node, {
-            x: x - origin.x + offset.x,
-            y: y - origin.y + offset.y
-        });
+        const binding = bindings.get(node);
+        if (binding?.movable) {
+            if (binding.onclick || binding.oncontext) {
+                const dx = origin.x - x;
+                const dz = origin.y - y;
+
+                if (dx * dx + dz * dz <= 25) {
+                    return;
+                }
+            }
+
+            dispatchMove(node, {
+                x: x - origin.x + offset.x,
+                y: y - origin.y + offset.y
+            });
+        }
     }
 }
 
