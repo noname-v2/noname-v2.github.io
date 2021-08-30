@@ -1,5 +1,5 @@
 import type { createPop } from './choose-pop';
-import type { PopConfirm, Select } from '../../../../components/arena/pop';
+import type { PopConfirm, Select } from '../../types';
 
 export function createHero(T: ReturnType<typeof createPop>) {
     return class ChoosePop extends T {

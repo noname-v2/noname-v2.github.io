@@ -39,10 +39,6 @@ noname-arena noname-zoom > noname-pop {
                     margin-left: -2px;
                     margin-right: -2px;
 
-                    &.filled > noname-container {
-                        opacity: 0;
-                    }
-
                     > noname-container {
                         transition: opacity var(--app-transition);
                         position: absolute;

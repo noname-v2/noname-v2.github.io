@@ -842,9 +842,6 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-i
   margin-left: -2px;
   margin-right: -2px;
 }
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item.filled > noname-container {
-  opacity: 0;
-}
 noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-item > noname-container {
   transition: opacity var(--app-transition);
   position: absolute;

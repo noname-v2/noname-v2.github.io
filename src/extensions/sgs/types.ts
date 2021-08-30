@@ -2,6 +2,9 @@ import type { Extension, Class, Dict } from '../../types';
 import type { task } from './classes/task';
 import type { game } from './classes/game';
 
+/** Types for pop selection. */
+export type { Select, PopConfirm, PopContent } from '../../components/arena/pop';
+
 /** Built-in types that may be used by extensions. */
 export type { Link } from '../../worker/link';
 export type { Config } from '../../types';

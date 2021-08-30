@@ -73,7 +73,7 @@
 		"width": "85px",
 		"scale": "0.567",
 		"margin": "8",
-		"tray-width": "60px",
+		"tray-height": "60px",
 		"tray-margin": "16",
 		"timer-background": "rgba(0, 0, 0, 0.2)",
 		"timer-bar-background": "rgb(231, 116, 50)",

@@ -1,4 +1,4 @@
-import type { SGS } from '../sgs/types';
+import type { SGS, Select } from '../sgs/types';
 
 export default {
     mode: {
@@ -59,10 +59,9 @@ export default {
                         this.addTask('loop');
                     }
 
-                    getChoices() {
+                    getChoices(): Select<string> {
                         return {
                             items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            filter: true,
                             num: 8
                         };
                     }
