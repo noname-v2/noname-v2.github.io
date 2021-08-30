@@ -318,7 +318,7 @@ export class Pop extends Component {
                             getCard: this.app.getCard,
                             accessExtension: this.app.accessExtension
                         }
-                        item.classList[func.apply(filterThis, [id, selected]) ? 'remove' : 'add']('defer');
+                        item.classList[func.call(filterThis, id) ? 'remove' : 'add']('defer');
                     }
                     catch {
                         ask = true;
@@ -347,6 +347,16 @@ export class Pop extends Component {
             }
         }
         this.ok.classList[ok ? 'remove' : 'add']('disabled');
+    }
+
+    /** Update selectable items by worker. */
+    setSelectable(selectable: (string | number)[]) {
+        if (this.#pending) {
+            for (const [id, [item]] of this.items) {
+                item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+            }
+            this.#pending = false;
+        }
     }
 
     $content(content: PopContent) {

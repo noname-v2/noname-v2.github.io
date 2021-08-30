@@ -2578,7 +2578,7 @@
                                 getCard: this.app.getCard,
                                 accessExtension: this.app.accessExtension
                             };
-                            item.classList[func.apply(filterThis, [id, selected]) ? 'remove' : 'add']('defer');
+                            item.classList[func.call(filterThis, id) ? 'remove' : 'add']('defer');
                         }
                         catch {
                             ask = true;
@@ -2606,6 +2606,15 @@
                 }
             }
             this.ok.classList[ok ? 'remove' : 'add']('disabled');
+        }
+        /** Update selectable items by worker. */
+        setSelectable(selectable) {
+            if (this.#pending) {
+                for (const [id, [item]] of this.items) {
+                    item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+                }
+                this.#pending = false;
+            }
         }
         $content(content) {
             if (this.mine) {

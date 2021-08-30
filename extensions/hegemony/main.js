@@ -820,7 +820,7 @@ var main = {
         inherit: 'sgs'
     },
     filters: {
-        choose(name) {
+        choose(name, task) {
             const faction = this.getHero(name).faction;
             if (this.selected.length) {
                 return faction === this.getHero(this.selected[0]).faction;

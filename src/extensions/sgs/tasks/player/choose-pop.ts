@@ -1,6 +1,6 @@
 import type { PopContent } from '../../../../components/arena/pop';
 import type { createChoose } from './choose';
-import type { Link, Player } from '../../types';
+import type { Link, Select, FilterThis } from '../../types';
 
 export function createPop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {
@@ -52,7 +52,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
 
         filter(selections: (string | number)[][], pop: Link) {
             // map of sections and its selected items
-            const sections = new Map<any, [(string | number)[], (string | number)[]]>();
+            const sections = new Map<Select<any>, [(string | number)[], (string | number)[]]>();
             
             // get lists of all items and selected items
             let all: any[] = [];
@@ -73,17 +73,32 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             }
 
             // get selectable items
-            for (const [sel, selected] of sections) {
-
-            }
             const selectable = [];
-            for(const section of pop.content) {
-                if (Array.isArray(section[1])) {
-                    for (const selected of selections) {
-                        console.log(selected);
+            for (const [sel, [all, selected]] of sections) {
+                const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
+                if (n > selected.length) {
+                    const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
+                    const filterThis: FilterThis<any> = {
+                        all, selected,
+                        getHero: this.game.getHero,
+                        getCard: this.game.getCard,
+                        accessExtension: this.game.accessExtension
+                    }
+                    for (const item of all) {
+                        if (!selected.includes(item)) {
+                            try {
+                                if (func.apply(filterThis, [item, this])) {
+                                    selectable.push(item);
+                                }
+                            }
+                            catch {}
+                        }
                     }
                 }
             }
+
+            // update pop
+            pop.call('setSelectable', selectable);
         }
     }
 }
