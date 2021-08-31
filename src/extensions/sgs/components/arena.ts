@@ -1,7 +1,7 @@
 import type { Arena } from '../../../components';
 
 export function arena(T: typeof Arena) {
-    return class ArenaSGS extends T {
+    return class Arena extends T {
         /** Blur arena on start. */
         initBlur = true;
 

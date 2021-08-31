@@ -65,6 +65,9 @@ export class Pop extends Component {
      */
     items = new Map<string | number, [HTMLElement, HTMLElement, Gallery]>();
 
+    /** Map of button IDs -> button elements. */
+    buttons = new Map<string, HTMLElement>();
+
     /** Selected items. */
     selected = new Set<string | number>();
 
@@ -73,9 +76,6 @@ export class Pop extends Component {
 
     /** Container of clones of selected items. */
     tray!: HTMLElement;
-
-    /** Confirm button. */
-    ok!: HTMLElement;
 
     /** Operation blocked by animation. */
     #blocked: HTMLElement | null = null;
@@ -156,7 +156,8 @@ export class Pop extends Component {
 
         for (const item of content) {
             if (item === 'ok') {
-                const ok = this.ok = this.ui.createElement('widget.button', bar);
+                const ok = this.ui.createElement('widget.button', bar);
+                this.buttons.set('ok', ok);
                 ok.dataset.fill = 'red';
                 ok.innerHTML = '确定';
                 this.ui.bind(ok, () => {
@@ -166,6 +167,7 @@ export class Pop extends Component {
             }
             else if (item === 'cancel') {
                 const cancel = this.ui.createElement('widget.button', bar);
+                this.buttons.set('cancel', cancel);
                 cancel.innerHTML = '取消';
                 this.ui.bind(cancel, () => {
                     this.respond(false);
@@ -175,6 +177,7 @@ export class Pop extends Component {
             else {
                 const button = this.ui.createElement('widget.button', bar);
                 const [id, text, color] = item;
+                this.buttons.set(id, button);
                 button.innerHTML = text;
                 if (color) {
                     button.dataset.fill = color;
@@ -184,11 +187,6 @@ export class Pop extends Component {
                 });
             }
         }
-    }
-
-    /** Open popup to pick heros. */
-    pick([e, packs]: [Point, string[]]) {
-        console.log('ok', e, packs);
     }
 
     /** Add tray of selected items. */
@@ -300,7 +298,7 @@ export class Pop extends Component {
                 if (ask) {
                     this.#pending = true;
                     this.yield(Array.from(selections.values()));
-                    this.ok.classList.add('disabled');
+                    this.buttons.get('ok')?.classList.add('disabled');
                     console.log('asking...');
                     return;
                 }
@@ -319,7 +317,9 @@ export class Pop extends Component {
                 break;
             }
         }
-        this.ok.classList[ok ? 'remove' : 'add']('disabled');
+        this.buttons.get('ok')?.classList[ok ? 'remove' : 'add']('disabled');
+        
+        return ok;
     }
 
     /** Update selectable items by worker. */

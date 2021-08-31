@@ -2455,14 +2455,16 @@
          * [2]: gallery that contains the item
          */
         items = new Map();
+        /** Items added manually. */
+        addedItems = new Set();
+        /** Map of button IDs -> button elements. */
+        buttons = new Map();
         /** Selected items. */
         selected = new Set();
         /** Filters and expected number of selected items of galleries. */
         galleries = new Map();
         /** Container of clones of selected items. */
         tray;
-        /** Confirm button. */
-        ok;
         /** Operation blocked by animation. */
         #blocked = null;
         /** Awaiting filter results from worker. */
@@ -2531,7 +2533,8 @@
             const bar = this.pane.add('bar');
             for (const item of content) {
                 if (item === 'ok') {
-                    const ok = this.ok = this.ui.createElement('widget.button', bar);
+                    const ok = this.ui.createElement('widget.button', bar);
+                    this.buttons.set('ok', ok);
                     ok.dataset.fill = 'red';
                     ok.innerHTML = '确定';
                     this.ui.bind(ok, () => {
@@ -2541,6 +2544,7 @@
                 }
                 else if (item === 'cancel') {
                     const cancel = this.ui.createElement('widget.button', bar);
+                    this.buttons.set('cancel', cancel);
                     cancel.innerHTML = '取消';
                     this.ui.bind(cancel, () => {
                         this.respond(false);
@@ -2550,6 +2554,7 @@
                 else {
                     const button = this.ui.createElement('widget.button', bar);
                     const [id, text, color] = item;
+                    this.buttons.set(id, button);
                     button.innerHTML = text;
                     if (color) {
                         button.dataset.fill = color;
@@ -2559,10 +2564,6 @@
                     });
                 }
             }
-        }
-        /** Open popup to pick heros. */
-        pick([e, packs]) {
-            console.log('ok', e, packs);
         }
         /** Add tray of selected items. */
         addTray() {
@@ -2664,7 +2665,7 @@
                     if (ask) {
                         this.#pending = true;
                         this.yield(Array.from(selections.values()));
-                        this.ok.classList.add('disabled');
+                        this.buttons.get('ok')?.classList.add('disabled');
                         console.log('asking...');
                         return;
                     }
@@ -2682,7 +2683,8 @@
                     break;
                 }
             }
-            this.ok.classList[ok ? 'remove' : 'add']('disabled');
+            this.buttons.get('ok')?.classList[ok ? 'remove' : 'add']('disabled');
+            return ok;
         }
         /** Update selectable items by worker. */
         setSelectable(selectable) {

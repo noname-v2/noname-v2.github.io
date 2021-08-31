@@ -478,7 +478,7 @@ const classes = {
 };
 
 function arena(T) {
-    return class ArenaSGS extends T {
+    return class Arena extends T {
         /** Blur arena on start. */
         initBlur = true;
         /** Layout mode. */
@@ -700,7 +700,7 @@ function arena(T) {
 }
 
 function player(T) {
-    return class PlayerSGS extends T {
+    return class Player extends T {
         x;
         y;
         locate(dx = 0, dy = 0) {
@@ -717,8 +717,25 @@ function player(T) {
     };
 }
 
+function pop(T) {
+    return class Pop extends T {
+        /** Open popup to pick heros. */
+        pick([e, packs]) {
+            console.log('ok', e, packs);
+        }
+        /** Update pick button when checking. */
+        check() {
+            const ok = super.check();
+            if (typeof ok === 'boolean') {
+                this.buttons.get('pick')?.classList[!ok ? 'remove' : 'add']('disabled');
+            }
+            return ok;
+        }
+    };
+}
+
 const components = {
-    arena, player
+    arena, player, pop
 };
 
 var main = {

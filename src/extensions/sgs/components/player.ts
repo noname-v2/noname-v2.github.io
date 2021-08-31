@@ -2,7 +2,7 @@ import type { Player } from '../../../components';
 import type { PlayerLink } from '../classes/player';
 
 export function player(T: typeof Player) {
-    return class PlayerSGS extends T {
+    return class Player extends T {
         declare data: PlayerLink;
         
         x!: number;
