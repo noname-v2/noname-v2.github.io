@@ -9,7 +9,7 @@ export class Collection extends Popup {
     /** Gallery object. */
     gallery!: Gallery;
 
-    setup(pack: string, section: 'hero' | 'card') {
+    setup(pack: string, section: 'hero' | 'card', render?: (id: string, node: HTMLElement) => void) {
         const lib = this.app.accessExtension(pack, section);
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
@@ -23,8 +23,12 @@ export class Collection extends Popup {
                 gallery.add(() => {
                     if (section === 'hero') {
                         const player = this.ui.create('player');
-                        player.setHero(pack + ':' + name);
-                        this.items.set(pack + ':' + name, player.node);
+                        const id = pack + ':' + name;
+                        player.setHero(id);
+                        this.items.set(id, player.node);
+                        if (render) {
+                            render(id, player.node);
+                        }
                         return player.node;
                     }
                     else {

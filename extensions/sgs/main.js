@@ -719,33 +719,17 @@ function player(T) {
 
 function pop(T) {
     return class Pop extends T {
-        /** Items added manually. */
-        addedItems = new Set();
-        /** Selected by pick. */
+        /** Selected by this.pick(). */
         picked = new Set();
-        /** Clones from pick. */
+        /** Item clones created by this.pick(). */
         clones = new Map();
-        /** Cache of created galleries. */
+        /** Cache of created collections. */
         collections = new Map();
-        /** All items. */
-        all;
-        /** Open a popup to pick heros. Note, if enabled:
-         * 1. multiple galleries in a single Pop is no longer allowed.
-         * 2. filter function can must be client-compatible (takes only 1 argument).
-         */
+        /** Open a popup to pick heros. */
         pick([e, packs]) {
-            // get all available items
-            if (!this.all) {
-                this.all = [];
-                for (const pack of packs) {
-                    const name = this.app.accessExtension(pack, 'heropack');
-                    for (const hero in this.app.accessExtension(pack, 'hero')) {
-                        this.all.push(name + ':' + hero);
-                    }
-                }
-            }
             const menu = this.ui.create('popup');
             for (const pack of packs) {
+                // separate by packs to improve performance
                 const name = this.app.accessExtension(pack, 'heropack');
                 menu.pane.addOption(name ?? pack, e => {
                     // open hero gallery
@@ -758,71 +742,49 @@ function pop(T) {
             }
             menu.open(e);
         }
-        /** Create a collection. */
+        /** Create a hero collection of an extension. */
         #createCollection(pack) {
-            const gallery = this.galleries.keys().next().value;
-            const [num, filter] = this.galleries.get(gallery);
-            const func = filter ? this.app.accessExtension(filter) : null;
             const collection = this.ui.create('collection');
-            const filterThis = {
-                all: this.all,
-                getHero: this.app.getHero,
-                getCard: this.app.getCard,
-                accessExtension: this.app.accessExtension
-            };
-            collection.setup(pack, 'hero');
-            collection.gallery.renderAll();
-            this.collections.set(pack, collection);
-            // check if hero is allowed
-            const check = () => {
-                filterThis.selected = Array.from(this.picked);
-                for (const [id, node] of collection.items) {
-                    let disabled = this.picked.has(id);
-                    if (!disabled) {
-                        try {
-                            if (func && !func.call(filterThis, id)) {
-                                disabled = true;
-                            }
-                        }
-                        catch { }
-                    }
-                    node.classList[disabled ? 'add' : 'remove']('defer');
-                }
-            };
-            collection.onopen = check;
-            // bind onclick
-            for (const [id, node] of collection.items) {
+            collection.setup(pack, 'hero', (id, node) => {
                 this.ui.bind(node, () => {
                     if (this.picked.has(id)) {
+                        // unselect hero
                         this.picked.delete(id);
-                        this.buttons.get('pick')?.classList.remove('disabled');
                         this.updateTray(null, this.clones.get(id), false);
-                        check();
+                        node.classList.remove('defer');
                     }
                     else if (!node.classList.contains('defer')) {
+                        // create clone of hero
                         if (!this.clones.has(id)) {
                             const clone = this.ui.createElement('widget.avatar');
                             clone.dataset.shadow = 'blue';
                             this.ui.setImage(clone, id);
+                            let clicked = false;
                             this.ui.bind(clone, () => {
+                                if (clicked) {
+                                    return;
+                                }
+                                clicked = true;
+                                setTimeout(() => clicked = false, 500);
                                 this.picked.delete(id);
-                                this.buttons.get('pick')?.classList.remove('disabled');
                                 this.updateTray(null, clone, false);
                             });
                             this.clones.set(id, clone);
                         }
+                        // select hero
                         this.picked.add(id);
                         this.updateTray(null, this.clones.get(id), true);
-                        if (this.picked.size === num[1]) {
-                            this.buttons.get('pick')?.classList.add('disabled');
-                            collection.close();
-                        }
-                        else {
-                            check();
-                        }
+                        node.classList.add('defer');
                     }
                 });
-            }
+            });
+            this.collections.set(pack, collection);
+            // check if hero is picked
+            collection.onopen = () => {
+                for (const [id, node] of collection.items) {
+                    node.classList[this.picked.has(id) ? 'add' : 'remove']('defer');
+                }
+            };
         }
     };
 }

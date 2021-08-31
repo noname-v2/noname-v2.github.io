@@ -1910,7 +1910,7 @@
         items = new Map();
         /** Gallery object. */
         gallery;
-        setup(pack, section) {
+        setup(pack, section, render) {
             const lib = this.app.accessExtension(pack, section);
             const n = Object.entries(lib ?? {}).length;
             if (lib && n) {
@@ -1923,8 +1923,12 @@
                     gallery.add(() => {
                         if (section === 'hero') {
                             const player = this.ui.create('player');
-                            player.setHero(pack + ':' + name);
-                            this.items.set(pack + ':' + name, player.node);
+                            const id = pack + ':' + name;
+                            player.setHero(id);
+                            this.items.set(id, player.node);
+                            if (render) {
+                                render(id, player.node);
+                            }
                             return player.node;
                         }
                     });
