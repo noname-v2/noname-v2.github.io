@@ -80,43 +80,6 @@ export class Arena extends Component {
         if (this.platform.android && history.state === null) {
             history.pushState('arena', '');
         }
-
-        // setup control panel
-        this.control.ready.then(() => {
-            this.controlZoom.node.appendChild(this.control.node);
-
-            // setup swipe area
-            let xmax = 0;
-            let blocked = false;
-            this.ui.bind(this.swipe, {
-                movable: {x: [0, 220], y: [0, 0]},
-                onmove: e => {
-                    xmax = Math.max(xmax, e.x);
-                    this.control.updateZoom(e.x);
-                    return e.x;
-                },
-                onmoveend: x => {
-                    if (!x || blocked) return;
-                    blocked = true;
-                    setTimeout(() => blocked = false, 200);
-                    this.ui.moveTo(this.swipe, {x: 0, y: 0}, false);
-                    if (xmax > 50 && x > xmax - 5) {
-                        this.control.show(x);
-                    }
-                    else {
-                        this.control.hide(x);
-                    }
-                    xmax = 0;
-                },
-                oncontext: () => {
-                    if (blocked) return;
-                    blocked = true;
-                    xmax = 0;
-                    setTimeout(() => blocked = false, 200);
-                    this.control.show();
-                }
-            });
-        });
     }
 
     /** Update arena layout (intended to be inherited by mode). */
