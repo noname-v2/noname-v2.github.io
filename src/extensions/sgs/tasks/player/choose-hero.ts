@@ -5,7 +5,7 @@ import type { Point } from '../../../../components';
 export function createHero(T: ReturnType<typeof createPop>) {
     return class ChoosePop extends T {
         heros!: Map<number, string[] | Select<string>>;
-        freeChoose = false;
+        pick = false;
 
         main() {
             this.pop = new Map();
@@ -14,8 +14,8 @@ export function createHero(T: ReturnType<typeof createPop>) {
                 if (!this.forced) {
                     confirm.push('cancel');
                 }
-                if (this.freeChoose) {
-                    confirm.push(['pick', '点将']);
+                if (this.pick) {
+                    confirm.push(['callPick', '点将']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
@@ -26,7 +26,7 @@ export function createHero(T: ReturnType<typeof createPop>) {
             super.main();
         }
 
-        pick(pop: Link, e: Point) {
+        callPick(pop: Link, e: Point) {
             pop.call('pick', [e, this.game.config.heropacks]);
         }
     }

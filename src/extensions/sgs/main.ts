@@ -12,13 +12,13 @@ export default {
                 intro: '允许其他玩家通过主页的联机键加入游戏。',
                 init: false
             },
-            online_join: {
+            join: {
                 name: '允许中途加入',
                 intro: '允许旁观玩家在游戏过程中加入游戏。',
                 init: true,
                 requires: 'online'
             },
-            online_timeout: {
+            timeout: {
                 name: '出牌时限',
                 init: 30,
                 options: [
@@ -29,7 +29,7 @@ export default {
                 ],
                 requires: 'online'
             },
-            online_mulligan: {
+            mulligan: {
                 name: '手气卡',
                 intro: '游戏开始时玩家可以更换一至两次手牌。',
                 init: 0,
@@ -40,25 +40,18 @@ export default {
                 ],
                 requires: 'online'
             },
-            mulligan: {
+            infinite_mulligan: {
                 name: '手气卡',
                 intro: '游戏开始时玩家可以更换任意次手牌。',
                 init: false,
                 requires: '!online'
             },
-            online_choose: {
+            pick: {
                 name: '点将',
                 intro: '允许玩家自由选择武将。',
-                init: false,
-                requires: 'online'
+                init: false
             },
-            choose: {
-                name: '点将',
-                intro: '允许玩家自由选择武将。',
-                init: true,
-                requires: '!online'
-            },
-            game_speed: {
+            speed: {
                 name: '游戏速度',
                 intro: '控制游戏事件间的间隔时间。',
                 init: 0.3,

@@ -167,7 +167,7 @@ export class Pop extends Component {
 
             if (add) {
                 if (!item) {
-                    // item added from elsewhere (e.g. freeChoose)
+                    // item added from elsewhere (e.g. hero pick)
                     dx = 0;
                     dy = 0;
                     scale = 'var(--app-zoom-scale)';
@@ -190,7 +190,6 @@ export class Pop extends Component {
                     }
                 }
                 else {
-                    // item added from elsewhere (e.g. freeChoose)
                     zoom = true;
                 }
                 
