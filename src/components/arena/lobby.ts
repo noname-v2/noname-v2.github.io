@@ -165,7 +165,7 @@ export class Lobby extends Component {
         for (const pack of configs.heropacks) {
             const name = this.app.accessExtension(pack, 'heropack');
             const toggle = this.sidebar.pane.addToggle([name,
-                e => this.#openGallery(e, pack, 'hero')], result => {
+                e => this.ui.create('collection').pop(e, pack, 'hero')], result => {
                 this.freeze();
                 this.yield(['banned', 'heropack/' + pack, result]);
             });
@@ -177,7 +177,7 @@ export class Lobby extends Component {
         for (const pack of configs.cardpacks) {
             const name = this.app.accessExtension(pack, 'cardpack');
             const toggle = this.sidebar.pane.addToggle([name,
-                e => this.#openGallery(e, pack, 'card')], result => {
+                e => this.ui.create('collection').pop(e, pack, 'card')], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);
             });
@@ -319,33 +319,5 @@ export class Lobby extends Component {
             }
             this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
         }
-    }
-
-    /** Open an extension gallery. */
-    #openGallery(e: Point, pack: string, section: 'hero' | 'card') {
-        const lib = this.app.accessExtension(pack, section);
-        const n = Object.entries(lib ?? {}).length;
-        if (lib && n) {
-            const menu = this.ui.create('popup');
-            menu.location = e;
-            menu.pane.node.classList.add('auto');
-            menu.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-            const [gallery, width] = menu.pane.addPopGallery(n);
-            gallery.node.style.width = `${width}px`;
-
-            for (const name in lib) {
-                gallery.add(() => {
-                    if (section === 'hero') {
-                        const player = this.ui.create('player');
-                        player.setHero(pack + ':' + name);
-                        return player.node;
-                    }
-                    else {
-                        
-                    }
-                });
-            }
-            this.app.popup(menu).then(() => gallery.checkPage());
-        } 
     }
 }

@@ -447,7 +447,7 @@ export class Pop extends Component {
             this.tray.appendChild(clone);
         }
 
-        const rect1 = item.getBoundingClientRect();
+        const rect1 = item.parentNode ? item.getBoundingClientRect() : {} as any;
         const rect2 = clone.getBoundingClientRect();
         let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
         let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
@@ -463,18 +463,35 @@ export class Pop extends Component {
         setTimeout(unblock, 500);
 
         if (add) {
+            if (!item.parentNode) {
+                // item added from elsewhere (e.g. freeChoose)
+                dx = 0;
+                dy = 0;
+                scale = 'var(--app-zoom-scale)';
+            }
             this.ui.animate(clone, {
                 x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
             }).onfinish = unblock;
         }
         else {
-            const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
-            const indicator = page.parentNode!.nextSibling as HTMLElement;
-            const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
-            const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
-
-            // skip translate animation if item is not in current gallery page
-            if (idx !== idx2) {
+            let zoom = false;
+            if (item.parentNode) {
+                const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
+                const indicator = page.parentNode!.nextSibling as HTMLElement;
+                const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
+                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
+                
+                // skip translate animation if item is not in current gallery page
+                if (idx !== idx2) {
+                    zoom = true;
+                }
+            }
+            else {
+                // item added from elsewhere (e.g. freeChoose)
+                zoom = true;
+            }
+            
+            if (zoom) {
                 dx = 0;
                 dy = 0;
                 scale = 'var(--app-zoom-scale)';

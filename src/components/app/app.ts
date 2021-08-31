@@ -206,8 +206,10 @@ export class App extends Component {
             bcolor: 'background-image',
             fill: 'background',
             text: 'text-color',
-            shadow: 'text-shadow',
-            glow: 'text-shadow'
+            shadow: 'box-shadow',
+            glow: 'box-shadow',
+            tshadow: 'text-shadow',
+            tglow: 'text-shadow'
         };
         
         for (const section in dataset) {

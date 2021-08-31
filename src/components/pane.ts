@@ -1,4 +1,4 @@
-import { Component, Gallery } from '../components';
+import { Component, Gallery, Point } from '../components';
 import type { ToggleOptions } from './toggle';
 
 export class Pane extends Component {
@@ -82,7 +82,7 @@ export class Pane extends Component {
 	}
 
 	/** Add context menu item. */
-	addOption(caption: string, onclick: () => void) {
+	addOption(caption: string, onclick: (e: Point) => void) {
 		this.node.classList.add('menu');
 		const option = this.ui.createElement('option');
 		this.ui.format(option, caption);

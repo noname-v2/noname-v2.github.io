@@ -1350,8 +1350,10 @@
                 bcolor: 'background-image',
                 fill: 'background',
                 text: 'text-color',
-                shadow: 'text-shadow',
-                glow: 'text-shadow'
+                shadow: 'box-shadow',
+                glow: 'box-shadow',
+                tshadow: 'text-shadow',
+                tglow: 'text-shadow'
             };
             for (const section in dataset) {
                 for (const name in this.css[section]) {
@@ -1902,6 +1904,36 @@
         }
     }
 
+    class Collection extends Popup {
+        /** Gallery items. */
+        items = new Map();
+        /** Gallery object. */
+        gallery;
+        pop(e, pack, section) {
+            const lib = this.app.accessExtension(pack, section);
+            const n = Object.entries(lib ?? {}).length;
+            if (lib && n) {
+                this.location = e;
+                this.pane.node.classList.add('auto');
+                this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+                const [gallery, width] = this.pane.addPopGallery(n);
+                this.gallery = gallery;
+                gallery.node.style.width = `${width}px`;
+                for (const name in lib) {
+                    gallery.add(() => {
+                        if (section === 'hero') {
+                            const player = this.ui.create('player');
+                            player.setHero(pack + ':' + name);
+                            this.items.set(pack + ':' + name, player.node);
+                            return player.node;
+                        }
+                    });
+                }
+                return this.app.popup(this).then(() => gallery.checkPage());
+            }
+        }
+    }
+
     class Control extends Component {
         /** Sidebar for configurations. */
         sidebar = this.ui.create('sidebar', this.node);
@@ -2162,7 +2194,7 @@
             for (const pack of configs.heropacks) {
                 const name = this.app.accessExtension(pack, 'heropack');
                 const toggle = this.sidebar.pane.addToggle([name,
-                    e => this.#openGallery(e, pack, 'hero')], result => {
+                    e => this.ui.create('collection').pop(e, pack, 'hero')], result => {
                     this.freeze();
                     this.yield(['banned', 'heropack/' + pack, result]);
                 });
@@ -2173,7 +2205,7 @@
             for (const pack of configs.cardpacks) {
                 const name = this.app.accessExtension(pack, 'cardpack');
                 const toggle = this.sidebar.pane.addToggle([name,
-                    e => this.#openGallery(e, pack, 'card')], result => {
+                    e => this.ui.create('collection').pop(e, pack, 'card')], result => {
                     this.freeze();
                     this.yield(['banned', 'cardpack/' + pack, result]);
                 });
@@ -2305,29 +2337,6 @@
                 this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
             }
         }
-        /** Open an extension gallery. */
-        #openGallery(e, pack, section) {
-            const lib = this.app.accessExtension(pack, section);
-            const n = Object.entries(lib ?? {}).length;
-            if (lib && n) {
-                const menu = this.ui.create('popup');
-                menu.location = e;
-                menu.pane.node.classList.add('auto');
-                menu.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-                const [gallery, width] = menu.pane.addPopGallery(n);
-                gallery.node.style.width = `${width}px`;
-                for (const name in lib) {
-                    gallery.add(() => {
-                        if (section === 'hero') {
-                            const player = this.ui.create('player');
-                            player.setHero(pack + ':' + name);
-                            return player.node;
-                        }
-                    });
-                }
-                this.app.popup(menu).then(() => gallery.checkPage());
-            }
-        }
     }
 
     class Peer extends Component {
@@ -2388,8 +2397,8 @@
             if (info) {
                 const [label, color] = info;
                 this.faction.innerHTML = label;
-                this.faction.dataset.glow = color;
-                this.heroName.dataset.shadow = color;
+                this.faction.dataset.tglow = color;
+                this.heroName.dataset.tshadow = color;
             }
         }
         $hpMax(hp) {
@@ -2455,8 +2464,6 @@
          * [2]: gallery that contains the item
          */
         items = new Map();
-        /** Items added manually. */
-        addedItems = new Set();
         /** Map of button IDs -> button elements. */
         buttons = new Map();
         /** Selected items. */
@@ -2798,7 +2805,7 @@
             if (add) {
                 this.tray.appendChild(clone);
             }
-            const rect1 = item.getBoundingClientRect();
+            const rect1 = item.parentNode ? item.getBoundingClientRect() : {};
             const rect2 = clone.getBoundingClientRect();
             let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
             let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
@@ -2812,17 +2819,33 @@
             };
             setTimeout(unblock, 500);
             if (add) {
+                if (!item.parentNode) {
+                    // item added from elsewhere (e.g. freeChoose)
+                    dx = 0;
+                    dy = 0;
+                    scale = 'var(--app-zoom-scale)';
+                }
                 this.ui.animate(clone, {
                     x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
                 }).onfinish = unblock;
             }
             else {
-                const page = item.parentNode.parentNode.parentNode;
-                const indicator = page.parentNode.nextSibling;
-                const idx = Array.from(page.parentNode.childNodes).indexOf(page);
-                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
-                // skip translate animation if item is not in current gallery page
-                if (idx !== idx2) {
+                let zoom = false;
+                if (item.parentNode) {
+                    const page = item.parentNode.parentNode.parentNode;
+                    const indicator = page.parentNode.nextSibling;
+                    const idx = Array.from(page.parentNode.childNodes).indexOf(page);
+                    const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
+                    // skip translate animation if item is not in current gallery page
+                    if (idx !== idx2) {
+                        zoom = true;
+                    }
+                }
+                else {
+                    // item added from elsewhere (e.g. freeChoose)
+                    zoom = true;
+                }
+                if (zoom) {
                     dx = 0;
                     dy = 0;
                     scale = 'var(--app-zoom-scale)';
@@ -4183,6 +4206,7 @@
     componentClasses.set('dialog', Dialog);
     componentClasses.set('sidebar', Sidebar);
     componentClasses.set('arena', Arena);
+    componentClasses.set('collection', Collection);
     componentClasses.set('control', Control);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('peer', Peer);

@@ -64,8 +64,8 @@ export class Player extends Component {
         if (info) {
             const [label, color] = info;
             this.faction.innerHTML = label;
-            this.faction.dataset.glow = color;
-            this.heroName.dataset.shadow = color;
+            this.faction.dataset.tglow = color;
+            this.heroName.dataset.tshadow = color;
         }
     }
 
