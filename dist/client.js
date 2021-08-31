@@ -1904,16 +1904,16 @@
         }
     }
 
+    /** A collection of all items in an extension. */
     class Collection extends Popup {
         /** Gallery items. */
         items = new Map();
         /** Gallery object. */
         gallery;
-        pop(e, pack, section) {
+        setup(pack, section) {
             const lib = this.app.accessExtension(pack, section);
             const n = Object.entries(lib ?? {}).length;
             if (lib && n) {
-                this.location = e;
                 this.pane.node.classList.add('auto');
                 this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
                 const [gallery, width] = this.pane.addPopGallery(n);
@@ -1929,8 +1929,12 @@
                         }
                     });
                 }
-                return this.app.popup(this).then(() => gallery.checkPage());
             }
+        }
+        async pop(e) {
+            this.location = e;
+            await this.app.popup(this);
+            this.gallery.checkPage();
         }
     }
 
@@ -2193,8 +2197,11 @@
             this.sidebar.pane.addSection('武将');
             for (const pack of configs.heropacks) {
                 const name = this.app.accessExtension(pack, 'heropack');
-                const toggle = this.sidebar.pane.addToggle([name,
-                    e => this.ui.create('collection').pop(e, pack, 'hero')], result => {
+                const toggle = this.sidebar.pane.addToggle([name, e => {
+                        const collection = this.ui.create('collection');
+                        collection.setup(pack, 'hero');
+                        collection.pop(e);
+                    }], result => {
                     this.freeze();
                     this.yield(['banned', 'heropack/' + pack, result]);
                 });
@@ -2204,8 +2211,11 @@
             this.sidebar.pane.addSection('卡牌');
             for (const pack of configs.cardpacks) {
                 const name = this.app.accessExtension(pack, 'cardpack');
-                const toggle = this.sidebar.pane.addToggle([name,
-                    e => this.ui.create('collection').pop(e, pack, 'card')], result => {
+                const toggle = this.sidebar.pane.addToggle([name, e => {
+                        const collection = this.ui.create('collection');
+                        collection.setup(pack, 'card');
+                        collection.open(e);
+                    }], result => {
                     this.freeze();
                     this.yield(['banned', 'cardpack/' + pack, result]);
                 });
@@ -2480,18 +2490,111 @@
         click(id) {
             if (this.#blocked || this.#pending)
                 return;
-            const [node] = this.items.get(id);
+            const [item, clone] = this.items.get(id);
             if (this.selected.has(id)) {
                 this.selected.delete(id);
-                node.classList.remove('selected');
-                this.#updateTray(id, false);
+                item.classList.remove('selected');
+                this.updateTray(item, clone, false);
                 this.check();
             }
-            else if (!node.classList.contains('defer')) {
+            else if (!item.classList.contains('defer')) {
                 this.selected.add(id);
-                node.classList.add('selected');
-                this.#updateTray(id, true);
+                item.classList.add('selected');
+                this.updateTray(item, clone, true);
                 this.check();
+            }
+        }
+        /** Update tray item locations. */
+        updateTray(item, clone, add) {
+            const d = parseInt(this.app.css.pop['tray-height']) - 8;
+            const margin = parseInt(this.app.css.pop['tray-margin']);
+            const width = this.tray.clientWidth;
+            const clones = [];
+            for (const node of Array.from(this.tray.childNodes)) {
+                if (node === clone) {
+                    continue;
+                }
+                clones.push(node);
+            }
+            if (add) {
+                clones.push(clone);
+            }
+            // determine spacing
+            const n = clones.length;
+            let spacing;
+            if ((width - margin) / (d + margin) > n) {
+                // use margin as spacing
+                spacing = margin;
+            }
+            else if ((width - 4) / (d + 4) > n) {
+                // spaced evenly
+                spacing = (width - n * d) / (n + 1);
+            }
+            else {
+                // leave 4px for left and right
+                spacing = (width - 8 - d) / (n - 1) - d;
+            }
+            // determine left most location
+            const length = d * n + spacing * (n - 1);
+            const left = (width - length) / 2;
+            // align items
+            for (let i = 0; i < clones.length; i++) {
+                const x = left + i * (d + spacing);
+                clones[i].style.transform = `translateX(${x}px)`;
+                clones[i]._x = x;
+            }
+            // add or remove diff
+            if (add) {
+                this.tray.appendChild(clone);
+            }
+            const rect1 = item ? item.getBoundingClientRect() : {};
+            const rect2 = clone.getBoundingClientRect();
+            let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
+            let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
+            let scale = 1.5;
+            const x = clone._x;
+            this.#blocked = clone;
+            const unblock = () => {
+                if (this.#blocked === clone) {
+                    this.#blocked = null;
+                }
+            };
+            setTimeout(unblock, 500);
+            if (add) {
+                if (!item) {
+                    // item added from elsewhere (e.g. freeChoose)
+                    dx = 0;
+                    dy = 0;
+                    scale = 'var(--app-zoom-scale)';
+                }
+                this.ui.animate(clone, {
+                    x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
+                }).onfinish = unblock;
+            }
+            else {
+                let zoom = false;
+                if (item) {
+                    const page = item.parentNode.parentNode.parentNode;
+                    const indicator = page.parentNode.nextSibling;
+                    const idx = Array.from(page.parentNode.childNodes).indexOf(page);
+                    const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
+                    // skip translate animation if item is not in current gallery page
+                    if (idx !== idx2) {
+                        zoom = true;
+                    }
+                }
+                else {
+                    // item added from elsewhere (e.g. freeChoose)
+                    zoom = true;
+                }
+                if (zoom) {
+                    dx = 0;
+                    dy = 0;
+                    scale = 'var(--app-zoom-scale)';
+                }
+                this.ui.animate(clone, {
+                    x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
+                }).onfinish = () => { clone.remove(); unblock(); };
             }
         }
         addCaption(caption) {
@@ -2759,100 +2862,6 @@
             }
             else {
                 this.timer?.remove();
-            }
-        }
-        /** Update tray item locations. */
-        #updateTray(id, add) {
-            const [item, clone, gallery] = this.items.get(id);
-            const d = parseInt(this.app.css.pop['tray-height']) - 8;
-            const margin = parseInt(this.app.css.pop['tray-margin']);
-            const width = this.tray.clientWidth;
-            const clones = [];
-            for (const node of Array.from(this.tray.childNodes)) {
-                if (node === clone) {
-                    continue;
-                }
-                clones.push(node);
-            }
-            if (add) {
-                clones.push(clone);
-            }
-            // determine spacing
-            const n = clones.length;
-            let spacing;
-            if ((width - margin) / (d + margin) > n) {
-                // use margin as spacing
-                spacing = margin;
-            }
-            else if ((width - 4) / (d + 4) > n) {
-                // spaced evenly
-                spacing = (width - n * d) / (n + 1);
-            }
-            else {
-                // leave 4px for left and right
-                spacing = (width - 8 - d) / (n - 1) - d;
-            }
-            // determine left most location
-            const length = d * n + spacing * (n - 1);
-            const left = (width - length) / 2;
-            // align items
-            for (let i = 0; i < clones.length; i++) {
-                const x = left + i * (d + spacing);
-                clones[i].style.transform = `translateX(${x}px)`;
-                clones[i]._x = x;
-            }
-            // add or remove diff
-            if (add) {
-                this.tray.appendChild(clone);
-            }
-            const rect1 = item.parentNode ? item.getBoundingClientRect() : {};
-            const rect2 = clone.getBoundingClientRect();
-            let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
-            let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
-            let scale = 1.5;
-            const x = clone._x;
-            this.#blocked = clone;
-            const unblock = () => {
-                if (this.#blocked === clone) {
-                    this.#blocked = null;
-                }
-            };
-            setTimeout(unblock, 500);
-            if (add) {
-                if (!item.parentNode) {
-                    // item added from elsewhere (e.g. freeChoose)
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-                this.ui.animate(clone, {
-                    x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
-                }).onfinish = unblock;
-            }
-            else {
-                let zoom = false;
-                if (item.parentNode) {
-                    const page = item.parentNode.parentNode.parentNode;
-                    const indicator = page.parentNode.nextSibling;
-                    const idx = Array.from(page.parentNode.childNodes).indexOf(page);
-                    const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
-                    // skip translate animation if item is not in current gallery page
-                    if (idx !== idx2) {
-                        zoom = true;
-                    }
-                }
-                else {
-                    // item added from elsewhere (e.g. freeChoose)
-                    zoom = true;
-                }
-                if (zoom) {
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-                this.ui.animate(clone, {
-                    x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
-                }).onfinish = () => { clone.remove(); unblock(); };
             }
         }
     }

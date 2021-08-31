@@ -86,18 +86,122 @@ export class Pop extends Component {
     /** Click on selectable items. */
     click(id: string | number) {
         if (this.#blocked || this.#pending) return;
-        const [node] = this.items.get(id)!;
+        const [item, clone] = this.items.get(id)!;
         if (this.selected.has(id)) {
             this.selected.delete(id);
-            node.classList.remove('selected');
-            this.#updateTray(id, false);
+            item.classList.remove('selected');
+            this.updateTray(item, clone, false);
             this.check();
         }
-        else if (!node.classList.contains('defer')) {
+        else if (!item.classList.contains('defer')) {
             this.selected.add(id);
-            node.classList.add('selected');
-            this.#updateTray(id, true);
+            item.classList.add('selected');
+            this.updateTray(item, clone, true);
             this.check();
+        }
+    }
+
+    /** Update tray item locations. */
+    updateTray(item: HTMLElement | null, clone: HTMLElement, add: boolean) {
+        const d = parseInt(this.app.css.pop['tray-height']) - 8;
+        const margin = parseInt(this.app.css.pop['tray-margin']);
+        const width = this.tray.clientWidth;
+        const clones = [];
+        for (const node of Array.from(this.tray.childNodes)) {
+            if (node === clone) {
+                continue;
+            }
+            clones.push(node as HTMLElement);
+        }
+        if (add) {
+            clones.push(clone);
+        }
+
+        // determine spacing
+        const n = clones.length;
+        let spacing: number;
+        if ((width - margin) / (d + margin) > n) {
+            // use margin as spacing
+            spacing = margin;
+        }
+        else if ((width - 4) / (d + 4) > n) {
+            // spaced evenly
+            spacing = (width - n * d) / (n + 1);
+        }
+        else {
+            // leave 4px for left and right
+            spacing = (width - 8 - d) / (n - 1) - d;
+        }
+
+        // determine left most location
+        const length = d * n + spacing * (n - 1);
+        const left = (width - length) / 2;
+
+        // align items
+        for (let i = 0; i < clones.length; i++) {
+            const x = left + i * (d + spacing);
+            clones[i].style.transform = `translateX(${x}px)`;
+            (clones[i] as any)._x = x;
+        }
+
+        // add or remove diff
+        if (add) {
+            this.tray.appendChild(clone);
+        }
+
+        const rect1 = item ? item.getBoundingClientRect() : {} as any;
+        const rect2 = clone.getBoundingClientRect();
+        let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
+        let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
+        let scale: string | number = 1.5;
+        const x = (clone as any)._x;
+        
+        this.#blocked = clone;
+        const unblock = () => {
+            if (this.#blocked === clone) {
+                this.#blocked = null;
+            }
+        }
+        setTimeout(unblock, 500);
+
+        if (add) {
+            if (!item) {
+                // item added from elsewhere (e.g. freeChoose)
+                dx = 0;
+                dy = 0;
+                scale = 'var(--app-zoom-scale)';
+            }
+            this.ui.animate(clone, {
+                x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
+            }).onfinish = unblock;
+        }
+        else {
+            let zoom = false;
+            if (item) {
+                const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
+                const indicator = page.parentNode!.nextSibling as HTMLElement;
+                const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
+                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
+                
+                // skip translate animation if item is not in current gallery page
+                if (idx !== idx2) {
+                    zoom = true;
+                }
+            }
+            else {
+                // item added from elsewhere (e.g. freeChoose)
+                zoom = true;
+            }
+            
+            if (zoom) {
+                dx = 0;
+                dy = 0;
+                scale = 'var(--app-zoom-scale)';
+            }
+
+            this.ui.animate(clone, {
+                x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
+            }).onfinish = () => { clone.remove(); unblock() };
         }
     }
 
@@ -395,111 +499,6 @@ export class Pop extends Component {
         }
         else {
             this.timer?.remove();
-        }
-    }
-
-    /** Update tray item locations. */
-    #updateTray(id: string | number, add: boolean) {
-        const [item, clone, gallery] = this.items.get(id)!;
-        const d = parseInt(this.app.css.pop['tray-height']) - 8;
-        const margin = parseInt(this.app.css.pop['tray-margin']);
-        const width = this.tray.clientWidth;
-        const clones = [];
-        for (const node of Array.from(this.tray.childNodes)) {
-            if (node === clone) {
-                continue;
-            }
-            clones.push(node as HTMLElement);
-        }
-        if (add) {
-            clones.push(clone);
-        }
-
-        // determine spacing
-        const n = clones.length;
-        let spacing: number;
-        if ((width - margin) / (d + margin) > n) {
-            // use margin as spacing
-            spacing = margin;
-        }
-        else if ((width - 4) / (d + 4) > n) {
-            // spaced evenly
-            spacing = (width - n * d) / (n + 1);
-        }
-        else {
-            // leave 4px for left and right
-            spacing = (width - 8 - d) / (n - 1) - d;
-        }
-
-        // determine left most location
-        const length = d * n + spacing * (n - 1);
-        const left = (width - length) / 2;
-
-        // align items
-        for (let i = 0; i < clones.length; i++) {
-            const x = left + i * (d + spacing);
-            clones[i].style.transform = `translateX(${x}px)`;
-            (clones[i] as any)._x = x;
-        }
-
-        // add or remove diff
-        if (add) {
-            this.tray.appendChild(clone);
-        }
-
-        const rect1 = item.parentNode ? item.getBoundingClientRect() : {} as any;
-        const rect2 = clone.getBoundingClientRect();
-        let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
-        let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
-        let scale: string | number = 1.5;
-        const x = (clone as any)._x;
-        
-        this.#blocked = clone;
-        const unblock = () => {
-            if (this.#blocked === clone) {
-                this.#blocked = null;
-            }
-        }
-        setTimeout(unblock, 500);
-
-        if (add) {
-            if (!item.parentNode) {
-                // item added from elsewhere (e.g. freeChoose)
-                dx = 0;
-                dy = 0;
-                scale = 'var(--app-zoom-scale)';
-            }
-            this.ui.animate(clone, {
-                x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
-            }).onfinish = unblock;
-        }
-        else {
-            let zoom = false;
-            if (item.parentNode) {
-                const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
-                const indicator = page.parentNode!.nextSibling as HTMLElement;
-                const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
-                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
-                
-                // skip translate animation if item is not in current gallery page
-                if (idx !== idx2) {
-                    zoom = true;
-                }
-            }
-            else {
-                // item added from elsewhere (e.g. freeChoose)
-                zoom = true;
-            }
-            
-            if (zoom) {
-                dx = 0;
-                dy = 0;
-                scale = 'var(--app-zoom-scale)';
-            }
-
-            this.ui.animate(clone, {
-                x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
-            }).onfinish = () => { clone.remove(); unblock() };
         }
     }
 }

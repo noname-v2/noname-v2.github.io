@@ -1,6 +1,7 @@
 import { Popup } from '../popup';
 import type { Point, Gallery } from '../../components';
 
+/** A collection of all items in an extension. */
 export class Collection extends Popup {
     /** Gallery items. */
     items = new Map<string, HTMLElement>();
@@ -8,11 +9,10 @@ export class Collection extends Popup {
     /** Gallery object. */
     gallery!: Gallery;
 
-    pop(e: Point, pack: string, section: 'hero' | 'card') {
+    setup(pack: string, section: 'hero' | 'card') {
         const lib = this.app.accessExtension(pack, section);
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
-            this.location = e;
             this.pane.node.classList.add('auto');
             this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
             const [gallery, width] = this.pane.addPopGallery(n);
@@ -32,7 +32,12 @@ export class Collection extends Popup {
                     }
                 });
             }
-            return this.app.popup(this).then(() => gallery.checkPage());
         }
+    }
+
+    async pop(e: Point) {
+        this.location = e;
+        await this.app.popup(this);
+        this.gallery.checkPage();
     }
 }

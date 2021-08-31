@@ -164,8 +164,11 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const pack of configs.heropacks) {
             const name = this.app.accessExtension(pack, 'heropack');
-            const toggle = this.sidebar.pane.addToggle([name,
-                e => this.ui.create('collection').pop(e, pack, 'hero')], result => {
+            const toggle = this.sidebar.pane.addToggle([name, e => {
+                    const collection = this.ui.create('collection');
+                    collection.setup(pack, 'hero');
+                    collection.pop(e);
+                }], result => {
                 this.freeze();
                 this.yield(['banned', 'heropack/' + pack, result]);
             });
@@ -176,8 +179,11 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const pack of configs.cardpacks) {
             const name = this.app.accessExtension(pack, 'cardpack');
-            const toggle = this.sidebar.pane.addToggle([name,
-                e => this.ui.create('collection').pop(e, pack, 'card')], result => {
+            const toggle = this.sidebar.pane.addToggle([name, e => {
+                const collection = this.ui.create('collection');
+                collection.setup(pack, 'card');
+                collection.open(e);
+            }], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);
             });
