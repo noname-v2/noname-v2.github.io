@@ -9,14 +9,6 @@ var main = {
                     nheros = 15;
                     /** Choice of heros for players. */
                     choices;
-                    get freeChoose() {
-                        if (this.game.hub.connected) {
-                            return this.game.config.online_choose;
-                        }
-                        else {
-                            return this.game.config.choose;
-                        }
-                    }
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
@@ -33,7 +25,7 @@ var main = {
                                 player.link.identity = 'zhu';
                                 heros.set(id, this.getChoices());
                                 this.addTask('chooseHero', {
-                                    heros, forced: true, freeChoose: this.freeChoose
+                                    heros, forced: true, pick: this.game.config.pick
                                 });
                                 break;
                             }
@@ -47,7 +39,7 @@ var main = {
                             }
                         }
                         this.addTask('chooseHero', {
-                            heros, forced: true, freeChoose: this.freeChoose
+                            heros, forced: true, pick: this.game.config.pick
                         });
                         this.addTask('loop');
                     }

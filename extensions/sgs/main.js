@@ -85,7 +85,7 @@ function lobby(T) {
             }
             // set default configurations
             for (const name in configs) {
-                this.game.config[name] ??= configs[name].init;
+                this.game.config[name] = configs[name].init;
             }
             // configuration for player number
             const np = this.game.mode.np;
@@ -104,7 +104,7 @@ function lobby(T) {
                 for (const n of np) {
                     configs.np.options.push([n, `<span class="mono">${n}</span>人`]);
                 }
-                this.game.config.np ??= npmax;
+                this.game.config.np = npmax;
             }
             // create lobby
             lobby.npmax = npmax;
@@ -112,20 +112,22 @@ function lobby(T) {
             this.add('awaitStart');
             this.add('cleanUp');
         }
-        /** Listen to configuration changes while awaiting game start. */
+        /** Await initial configuration. */
         awaitStart() {
-            // monitor configuration change and await game start
             const lobby = this.lobby;
             lobby.owner = this.game.owner;
-            lobby.mode = this.game.mode.extension;
-            lobby.config = this.game.config;
-            lobby.config.banned ??= {};
             lobby.monitor('updateLobby');
             lobby.await();
         }
         /** Update game configuration. */
         updateLobby([type, key, val]) {
-            if (type === 'sync') {
+            if (type === 'init') {
+                const lobby = this.lobby;
+                this.game.config.banned = {};
+                this.game.utils.apply(this.game.config, val);
+                lobby.config = this.game.config;
+            }
+            else if (type === 'sync') {
                 // game connected to or disconnected from hub
                 this.game.config.online = val;
                 this.lobby.config = this.game.config;
@@ -320,7 +322,7 @@ function createPop(T) {
 function createHero(T) {
     return class ChoosePop extends T {
         heros;
-        freeChoose = false;
+        pick = false;
         main() {
             this.pop = new Map();
             for (const [id, heros] of this.heros) {
@@ -328,8 +330,8 @@ function createHero(T) {
                 if (!this.forced) {
                     confirm.push('cancel');
                 }
-                if (this.freeChoose) {
-                    confirm.push(['pick', '点将']);
+                if (this.pick) {
+                    confirm.push(['callPick', '点将']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
@@ -339,7 +341,7 @@ function createHero(T) {
             }
             super.main();
         }
-        pick(pop, e) {
+        callPick(pop, e) {
             pop.call('pick', [e, this.game.config.heropacks]);
         }
     };
@@ -852,13 +854,13 @@ var main = {
                 intro: '允许其他玩家通过主页的联机键加入游戏。',
                 init: false
             },
-            online_join: {
+            join: {
                 name: '允许中途加入',
                 intro: '允许旁观玩家在游戏过程中加入游戏。',
                 init: true,
                 requires: 'online'
             },
-            online_timeout: {
+            timeout: {
                 name: '出牌时限',
                 init: 30,
                 options: [
@@ -869,7 +871,7 @@ var main = {
                 ],
                 requires: 'online'
             },
-            online_mulligan: {
+            mulligan: {
                 name: '手气卡',
                 intro: '游戏开始时玩家可以更换一至两次手牌。',
                 init: 0,
@@ -880,25 +882,18 @@ var main = {
                 ],
                 requires: 'online'
             },
-            mulligan: {
+            infinite_mulligan: {
                 name: '手气卡',
                 intro: '游戏开始时玩家可以更换任意次手牌。',
                 init: false,
                 requires: '!online'
             },
-            online_choose: {
+            pick: {
                 name: '点将',
                 intro: '允许玩家自由选择武将。',
-                init: false,
-                requires: 'online'
+                init: false
             },
-            choose: {
-                name: '点将',
-                intro: '允许玩家自由选择武将。',
-                init: true,
-                requires: '!online'
-            },
-            game_speed: {
+            speed: {
                 name: '游戏速度',
                 intro: '控制游戏事件间的间隔时间。',
                 init: 0.3,

@@ -6,14 +6,6 @@ const mode = {
             return class Identity extends T {
                 /** Number of hero choices. */
                 nheros = 10;
-                get freeChoose() {
-                    if (this.game.hub.connected) {
-                        return this.game.config.online_choose;
-                    }
-                    else {
-                        return this.game.config.choose;
-                    }
-                }
                 main() {
                     this.addTask('lobby');
                     this.addTask('setup');
@@ -31,7 +23,7 @@ const mode = {
                         });
                     }
                     this.addTask('chooseHero', {
-                        heros, forced: true, freeChoose: this.freeChoose
+                        heros, forced: true, pick: this.game.config.pick
                     });
                     this.addTask('loop');
                 }

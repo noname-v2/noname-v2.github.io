@@ -836,7 +836,6 @@
             worker.onmessage = ({ data }) => {
                 if (data === 'ready') {
                     worker.onmessage = ({ data }) => dispatch(data);
-                    config.push(get(config[0] + ':config') || {});
                     config.push([hub.nickname, hub.avatar]);
                     send(0, config, true);
                 }
@@ -2081,6 +2080,10 @@
         spectateButton = this.ui.createElement('widget.button');
         /** Container of spectators. */
         spectateBar = this.ui.createElement('bar');
+        get #config() {
+            const arena = this.app.arena;
+            return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
+        }
         init() {
             const arena = this.app.arena;
             arena.appZoom.node.appendChild(this.node);
@@ -2112,6 +2115,10 @@
                         toggle.confirm.delete(false);
                     }
                 }
+            }
+            // update onlin / offline configuration
+            if (this.mine) {
+                this.yield(['init', null, this.db.get(this.#config) || {}]);
             }
             // update seats
             const players = [];
@@ -2229,6 +2236,9 @@
         $owner() {
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
             this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
+            if (this.mine) {
+                this.yield(['init', null, this.db.get(this.#config) || {}]);
+            }
         }
         $config(config) {
             this.unfreeze();
@@ -2249,7 +2259,7 @@
             // save configuration
             if (this.mine) {
                 delete config.online;
-                this.db.set(this.app.arena.data.mode + ':config', config);
+                this.db.set(this.#config, config);
             }
             // update spectators
             if (config.np) {
@@ -2567,7 +2577,7 @@
                 setTimeout(unblock, 500);
                 if (add) {
                     if (!item) {
-                        // item added from elsewhere (e.g. freeChoose)
+                        // item added from elsewhere (e.g. hero pick)
                         dx = 0;
                         dy = 0;
                         scale = 'var(--app-zoom-scale)';
@@ -2589,7 +2599,6 @@
                         }
                     }
                     else {
-                        // item added from elsewhere (e.g. freeChoose)
                         zoom = true;
                     }
                     if (zoom) {

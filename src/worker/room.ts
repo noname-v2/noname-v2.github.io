@@ -61,7 +61,7 @@ export class Room {
     /** Currently paused by stage.awaits. */
     #paused = true;
 
-    async init(uid: string, [name, packs, config, info]:  [string, string[], Dict, [string, string]]) {
+    async init(uid: string, [name, packs, info]:  [string, string[], [string, string]]) {
         this.uid = uid;
         this.info = info;
 
@@ -77,7 +77,6 @@ export class Room {
         // start game
         this.game = new (this.getClass('game'))();
         this.game.mode = mode;
-        this.game.config = config;
         this.game.packs = new Set(packs);
         this.rootStage = this.currentStage = this.createStage('main');
         this.arena = this.game.create('arena');

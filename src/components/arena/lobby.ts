@@ -33,6 +33,11 @@ export class Lobby extends Component {
     /** Container of spectators. */
     spectateBar = this.ui.createElement('bar');
 
+    get #config() {
+        const arena = this.app.arena!;
+        return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
+    }
+
     init() {
         const arena = this.app.arena!;
         arena.appZoom.node.appendChild(this.node);
@@ -67,6 +72,11 @@ export class Lobby extends Component {
                     toggle.confirm.delete(false);
                 }
             }
+        }
+
+        // update onlin / offline configuration
+        if (this.mine) {
+            this.yield(['init', null, this.db.get(this.#config) || {}]);
         }
 
         // update seats
@@ -194,6 +204,9 @@ export class Lobby extends Component {
     $owner() {
         this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
         this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
+        if (this.mine) {
+            this.yield(['init', null, this.db.get(this.#config) || {}]);
+        }
     }
 
     $config(config: Dict) {
@@ -217,7 +230,7 @@ export class Lobby extends Component {
         // save configuration
         if (this.mine) {
             delete config.online;
-            this.db.set(this.app.arena!.data.mode + ':config', config);
+            this.db.set(this.#config, config);
         }
 
         // update spectators

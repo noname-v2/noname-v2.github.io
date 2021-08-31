@@ -82,7 +82,6 @@ export function connect(config: [string, string[]] | string) {
         worker.onmessage = ({data}) => {
             if (data === 'ready') {
                 worker.onmessage = ({data}) => dispatch(data);
-                config.push(db.get(config[0] + ':config') || {});
                 config.push([hub.nickname, hub.avatar]);
                 send(0, config, true);
             }

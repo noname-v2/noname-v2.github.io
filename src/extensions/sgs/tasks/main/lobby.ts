@@ -26,7 +26,7 @@ export function lobby(T: TaskClass) {
 
             // set default configurations
             for (const name in configs) {
-                this.game.config[name] ??= configs[name].init;
+                this.game.config[name] = configs[name].init;
             }
 
             // configuration for player number
@@ -46,7 +46,7 @@ export function lobby(T: TaskClass) {
                 for (const n of np) {
                     configs.np.options!.push([n, `<span class="mono">${n}</span>人`]);
                 }
-                this.game.config.np ??= npmax;
+                this.game.config.np = npmax;
             }
 
             // create lobby
@@ -56,21 +56,23 @@ export function lobby(T: TaskClass) {
             this.add('cleanUp');
         }
 
-        /** Listen to configuration changes while awaiting game start. */
+        /** Await initial configuration. */
         awaitStart() {
-            // monitor configuration change and await game start
             const lobby = this.lobby;
             lobby.owner = this.game.owner;
-            lobby.mode = this.game.mode.extension;
-            lobby.config = this.game.config;
-            lobby.config.banned ??= {};
             lobby.monitor('updateLobby');
             lobby.await();
         }
 
         /** Update game configuration. */
         updateLobby([type, key, val]: [string, string, any]) {
-            if (type === 'sync') {
+            if (type === 'init') {
+                const lobby = this.lobby;
+                this.game.config.banned = {};
+                this.game.utils.apply(this.game.config, val);
+                lobby.config = this.game.config;
+            }
+            else if (type === 'sync') {
                 // game connected to or disconnected from hub
                 this.game.config.online = val;
                 this.lobby.config = this.game.config;

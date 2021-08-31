@@ -9,7 +9,7 @@ export abstract class Game {
     mode!: Mode;
 
     /** Game configuration. */
-    config!: Dict;
+    config: Dict = {};
 
     /** Hero packages. */
     packs!: Set<string>;

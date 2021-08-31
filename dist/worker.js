@@ -329,7 +329,7 @@
         }
         /** Delay for a given time. */
         async sleep(duration = 1) {
-            await this.game.utils.sleep(duration * (this.game.config.game_speed ?? 0.3));
+            await this.game.utils.sleep(duration * (this.game.config.speed ?? 0.3));
         }
     }
 
@@ -378,7 +378,7 @@
         /** Game mode. */
         mode;
         /** Game configuration. */
-        config;
+        config = {};
         /** Hero packages. */
         packs;
         get owner() {
@@ -640,7 +640,7 @@
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        async init(uid, [name, packs, config, info]) {
+        async init(uid, [name, packs, info]) {
             this.uid = uid;
             this.info = info;
             // load extensions
@@ -652,7 +652,6 @@
             // start game
             this.game = new (this.getClass('game'))();
             this.game.mode = mode;
-            this.game.config = config;
             this.game.packs = new Set(packs);
             this.rootStage = this.currentStage = this.createStage('main');
             this.arena = this.game.create('arena');
