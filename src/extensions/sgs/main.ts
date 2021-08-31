@@ -12,12 +12,6 @@ export default {
                 intro: '允许其他玩家通过主页的联机键加入游戏。',
                 init: false
             },
-            join: {
-                name: '允许中途加入',
-                intro: '允许旁观玩家在游戏过程中加入游戏。',
-                init: true,
-                requires: 'online'
-            },
             timeout: {
                 name: '出牌时限',
                 init: 30,

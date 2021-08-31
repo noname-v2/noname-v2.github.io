@@ -2101,7 +2101,7 @@
             const peers = this.app.arena.peers;
             // callback for online mode toggle
             if (this.mine) {
-                this.yield(['sync', null, peers ? true : false]);
+                this.yield(['sync', null, [peers ? true : false, this.db.get(this.#config) || {}]]);
                 if (this.connecting && !peers) {
                     this.app.alert('连接失败');
                 }
@@ -2115,10 +2115,6 @@
                         toggle.confirm.delete(false);
                     }
                 }
-            }
-            // update onlin / offline configuration
-            if (this.mine) {
-                this.yield(['init', null, this.db.get(this.#config) || {}]);
             }
             // update seats
             const players = [];
@@ -2237,23 +2233,27 @@
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
             this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
             if (this.mine) {
-                this.yield(['init', null, this.db.get(this.#config) || {}]);
+                this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
             }
         }
         $config(config) {
             this.unfreeze();
             // update toggles
-            for (const key in config) {
-                const toggle = this.configToggles.get(key);
-                toggle?.assign(config[key]);
-                const requires = this.configDynamicToggles.get(key);
-                if (requires && toggle) {
-                    if (requires[0] === '!') {
-                        toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+            for (const [key, toggle] of this.configToggles) {
+                if (key in config) {
+                    toggle.assign(config[key]);
+                    const requires = this.configDynamicToggles.get(key);
+                    if (requires) {
+                        if (requires[0] === '!') {
+                            toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                        }
+                        else {
+                            toggle.node.style.display = config[requires] ? '' : 'none';
+                        }
                     }
-                    else {
-                        toggle.node.style.display = config[requires] ? '' : 'none';
-                    }
+                }
+                else {
+                    toggle.node.style.display = 'none';
                 }
             }
             // save configuration
@@ -2500,6 +2500,8 @@
         #blocked = null;
         /** Awaiting filter results from worker. */
         #pending = false;
+        /** Current block ID. */
+        #blockCount = 0;
         /** Click on selectable items. */
         click(id) {
             if (this.#blocked || this.#pending)
@@ -2568,9 +2570,9 @@
                 let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
                 let scale = 1.5;
                 const x = clone._x;
-                this.#blocked = clone;
+                const blocked = this.#blocked = ++this.#blockCount;
                 const unblock = () => {
-                    if (this.#blocked === clone) {
+                    if (this.#blocked === blocked) {
                         this.#blocked = null;
                     }
                 };

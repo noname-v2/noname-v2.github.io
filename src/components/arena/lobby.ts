@@ -58,7 +58,7 @@ export class Lobby extends Component {
         
         // callback for online mode toggle
         if (this.mine) {
-            this.yield(['sync', null, peers ? true : false]);
+            this.yield(['sync', null, [peers ? true : false, this.db.get(this.#config) || {}]]);
             if (this.connecting && !peers) {
                 this.app.alert('连接失败');
             }
@@ -72,11 +72,6 @@ export class Lobby extends Component {
                     toggle.confirm.delete(false);
                 }
             }
-        }
-
-        // update onlin / offline configuration
-        if (this.mine) {
-            this.yield(['init', null, this.db.get(this.#config) || {}]);
         }
 
         // update seats
@@ -205,7 +200,7 @@ export class Lobby extends Component {
         this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
         this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
         if (this.mine) {
-            this.yield(['init', null, this.db.get(this.#config) || {}]);
+            this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
         }
     }
 
@@ -213,17 +208,21 @@ export class Lobby extends Component {
         this.unfreeze();
 
         // update toggles
-        for (const key in config) {
-            const toggle = this.configToggles.get(key);
-            toggle?.assign(config[key]);
-            const requires = this.configDynamicToggles.get(key);
-            if (requires && toggle) {
-                if (requires[0] === '!') {
-                    toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+        for (const [key, toggle] of this.configToggles) {
+            if (key in config) {
+                toggle.assign(config[key]);
+                const requires = this.configDynamicToggles.get(key);
+                if (requires) {
+                    if (requires[0] === '!') {
+                        toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                    }
+                    else {
+                        toggle.node.style.display = config[requires] ? '' : 'none';
+                    }
                 }
-                else {
-                    toggle.node.style.display = config[requires] ? '' : 'none';
-                }
+            }
+            else {
+                toggle.node.style.display = 'none';
             }
         }
 

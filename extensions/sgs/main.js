@@ -121,15 +121,17 @@ function lobby(T) {
         }
         /** Update game configuration. */
         updateLobby([type, key, val]) {
-            if (type === 'init') {
-                const lobby = this.lobby;
-                this.game.config.banned = {};
-                this.game.utils.apply(this.game.config, val);
-                lobby.config = this.game.config;
-            }
-            else if (type === 'sync') {
+            if (type === 'sync') {
                 // game connected to or disconnected from hub
-                this.game.config.online = val;
+                this.game.config.online = val[0];
+                this.game.config.banned = {};
+                this.game.utils.apply(this.game.config, val[1]);
+                for (const key in this.game.mode.config) {
+                    const requires = this.game.mode.config[key].requires;
+                    if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
+                        delete this.game.config[key];
+                    }
+                }
                 this.lobby.config = this.game.config;
                 // add callback for client operations
                 const peers = this.game.hub.peers;
@@ -757,7 +759,7 @@ function pop(T) {
         /** Save picked heros. */
         #save() {
             this.db.set(this.#id, Array.from(this.picked));
-            this.buttons.get('pick').dataset.fill = this.picked.size ? 'blue' : '';
+            this.buttons.get('callPick').dataset.fill = this.picked.size ? 'blue' : '';
         }
         /** Restore from saved heros. */
         #restore() {
@@ -778,7 +780,7 @@ function pop(T) {
                     const x = clone._x;
                     this.ui.animate(clone, { x: [x, x], opacity: [0, 1] });
                 }
-                this.buttons.get('pick').dataset.fill = 'blue';
+                this.buttons.get('callPick').dataset.fill = 'blue';
                 return true;
             }
             else {
@@ -853,12 +855,6 @@ var main = {
                 name: '联机模式',
                 intro: '允许其他玩家通过主页的联机键加入游戏。',
                 init: false
-            },
-            join: {
-                name: '允许中途加入',
-                intro: '允许旁观玩家在游戏过程中加入游戏。',
-                init: true,
-                requires: 'online'
             },
             timeout: {
                 name: '出牌时限',

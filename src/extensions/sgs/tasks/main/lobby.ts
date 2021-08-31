@@ -66,15 +66,18 @@ export function lobby(T: TaskClass) {
 
         /** Update game configuration. */
         updateLobby([type, key, val]: [string, string, any]) {
-            if (type === 'init') {
-                const lobby = this.lobby;
-                this.game.config.banned = {};
-                this.game.utils.apply(this.game.config, val);
-                lobby.config = this.game.config;
-            }
-            else if (type === 'sync') {
+            if (type === 'sync') {
                 // game connected to or disconnected from hub
-                this.game.config.online = val;
+                this.game.config.online = val[0];
+                this.game.config.banned = {};
+                this.game.utils.apply(this.game.config, val[1]);
+
+                for (const key in this.game.mode.config) {
+                    const requires = this.game.mode.config[key].requires;
+                    if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
+                        delete this.game.config[key];
+                    }
+                }
                 this.lobby.config = this.game.config;
 
                 // add callback for client operations

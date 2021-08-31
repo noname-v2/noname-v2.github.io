@@ -44,7 +44,7 @@ export function pop(T: typeof Pop) {
         /** Save picked heros. */
         #save() {
             this.db.set(this.#id, Array.from(this.picked));
-            this.buttons.get('pick')!.dataset.fill = this.picked.size ? 'blue' : '';
+            this.buttons.get('callPick')!.dataset.fill = this.picked.size ? 'blue' : '';
         }
 
         /** Restore from saved heros. */
@@ -66,7 +66,7 @@ export function pop(T: typeof Pop) {
                     const x = (clone as any)._x;
                     this.ui.animate(clone, {x: [x, x], opacity: [0, 1]});
                 }
-                this.buttons.get('pick')!.dataset.fill = 'blue';
+                this.buttons.get('callPick')!.dataset.fill = 'blue';
                 return true;
             }
             else {

@@ -78,10 +78,13 @@ export class Pop extends Component {
     tray!: HTMLElement;
 
     /** Operation blocked by animation. */
-    #blocked: HTMLElement | null = null;
+    #blocked: number | null = null;
 
     /** Awaiting filter results from worker. */
     #pending: boolean = false;
+
+    /** Current block ID. */
+    #blockCount = 0;
 
     /** Click on selectable items. */
     click(id: string | number) {
@@ -157,9 +160,9 @@ export class Pop extends Component {
             let scale: string | number = 1.5;
             const x = (clone as any)._x;
             
-            this.#blocked = clone;
+            const blocked = this.#blocked = ++this.#blockCount;
             const unblock = () => {
-                if (this.#blocked === clone) {
+                if (this.#blocked === blocked) {
                     this.#blocked = null;
                 }
             }
