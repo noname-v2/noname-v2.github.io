@@ -232,6 +232,20 @@ noname-gallery.with-indicator > noname-indicator {
 noname-gallery.with-indicator > noname-indicator > * {
   position: relative;
 }
+noname-gallery.pop noname-item {
+  width: var(--pop-width);
+  aspect-ratio: 1/var(--player-ratio);
+}
+noname-gallery.pop noname-item > noname-player {
+  transition: opacity var(--app-transition);
+  width: var(--player-width);
+  height: auto;
+  transform: scale(var(--pop-scale));
+  transform-origin: top left;
+}
+noname-gallery.pop noname-item > noname-player.selected {
+  opacity: var(--app-defer-opacity);
+}
 
 html, body {
   width: 100%;
@@ -633,20 +647,6 @@ noname-pane > noname-gallery > noname-player > noname-content > noname-hp {
   bottom: 8px;
   right: 5px;
 }
-noname-pane > noname-gallery.pop noname-item {
-  width: var(--pop-width);
-  aspect-ratio: 1/var(--player-ratio);
-}
-noname-pane > noname-gallery.pop noname-item > noname-player {
-  transition: opacity var(--app-transition);
-  width: var(--player-width);
-  height: auto;
-  transform: scale(var(--pop-scale));
-  transform-origin: top left;
-}
-noname-pane > noname-gallery.pop noname-item > noname-player.selected {
-  opacity: var(--app-defer-opacity);
-}
 noname-pane > noname-bar {
   text-align: center;
   margin: 16px 0 14px 0;
@@ -949,10 +949,6 @@ noname-popup > noname-pane.menu > noname-option:hover {
 }
 noname-popup > noname-pane.context {
   width: 220px;
-}
-noname-popup > noname-pane.gallery {
-  width: 500px;
-  height: auto;
 }
 noname-popup > noname-pane.intro {
   border-radius: var(--widget-radius-sharp);

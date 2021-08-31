@@ -164,7 +164,8 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const pack of configs.heropacks) {
             const name = this.app.accessExtension(pack, 'heropack');
-            const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
+            const toggle = this.sidebar.pane.addToggle([name,
+                e => this.#openGallery(e, pack, 'hero')], result => {
                 this.freeze();
                 this.yield(['banned', 'heropack/' + pack, result]);
             });
@@ -175,7 +176,8 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const pack of configs.cardpacks) {
             const name = this.app.accessExtension(pack, 'cardpack');
-            const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
+            const toggle = this.sidebar.pane.addToggle([name,
+                e => this.#openGallery(e, pack, 'card')], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);
             });
@@ -320,10 +322,38 @@ export class Lobby extends Component {
     }
 
     /** Open an extension gallery. */
-    #openGallery(e: Point) {
-        const menu = this.ui.create('popup');
-        menu.pane.node.classList.add('gallery');
-        menu.pane.node.classList.add('pop');
-        menu.open(e);
+    #openGallery(e: Point, pack: string, section: 'hero' | 'card') {
+        const lib = this.app.accessExtension(pack, section);
+        const n = Object.entries(lib ?? {}).length;
+        if (lib && n) {
+            const menu = this.ui.create('popup');
+
+            const width = parseInt(this.app.css.pop.width);
+            const height = parseFloat(this.app.css.player.ratio) * width;
+            const margin = parseInt(this.app.css.pop.margin);
+            let galleryHeight;
+            if (n > 5) {
+                galleryHeight = height * 2 + margin * 3;
+                if (n > 10) {
+                    galleryHeight += 12;
+                }
+            }
+            else {
+                galleryHeight = height + margin * 2;
+            }
+            
+            const gallery = menu.pane.addGallery(n > 5 ? 2 : 1, Math.min(5, n));
+            gallery.node.style.height = `${galleryHeight}px`;
+            gallery.node.classList.add('pop');
+            for (const name in lib) {
+                gallery.add(() => {
+                    const player = this.ui.create('player');
+                    player.setHero(pack + ':' + name);
+                    return player.node;
+                });
+            }
+            menu.open(e);
+            gallery.checkPage();
+        } 
     }
 }

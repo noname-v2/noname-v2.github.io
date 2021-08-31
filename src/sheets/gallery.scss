@@ -101,4 +101,22 @@ noname-gallery {
             @include flex-center;
         }
     }
+
+    // gallery containing players or cards
+	&.pop noname-item {
+		width: var(--pop-width);
+		aspect-ratio: 1 / var(--player-ratio);
+		
+		> noname-player {
+			transition: opacity var(--app-transition);
+			width:  var(--player-width);
+			height: auto;
+			transform: scale(var(--pop-scale));
+			transform-origin: top left;
+
+			&.selected {
+				opacity: var(--app-defer-opacity);
+			}
+		}
+	}
 }
