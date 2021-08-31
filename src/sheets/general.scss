@@ -40,6 +40,10 @@ noname-image.avatar {
 	opacity: var(--app-defer-opacity) !important;
 }
 
+.movedown {
+	transition: none !important;
+}
+
 .scrollx {
 	overflow-x: scroll;
 	overflow-y: hidden;

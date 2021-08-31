@@ -29,6 +29,10 @@ noname-arena noname-zoom > noname-pop {
                     &.avatar {
                         background-position: var(--widget-avatar-position) !important;
                     }
+
+                    &.movedown {
+                        z-index: 10000 !important;
+                    }
                 }
             }
         }

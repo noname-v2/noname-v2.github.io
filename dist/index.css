@@ -301,6 +301,10 @@ noname-image.avatar {
   opacity: var(--app-defer-opacity) !important;
 }
 
+.movedown {
+  transition: none !important;
+}
+
 .scrollx {
   overflow-x: scroll;
   overflow-y: hidden;
@@ -857,6 +861,9 @@ noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-w
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.avatar {
   background-position: var(--widget-avatar-position) !important;
+}
+noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.movedown {
+  z-index: 10000 !important;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;

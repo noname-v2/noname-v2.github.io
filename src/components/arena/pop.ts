@@ -116,6 +116,7 @@ export class Pop extends Component {
             }
             clones.push(node as HTMLElement);
         }
+        clones.sort((a, b) => (this.ui.getX(a) - this.ui.getX(b)));
         if (add && clone) {
             clones.push(clone);
         }
@@ -140,11 +141,48 @@ export class Pop extends Component {
         const length = d * n + spacing * (n - 1);
         const left = (width - length) / 2;
 
+        // move a clone
+        const move = (node: HTMLElement, i: number) => {
+            this.ui.moveTo(node, {x: x(i), y: 0}, false);
+            indices.set(node, i);
+        };
+
         // align items
+        const indices = new Map<HTMLElement, number>();
+        const x = (i: number) => left + i * (d + spacing);
         for (let i = 0; i < clones.length; i++) {
-            const x = left + i * (d + spacing);
-            clones[i].style.transform = `translateX(${x}px)`;
-            (clones[i] as any)._x = x;
+            clones[i].style.zIndex = i.toString();
+            move(clones[i], i);
+        }
+        for (const node of clones) {
+            this.ui.bind(node, {
+                movable: {x: [left, x(clones.length - 1)], y: [0, 0]},
+                onmove: e => {
+                    const j = Math.round((e.x - left) / (d + spacing));
+                    let current = indices.get(node)!;
+                    if (j !== current) {
+                        for (const node2 of clones) {
+                            if (node2 === node) {
+                                continue;
+                            }
+                            const k = indices.get(node2)!;
+                            if (j < current && k < current && k >= j) {
+                                move(node2, k + 1);
+                            }
+                            else if (j > current && k > current && k <= j) {
+                                move(node2, k - 1);
+                            }
+                        }
+                        indices.set(node, j);
+                    }
+                },
+                onmoveend: () => {
+                    move(node, indices.get(node)!);
+                    for (const node2 of clones) {
+                        node2.style.zIndex = indices.get(node2)!.toString();
+                    }
+                }
+            });
         }
 
         // add or remove diff
@@ -158,8 +196,7 @@ export class Pop extends Component {
             let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
             let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
             let scale: string | number = 1.5;
-            const x = (clone as any)._x;
-            
+            const x = this.ui.getX(clone);
             const blocked = this.#blocked = ++this.#blockCount;
             const unblock = () => {
                 if (this.#blocked === blocked) {
@@ -304,6 +341,7 @@ export class Pop extends Component {
         tray.classList.add('tray');
         tray.style.height = `${height}px`;
         this.height += height + 26;
+        tray.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
     }
 
     /** Remove with fade out animation. */

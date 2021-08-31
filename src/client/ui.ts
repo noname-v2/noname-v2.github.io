@@ -100,6 +100,7 @@ function register(node: HTMLElement) {
 
         // initialize move event
         if (binding.movable && !moving) {
+            node.classList.add('movedown');
             moving = [node, origin, binding.offset || {x: 0, y: 0}, null, touch];
 
             // fire ondown event
@@ -131,6 +132,7 @@ function resetMove(node: HTMLElement) {
     if (moving && moving[0] === node) {
         moving = null;
     }
+    node.classList.remove('movedown');
 }
 
 /** Callback for mousemove or touchmove. */
@@ -195,6 +197,7 @@ function pointerEnd(touch: boolean) {
     }
     
     if (moving && moving[4] === touch) {
+        moving[0].classList.remove('movedown');
         moving = null;
     }
 }
@@ -346,6 +349,16 @@ export function moveTo(node: HTMLElement, location: Point, transit: boolean = tr
         }
         binding.offset = location;
     }
+}
+
+/** Get the transform of an element in x direction. */
+export function getX(node: HTMLElement) {
+    return bindings.get(node)?.offset?.x ?? 0;
+}
+
+/** Get the transform of an element in x direction. */
+export function getY(node: HTMLElement) {
+    return bindings.get(node)?.offset?.y ?? 0;
 }
 
 /** Fire move event. */

@@ -249,6 +249,7 @@
             }
             // initialize move event
             if (binding.movable && !moving) {
+                node.classList.add('movedown');
                 moving = [node, origin, binding.offset || { x: 0, y: 0 }, null, touch];
                 // fire ondown event
                 if (binding.ondown) {
@@ -274,6 +275,7 @@
         if (moving && moving[0] === node) {
             moving = null;
         }
+        node.classList.remove('movedown');
     }
     /** Callback for mousemove or touchmove. */
     function pointerMove(e, touch) {
@@ -327,6 +329,7 @@
             clicking = null;
         }
         if (moving && moving[4] === touch) {
+            moving[0].classList.remove('movedown');
             moving = null;
         }
     }
@@ -455,6 +458,14 @@
             }
             binding.offset = location;
         }
+    }
+    /** Get the transform of an element in x direction. */
+    function getX(node) {
+        return bindings.get(node)?.offset?.x ?? 0;
+    }
+    /** Get the transform of an element in x direction. */
+    function getY(node) {
+        return bindings.get(node)?.offset?.y ?? 0;
     }
     /** Fire move event. */
     function dispatchMove(node, location) {
@@ -628,6 +639,8 @@
         bind: bind,
         dispatchClick: dispatchClick,
         moveTo: moveTo,
+        getX: getX,
+        getY: getY,
         dispatchMove: dispatchMove,
         dispatchMoveEnd: dispatchMoveEnd,
         animate: animate,
@@ -2532,6 +2545,7 @@
                 }
                 clones.push(node);
             }
+            clones.sort((a, b) => (this.ui.getX(a) - this.ui.getX(b)));
             if (add && clone) {
                 clones.push(clone);
             }
@@ -2553,11 +2567,47 @@
             // determine left most location
             const length = d * n + spacing * (n - 1);
             const left = (width - length) / 2;
+            // move a clone
+            const move = (node, i) => {
+                this.ui.moveTo(node, { x: x(i), y: 0 }, false);
+                indices.set(node, i);
+            };
             // align items
+            const indices = new Map();
+            const x = (i) => left + i * (d + spacing);
             for (let i = 0; i < clones.length; i++) {
-                const x = left + i * (d + spacing);
-                clones[i].style.transform = `translateX(${x}px)`;
-                clones[i]._x = x;
+                clones[i].style.zIndex = i.toString();
+                move(clones[i], i);
+            }
+            for (const node of clones) {
+                this.ui.bind(node, {
+                    movable: { x: [left, x(clones.length - 1)], y: [0, 0] },
+                    onmove: e => {
+                        const j = Math.round((e.x - left) / (d + spacing));
+                        let current = indices.get(node);
+                        if (j !== current) {
+                            for (const node2 of clones) {
+                                if (node2 === node) {
+                                    continue;
+                                }
+                                const k = indices.get(node2);
+                                if (j < current && k < current && k >= j) {
+                                    move(node2, k + 1);
+                                }
+                                else if (j > current && k > current && k <= j) {
+                                    move(node2, k - 1);
+                                }
+                            }
+                            indices.set(node, j);
+                        }
+                    },
+                    onmoveend: () => {
+                        move(node, indices.get(node));
+                        for (const node2 of clones) {
+                            node2.style.zIndex = indices.get(node2).toString();
+                        }
+                    }
+                });
             }
             // add or remove diff
             if (add && clone) {
@@ -2569,7 +2619,7 @@
                 let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
                 let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
                 let scale = 1.5;
-                const x = clone._x;
+                const x = this.ui.getX(clone);
                 const blocked = this.#blocked = ++this.#blockCount;
                 const unblock = () => {
                     if (this.#blocked === blocked) {
@@ -2699,6 +2749,7 @@
             tray.classList.add('tray');
             tray.style.height = `${height}px`;
             this.height += height + 26;
+            tray.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
         }
         /** Remove with fade out animation. */
         remove() {

@@ -777,7 +777,7 @@ function pop(T) {
                 this.updateTray(null, null, false);
                 for (const id of picked) {
                     const clone = this.clones.get(id);
-                    const x = clone._x;
+                    const x = this.ui.getX(clone);
                     this.ui.animate(clone, { x: [x, x], opacity: [0, 1] });
                 }
                 this.buttons.get('callPick').dataset.fill = 'blue';
@@ -817,6 +817,9 @@ function pop(T) {
         #createCollection(pack) {
             const collection = this.ui.create('collection');
             collection.setup(pack, 'hero', (id, node) => {
+                if (this.picked.has(id)) {
+                    node.classList.add('defer');
+                }
                 this.ui.bind(node, () => {
                     if (this.picked.has(id)) {
                         // unselect hero
