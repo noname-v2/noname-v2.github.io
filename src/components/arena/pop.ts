@@ -153,13 +153,10 @@ export class Pop extends Component {
         for (const hero of heros) {
             gallery.add(() => {
                 const player = this.ui.create('player');
-                const info = this.app.getHero(hero);
-                player.data.heroImage = hero;
-                player.data.heroName = info.name;
-                const node = player.node;
+                player.setHero(hero);
 
                 // bind context menu
-                this.ui.bind(node, {oncontext: () => {
+                this.ui.bind(player.node, {oncontext: () => {
                     player.data.heroName = 'Right';
                 }});
 

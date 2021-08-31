@@ -64,7 +64,7 @@ export class Gallery extends Component {
         }
 
         // avoid conflict with move operation
-        this.node.addEventListener('touchstart', e => e.stopPropagation());
+        this.node.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
     }
 
     /** Add an item or an item constructor. */

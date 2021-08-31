@@ -2322,8 +2322,20 @@
         viceName = this.ui.createElement('caption.vice', this.content);
         /** Nickname of hero's controller. */
         nickname = this.ui.createElement('span', this.content);
+        /** Faction label. */
+        faction = this.ui.createElement('label', this.content);
+        /** HP bar. */
+        hp = this.ui.createElement('hp', this.content);
         /** Timer bar. */
         timer = null;
+        setHero(name) {
+            const info = this.app.getHero(name);
+            this.data.heroImage = name;
+            this.data.heroName = info.name;
+            this.data.faction = info.faction;
+            this.data.hpMax = info.hp;
+            this.data.hp = info.hp;
+        }
         $heroImage(name) {
             if (name) {
                 this.node.classList.add('hero-shown');
@@ -2339,6 +2351,44 @@
         }
         $nickname(name) {
             this.ui.format(this.nickname, name ?? '');
+        }
+        $faction(faction) {
+            const info = this.lib.faction[faction];
+            if (info) {
+                const [label, color] = info;
+                this.faction.innerHTML = label;
+                this.faction.dataset.glow = color;
+                this.heroName.dataset.shadow = color;
+            }
+        }
+        $hpMax(hp) {
+            const current = this.hp.childNodes.length;
+            if (current < hp) {
+                for (let i = current; i < hp; i++) {
+                    this.ui.createElement('image', this.hp);
+                }
+            }
+            else if (current > hp) {
+                for (let i = hp; i < current; i++) {
+                    this.hp.firstChild.remove();
+                }
+            }
+        }
+        $hp(hp) {
+            const hpMax = this.hp.childNodes.length;
+            for (let i = 0; i < hpMax; i++) {
+                const node = this.hp.childNodes[hpMax - i - 1];
+                node.classList[i < hp ? 'remove' : 'add']('lost');
+            }
+            if (hp > Math.round(hpMax / 2) || hp === hpMax) {
+                this.hp.dataset.condition = 'high';
+            }
+            else if (hp > Math.floor(hpMax / 3)) {
+                this.hp.dataset.condition = 'mid';
+            }
+            else {
+                this.hp.dataset.condition = 'low';
+            }
         }
         $timer(config) {
             if (config) {
@@ -2449,12 +2499,9 @@
             for (const hero of heros) {
                 gallery.add(() => {
                     const player = this.ui.create('player');
-                    const info = this.app.getHero(hero);
-                    player.data.heroImage = hero;
-                    player.data.heroName = info.name;
-                    const node = player.node;
+                    player.setHero(hero);
                     // bind context menu
-                    this.ui.bind(node, { oncontext: () => {
+                    this.ui.bind(player.node, { oncontext: () => {
                             player.data.heroName = 'Right';
                         } });
                     // add to this.items
@@ -2897,7 +2944,7 @@
                 this.listen('resize');
             }
             // avoid conflict with move operation
-            this.node.addEventListener('touchstart', e => e.stopPropagation());
+            this.node.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
         }
         /** Add an item or an item constructor. */
         add(item) {

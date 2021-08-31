@@ -40,6 +40,17 @@ noname-player {
 		opacity: 0;
 	}
 
+	&.identity-shown > noname-content {
+		> noname-caption {
+			top: 38px;
+			left: 5px;
+		}
+		> noname-label {
+			right: auto;
+			left: 5px;
+		}
+	}
+
 	> noname-content {
 		overflow: hidden;
 		

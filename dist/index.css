@@ -703,6 +703,14 @@ noname-player:not(.hero-shown):not(.vice-shown) > noname-background {
 noname-player:not(.hero-shown) > noname-background > noname-image {
   opacity: 0;
 }
+noname-player.identity-shown > noname-content > noname-caption {
+  top: 38px;
+  left: 5px;
+}
+noname-player.identity-shown > noname-content > noname-label {
+  right: auto;
+  left: 5px;
+}
 noname-player > noname-content {
   overflow: hidden;
 }
