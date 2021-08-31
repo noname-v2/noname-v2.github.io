@@ -44,6 +44,17 @@
     let app;
     let splash;
     let arena = null;
+    /** Extention items that are indexed. */
+    const lib = {
+        /** Keywords in intro. */
+        keyword: {},
+        /** factions from extensions. */
+        faction: {},
+        /** Card types from extensions. */
+        type: {},
+        /** Card subtypes from extensions. */
+        subtype: {}
+    };
     /** Set the value of main components. */
     function set$1(target, val) {
         switch (target) {
@@ -542,7 +553,6 @@
         }
         return anim;
     }
-    const keywords = new Map();
     /** Translate number to zh-CN. */
     function toCN(str, two = true) {
         const num = parseInt(str);
@@ -583,7 +593,7 @@
         for (let i = 0; i < sections.length; i++) {
             let [name, content] = split(sections[i], ')');
             if (content) {
-                if (keywords.has(name)) ;
+                if (lib.keyword[name]) ;
                 else if (!isNaN(name)) {
                     content = toCN(name) + content;
                 }
@@ -591,10 +601,6 @@
             }
         }
         node.innerHTML = sections.join('');
-    }
-    /** Register a keyword. */
-    function registerKeyword(name, content) {
-        keywords.set(name, content);
     }
     /** Count active childNodes. */
     function countActive(node) {
@@ -626,7 +632,6 @@
         dispatchMoveEnd: dispatchMoveEnd,
         animate: animate,
         format: format,
-        registerKeyword: registerKeyword,
         countActive: countActive
     });
 
@@ -746,10 +751,15 @@
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
-    async function importExtension(extname) {
+    async function importExtension(extname, index) {
         if (!extensions.has(extname)) {
             const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
             extensions.set(extname, ext);
+            if (index) {
+                for (const section in ext.lib) {
+                    Object.assign(index[section], ext.lib[section]);
+                }
+            }
         }
         return extensions.get(extname);
     }
@@ -913,7 +923,7 @@
         }
         // overwrite component constructors by mode
         for (const pack of ruleset) {
-            const ext = await importExtension(pack);
+            const ext = await importExtension(pack, lib);
             for (const tag in ext.mode?.components) {
                 const cls = componentClasses$1.get(tag) ?? backups.get('component');
                 componentClasses$1.set(tag, ext.mode.components[tag](cls));
@@ -921,7 +931,7 @@
         }
         // import packs
         for (const pack of packs) {
-            await importExtension(pack);
+            await importExtension(pack, lib);
         }
     }
     /**
@@ -1080,6 +1090,9 @@
         }
         get ui() {
             return ui;
+        }
+        get lib() {
+            return lib;
         }
         get owner() {
             return this.data.owner;
@@ -1333,7 +1346,7 @@
             sheet.insertRule(`noname-app {${rules}}`, sheet.rules.length);
             // add rules for dataset
             const dataset = {
-                buttonicon: 'background-image',
+                bcolor: 'background-image',
                 fill: 'background',
                 text: 'text-color',
                 shadow: 'text-shadow',
@@ -2835,7 +2848,7 @@
             this.content.appendChild(str2);
         }
         $color(color) {
-            this.image.dataset.buttonicon = color;
+            this.image.dataset.bcolor = color;
         }
     }
 

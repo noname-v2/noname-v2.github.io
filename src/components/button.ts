@@ -32,6 +32,6 @@ export class Button extends Component {
 	}
 
 	$color(color: ButtonColor) {
-		this.image.dataset.buttonicon = color;
+		this.image.dataset.bcolor = color;
 	}
 }

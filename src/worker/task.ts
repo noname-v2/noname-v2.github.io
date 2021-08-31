@@ -88,6 +88,6 @@ export class Task<T extends Game = Game> {
 
     /** Delay for a given time. */
     async sleep(duration: number = 1) {
-        await this.game.utils.sleep(duration * (this.game.mode.duration ?? 0.5));
+        await this.game.utils.sleep(duration * (this.game.config.game_speed ?? 0.3));
     }
 }

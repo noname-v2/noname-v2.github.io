@@ -1,7 +1,6 @@
 import type { Extension, Class, Dict } from '../../types';
 import type { task } from './classes/task';
 import type { game } from './classes/game';
-import type { TextColor, GlowColor } from '../../components';
 
 /** Types for pop selection. */
 export type { PopConfirm, PopContent } from '../../components/arena/pop';
@@ -75,8 +74,4 @@ export interface SGS extends Extension<Task> {
     card?: CardDict;
     skill?: SkillDict;
     pile?: Pile;
-    faction?: Dict<[string, GlowColor]>;
-    keyword?: Dict<[string, TextColor]>;
-    type?: Dict<string>;
-    subtype?: Dict<string>;
 }

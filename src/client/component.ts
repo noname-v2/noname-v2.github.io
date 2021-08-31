@@ -3,7 +3,7 @@ import * as db from './db';
 import * as platform from '../platform';
 import * as utils from '../utils';
 import * as client from './client';
-import { app } from './globals';
+import { app, lib } from './globals';
 import { debug } from '../meta';
 import type { Dict } from '../types';
 import type { TransitionDuration } from '../components';
@@ -58,6 +58,10 @@ export class Component {
 
     get ui() {
         return ui;
+    }
+
+    get lib() {
+        return lib;
     }
 
     get owner(): string | null {

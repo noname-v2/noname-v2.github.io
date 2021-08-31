@@ -1,7 +1,7 @@
 import { importExtension } from '../extension';
 import { rng } from '../utils';
 import { create } from './ui';
-import { backups, componentClasses, restore, app, splash } from './globals';
+import { backups, componentClasses, restore, app, splash, lib } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
 import type { Component } from '../components';
@@ -180,7 +180,7 @@ async function loadArena(ruleset: string[], packs: string[]) {
 
     // overwrite component constructors by mode
     for (const pack of ruleset) {
-        const ext = await importExtension(pack);
+        const ext = await importExtension(pack, lib);
         for (const tag in ext.mode?.components) {
             const cls = componentClasses.get(tag) ?? backups.get('component');
             componentClasses.set(tag, ext.mode!.components[tag](cls));
@@ -189,7 +189,7 @@ async function loadArena(ruleset: string[], packs: string[]) {
     
     // import packs
     for (const pack of packs) {
-        await importExtension(pack);
+        await importExtension(pack, lib);
     }
 }
 

@@ -151,7 +151,7 @@
 		"ok": "@(icon-ok.svg)"
 	},
 
-	"buttonicon": {
+	"bcolor": {
 		"blue": "@(button-blue.webp)",
 		"green": "@(button-green.webp)",
 		"grey": "@(button-grey.webp)",

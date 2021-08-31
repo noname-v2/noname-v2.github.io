@@ -1,6 +1,7 @@
 import type { Task } from './worker/task';
 import type { Component } from './components';
 import type { accessExtension, getHero, getCard} from './extension';
+import type { lib } from './client/globals';
 
 /** Plain object. */
 export type Dict<T=any> = {[key: string]: T};
@@ -44,6 +45,7 @@ export interface Extension<T extends Task = Task> {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
+    lib?: typeof lib;
 }
 
 /** Format of extension meta data. */

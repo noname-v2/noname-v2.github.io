@@ -1,11 +1,8 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
-import { Component, Popup, Zoom } from '../../components';
+import { Component, Popup, Zoom, TransitionDuration } from '../../components';
 import { importExtension, accessExtension, getHero, getCard } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
-
-/** Transition duration names. */
-export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -205,7 +202,7 @@ export class App extends Component {
 
         // add rules for dataset
         const dataset: Dict = {
-            buttonicon: 'background-image',
+            bcolor: 'background-image',
             fill: 'background',
             text: 'text-color',
             shadow: 'text-shadow',

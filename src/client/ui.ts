@@ -1,14 +1,8 @@
 import { android, ios } from '../platform';
-import { app, componentClasses } from './globals';
+import { app, lib, componentClasses } from './globals';
 import { split } from '../utils';
 import type { ComponentTagMap } from '../classes';
-import type { TextColor } from '../components';
-
-/** Type for point location */
-export type Point = {x: number, y: number};
-
-/** Type for an area */
-export type Region = {x: [number, number], y: [number, number]};
+import type { Point, Region } from '../components';
 
 /** Type for point location from an event. */
 type EventPoint = {clientX: number, clientY: number, button?: number}
@@ -475,14 +469,6 @@ export function animate(node: HTMLElement, animation: {
     return anim;
 }
 
-/** Map of keywords.
- * [0]: keyword name
- * [1]: keyword intro
- * [2]: keyword text color
- */
-type Keyword = [string, string, TextColor?];
-const keywords = new Map<string, Keyword>();
-
 /** Translate number to zh-CN. */
 function toCN(str: string | number, two: boolean = true): string {
     const num = parseInt(str as any);
@@ -521,7 +507,7 @@ export function format(node: HTMLElement, content: string) {
     for (let i = 0; i < sections.length; i++) {
         let [name, content] = split(sections[i], ')');
         if (content) {
-            if (keywords.has(name)) {
+            if (lib.keyword[name]) {
                 //////
             }
             else if (!isNaN(name as any)) {
@@ -531,11 +517,6 @@ export function format(node: HTMLElement, content: string) {
         }
     }
     node.innerHTML = sections.join('');
-}
-
-/** Register a keyword. */
-export function registerKeyword(name: string, content: Keyword) {
-    keywords.set(name, content);
 }
 
 /** Count active childNodes. */

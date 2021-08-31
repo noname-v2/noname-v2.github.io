@@ -329,17 +329,22 @@
         }
         /** Delay for a given time. */
         async sleep(duration = 1) {
-            await this.game.utils.sleep(duration * (this.game.mode.duration ?? 0.5));
+            await this.game.utils.sleep(duration * (this.game.config.game_speed ?? 0.3));
         }
     }
 
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
-    async function importExtension(extname) {
+    async function importExtension(extname, index) {
         if (!extensions.has(extname)) {
             const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
             extensions.set(extname, ext);
+            if (index) {
+                for (const section in ext.lib) {
+                    Object.assign(index[section], ext.lib[section]);
+                }
+            }
         }
         return extensions.get(extname);
     }
