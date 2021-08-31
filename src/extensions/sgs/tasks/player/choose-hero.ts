@@ -15,7 +15,7 @@ export function createHero(T: ReturnType<typeof createPop>) {
                     confirm.push('cancel');
                 }
                 if (this.freeChoose) {
-                    confirm.push(['pick', '点将', 'blue']);
+                    confirm.push(['pick', '点将']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],

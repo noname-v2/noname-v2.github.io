@@ -83,6 +83,7 @@ export class Room {
         this.arena = this.game.create('arena');
         this.arena.ruleset = this.#ruleset;
         this.arena.packs = packs;
+        this.arena.mode = mode.extension;
         this.loop();
     }
 

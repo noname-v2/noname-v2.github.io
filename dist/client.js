@@ -2249,7 +2249,7 @@
             // save configuration
             if (this.mine) {
                 delete config.online;
-                this.db.set(this.data.mode + ':config', config);
+                this.db.set(this.app.arena.data.mode + ':config', config);
             }
             // update spectators
             if (config.np) {
@@ -2520,7 +2520,7 @@
                 }
                 clones.push(node);
             }
-            if (add) {
+            if (add && clone) {
                 clones.push(clone);
             }
             // determine spacing
@@ -2548,57 +2548,59 @@
                 clones[i]._x = x;
             }
             // add or remove diff
-            if (add) {
+            if (add && clone) {
                 this.tray.appendChild(clone);
             }
-            const rect1 = item ? item.getBoundingClientRect() : {};
-            const rect2 = clone.getBoundingClientRect();
-            let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
-            let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
-            let scale = 1.5;
-            const x = clone._x;
-            this.#blocked = clone;
-            const unblock = () => {
-                if (this.#blocked === clone) {
-                    this.#blocked = null;
-                }
-            };
-            setTimeout(unblock, 500);
-            if (add) {
-                if (!item) {
-                    // item added from elsewhere (e.g. freeChoose)
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-                this.ui.animate(clone, {
-                    x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
-                }).onfinish = unblock;
-            }
-            else {
-                let zoom = false;
-                if (item) {
-                    const page = item.parentNode.parentNode.parentNode;
-                    const indicator = page.parentNode.nextSibling;
-                    const idx = Array.from(page.parentNode.childNodes).indexOf(page);
-                    const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
-                    // skip translate animation if item is not in current gallery page
-                    if (idx !== idx2) {
-                        zoom = true;
+            if (clone) {
+                const rect1 = item ? item.getBoundingClientRect() : {};
+                const rect2 = clone.getBoundingClientRect();
+                let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
+                let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
+                let scale = 1.5;
+                const x = clone._x;
+                this.#blocked = clone;
+                const unblock = () => {
+                    if (this.#blocked === clone) {
+                        this.#blocked = null;
                     }
+                };
+                setTimeout(unblock, 500);
+                if (add) {
+                    if (!item) {
+                        // item added from elsewhere (e.g. freeChoose)
+                        dx = 0;
+                        dy = 0;
+                        scale = 'var(--app-zoom-scale)';
+                    }
+                    this.ui.animate(clone, {
+                        x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
+                    }).onfinish = unblock;
                 }
                 else {
-                    // item added from elsewhere (e.g. freeChoose)
-                    zoom = true;
+                    let zoom = false;
+                    if (item) {
+                        const page = item.parentNode.parentNode.parentNode;
+                        const indicator = page.parentNode.nextSibling;
+                        const idx = Array.from(page.parentNode.childNodes).indexOf(page);
+                        const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
+                        // skip translate animation if item is not in current gallery page
+                        if (idx !== idx2) {
+                            zoom = true;
+                        }
+                    }
+                    else {
+                        // item added from elsewhere (e.g. freeChoose)
+                        zoom = true;
+                    }
+                    if (zoom) {
+                        dx = 0;
+                        dy = 0;
+                        scale = 'var(--app-zoom-scale)';
+                    }
+                    this.ui.animate(clone, {
+                        x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
+                    }).onfinish = () => { clone.remove(); unblock(); };
                 }
-                if (zoom) {
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-                this.ui.animate(clone, {
-                    x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
-                }).onfinish = () => { clone.remove(); unblock(); };
             }
         }
         addCaption(caption) {

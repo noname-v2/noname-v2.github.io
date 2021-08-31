@@ -217,7 +217,7 @@ export class Lobby extends Component {
         // save configuration
         if (this.mine) {
             delete config.online;
-            this.db.set(this.data.mode + ':config', config);
+            this.db.set(this.app.arena!.data.mode + ':config', config);
         }
 
         // update spectators

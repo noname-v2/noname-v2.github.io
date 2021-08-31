@@ -329,7 +329,7 @@ function createHero(T) {
                     confirm.push('cancel');
                 }
                 if (this.freeChoose) {
-                    confirm.push(['pick', '点将', 'blue']);
+                    confirm.push(['pick', '点将']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
@@ -725,8 +725,18 @@ function pop(T) {
         clones = new Map();
         /** Cache of created collections. */
         collections = new Map();
+        /** Restored picked heros from db. */
+        #restored = false;
+        /** ID in db for saving. */
+        get #id() {
+            const arena = this.app.arena;
+            return arena.data.mode + ':' + (arena.data.peers ? 'online_picked' : 'picked');
+        }
         /** Open a popup to pick heros. */
         pick([e, packs]) {
+            if (this.#restore()) {
+                return;
+            }
             const menu = this.ui.create('popup');
             for (const pack of packs) {
                 // separate by packs to improve performance
@@ -742,6 +752,63 @@ function pop(T) {
             }
             menu.open(e);
         }
+        /** Save picked heros. */
+        #save() {
+            this.db.set(this.#id, Array.from(this.picked));
+            this.buttons.get('pick').dataset.fill = this.picked.size ? 'blue' : '';
+        }
+        /** Restore from saved heros. */
+        #restore() {
+            if (this.#restored) {
+                return false;
+            }
+            this.#restored = true;
+            const picked = this.db.get(this.#id) ?? [];
+            if (picked.length) {
+                for (const id of picked) {
+                    this.#pick(id);
+                    const clone = this.clones.get(id);
+                    this.tray.appendChild(clone);
+                }
+                this.updateTray(null, null, false);
+                for (const id of picked) {
+                    const clone = this.clones.get(id);
+                    const x = clone._x;
+                    this.ui.animate(clone, { x: [x, x], opacity: [0, 1] });
+                }
+                this.buttons.get('pick').dataset.fill = 'blue';
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        /** Pick an item. */
+        #pick(id) {
+            if (!this.clones.has(id)) {
+                const clone = this.ui.createElement('widget.avatar');
+                clone.dataset.shadow = 'blue';
+                this.ui.setImage(clone, id);
+                let clicked = false;
+                this.ui.bind(clone, () => {
+                    if (clicked) {
+                        return;
+                    }
+                    clicked = true;
+                    setTimeout(() => clicked = false, 500);
+                    this.#unpick(id);
+                });
+                this.clones.set(id, clone);
+            }
+            // select hero
+            this.picked.add(id);
+        }
+        /** Unpick an item. */
+        #unpick(id) {
+            this.picked.delete(id);
+            this.updateTray(null, this.clones.get(id), false);
+            this.#save();
+        }
         /** Create a hero collection of an extension. */
         #createCollection(pack) {
             const collection = this.ui.create('collection');
@@ -749,31 +816,14 @@ function pop(T) {
                 this.ui.bind(node, () => {
                     if (this.picked.has(id)) {
                         // unselect hero
-                        this.picked.delete(id);
-                        this.updateTray(null, this.clones.get(id), false);
+                        this.#unpick(id);
                         node.classList.remove('defer');
                     }
                     else if (!node.classList.contains('defer')) {
                         // create clone of hero
-                        if (!this.clones.has(id)) {
-                            const clone = this.ui.createElement('widget.avatar');
-                            clone.dataset.shadow = 'blue';
-                            this.ui.setImage(clone, id);
-                            let clicked = false;
-                            this.ui.bind(clone, () => {
-                                if (clicked) {
-                                    return;
-                                }
-                                clicked = true;
-                                setTimeout(() => clicked = false, 500);
-                                this.picked.delete(id);
-                                this.updateTray(null, clone, false);
-                            });
-                            this.clones.set(id, clone);
-                        }
-                        // select hero
-                        this.picked.add(id);
+                        this.#pick(id);
                         this.updateTray(null, this.clones.get(id), true);
+                        this.#save();
                         node.classList.add('defer');
                     }
                 });
