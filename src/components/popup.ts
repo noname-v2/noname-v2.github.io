@@ -25,6 +25,9 @@ export class Popup extends Component {
 	/** Currently hidden. */
 	hidden = true;
 
+	/** Location when opened. */
+	location?: Point;
+
     init() {
 		this.node.classList.add('noname-popup');
 		
@@ -59,6 +62,7 @@ export class Popup extends Component {
 			return;
 		}
 		this.hidden = false;
+		location ??= this.location;
 
 		if (!location) {
 			this.node.classList.add('center');

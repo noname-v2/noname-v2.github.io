@@ -947,8 +947,9 @@ noname-popup > noname-pane.menu > noname-option:hover {
   background: var(--fill-blue);
   box-shadow: var(--widget-image-shadow);
 }
-noname-popup > noname-pane.context {
-  width: 220px;
+noname-popup > noname-pane.auto {
+  width: auto;
+  height: auto;
 }
 noname-popup > noname-pane.intro {
   border-radius: var(--widget-radius-sharp);

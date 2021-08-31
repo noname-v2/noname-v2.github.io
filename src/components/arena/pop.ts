@@ -1,4 +1,4 @@
-import { Component, Gallery, Timer, Player } from '../../components';
+import { Component, Gallery, Timer, Player, Point } from '../../components';
 import type { Select, FilterThis } from '../../types';
 
 /** Possible contents of pop sections. */
@@ -107,40 +107,10 @@ export class Pop extends Component {
     }
 
     addHero(select: string[] | Select<string>) {
-        // determine gallery size
         const heros = Array.isArray(select) ? select : select.items;
-        const width = parseInt(this.app.css.pop.width);
-        const height = parseFloat(this.app.css.player.ratio) * width;
-        const margin = parseInt(this.app.css.pop.margin);
-        const currentHeight = this.height;
-
-        let nrows: number;
-        let ncols: number;
-
-        if (heros.length <= 5) {
-            // single-row gallery
-            ncols = heros.length;
-            nrows = 1;
-            this.width = Math.max(this.width, heros.length * (width + margin) + margin * 4);
-            this.height += height + margin * 2;
-        }
-        else {
-            // double-row gallery
-            ncols = 5;
-            nrows = 2;
-            this.width = Math.max(this.width, 5 * (width + margin) + margin * 4);
-            this.height += height * 2 + margin * 3;
-
-            if (heros.length > 10) {
-                this.height += 12;
-            }
-        }
-
-        // add gallery
-        const gallery = this.pane.addGallery(nrows, ncols);
-        gallery.node.classList.add('pop');
-        gallery.node.style.height = `${this.height - currentHeight}px`;
-        gallery.node.addEventListener('mousedown', e => e.stopPropagation());
+        const [gallery, width, height] = this.pane.addPopGallery(heros.length);
+        this.height += height;
+        this.width = Math.max(this.width, width);
 
         if (!Array.isArray(select)) {
             let num = select.num;
@@ -209,11 +179,16 @@ export class Pop extends Component {
                 if (color) {
                     button.dataset.fill = color;
                 }
-                this.ui.bind(button, () => {
-                    this.yield(id);
+                this.ui.bind(button, e => {
+                    this.yield([id, {x: e.x, y: e.y}]);
                 });
             }
         }
+    }
+
+    /** Open popup to pick heros. */
+    pick([e, packs]: [Point, string[]]) {
+        console.log('ok', e, packs);
     }
 
     /** Add tray of selected items. */

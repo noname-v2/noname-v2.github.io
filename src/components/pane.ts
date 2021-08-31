@@ -1,4 +1,4 @@
-import { Component } from '../components';
+import { Component, Gallery } from '../components';
 import type { ToggleOptions } from './toggle';
 
 export class Pane extends Component {
@@ -41,6 +41,44 @@ export class Pane extends Component {
 		gallery.ncols = ncols;
 		this.node.appendChild(gallery.node);
 		return gallery;
+	}
+
+	/** Add a gallery containing heros or cards. */
+	addPopGallery(n: number): [Gallery, number, number] {
+		// values from theme
+        const width = parseInt(this.app.css.pop.width);
+        const height = parseFloat(this.app.css.player.ratio) * width;
+        const margin = parseInt(this.app.css.pop.margin);
+
+		// gallery size
+        let nrows: number, ncols: number, galleryWidth: number, galleryHeight: number;
+
+        if (n <= 5) {
+            // single-row gallery
+            ncols = n;
+            nrows = 1;
+			galleryWidth = n * (width + margin) + margin * 4;
+            galleryHeight = height + margin * 2;
+        }
+        else {
+            // double-row gallery
+            ncols = 5;
+            nrows = 2;
+            galleryWidth = 5 * (width + margin) + margin * 4;
+            galleryHeight = height * 2 + margin * 3;
+
+            if (n > 10) {
+                galleryHeight += 12;
+            }
+        }
+
+		// add gallery
+        const gallery = this.addGallery(nrows, ncols);
+        gallery.node.classList.add('pop');
+        gallery.node.style.height = `${galleryHeight}px`;
+        gallery.node.addEventListener('mousedown', e => e.stopPropagation());
+
+		return [gallery, galleryWidth, galleryHeight];
 	}
 
 	/** Add context menu item. */

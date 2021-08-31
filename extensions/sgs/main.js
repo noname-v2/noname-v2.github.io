@@ -196,6 +196,19 @@ function lobby(T) {
         }
         /** Remove lobby and start game. */
         cleanUp() {
+            // finalize packs
+            this.game.config.heropacks = [];
+            this.game.config.cardpacks = [];
+            for (const name of this.game.packs) {
+                const heropack = this.game.accessExtension(name, 'heropack');
+                const cardpack = this.game.accessExtension(name, 'cardpack');
+                if (heropack && !this.game.config.banned?.heropack?.includes(name)) {
+                    this.game.config.heropacks.push(name);
+                }
+                if (cardpack && !this.game.config.banned?.cardpack?.includes(name)) {
+                    this.game.config.cardpacks.push(name);
+                }
+            }
             // remove lobby and disable further configuration change
             this.lobby.unlink();
             this.game.start();
@@ -246,51 +259,60 @@ function createPop(T) {
             console.log(this.results);
         }
         filter(selections, pop) {
-            // map of sections and its selected items
-            const sections = new Map();
-            // get lists of all items and selected items
-            let all = [];
-            for (const section of pop.content) {
-                const sel = section[1];
-                if (Array.isArray(sel.items)) {
-                    all = all.concat(sel.items);
-                    for (const selection of selections) {
-                        if (selection.length && sel.items.includes(selection[0])) {
-                            sections.set(sel, [sel.items, selection]);
-                            break;
-                        }
-                    }
-                    if (!sections.has(sel)) {
-                        sections.set(sel, [sel.items, []]);
-                    }
+            if (typeof selections[0] === 'string') {
+                // custom operations defined by child classes
+                try {
+                    this[selections[0]](pop, ...selections.slice(1));
                 }
+                catch { }
             }
-            // get selectable items
-            const selectable = [];
-            for (const [sel, [all, selected]] of sections) {
-                const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-                if (n > selected.length) {
-                    const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                    const filterThis = {
-                        all, selected,
-                        getHero: this.game.getHero,
-                        getCard: this.game.getCard,
-                        accessExtension: this.game.accessExtension
-                    };
-                    for (const item of all) {
-                        if (!selected.includes(item)) {
-                            try {
-                                if (func.apply(filterThis, [item, this])) {
-                                    selectable.push(item);
-                                }
+            else {
+                // map of sections and its selected items
+                const sections = new Map();
+                // get lists of all items and selected items
+                let all = [];
+                for (const section of pop.content) {
+                    const sel = section[1];
+                    if (Array.isArray(sel.items)) {
+                        all = all.concat(sel.items);
+                        for (const selection of selections) {
+                            if (selection.length && sel.items.includes(selection[0])) {
+                                sections.set(sel, [sel.items, selection]);
+                                break;
                             }
-                            catch { }
+                        }
+                        if (!sections.has(sel)) {
+                            sections.set(sel, [sel.items, []]);
                         }
                     }
                 }
+                // get selectable items
+                const selectable = [];
+                for (const [sel, [all, selected]] of sections) {
+                    const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
+                    if (n > selected.length) {
+                        const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
+                        const filterThis = {
+                            all, selected,
+                            getHero: this.game.getHero,
+                            getCard: this.game.getCard,
+                            accessExtension: this.game.accessExtension
+                        };
+                        for (const item of all) {
+                            if (!selected.includes(item)) {
+                                try {
+                                    if (func.apply(filterThis, [item, this])) {
+                                        selectable.push(item);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                }
+                // update pop
+                pop.call('setSelectable', selectable);
             }
-            // update pop
-            pop.call('setSelectable', selectable);
         }
     };
 }
@@ -307,7 +329,7 @@ function createHero(T) {
                     confirm.push('cancel');
                 }
                 if (this.freeChoose) {
-                    confirm.push(['free', '点将', 'blue']);
+                    confirm.push(['pick', '点将', 'blue']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
@@ -316,6 +338,9 @@ function createHero(T) {
                 ]);
             }
             super.main();
+        }
+        pick(pop, e) {
+            pop.call('pick', [e, this.game.config.heropacks]);
         }
     };
 }

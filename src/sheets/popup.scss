@@ -54,8 +54,9 @@ noname-popup {
             }
         }
 
-        &.context {
-            width: 220px;
+        &.auto {
+            width: auto;
+            height: auto;
         }
 
         &.intro {

@@ -1459,7 +1459,7 @@
             }
         }
         /** Displa a popup. */
-        popup(dialog, id) {
+        async popup(dialog, id) {
             const dialogID = id ?? ++this.#dialogCount;
             this.popups.get(dialogID)?.close();
             const onopen = dialog.onopen;
@@ -1494,7 +1494,8 @@
                 }
             };
             this.popups.set(dialogID, dialog);
-            dialog.ready.then(() => dialog.open());
+            await dialog.ready;
+            dialog.open();
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
@@ -1608,6 +1609,8 @@
         transition = null;
         /** Currently hidden. */
         hidden = true;
+        /** Location when opened. */
+        location;
         init() {
             this.node.classList.add('noname-popup');
             // block DOM events behind the pane
@@ -1638,6 +1641,7 @@
                 return;
             }
             this.hidden = false;
+            location ??= this.location;
             if (!location) {
                 this.node.classList.add('center');
             }
@@ -2307,31 +2311,21 @@
             const n = Object.entries(lib ?? {}).length;
             if (lib && n) {
                 const menu = this.ui.create('popup');
-                const width = parseInt(this.app.css.pop.width);
-                const height = parseFloat(this.app.css.player.ratio) * width;
-                const margin = parseInt(this.app.css.pop.margin);
-                let galleryHeight;
-                if (n > 5) {
-                    galleryHeight = height * 2 + margin * 3;
-                    if (n > 10) {
-                        galleryHeight += 12;
-                    }
-                }
-                else {
-                    galleryHeight = height + margin * 2;
-                }
-                const gallery = menu.pane.addGallery(n > 5 ? 2 : 1, Math.min(5, n));
-                gallery.node.style.height = `${galleryHeight}px`;
-                gallery.node.classList.add('pop');
+                menu.location = e;
+                menu.pane.node.classList.add('auto');
+                menu.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+                const [gallery, width] = menu.pane.addPopGallery(n);
+                gallery.node.style.width = `${width}px`;
                 for (const name in lib) {
                     gallery.add(() => {
-                        const player = this.ui.create('player');
-                        player.setHero(pack + ':' + name);
-                        return player.node;
+                        if (section === 'hero') {
+                            const player = this.ui.create('player');
+                            player.setHero(pack + ':' + name);
+                            return player.node;
+                        }
                     });
                 }
-                menu.open(e);
-                gallery.checkPage();
+                this.app.popup(menu).then(() => gallery.checkPage());
             }
         }
     }
@@ -2496,36 +2490,10 @@
             this.height += 50;
         }
         addHero(select) {
-            // determine gallery size
             const heros = Array.isArray(select) ? select : select.items;
-            const width = parseInt(this.app.css.pop.width);
-            const height = parseFloat(this.app.css.player.ratio) * width;
-            const margin = parseInt(this.app.css.pop.margin);
-            const currentHeight = this.height;
-            let nrows;
-            let ncols;
-            if (heros.length <= 5) {
-                // single-row gallery
-                ncols = heros.length;
-                nrows = 1;
-                this.width = Math.max(this.width, heros.length * (width + margin) + margin * 4);
-                this.height += height + margin * 2;
-            }
-            else {
-                // double-row gallery
-                ncols = 5;
-                nrows = 2;
-                this.width = Math.max(this.width, 5 * (width + margin) + margin * 4);
-                this.height += height * 2 + margin * 3;
-                if (heros.length > 10) {
-                    this.height += 12;
-                }
-            }
-            // add gallery
-            const gallery = this.pane.addGallery(nrows, ncols);
-            gallery.node.classList.add('pop');
-            gallery.node.style.height = `${this.height - currentHeight}px`;
-            gallery.node.addEventListener('mousedown', e => e.stopPropagation());
+            const [gallery, width, height] = this.pane.addPopGallery(heros.length);
+            this.height += height;
+            this.width = Math.max(this.width, width);
             if (!Array.isArray(select)) {
                 let num = select.num;
                 if (typeof num === 'number') {
@@ -2586,11 +2554,15 @@
                     if (color) {
                         button.dataset.fill = color;
                     }
-                    this.ui.bind(button, () => {
-                        this.yield(id);
+                    this.ui.bind(button, e => {
+                        this.yield([id, { x: e.x, y: e.y }]);
                     });
                 }
             }
+        }
+        /** Open popup to pick heros. */
+        pick([e, packs]) {
+            console.log('ok', e, packs);
         }
         /** Add tray of selected items. */
         addTray() {
@@ -3273,6 +3245,38 @@
             gallery.ncols = ncols;
             this.node.appendChild(gallery.node);
             return gallery;
+        }
+        /** Add a gallery containing heros or cards. */
+        addPopGallery(n) {
+            // values from theme
+            const width = parseInt(this.app.css.pop.width);
+            const height = parseFloat(this.app.css.player.ratio) * width;
+            const margin = parseInt(this.app.css.pop.margin);
+            // gallery size
+            let nrows, ncols, galleryWidth, galleryHeight;
+            if (n <= 5) {
+                // single-row gallery
+                ncols = n;
+                nrows = 1;
+                galleryWidth = n * (width + margin) + margin * 4;
+                galleryHeight = height + margin * 2;
+            }
+            else {
+                // double-row gallery
+                ncols = 5;
+                nrows = 2;
+                galleryWidth = 5 * (width + margin) + margin * 4;
+                galleryHeight = height * 2 + margin * 3;
+                if (n > 10) {
+                    galleryHeight += 12;
+                }
+            }
+            // add gallery
+            const gallery = this.addGallery(nrows, ncols);
+            gallery.node.classList.add('pop');
+            gallery.node.style.height = `${galleryHeight}px`;
+            gallery.node.addEventListener('mousedown', e => e.stopPropagation());
+            return [gallery, galleryWidth, galleryHeight];
         }
         /** Add context menu item. */
         addOption(caption, onclick) {

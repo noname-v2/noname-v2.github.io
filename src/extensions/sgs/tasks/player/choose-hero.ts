@@ -1,5 +1,6 @@
 import type { createPop } from './choose-pop';
-import type { PopConfirm, Select } from '../../types';
+import type { PopConfirm, Select, Link } from '../../types';
+import type { Point } from '../../../../components';
 
 export function createHero(T: ReturnType<typeof createPop>) {
     return class ChoosePop extends T {
@@ -14,7 +15,7 @@ export function createHero(T: ReturnType<typeof createPop>) {
                     confirm.push('cancel');
                 }
                 if (this.freeChoose) {
-                    confirm.push(['free', '点将', 'blue']);
+                    confirm.push(['pick', '点将', 'blue']);
                 }
                 this.pop.set(id, [
                     ['caption', '选择武将'],
@@ -23,6 +24,10 @@ export function createHero(T: ReturnType<typeof createPop>) {
                 ]);
             }
             super.main();
+        }
+
+        pick(pop: Link, e: Point) {
+            pop.call('pick', [e, this.game.config.heropacks]);
         }
     }
 }

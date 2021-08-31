@@ -51,54 +51,63 @@ export function createPop(T: ReturnType<typeof createChoose>) {
         }
 
         filter(selections: (string | number)[][], pop: Link) {
-            // map of sections and its selected items
-            const sections = new Map<Select<any>, [(string | number)[], (string | number)[]]>();
-            
-            // get lists of all items and selected items
-            let all: any[] = [];
-            for (const section of pop.content) {
-                const sel = section[1];
-                if (Array.isArray(sel.items)) {
-                    all = all.concat(sel.items);
-                    for (const selection of selections) {
-                        if (selection.length && sel.items.includes(selection[0])) {
-                            sections.set(sel, [sel.items, selection]);
-                            break;
-                        }
-                    }
-                    if (!sections.has(sel)) {
-                        sections.set(sel, [sel.items, []]);
-                    }
+            if (typeof selections[0] === 'string') {
+                // custom operations defined by child classes
+                try {
+                    (this as any)[selections[0]](pop, ...selections.slice(1));
                 }
+                catch {}
             }
-
-            // get selectable items
-            const selectable = [];
-            for (const [sel, [all, selected]] of sections) {
-                const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-                if (n > selected.length) {
-                    const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                    const filterThis: FilterThis<any> = {
-                        all, selected,
-                        getHero: this.game.getHero,
-                        getCard: this.game.getCard,
-                        accessExtension: this.game.accessExtension
-                    }
-                    for (const item of all) {
-                        if (!selected.includes(item)) {
-                            try {
-                                if (func.apply(filterThis, [item, this])) {
-                                    selectable.push(item);
-                                }
+            else {
+                // map of sections and its selected items
+                const sections = new Map<Select<any>, [(string | number)[], (string | number)[]]>();
+                
+                // get lists of all items and selected items
+                let all: any[] = [];
+                for (const section of pop.content) {
+                    const sel = section[1];
+                    if (Array.isArray(sel.items)) {
+                        all = all.concat(sel.items);
+                        for (const selection of selections) {
+                            if (selection.length && sel.items.includes(selection[0])) {
+                                sections.set(sel, [sel.items, selection]);
+                                break;
                             }
-                            catch {}
+                        }
+                        if (!sections.has(sel)) {
+                            sections.set(sel, [sel.items, []]);
                         }
                     }
                 }
-            }
 
-            // update pop
-            pop.call('setSelectable', selectable);
+                // get selectable items
+                const selectable = [];
+                for (const [sel, [all, selected]] of sections) {
+                    const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
+                    if (n > selected.length) {
+                        const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
+                        const filterThis: FilterThis<any> = {
+                            all, selected,
+                            getHero: this.game.getHero,
+                            getCard: this.game.getCard,
+                            accessExtension: this.game.accessExtension
+                        }
+                        for (const item of all) {
+                            if (!selected.includes(item)) {
+                                try {
+                                    if (func.apply(filterThis, [item, this])) {
+                                        selectable.push(item);
+                                    }
+                                }
+                                catch {}
+                            }
+                        }
+                    }
+                }
+
+                // update pop
+                pop.call('setSelectable', selectable);
+            }
         }
     }
 }

@@ -327,33 +327,25 @@ export class Lobby extends Component {
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
             const menu = this.ui.create('popup');
+            menu.location = e;
+            menu.pane.node.classList.add('auto');
+            menu.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+            const [gallery, width] = menu.pane.addPopGallery(n);
+            gallery.node.style.width = `${width}px`;
 
-            const width = parseInt(this.app.css.pop.width);
-            const height = parseFloat(this.app.css.player.ratio) * width;
-            const margin = parseInt(this.app.css.pop.margin);
-            let galleryHeight;
-            if (n > 5) {
-                galleryHeight = height * 2 + margin * 3;
-                if (n > 10) {
-                    galleryHeight += 12;
-                }
-            }
-            else {
-                galleryHeight = height + margin * 2;
-            }
-            
-            const gallery = menu.pane.addGallery(n > 5 ? 2 : 1, Math.min(5, n));
-            gallery.node.style.height = `${galleryHeight}px`;
-            gallery.node.classList.add('pop');
             for (const name in lib) {
                 gallery.add(() => {
-                    const player = this.ui.create('player');
-                    player.setHero(pack + ':' + name);
-                    return player.node;
+                    if (section === 'hero') {
+                        const player = this.ui.create('player');
+                        player.setHero(pack + ':' + name);
+                        return player.node;
+                    }
+                    else {
+                        
+                    }
                 });
             }
-            menu.open(e);
-            gallery.checkPage();
+            this.app.popup(menu).then(() => gallery.checkPage());
         } 
     }
 }

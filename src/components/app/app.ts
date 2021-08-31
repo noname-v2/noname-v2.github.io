@@ -329,7 +329,7 @@ export class App extends Component {
     }
 
     /** Displa a popup. */
-    popup(dialog: Popup, id?: string) {
+    async popup(dialog: Popup, id?: string) {
         const dialogID = id ?? ++this.#dialogCount;
         this.popups.get(dialogID)?.close();
         const onopen = dialog.onopen;
@@ -370,7 +370,8 @@ export class App extends Component {
         };
 
         this.popups.set(dialogID, dialog);
-        dialog.ready.then(() => dialog.open());
+        await dialog.ready;
+        dialog.open();
     }
 
     /** Clear alert and confirm dialogs. */
