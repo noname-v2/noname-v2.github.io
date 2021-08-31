@@ -1,8 +1,8 @@
 import type { Game } from '../../../worker/game';
 import type { SGS, Player, Card, Skill } from '../types';
 
-export function game(A: typeof Game) {
-    return class Game extends A {
+export function game(G: typeof Game) {
+    return class Game extends G {
         /** Map of all players, cards and skills. */
         players = new Map<number, Player>();
         cards = new Map<number, Card>();

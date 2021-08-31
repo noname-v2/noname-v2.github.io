@@ -1,5 +1,3 @@
-import type { SkillDict } from '../sgs/types';
-
 export const skill = {
     jianxiong: {
         name: '奸雄',
@@ -245,4 +243,4 @@ export const skill = {
         name: '倾城',
         intro: '出牌阶段，你可以弃置一张黑色牌并选择一名武将牌均明置的其他角色，然后你暗置其一张武将牌。然后若你以此法弃置的牌是装备牌，则你可以再选择另一名武将牌均明置的其他角色，暗置其一张武将牌。'
     }
-} as SkillDict;
+};

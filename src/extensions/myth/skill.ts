@@ -1,5 +1,3 @@
-import type { SkillDict } from '../sgs/types';
-
 export const skill = {
     jushou: {
         name: '据守',
@@ -397,4 +395,4 @@ export const skill = {
         name: '从谏',
         intro: '当你成为锦囊牌的目标时，若此牌的目标数大于1，则你可以交给其中一名其他目标角色一张牌，然后摸一张牌，若你给出的是装备牌，改为摸两张牌。'
     }
-} as SkillDict;
+};

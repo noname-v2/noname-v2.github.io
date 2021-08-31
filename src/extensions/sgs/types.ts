@@ -1,4 +1,4 @@
-import type { Extension, Class, Dict } from '../../types';
+import type { Extension, Class, Dict, Mode as BaseMode } from '../../types';
 import type { task } from './classes/task';
 import type { game } from './classes/game';
 
@@ -22,9 +22,10 @@ export type Game = InstanceType<GameClass>;
 /** Type for SGS Task. */
 export type TaskClass = ReturnType<typeof task>;
 export type Task = InstanceType<TaskClass>;
+export type Mode = BaseMode<Task>;
 
 /** SGS hero definition. */
-export type HeroDict = Dict<{
+export interface HeroData {
     name: string;
     intro: string;
     gender: string;
@@ -33,10 +34,10 @@ export type HeroDict = Dict<{
     skills: string[];
     subpack?: string;
     [key: string]: any;
-}>;
+};
 
 /** SGS card definition. */
-export type CardDict = Dict<{
+export interface CardData {
     name: string;
     intro: string;
     type: string;
@@ -52,10 +53,10 @@ export type CardDict = Dict<{
     range?: number;
     distance?: number | [number, number];
     [key: string]: any;
-}>;
+};
 
 /** SGS skill definition. */
-export type SkillDict = Dict<{
+export interface SkillData {
     name: string;
     intro: string;
     type?: string;
@@ -63,15 +64,15 @@ export type SkillDict = Dict<{
     inherit?: string;
     trigger?: Dict<string>;
     [key: string]: any;
-}>;
+};
 
 /** Card pile format. */
 export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
 
 /** Basic SGS extension structure. */
 export interface SGS extends Extension<Task> {
-    hero?: HeroDict;
-    card?: CardDict;
-    skill?: SkillDict;
+    hero?: Dict<HeroData>;
+    card?: Dict<CardData>;
+    skill?: Dict<SkillData>;
     pile?: Pile;
 }

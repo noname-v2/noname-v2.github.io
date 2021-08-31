@@ -1,5 +1,3 @@
-import type { SkillDict } from '../sgs/types';
-
 export const skill = {
     kangkai: {
         name: '慷忾',
@@ -377,4 +375,4 @@ export const skill = {
         name: '方统',
         intro: '结束阶段开始时，若有“方”，你可弃置一张牌，若如此做，你将至少一张“方”置入弃牌堆。若此牌与你以此法置入弃牌堆的所有“方”的点数之和为36，你对一名其他角色造成3点雷电伤害。'	
     }
-} as SkillDict;
+};

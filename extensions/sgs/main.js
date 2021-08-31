@@ -373,8 +373,8 @@ const tasks = {
     moveTo
 };
 
-function game(A) {
-    return class Game extends A {
+function game(G) {
+    return class Game extends G {
         /** Map of all players, cards and skills. */
         players = new Map();
         cards = new Map();

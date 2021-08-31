@@ -45,7 +45,7 @@ export interface Extension<T extends Task = Task> {
     heropack?: string;
     cardpack?: string;
     tags?: string[];
-    lib?: typeof lib;
+    lib?: Partial<typeof lib>;
 }
 
 /** Format of extension meta data. */

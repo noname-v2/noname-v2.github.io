@@ -1,5 +1,3 @@
-import type { SkillDict } from '../sgs/types';
-
 export const skill = {
     luoying: {
         name: '落英',
@@ -397,4 +395,4 @@ export const skill = {
         name: '饰非',
         intro: '当你需要使用或打出@(standard.shan)时，你可以令当前回合角色摸一张牌，然后若其手牌不是唯一最多，则你弃置最多的角色一张牌，视为你使用或打出一张@(standard.shan)。'
     }
-} as SkillDict;
+};
