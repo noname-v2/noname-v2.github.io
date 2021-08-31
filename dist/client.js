@@ -1346,6 +1346,7 @@
             sheet.insertRule(`noname-app {${rules}}`, sheet.rules.length);
             // add rules for dataset
             const dataset = {
+                icon: 'background-image',
                 bcolor: 'background-image',
                 fill: 'background',
                 text: 'text-color',
@@ -3148,7 +3149,7 @@
         $icon(name) {
             if (name) {
                 this.node.classList.add('with-icon');
-                this.icon.style.backgroundImage = `var(--icon-${name})`;
+                this.icon.dataset.icon = name;
             }
             else {
                 this.node.classList.remove('with-icon');

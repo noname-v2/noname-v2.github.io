@@ -202,6 +202,7 @@ export class App extends Component {
 
         // add rules for dataset
         const dataset: Dict = {
+            icon: 'background-image',
             bcolor: 'background-image',
             fill: 'background',
             text: 'text-color',

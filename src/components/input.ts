@@ -72,7 +72,7 @@ export class Input extends Component {
 	$icon(name: string) {
 		if (name) {
 			this.node.classList.add('with-icon');
-			this.icon.style.backgroundImage = `var(--icon-${name})`;
+			this.icon.dataset.icon = name;
 		}
 		else {
 			this.node.classList.remove('with-icon');

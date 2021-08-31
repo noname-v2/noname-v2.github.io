@@ -13,6 +13,7 @@ fs.writeFileSync('build/meta.ts',
 // get color literal types
 const css = JSON.parse(fs.readFileSync('assets/theme/default/theme.json'));
 const names = {
+    icon: 'IconImage',
     bcolor: 'ButtonColor',
     fill: 'FillColor',
     text: 'TextColor',
