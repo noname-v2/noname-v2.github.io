@@ -1,4 +1,4 @@
-import type { TaskClass } from '../types';
+import type { TaskClass } from '../../types';
 
 export function setup(T: TaskClass) {
     return class Setup extends T {

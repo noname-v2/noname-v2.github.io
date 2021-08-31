@@ -1,7 +1,7 @@
 import type { SGS } from './types';
-import { tasks } from './tasks';
-import { classes } from './classes';
-import { components } from './components';
+import { tasks } from './tasks/index';
+import { classes } from './classes/index';
+import { components } from './components/index';
 
 export default {
     mode: { 

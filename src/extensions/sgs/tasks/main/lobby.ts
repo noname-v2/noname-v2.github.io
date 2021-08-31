@@ -1,4 +1,4 @@
-import type { TaskClass, Link, Config, Dict } from '../types';
+import type { TaskClass, Link, Config, Dict } from '../../types';
 
 export function lobby(T: TaskClass) {
     return class Lobby extends T {
