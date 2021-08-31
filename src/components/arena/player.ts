@@ -25,18 +25,13 @@ export class Player extends Component {
     /** Timer bar. */
     timer: Timer | null = null;
 
-    init() {
-        this.node.classList.add('hero-hidden');
-        this.node.classList.add('vice-hidden');
-    }
-
     $heroImage(name: string | null) {
         if (name) {
-            this.node.classList.remove('hero-hidden');
+            this.node.classList.add('hero-shown');
             this.ui.setImage(this.heroImage, name);
         }
         else {
-            this.node.classList.add('hero-hidden');
+            this.node.classList.remove('hero-shown');
             this.heroImage.style.backgroundImage = '';
         }
     }

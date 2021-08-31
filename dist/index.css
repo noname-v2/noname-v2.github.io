@@ -696,11 +696,11 @@ noname-player > noname-background > noname-image {
   border-radius: var(--player-image-radius);
   box-shadow: var(--player-image-shadow);
 }
-noname-player.hero-hidden.vice-hidden > noname-background {
+noname-player:not(.hero-shown):not(.vice-shown) > noname-background {
   background: var(--player-back-background);
   box-shadow: var(--player-back-shadow);
 }
-noname-player.hero-hidden > noname-background > noname-image {
+noname-player:not(.hero-shown) > noname-background > noname-image {
   opacity: 0;
 }
 noname-player > noname-content {

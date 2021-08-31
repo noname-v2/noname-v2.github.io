@@ -2324,17 +2324,13 @@
         nickname = this.ui.createElement('span', this.content);
         /** Timer bar. */
         timer = null;
-        init() {
-            this.node.classList.add('hero-hidden');
-            this.node.classList.add('vice-hidden');
-        }
         $heroImage(name) {
             if (name) {
-                this.node.classList.remove('hero-hidden');
+                this.node.classList.add('hero-shown');
                 this.ui.setImage(this.heroImage, name);
             }
             else {
-                this.node.classList.add('hero-hidden');
+                this.node.classList.remove('hero-shown');
                 this.heroImage.style.backgroundImage = '';
             }
         }
