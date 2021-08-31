@@ -1,5 +1,5 @@
 import { hub } from '../../client/client';
-import { Component, Toggle, Player } from '../../components';
+import { Component, Toggle, Player, Point } from '../../components';
 import type { Config, Dict } from '../../types';
 
 export class Lobby extends Component {
@@ -133,7 +133,7 @@ export class Lobby extends Component {
         }));
     }
 
-    $pane(configs: {heropacks: Dict<string>, cardpacks: Dict<string>, configs: Dict<Config>}) {
+    $pane(configs: {heropacks: string[], cardpacks: string[], configs: Dict<Config>}) {
         // mode options
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
@@ -162,22 +162,24 @@ export class Lobby extends Component {
 
         // heropacks
         this.sidebar.pane.addSection('武将');
-        for (const name in configs.heropacks) {
-            const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
+        for (const pack of configs.heropacks) {
+            const name = this.app.accessExtension(pack, 'heropack');
+            const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
                 this.freeze();
-                this.yield(['banned', 'heropack/' + name, result]);
+                this.yield(['banned', 'heropack/' + pack, result]);
             });
-            this.heroToggles.set(name, toggle);
+            this.heroToggles.set(pack, toggle);
         }
         
         // cardpacks
         this.sidebar.pane.addSection('卡牌');
-        for (const name in configs.cardpacks) {
-            const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
+        for (const pack of configs.cardpacks) {
+            const name = this.app.accessExtension(pack, 'cardpack');
+            const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
                 this.freeze();
-                this.yield(['banned', 'cardpack/' + name, result]);
+                this.yield(['banned', 'cardpack/' + pack, result]);
             });
-            this.cardToggles.set(name, toggle);
+            this.cardToggles.set(pack, toggle);
         }
     }
 
@@ -315,5 +317,13 @@ export class Lobby extends Component {
             }
             this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
         }
+    }
+
+    /** Open an extension gallery. */
+    #openGallery(e: Point) {
+        const menu = this.ui.create('popup');
+        menu.pane.node.classList.add('gallery');
+        menu.pane.node.classList.add('pop');
+        menu.open(e);
     }
 }

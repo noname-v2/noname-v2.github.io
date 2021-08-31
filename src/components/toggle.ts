@@ -1,4 +1,10 @@
-import { Component } from '../components';
+import { Component, Point } from '../components';
+
+export type ToggleOptions = [
+    string | [string, string] | [string, (e: Point) => void],
+    (result: any) => void,
+    [string | number, string][]?
+];
 
 export class Toggle extends Component {
     /** Caption text. */
@@ -16,15 +22,20 @@ export class Toggle extends Component {
     /** Requires confirmation when toggling to a value. */
     confirm = new Map<string | number | boolean, [string | null, string?]>();
 
-    setup(caption: string | [string, string], onclick: (result: any) => void, choices?: [string | number, string][]) {
+    setup(...[caption, onclick, choices]: ToggleOptions) {
         if (Array.isArray(caption)) {
             this.ui.format(this.span, caption[0]);
             this.ui.bind(this.span, {oncontext: e => {
-                const menu = this.ui.create('popup');
-                menu.pane.width = 160;
-                menu.pane.node.classList.add('intro');
-                menu.pane.addText(caption[1]);
-                menu.open(e);
+                if (typeof caption[1] === 'function') {
+                    caption[1](e);
+                }
+                else {
+                    const menu = this.ui.create('popup');
+                    menu.pane.width = 160;
+                    menu.pane.node.classList.add('intro');
+                    menu.pane.addText(caption[1]);
+                    menu.open(e);
+                }
             }});
         }
         else {

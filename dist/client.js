@@ -2158,21 +2158,23 @@
             }
             // heropacks
             this.sidebar.pane.addSection('武将');
-            for (const name in configs.heropacks) {
-                const toggle = this.sidebar.pane.addToggle(configs.heropacks[name], result => {
+            for (const pack of configs.heropacks) {
+                const name = this.app.accessExtension(pack, 'heropack');
+                const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
                     this.freeze();
-                    this.yield(['banned', 'heropack/' + name, result]);
+                    this.yield(['banned', 'heropack/' + pack, result]);
                 });
-                this.heroToggles.set(name, toggle);
+                this.heroToggles.set(pack, toggle);
             }
             // cardpacks
             this.sidebar.pane.addSection('卡牌');
-            for (const name in configs.cardpacks) {
-                const toggle = this.sidebar.pane.addToggle(configs.cardpacks[name], result => {
+            for (const pack of configs.cardpacks) {
+                const name = this.app.accessExtension(pack, 'cardpack');
+                const toggle = this.sidebar.pane.addToggle([name, e => this.#openGallery(e)], result => {
                     this.freeze();
-                    this.yield(['banned', 'cardpack/' + name, result]);
+                    this.yield(['banned', 'cardpack/' + pack, result]);
                 });
-                this.cardToggles.set(name, toggle);
+                this.cardToggles.set(pack, toggle);
             }
         }
         $owner() {
@@ -2299,6 +2301,13 @@
                 }
                 this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
             }
+        }
+        /** Open an extension gallery. */
+        #openGallery(e) {
+            const menu = this.ui.create('popup');
+            menu.pane.node.classList.add('gallery');
+            menu.pane.node.classList.add('pop');
+            menu.open(e);
         }
     }
 
@@ -2489,6 +2498,7 @@
             }
             // add gallery
             const gallery = this.pane.addGallery(nrows, ncols);
+            gallery.node.classList.add('pop');
             gallery.node.style.height = `${this.height - currentHeight}px`;
             gallery.node.addEventListener('mousedown', e => e.stopPropagation());
             if (!Array.isArray(select)) {
@@ -3249,9 +3259,9 @@
             return option;
         }
         /** Add a toggle. */
-        addToggle(caption, onclick, choices) {
+        addToggle(...args) {
             const toggle = this.ui.create('toggle');
-            toggle.setup(caption, onclick, choices);
+            toggle.setup(...args);
             this.node.appendChild(toggle.node);
             return toggle;
         }
@@ -4028,15 +4038,20 @@
         disabledChoices = new Set();
         /** Requires confirmation when toggling to a value. */
         confirm = new Map();
-        setup(caption, onclick, choices) {
+        setup(...[caption, onclick, choices]) {
             if (Array.isArray(caption)) {
                 this.ui.format(this.span, caption[0]);
                 this.ui.bind(this.span, { oncontext: e => {
-                        const menu = this.ui.create('popup');
-                        menu.pane.width = 160;
-                        menu.pane.node.classList.add('intro');
-                        menu.pane.addText(caption[1]);
-                        menu.open(e);
+                        if (typeof caption[1] === 'function') {
+                            caption[1](e);
+                        }
+                        else {
+                            const menu = this.ui.create('popup');
+                            menu.pane.width = 160;
+                            menu.pane.node.classList.add('intro');
+                            menu.pane.addText(caption[1]);
+                            menu.open(e);
+                        }
                     } });
             }
             else {

@@ -58,6 +58,11 @@ noname-popup {
             width: 220px;
         }
 
+        &.gallery {
+            width: 500px;
+            height: auto;
+        }
+
         &.intro {
             @include widget-sharp;
             width: 180px;

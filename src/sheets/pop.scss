@@ -5,23 +5,6 @@ noname-arena noname-zoom > noname-pop {
     overflow: hidden;
 
     > noname-pane {
-        > noname-gallery noname-item {
-            width: var(--pop-width);
-            aspect-ratio: 1 / var(--player-ratio);
-            
-            > noname-player {
-                transition: opacity var(--app-transition);
-                width:  var(--player-width);
-                height: auto;
-                transform: scale(var(--pop-scale));
-                transform-origin: top left;
-
-                &.selected {
-                    opacity: var(--app-defer-opacity);
-                }
-            }
-        }
-
         > noname-bar {
             margin: 12px 0 14px 0;
 

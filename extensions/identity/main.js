@@ -64,6 +64,7 @@ var main = {
             identity: {
                 name: '选择身份',
                 init: 'random',
+                intro: '使用固定游戏身份。',
                 options: [
                     ['random', '随机'],
                     ['zhu', '主公'],

@@ -138,6 +138,7 @@ export class Pop extends Component {
 
         // add gallery
         const gallery = this.pane.addGallery(nrows, ncols);
+        gallery.node.classList.add('pop');
         gallery.node.style.height = `${this.height - currentHeight}px`;
         gallery.node.addEventListener('mousedown', e => e.stopPropagation());
 

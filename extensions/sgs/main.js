@@ -69,18 +69,18 @@ function lobby(T) {
         main() {
             const lobby = this.lobby = this.game.create('lobby');
             // get names of hero packs and card packs
-            const heropacks = {};
-            const cardpacks = {};
+            const heropacks = [];
+            const cardpacks = [];
             const configs = {};
             Object.assign(configs, this.game.mode.config);
             for (const name of this.game.packs) {
                 const heropack = this.game.accessExtension(name, 'heropack');
                 const cardpack = this.game.accessExtension(name, 'cardpack');
                 if (heropack) {
-                    heropacks[name] = heropack;
+                    heropacks.push(name);
                 }
                 if (cardpack) {
-                    cardpacks[name] = cardpack;
+                    cardpacks.push(name);
                 }
             }
             // set default configurations
@@ -753,7 +753,7 @@ var main = {
             },
             game_speed: {
                 name: '游戏速度',
-                intro: '控制游戏阶事件间的间隔时间。',
+                intro: '控制游戏事件间的间隔时间。',
                 init: 0.3,
                 options: [
                     [0.5, '较慢'],

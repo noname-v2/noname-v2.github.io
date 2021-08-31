@@ -1,4 +1,5 @@
 import { Component } from '../components';
+import type { ToggleOptions } from './toggle';
 
 export class Pane extends Component {
 	/** Pane width for text alignment. */
@@ -53,9 +54,9 @@ export class Pane extends Component {
 	}
 
 	/** Add a toggle. */
-	addToggle(caption: string | [string, string], onclick: (result: any) => void, choices?: [string | number, string][]) {
+	addToggle(...args: ToggleOptions) {
 		const toggle = this.ui.create('toggle');
-		toggle.setup(caption, onclick, choices);
+		toggle.setup(...args);
 		this.node.appendChild(toggle.node);
 		return toggle;
 	}

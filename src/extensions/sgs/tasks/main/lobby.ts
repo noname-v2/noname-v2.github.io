@@ -8,8 +8,8 @@ export function lobby(T: TaskClass) {
             const lobby = this.lobby = this.game.create('lobby');
 
             // get names of hero packs and card packs
-            const heropacks: Dict<string> = {};
-            const cardpacks: Dict<string> = {};
+            const heropacks: string[] = [];
+            const cardpacks: string[] = [];
             const configs: Dict<Config> = {};
             Object.assign(configs, this.game.mode.config);
 
@@ -17,10 +17,10 @@ export function lobby(T: TaskClass) {
                 const heropack = this.game.accessExtension(name, 'heropack');
                 const cardpack = this.game.accessExtension(name, 'cardpack');
                 if (heropack) {
-                    heropacks[name] = heropack;
+                    heropacks.push(name);
                 }
                 if (cardpack) {
-                    cardpacks[name] = cardpack;
+                    cardpacks.push(name);
                 }
             }
 
