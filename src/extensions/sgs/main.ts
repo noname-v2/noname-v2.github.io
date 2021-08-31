@@ -60,7 +60,7 @@ export default {
             },
             game_speed: {
                 name: '游戏速度',
-                intro: '控制游戏阶事件间的间隔时间。',
+                intro: '控制游戏事件间的间隔时间。',
                 init: 0.3,
                 options: [
                     [0.5, '较慢'],

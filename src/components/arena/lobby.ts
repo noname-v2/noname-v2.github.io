@@ -138,7 +138,8 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('选项');
         for (const name in configs.configs) {
             const config = configs.configs[name];
-            const toggle = this.sidebar.pane.addToggle(config.name!, result => {
+            const caption = config.intro ? [config.name, config.intro] : config.name;
+            const toggle = this.sidebar.pane.addToggle(caption as any, result => {
                 this.freeze();
                 if (name === 'online' && result) {
                     this.connecting = true;

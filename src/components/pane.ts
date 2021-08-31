@@ -53,7 +53,7 @@ export class Pane extends Component {
 	}
 
 	/** Add a toggle. */
-	addToggle(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
+	addToggle(caption: string | [string, string], onclick: (result: any) => void, choices?: [string | number, string][]) {
 		const toggle = this.ui.create('toggle');
 		toggle.setup(caption, onclick, choices);
 		this.node.appendChild(toggle.node);

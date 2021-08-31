@@ -351,7 +351,6 @@ export class SplashHub extends Popup {
             const ws = client.connection;
             if (address.input.disabled && ws instanceof WebSocket) {
                 const menu = this.ui.create('popup');
-                menu.position = e;
                 menu.pane.addOption('断开', () => {
                     if (ws === client.connection) {
                         ws.close();
@@ -360,7 +359,7 @@ export class SplashHub extends Popup {
                 });
                 menu.onclose = () => address.node.classList.remove('defer');
                 address.node.classList.add('defer');
-                menu.open();
+                menu.open(e);
             }
         });
     }

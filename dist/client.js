@@ -1605,8 +1605,6 @@
         onclose = null;
         /** Whether popup is closed when clicking on background layer. */
         temp = true;
-        /** Whether popup appears at the center. */
-        position = null;
         /** Built-in sizes. */
         size = null;
         /** Animation speed of open and close. */
@@ -1638,12 +1636,12 @@
                 this.node.remove();
             };
         }
-        open() {
+        open(location) {
             if (!this.hidden) {
                 return;
             }
             this.hidden = false;
-            if (this.position === null) {
+            if (!location) {
                 this.node.classList.add('center');
             }
             if (typeof this.size === 'string') {
@@ -1651,12 +1649,12 @@
             }
             this.node.classList.add('hidden');
             this.app.zoomNode.appendChild(this.node);
-            if (this.position) {
+            if (location) {
                 // determine position of the menu
                 if (this.transition === null) {
                     this.transition = 'fast';
                 }
-                let { x, y } = this.position;
+                let { x, y } = location;
                 const rect1 = this.pane.node.getBoundingClientRect();
                 const rect2 = this.app.zoomNode.getBoundingClientRect();
                 const zoom = this.app.zoom;
@@ -2137,7 +2135,8 @@
             this.sidebar.pane.addSection('选项');
             for (const name in configs.configs) {
                 const config = configs.configs[name];
-                const toggle = this.sidebar.pane.addToggle(config.name, result => {
+                const caption = config.intro ? [config.name, config.intro] : config.name;
+                const toggle = this.sidebar.pane.addToggle(caption, result => {
                     this.freeze();
                     if (name === 'online' && result) {
                         this.connecting = true;
@@ -3725,7 +3724,6 @@
                 const ws = connection;
                 if (address.input.disabled && ws instanceof WebSocket) {
                     const menu = this.ui.create('popup');
-                    menu.position = e;
                     menu.pane.addOption('断开', () => {
                         if (ws === connection) {
                             ws.close();
@@ -3734,7 +3732,7 @@
                     });
                     menu.onclose = () => address.node.classList.remove('defer');
                     address.node.classList.add('defer');
-                    menu.open();
+                    menu.open(e);
                 }
             });
         }
@@ -3919,8 +3917,7 @@
             menu.pane.addOption('游戏音乐', () => { clickOption(false, true); restore(); });
             menu.pane.addOption('全部应用', () => clickOption(true, true));
             menu.onclose = () => { this.#rotateMusic(node, bgm, false, false); restore(); };
-            menu.position = e;
-            menu.open();
+            menu.open(e);
         }
         /** Create rotation animation for music selector. */
         #rotate(node) {
@@ -4032,7 +4029,19 @@
         /** Requires confirmation when toggling to a value. */
         confirm = new Map();
         setup(caption, onclick, choices) {
-            this.ui.format(this.span, caption);
+            if (Array.isArray(caption)) {
+                this.ui.format(this.span, caption[0]);
+                this.ui.bind(this.span, { oncontext: e => {
+                        const menu = this.ui.create('popup');
+                        menu.pane.width = 160;
+                        menu.pane.node.classList.add('intro');
+                        menu.pane.addText(caption[1]);
+                        menu.open(e);
+                    } });
+            }
+            else {
+                this.ui.format(this.span, caption);
+            }
             if (choices) {
                 // menu based switcher
                 const popup = this.ui.createElement('text', this.node);
@@ -4054,8 +4063,10 @@
                             menu.close();
                         });
                     }
-                    menu.position = { x: (rect.left + rect.width) / this.app.zoom + 3, y: rect.top / this.app.zoom - 3 };
-                    menu.open();
+                    menu.open({
+                        x: (rect.left + rect.width) / this.app.zoom + 3,
+                        y: rect.top / this.app.zoom - 3
+                    });
                 });
                 // save captions corresponding to option values
                 this.choices = new Map(choices);

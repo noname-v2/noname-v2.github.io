@@ -212,8 +212,7 @@ export class SplashSettings extends Popup {
         menu.pane.addOption('游戏音乐', () => {clickOption(false, true); restore()});
         menu.pane.addOption('全部应用', () => clickOption(true, true));
         menu.onclose = () => {this.#rotateMusic(node, bgm, false, false); restore()};
-        menu.position = e;
-        menu.open();
+        menu.open(e);
     }
 
     /** Create rotation animation for music selector. */

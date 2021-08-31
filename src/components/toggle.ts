@@ -16,8 +16,20 @@ export class Toggle extends Component {
     /** Requires confirmation when toggling to a value. */
     confirm = new Map<string | number | boolean, [string | null, string?]>();
 
-    setup(caption: string, onclick: (result: any) => void, choices?: [string | number, string][]) {
-        this.ui.format(this.span, caption);
+    setup(caption: string | [string, string], onclick: (result: any) => void, choices?: [string | number, string][]) {
+        if (Array.isArray(caption)) {
+            this.ui.format(this.span, caption[0]);
+            this.ui.bind(this.span, {oncontext: e => {
+                const menu = this.ui.create('popup');
+                menu.pane.width = 160;
+                menu.pane.node.classList.add('intro');
+                menu.pane.addText(caption[1]);
+                menu.open(e);
+            }});
+        }
+        else {
+            this.ui.format(this.span, caption);
+        }
         
         if (choices) {
             // menu based switcher
@@ -40,8 +52,10 @@ export class Toggle extends Component {
                         menu.close();
                     })
                 }
-                menu.position = {x: (rect.left + rect.width) / this.app.zoom + 3, y: rect.top / this.app.zoom - 3};
-                menu.open();
+                menu.open({
+                    x: (rect.left + rect.width) / this.app.zoom + 3,
+                    y: rect.top / this.app.zoom - 3
+                });
             });
 
             // save captions corresponding to option values

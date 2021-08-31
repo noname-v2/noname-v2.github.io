@@ -53,5 +53,19 @@ noname-popup {
                 }
             }
         }
+
+        &.context {
+            width: 220px;
+        }
+
+        &.intro {
+            @include widget-sharp;
+            width: 180px;
+            height: auto;
+
+            > noname-text:last-child {
+                margin-bottom: 10px;
+            }
+        }
     }
 }
