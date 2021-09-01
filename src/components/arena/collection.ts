@@ -10,7 +10,7 @@ export class Collection extends Popup {
     gallery!: Gallery;
 
     /** Number of gallery columns. */
-    nrows = 3;
+    nrows = 2;
 
     /** Number of gallery columns. */
     ncols = 5;
@@ -21,7 +21,7 @@ export class Collection extends Popup {
         if (lib && n) {
             this.pane.node.classList.add('auto');
             this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-            const [gallery, width] = this.pane.addPopGallery(n, this.ncols);
+            const [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
             this.gallery = gallery;
             gallery.node.style.width = `${width}px`;
 

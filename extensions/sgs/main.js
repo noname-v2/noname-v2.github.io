@@ -816,7 +816,8 @@ function pop(T) {
         /** Create a hero collection of an extension. */
         #createCollection(pack) {
             const collection = this.ui.create('collection');
-            collection.ncols = 6;
+            collection.nrows = 3;
+            collection.ncols = 7;
             collection.setup(pack, 'hero', (id, node) => {
                 if (this.picked.has(id)) {
                     node.classList.add('defer');

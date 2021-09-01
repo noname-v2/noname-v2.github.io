@@ -44,7 +44,7 @@ export class Pane extends Component {
 	}
 
 	/** Add a gallery containing heros or cards. */
-	addPopGallery(n: number, c: number = 5): [Gallery, number, number] {
+	addPopGallery(n: number, r: number = 2, c: number = 5): [Gallery, number, number] {
 		// values from theme
         const width = parseInt(this.app.css.pop.width);
         const height = parseFloat(this.app.css.player.ratio) * width;
@@ -63,14 +63,15 @@ export class Pane extends Component {
         else {
             // double-row gallery
             ncols = c;
-            nrows = 2;
-            galleryWidth = c * (width + margin) + margin * 4;
-            galleryHeight = height * 2 + margin * 3;
-
-            if (n > 10) {
-                galleryHeight += 12;
-            }
+            nrows = Math.min(r, Math.ceil(n / c));
         }
+		
+		galleryWidth = ncols * (width + margin) + margin * 4;
+		galleryHeight = height * nrows + margin * (nrows + 1);
+
+		if (n > r * c) {
+			galleryHeight += 12;
+		}
 
 		// add gallery
         const gallery = this.addGallery(nrows, ncols);

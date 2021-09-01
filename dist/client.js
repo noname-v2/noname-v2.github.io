@@ -1923,6 +1923,8 @@
         /** Gallery object. */
         gallery;
         /** Number of gallery columns. */
+        nrows = 2;
+        /** Number of gallery columns. */
         ncols = 5;
         setup(pack, section, render) {
             const lib = this.app.accessExtension(pack, section);
@@ -1930,7 +1932,7 @@
             if (lib && n) {
                 this.pane.node.classList.add('auto');
                 this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-                const [gallery, width] = this.pane.addPopGallery(n, this.ncols);
+                const [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                 this.gallery = gallery;
                 gallery.node.style.width = `${width}px`;
                 for (const name in lib) {
@@ -3351,7 +3353,7 @@
             return gallery;
         }
         /** Add a gallery containing heros or cards. */
-        addPopGallery(n, c = 5) {
+        addPopGallery(n, r = 2, c = 5) {
             // values from theme
             const width = parseInt(this.app.css.pop.width);
             const height = parseFloat(this.app.css.player.ratio) * width;
@@ -3368,12 +3370,12 @@
             else {
                 // double-row gallery
                 ncols = c;
-                nrows = 2;
-                galleryWidth = c * (width + margin) + margin * 4;
-                galleryHeight = height * 2 + margin * 3;
-                if (n > 10) {
-                    galleryHeight += 12;
-                }
+                nrows = Math.min(r, Math.ceil(n / c));
+            }
+            galleryWidth = ncols * (width + margin) + margin * 4;
+            galleryHeight = height * nrows + margin * (nrows + 1);
+            if (n > r * c) {
+                galleryHeight += 12;
             }
             // add gallery
             const gallery = this.addGallery(nrows, ncols);
