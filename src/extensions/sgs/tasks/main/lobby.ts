@@ -24,11 +24,6 @@ export function lobby(T: TaskClass) {
                 }
             }
 
-            // set default configurations
-            for (const name in configs) {
-                this.game.config[name] = configs[name].init;
-            }
-
             // configuration for player number
             const np = this.game.mode.np!;
             let npmax: number;
@@ -73,9 +68,13 @@ export function lobby(T: TaskClass) {
                 this.game.utils.apply(this.game.config, val[1]);
 
                 for (const key in this.game.mode.config) {
-                    const requires = this.game.mode.config[key].requires;
+                    const entry = this.game.mode.config[key];
+                    const requires = entry.requires;
                     if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
                         delete this.game.config[key];
+                    }
+                    else {
+                        this.game.config[key] ??= entry.init;
                     }
                 }
                 this.lobby.config = this.game.config;
