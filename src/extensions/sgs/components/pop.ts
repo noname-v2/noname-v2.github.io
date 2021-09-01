@@ -22,7 +22,7 @@ export function pop(T: typeof Pop) {
 
         /** Open a popup to pick heros. */
         pick([e, packs]: [Point, string[]]) {
-            if (this.#restore()) {
+            if (!this.mine || this.#restore()) {
                 return;
             }
             const menu = this.ui.create('popup');

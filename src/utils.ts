@@ -107,6 +107,9 @@ export function rgets<T>(iterable: Iterable<T>, n: number = 1, inplace: boolean 
     }
     const setChosen = new Set<T>();
     for (let i = 0; i < n; i++) {
+        if (!set.size) {
+            break;
+        }
         const item = rget(set);
         set.delete(item);
         setChosen.add(item);

@@ -171,6 +171,9 @@
         }
         const setChosen = new Set();
         for (let i = 0; i < n; i++) {
+            if (!set.size) {
+                break;
+            }
             const item = rget(set);
             set.delete(item);
             setChosen.add(item);

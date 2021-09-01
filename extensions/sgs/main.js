@@ -738,7 +738,7 @@ function pop(T) {
         }
         /** Open a popup to pick heros. */
         pick([e, packs]) {
-            if (this.#restore()) {
+            if (!this.mine || this.#restore()) {
                 return;
             }
             const menu = this.ui.create('popup');
