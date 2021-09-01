@@ -9,13 +9,19 @@ export class Collection extends Popup {
     /** Gallery object. */
     gallery!: Gallery;
 
+    /** Number of gallery columns. */
+    nrows = 3;
+
+    /** Number of gallery columns. */
+    ncols = 5;
+
     setup(pack: string, section: 'hero' | 'card', render?: (id: string, node: HTMLElement) => void) {
         const lib = this.app.accessExtension(pack, section);
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
             this.pane.node.classList.add('auto');
             this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-            const [gallery, width] = this.pane.addPopGallery(n);
+            const [gallery, width] = this.pane.addPopGallery(n, this.ncols);
             this.gallery = gallery;
             gallery.node.style.width = `${width}px`;
 
@@ -39,7 +45,7 @@ export class Collection extends Popup {
         }
     }
 
-    async pop(e: Point) {
+    async pop(e?: Point) {
         this.location = e;
         await this.app.popup(this);
         this.gallery.checkPage();

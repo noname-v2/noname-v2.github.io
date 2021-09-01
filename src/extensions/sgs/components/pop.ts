@@ -35,7 +35,7 @@ export function pop(T: typeof Pop) {
                     if (!this.collections.has(pack)) {
                         this.#createCollection(pack);
                     }
-                    this.collections.get(pack)!.pop(e);
+                    this.collections.get(pack)!.pop();
                 });
             }
             menu.open(e);
@@ -105,7 +105,8 @@ export function pop(T: typeof Pop) {
         /** Create a hero collection of an extension. */
         #createCollection(pack: string) {
             const collection = this.ui.create('collection');
-
+            collection.nrows = 3;
+            collection.ncols = 6;
             collection.setup(pack, 'hero', (id, node) => {
                 if (this.picked.has(id)) {
                     node.classList.add('defer');

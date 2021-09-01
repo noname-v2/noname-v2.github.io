@@ -751,7 +751,7 @@ function pop(T) {
                     if (!this.collections.has(pack)) {
                         this.#createCollection(pack);
                     }
-                    this.collections.get(pack).pop(e);
+                    this.collections.get(pack).pop();
                 });
             }
             menu.open(e);
@@ -816,6 +816,7 @@ function pop(T) {
         /** Create a hero collection of an extension. */
         #createCollection(pack) {
             const collection = this.ui.create('collection');
+            collection.ncols = 6;
             collection.setup(pack, 'hero', (id, node) => {
                 if (this.picked.has(id)) {
                     node.classList.add('defer');
