@@ -30,7 +30,7 @@ export class Collection extends Popup {
                     if (section === 'hero') {
                         const player = this.ui.create('player');
                         const id = pack + ':' + name;
-                        player.setHero(id);
+                        player.initHero(id);
                         this.items.set(id, player.node);
                         if (render) {
                             render(id, player.node);

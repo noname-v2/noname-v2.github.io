@@ -1943,7 +1943,7 @@
                         if (section === 'hero') {
                             const player = this.ui.create('player');
                             const id = pack + ':' + name;
-                            player.setHero(id);
+                            player.initHero(id);
                             this.items.set(id, player.node);
                             if (render) {
                                 render(id, player.node);
@@ -2412,7 +2412,7 @@
         hp = this.ui.createElement('hp', this.content);
         /** Timer bar. */
         timer = null;
-        setHero(name) {
+        initHero(name) {
             const info = this.app.getHero(name);
             this.data.heroImage = name;
             this.data.heroName = info.name;
@@ -2691,7 +2691,7 @@
             for (const hero of heros) {
                 gallery.add(() => {
                     const player = this.ui.create('player');
-                    player.setHero(hero);
+                    player.initHero(hero);
                     // bind context menu
                     this.ui.bind(player.node, { oncontext: () => {
                             player.data.heroName = 'Right';

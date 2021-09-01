@@ -31,7 +31,7 @@ export class Player extends Component {
     /** Timer bar. */
     timer: Timer | null = null;
 
-    setHero(name: string) {
+    initHero(name: string) {
         const info = this.app.getHero(name);
         this.data.heroImage = name;
         this.data.heroName = info.name;
