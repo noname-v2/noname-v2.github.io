@@ -37,8 +37,15 @@ export class Card extends Component {
 		const info = this.app.getCard(name);
 
 		// card name
-		const caption = info.caption || info.name;
-		this.name.innerHTML = caption;
+		let caption = info.caption || info.name;
+		if (Array.isArray(caption)) {
+			this.name.innerHTML = caption[0];
+			this.ui.setColor(this.name, caption[1]);
+			caption = caption[0];
+		}
+		else {
+			this.name.innerHTML = caption;
+		}
 		this.name.className = '';
 		if (info.caption && caption.length === 1) {
 			this.name.classList.add('large');
@@ -72,6 +79,11 @@ export class Card extends Component {
 		// card range
 		if (!this.data.range) {
 			this.$range(info);
+		}
+
+		// card label
+		if (!this.data.label && info.label) {
+			this.$label(info.label);
 		}
 	}
 
@@ -125,7 +137,9 @@ export class Card extends Component {
 		if (Array.isArray(label)) {
 			// label with color and intro
 			this.label.innerHTML = label[0];
-			this.label.dataset.text = label[1] ?? '';
+			if (label[1]) {
+				this.ui.setColor(this.label, label[1]);
+			}
 
 			// context menu
 			const name = label[2], intro = label[3];

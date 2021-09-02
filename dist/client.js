@@ -644,6 +644,15 @@
         }
         return n;
     }
+    /** Set text color. */
+    function setColor(node, name) {
+        if (app.css.text[name]) {
+            node.dataset.text = name;
+        }
+        else {
+            node.style.color = name;
+        }
+    }
 
     var ui = /*#__PURE__*/Object.freeze({
         __proto__: null,
@@ -661,7 +670,8 @@
         dispatchMoveEnd: dispatchMoveEnd,
         animate: animate,
         format: format,
-        countActive: countActive
+        countActive: countActive,
+        setColor: setColor
     });
 
     /** Opened indexedDB object. */
@@ -1377,7 +1387,7 @@
                 icon: 'background-image',
                 bcolor: 'background-image',
                 fill: 'background',
-                text: 'text-color',
+                text: 'color',
                 shadow: 'box-shadow',
                 glow: 'box-shadow',
                 tshadow: 'text-shadow',
@@ -1958,8 +1968,15 @@
             this.node.classList.add('card-shown');
             const info = this.app.getCard(name);
             // card name
-            const caption = info.caption || info.name;
-            this.name.innerHTML = caption;
+            let caption = info.caption || info.name;
+            if (Array.isArray(caption)) {
+                this.name.innerHTML = caption[0];
+                this.ui.setColor(this.name, caption[1]);
+                caption = caption[0];
+            }
+            else {
+                this.name.innerHTML = caption;
+            }
             this.name.className = '';
             if (info.caption && caption.length === 1) {
                 this.name.classList.add('large');
@@ -1990,6 +2007,10 @@
             // card range
             if (!this.data.range) {
                 this.$range(info);
+            }
+            // card label
+            if (!this.data.label && info.label) {
+                this.$label(info.label);
             }
         }
         /** Card backgound image. */
@@ -2037,7 +2058,9 @@
             if (Array.isArray(label)) {
                 // label with color and intro
                 this.label.innerHTML = label[0];
-                this.label.dataset.text = label[1] ?? '';
+                if (label[1]) {
+                    this.ui.setColor(this.label, label[1]);
+                }
                 // context menu
                 const name = label[2], intro = label[3];
                 if (name || intro) {

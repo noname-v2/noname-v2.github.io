@@ -172,14 +172,16 @@
 	},
 
 	"text": {
-		"blue": "rgb(117, 186, 255)",
 		"red": "rgb(242, 37, 0)",
+		"blue": "rgb(117, 186, 255)",
+		"darkblue": "rgb(21, 46, 99)",
+		"darkred": "rgb(99, 21, 21)",
 		"orange": "rgb(255, 119, 63)",
 		"yellow": "rgb(255, 239, 105)",
 		"green": "rgb(104, 221, 127)",
 		"brown": "rgb(180, 150, 85)",
 		"purple": "rgb(233, 131, 255)",
-		"darkred": "rgb(128, 0, 0)",
+		"wine": "rgb(128, 0, 0)",
 		"honey": "rgb(235, 175, 76)",
 		"peach": "rgb(255, 170, 170)",
 		"black": "rgb(0, 0, 0)"

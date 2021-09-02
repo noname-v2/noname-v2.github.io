@@ -6,21 +6,21 @@ var main = {
     card: {
         huosha: {
             name: '火杀',
-            caption: '殺',
+            caption: ['殺', 'darkred'],
             intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard.shan)或受到一点火属性伤害。',
             type: 'basic',
             decoration: 'fire',
             originated: 'standard.sha',
-            label: ['火', 'rgb(99, 21, 21)']
+            label: ['火', 'darkred']
         },
         leisha: {
             name: '雷杀',
-            caption: '殺',
+            caption: ['殺', 'darkblue'],
             intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard.shan)或受到一点雷属性伤害。',
             type: 'basic',
             decoration: 'thunder',
             originated: 'standard.sha',
-            label: ['雷', 'rgb(21, 46, 99)']
+            label: ['雷', 'darkblue']
         },
         jiu: {
             name: '酒',

@@ -547,3 +547,13 @@ export function countActive(node?: HTMLElement) {
     }
     return n;
 }
+
+/** Set text color. */
+export function setColor(node: HTMLElement, name: string) {
+    if (app.css.text[name]) {
+        node.dataset.text = name;
+    }
+    else {
+        node.style.color = name;    
+    }
+}
