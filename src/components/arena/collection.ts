@@ -27,19 +27,23 @@ export class Collection extends Popup {
 
             for (const name in lib) {
                 gallery.add(() => {
+                    let node;
+                    const id = pack + ':' + name;
                     if (section === 'hero') {
                         const player = this.ui.create('player');
-                        const id = pack + ':' + name;
                         player.initHero(id);
-                        this.items.set(id, player.node);
-                        if (render) {
-                            render(id, player.node);
-                        }
-                        return player.node;
+                        node = player.node;
                     }
                     else {
-                        
+                        const card = this.ui.create('card');
+                        card.data.name = id;
+                        node = card.node;
                     }
+                    this.items.set(id, node);
+                    if (render) {
+                        render(id, node);
+                    }
+                    return node;
                 });
             }
         }

@@ -71,7 +71,8 @@
 
 	"pop": {
 		"width": "85px",
-		"scale": "0.567",
+		"player-scale": "0.567",
+		"card-scale": "0.81",
 		"margin": "8",
 		"tray-height": "60px",
 		"tray-margin": "16",

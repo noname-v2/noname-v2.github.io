@@ -187,7 +187,7 @@ export class Lobby extends Component {
             const toggle = this.sidebar.pane.addToggle([name, e => {
                 const collection = this.ui.create('collection');
                 collection.setup(pack, 'card');
-                collection.open(e);
+                collection.pop(e);
             }], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);

@@ -1,0 +1,149 @@
+noname-card {
+	width: 105px;
+	height: 147px;
+	overflow: hidden;
+
+	// fixed size for scaling
+	> noname-background, > noname-content {
+		width: 105px;
+		height: 147px;
+		transform-origin: top left;
+		> * {
+			position: absolute;
+		}
+	}
+
+	// flipped or unintialized
+	&.flip, &:not(.card-shown) {
+		> noname-background {
+			background-image: var(--card-back-background);
+		}
+
+		> noname-content {
+			display: none;
+		}
+	}
+	
+	// card background
+	> noname-background {
+		border-radius: var(--card-radius);
+		box-shadow: var(--card-shadow);
+		background-image: var(--card-background);
+		background-size: 100% 100%;
+
+		// card image
+		> noname-image {
+			width: 100%;
+			height: calc(100% / 1.4);
+			left: 0;
+			bottom: 0;
+		}
+
+		// card name decoration
+		> noname-decoration {
+			width: 70%;
+			height: 50%;
+			left: 15%;
+			top: 0;
+		}
+	}
+
+	// main content
+	> noname-content {
+		color: var(--card-color);
+		text-shadow: var(--card-caption-shadow);
+		text-shadow: var(--card-text-shadow);
+
+		// card name
+		> noname-caption {
+			width: 100%;
+			text-align: center;
+			height: 52px;
+			line-height: 52px;
+			font-size: 20px;
+			left: 0;
+			top: 0;
+
+			// card name with single character
+			&.large {
+				top: 4px;
+				font-size: 42px;
+				text-shadow: var(--card-caption-shadow);
+			}
+
+			// double-line card name
+			&.duoline {
+				line-height: 22px;
+				top: 6px;
+			}
+
+			// bold for none-large caption
+			&:not(.large) {
+				font-weight: bold;
+			}
+
+			// for caption length >= 5
+			&.vlong {
+				transform: scale(0.8);
+			}
+		}
+
+		// card label
+		> noname-label {
+			font-family: var(--app-label-font);
+			bottom: 4px;
+			left: 4px;
+			font-size: 24px;
+		}
+
+		// card distance or range
+		> noname-range {
+			font-family: var(--app-caption-font);
+			text-shadow: var(--card-glow-shadow);
+			bottom: 0;
+			right: 5px;
+			> span {
+				font-size: 52px;
+				margin-left: 3px;
+				&.smaller {
+					font-size: 34px;
+				}
+				&.tiny {
+					font-size: 20px;
+				}
+			}
+			&.small {
+				bottom: 3px;
+			}
+		}
+
+		// card suit and number
+		> noname-info {
+			font-family: var(--app-caption-font);
+			left: 4px;
+			top: 8px;
+			width: 20px;
+			line-height: 16px;
+			font-size: 20px;
+			text-align: center;
+
+			> noname-span {
+				display: block;
+			}
+		}
+	}
+
+	// card with suit or number
+	&.suit-shown, &.number-shown {
+		> noname-content > noname-caption:not(.large) {
+			left: 5px;
+			&.short {
+				left: 3px;
+			}
+			&.long {
+				letter-spacing: -2px;
+				left: 7px;
+			}
+		}
+	}
+}

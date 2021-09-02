@@ -126,6 +126,120 @@ noname-button > noname-content > noname-caption:last-child {
   right: -5px;
 }
 
+noname-card {
+  width: 105px;
+  height: 147px;
+  overflow: hidden;
+}
+noname-card > noname-background, noname-card > noname-content {
+  width: 105px;
+  height: 147px;
+  transform-origin: top left;
+}
+noname-card > noname-background > *, noname-card > noname-content > * {
+  position: absolute;
+}
+noname-card.flip > noname-background, noname-card:not(.card-shown) > noname-background {
+  background-image: var(--card-back-background);
+}
+noname-card.flip > noname-content, noname-card:not(.card-shown) > noname-content {
+  display: none;
+}
+noname-card > noname-background {
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  background-image: var(--card-background);
+  background-size: 100% 100%;
+}
+noname-card > noname-background > noname-image {
+  width: 100%;
+  height: calc(100% / 1.4);
+  left: 0;
+  bottom: 0;
+}
+noname-card > noname-background > noname-decoration {
+  width: 70%;
+  height: 50%;
+  left: 15%;
+  top: 0;
+}
+noname-card > noname-content {
+  color: var(--card-color);
+  text-shadow: var(--card-caption-shadow);
+  text-shadow: var(--card-text-shadow);
+}
+noname-card > noname-content > noname-caption {
+  width: 100%;
+  text-align: center;
+  height: 52px;
+  line-height: 52px;
+  font-size: 20px;
+  left: 0;
+  top: 0;
+}
+noname-card > noname-content > noname-caption.large {
+  top: 4px;
+  font-size: 42px;
+  text-shadow: var(--card-caption-shadow);
+}
+noname-card > noname-content > noname-caption.duoline {
+  line-height: 22px;
+  top: 6px;
+}
+noname-card > noname-content > noname-caption:not(.large) {
+  font-weight: bold;
+}
+noname-card > noname-content > noname-caption.vlong {
+  transform: scale(0.8);
+}
+noname-card > noname-content > noname-label {
+  font-family: var(--app-label-font);
+  bottom: 4px;
+  left: 4px;
+  font-size: 24px;
+}
+noname-card > noname-content > noname-range {
+  font-family: var(--app-caption-font);
+  text-shadow: var(--card-glow-shadow);
+  bottom: 0;
+  right: 5px;
+}
+noname-card > noname-content > noname-range > span {
+  font-size: 52px;
+  margin-left: 3px;
+}
+noname-card > noname-content > noname-range > span.smaller {
+  font-size: 34px;
+}
+noname-card > noname-content > noname-range > span.tiny {
+  font-size: 20px;
+}
+noname-card > noname-content > noname-range.small {
+  bottom: 3px;
+}
+noname-card > noname-content > noname-info {
+  font-family: var(--app-caption-font);
+  left: 4px;
+  top: 8px;
+  width: 20px;
+  line-height: 16px;
+  font-size: 20px;
+  text-align: center;
+}
+noname-card > noname-content > noname-info > noname-span {
+  display: block;
+}
+noname-card.suit-shown > noname-content > noname-caption:not(.large), noname-card.number-shown > noname-content > noname-caption:not(.large) {
+  left: 5px;
+}
+noname-card.suit-shown > noname-content > noname-caption:not(.large).short, noname-card.number-shown > noname-content > noname-caption:not(.large).short {
+  left: 3px;
+}
+noname-card.suit-shown > noname-content > noname-caption:not(.large).long, noname-card.number-shown > noname-content > noname-caption:not(.large).long {
+  letter-spacing: -2px;
+  left: 7px;
+}
+
 noname-control {
   width: 100%;
   height: 100%;
@@ -236,15 +350,23 @@ noname-gallery.pop noname-item {
   width: var(--pop-width);
   aspect-ratio: 1/var(--player-ratio);
 }
-noname-gallery.pop noname-item > noname-player {
+noname-gallery.pop noname-item > noname-player, noname-gallery.pop noname-item noname-card {
   transition: opacity var(--app-transition);
-  width: var(--player-width);
   height: auto;
-  transform: scale(var(--pop-scale));
   transform-origin: top left;
 }
-noname-gallery.pop noname-item > noname-player.selected {
+noname-gallery.pop noname-item > noname-player.selected, noname-gallery.pop noname-item noname-card.selected {
   opacity: var(--app-defer-opacity);
+}
+noname-gallery.pop noname-item > noname-player {
+  width: var(--player-width);
+  aspect-ratio: 1/var(--player-ratio);
+  transform: scale(var(--pop-player-scale));
+}
+noname-gallery.pop noname-item > noname-card {
+  width: var(--card-width);
+  aspect-ratio: 1/var(--card-ratio);
+  transform: scale(var(--pop-card-scale));
 }
 
 html, body {
