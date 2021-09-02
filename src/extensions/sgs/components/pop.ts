@@ -109,20 +109,20 @@ export function pop(T: typeof Pop) {
             collection.ncols = 7;
             collection.setup(pack, 'hero', (id, node) => {
                 if (this.picked.has(id)) {
-                    node.classList.add('defer');
+                    node.classList.add('selected');
                 }
                 this.ui.bind(node, () => {
                     if (this.picked.has(id)) {
                         // unselect hero
                         this.#unpick(id);
-                        node.classList.remove('defer');
+                        node.classList.remove('selected');
                     }
-                    else if (!node.classList.contains('defer')) {
+                    else if (!node.classList.contains('selected')) {
                         // create clone of hero
                         this.#pick(id);
                         this.updateTray(null, this.clones.get(id)!, true);
                         this.#save();
-                        node.classList.add('defer');
+                        node.classList.add('selected');
                     }
                 });
             });
@@ -131,7 +131,7 @@ export function pop(T: typeof Pop) {
             // check if hero is picked
             collection.onopen = () => {
                 for (const [id, node] of collection.items) {
-                    node.classList[this.picked.has(id) ? 'add' : 'remove']('defer');
+                    node.classList[this.picked.has(id) ? 'add' : 'remove']('selected');
                 }
             };
         }

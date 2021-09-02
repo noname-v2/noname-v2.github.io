@@ -355,8 +355,11 @@ noname-gallery.pop noname-item > noname-player, noname-gallery.pop noname-item n
   height: auto;
   transform-origin: top left;
 }
-noname-gallery.pop noname-item > noname-player.selected, noname-gallery.pop noname-item noname-card.selected {
-  opacity: var(--app-defer-opacity);
+noname-gallery.pop noname-item > noname-player > noname-background, noname-gallery.pop noname-item noname-card > noname-background {
+  transition: box-shadow var(--app-transition);
+}
+noname-gallery.pop noname-item > noname-player.selected > noname-background, noname-gallery.pop noname-item noname-card.selected > noname-background {
+  box-shadow: var(--glow-red);
 }
 noname-gallery.pop noname-item > noname-player {
   width: var(--player-width);

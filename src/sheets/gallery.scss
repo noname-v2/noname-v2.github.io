@@ -112,8 +112,15 @@ noname-gallery {
 			height: auto;
 			transform-origin: top left;
 
+            > noname-background {
+                transition: box-shadow var(--app-transition);
+            }
+            
 			&.selected {
-				opacity: var(--app-defer-opacity);
+				// opacity: var(--app-defer-opacity);
+                > noname-background {
+                    box-shadow: var(--glow-red);
+                }
 			}
 		}
 
