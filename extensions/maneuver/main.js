@@ -91,8 +91,8 @@ var main = {
             'equip.treasure': '宝物'
         },
         label: {
-            fire: ['火', 'darkred'],
-            thunder: ['雷', 'darkblue']
+            fire: ['火'],
+            thunder: ['雷']
         }
     }
 };

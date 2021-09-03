@@ -171,7 +171,7 @@
 		"gray": "linear-gradient(#4b4b4b, #464646)"
 	},
 
-	"text": {
+	"color": {
 		"red": "rgb(242, 37, 0)",
 		"blue": "rgb(117, 186, 255)",
 		"darkblue": "rgb(21, 46, 99)",

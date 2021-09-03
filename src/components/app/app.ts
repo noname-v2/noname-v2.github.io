@@ -205,7 +205,7 @@ export class App extends Component {
             icon: 'background-image',
             bcolor: 'background-image',
             fill: 'background',
-            text: 'color',
+            color: 'color',
             shadow: 'box-shadow',
             glow: 'box-shadow',
             tshadow: 'text-shadow',

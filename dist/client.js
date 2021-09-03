@@ -646,8 +646,8 @@
     }
     /** Set text color. */
     function setColor(node, name) {
-        if (app.css.text[name]) {
-            node.dataset.text = name;
+        if (app.css.color[name]) {
+            node.dataset.color = name;
         }
         else {
             node.style.color = name;
@@ -1387,7 +1387,7 @@
                 icon: 'background-image',
                 bcolor: 'background-image',
                 fill: 'background',
-                text: 'color',
+                color: 'color',
                 shadow: 'box-shadow',
                 glow: 'box-shadow',
                 tshadow: 'text-shadow',
@@ -2010,7 +2010,7 @@
             }
             // card label
             if (!this.data.label && info.label) {
-                this.$label(info.label);
+                this.$label([]);
             }
         }
         /** Card backgound image. */
@@ -2028,7 +2028,7 @@
                 else if (color === 'black') {
                     color = '';
                 }
-                this.info.dataset.text = color;
+                this.info.dataset.color = color;
                 this.suit.innerHTML = this.lib.suit[suit];
             }
             else {
@@ -2056,6 +2056,12 @@
             }
             if (typeof labels === 'string') {
                 labels = [labels];
+            }
+            if (this.data.name) {
+                const info = this.app.getCard(this.data.name);
+                if (info.label) {
+                    labels.push(info.label);
+                }
             }
             for (const label of labels) {
                 const info = this.lib.label[label];

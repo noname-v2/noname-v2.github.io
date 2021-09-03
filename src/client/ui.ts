@@ -550,8 +550,8 @@ export function countActive(node?: HTMLElement) {
 
 /** Set text color. */
 export function setColor(node: HTMLElement, name: string) {
-    if (app.css.text[name]) {
-        node.dataset.text = name;
+    if (app.css.color[name]) {
+        node.dataset.color = name;
     }
     else {
         node.style.color = name;    

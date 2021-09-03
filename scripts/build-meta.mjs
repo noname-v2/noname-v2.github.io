@@ -16,7 +16,7 @@ const names = {
     icon: 'IconImage',
     bcolor: 'ButtonColor',
     fill: 'FillColor',
-    text: 'TextColor',
+    color: 'TextColor',
     glow: 'GlowColor'
 }
 let literals = '';

@@ -193,11 +193,13 @@ noname-card > noname-content > noname-caption.vlong {
   transform: scale(0.8);
 }
 noname-card > noname-content > noname-label {
-  font-family: sans-serif;
   bottom: 8px;
   left: 8px;
   font-size: 14px;
   border-radius: 2px;
+}
+noname-card > noname-content > noname-label > noname-span {
+  margin-right: 3px;
 }
 noname-card > noname-content > noname-range {
   font-family: var(--app-caption-font);

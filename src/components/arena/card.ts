@@ -83,7 +83,7 @@ export class Card extends Component {
 
 		// card label
 		if (!this.data.label && info.label) {
-			this.$label(info.label);
+			this.$label([]);
 		}
 	}
 
@@ -103,7 +103,7 @@ export class Card extends Component {
 			else if (color === 'black') {
 				color = ''
 			}
-			this.info.dataset.text = color;
+			this.info.dataset.color = color;
 			this.suit.innerHTML = this.lib.suit[suit];
 		}
 		else {
@@ -128,13 +128,20 @@ export class Card extends Component {
 	/** Card label. */
 	$label(labels?: string | string[]) {
 		this.label.innerHTML = '';
-		
+
 		if (!labels) {
 			return;
 		}
 
 		if (typeof labels === 'string') {
 			labels = [labels];
+		}
+
+		if (this.data.name) {
+			const info = this.app.getCard(this.data.name);
+			if (info.label) {
+				labels.push(info.label);
+			}
 		}
 
 		for (const label of labels) {
