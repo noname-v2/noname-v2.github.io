@@ -98,6 +98,10 @@ export class Collection extends Popup {
                                     if (typeof num === 'number') {
                                         card.data.number = num;
                                     }
+                                    else {
+                                        card.data.number = num[0];
+                                        card.data.label = num.slice(1);
+                                    }
                                     return card.node;
                                 });
                             }

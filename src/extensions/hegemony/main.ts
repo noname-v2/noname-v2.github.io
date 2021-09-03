@@ -6,6 +6,7 @@ export default {
     mode,
     heropack: '国战标准',
     cardpack: '国战标准',
+    requires: ['standard', 'maneuver'],
     tags: ['guess-side', 'hero-hidden!', 'double-hero!'],
     skill,
     hero: {
@@ -538,5 +539,73 @@ export default {
         label: {
             hege: ['國']
         }
+    },
+    pile: {
+        'standard:sha': {
+            spade: [5, 7, 8, 8, 9, 10, 11],
+            club: [2, 3, 4, 5, 8, 9, 10, 11, 11],
+            heart: [10, 12],
+            diamond: [10, 11, 12]
+        },
+        'maneuver:huosha': {
+            heart: [4],
+            diamond: [4, 5]
+        },
+        'maneuver:leisha': {
+            club: [6, 7, 8],
+            spade: [6, 7]
+        },
+        'standard:shan': {
+            heart: [2, 11, 13],
+            diamond: [2, 3, 6, 7, 7, 8, 8, 9, 10, 11, 13]
+        },
+        'standard:tao': {
+            heart: [4, 6, 7, 8, 9, 10, 12],
+            diamond: [2]
+        },
+        'maneuver:jiu': {
+            diamond: [9],
+            spade: [9],
+            club: [9]
+        },
+        'maneuver:baiyin': { club: [1] },
+        'standard:bagua': { spade: [2] },
+        'standard:renwang': { club: [2] },
+        'maneuver:tengjia': { club: [2] },
+        'standard:jueying': { spade: [5] },
+        'standard:dilu': { club: [5] },
+        'standard:zhuahuang': { heart: [13] },
+        'standard:chitu': { heart: [5] },
+        'standard:dawan': { spade: [13] },
+		'standard:zixin': { diamond: [13] },
+		'standard:zhuge': { diamond: [1] },
+		'standard:cixiong': { spade: [2] },
+		'standard:qinggang': { spade: [6] },
+		'wuliu': { diamond: [6] },
+		'standard:zhangba': { spade: [12] },
+		'standard:guanshi': { diamond: [5] },
+		'sanjian': { diamond: [12] },
+		'standard:hanbin': { spade: [2] },
+		'maneuver:zhuque': { diamond: [1] },
+		'standard:qilin': { heart: [5] },
+		'standard:wanjian': { heart: [1] },
+		'standard:taoyuan': { heart: [1] },
+		'standard:shandian': { spade: [1] },
+		'standard:wugu': { heart: [3] },
+		'yuanjiao': { heart: [9] },
+		'standard:wuxie': { spade: [11] },
+		'standard:jiedao': { club: [12] },
+        'standard:juedou': { spade: [1], club: [1]},
+        'maneuver:huogong': { heart: [2, 3] },
+        'zhiji': { club: [3, 4] },
+        'yiyi': { diamond: [4], heart: [11] },
+        'standard:lebu': { club: [6], heart: [6] },
+        'standard:wuzhong': { heart: [7, 8] },
+        'standard:nanman': { spade: [13], club: [7] },
+        'maneuver:bingliang': { spade: [10], club: [10] },
+        'guowuxie': { diamond: [12], club: [13] },
+        'standard:shunshou': { diamond: [3], spade: [3, 4] },
+        'standard:guohe': { heart: [12], spade: [3, 4] },
+        'maneuver:tiesuo': { spade: [12], club: [12, 13] }
     }
 } as SGS;

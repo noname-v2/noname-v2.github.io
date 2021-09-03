@@ -188,7 +188,12 @@ async function loadArena(ruleset: string[], packs: string[]) {
     
     // import packs
     for (const pack of packs) {
-        await importExtension(pack, lib);
+        const ext = await importExtension(pack, lib);
+        if (ext.requires) {
+            for (const pack of ext.requires) {
+                await importExtension(pack, lib);
+            }
+        }
     }
 }
 

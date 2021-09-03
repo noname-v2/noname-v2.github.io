@@ -35,6 +35,9 @@ export class Card extends Component {
 	$name(name: string) {
 		this.node.classList.add('card-shown');
 		const info = this.app.getCard(name);
+		if (!info) {
+			console.log(name);
+		}
 
 		// card name
 		let caption = info.caption || info.name;

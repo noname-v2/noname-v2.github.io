@@ -50,6 +50,7 @@ export interface Extension<T extends Task = Task> {
     cardpack?: string;
     tags?: string[];
     lib?: Partial<typeof lib>;
+    requires?: string[];
 }
 
 /** Format of extension meta data. */

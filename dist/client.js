@@ -969,7 +969,12 @@
         }
         // import packs
         for (const pack of packs) {
-            await importExtension(pack, lib);
+            const ext = await importExtension(pack, lib);
+            if (ext.requires) {
+                for (const pack of ext.requires) {
+                    await importExtension(pack, lib);
+                }
+            }
         }
     }
     /**
@@ -1967,6 +1972,9 @@
         $name(name) {
             this.node.classList.add('card-shown');
             const info = this.app.getCard(name);
+            if (!info) {
+                console.log(name);
+            }
             // card name
             let caption = info.caption || info.name;
             if (Array.isArray(caption)) {
@@ -2193,6 +2201,10 @@
                                         card.data.suit = suit;
                                         if (typeof num === 'number') {
                                             card.data.number = num;
+                                        }
+                                        else {
+                                            card.data.number = num[0];
+                                            card.data.label = num.slice(1);
                                         }
                                         return card.node;
                                     });
