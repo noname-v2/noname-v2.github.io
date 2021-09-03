@@ -2018,7 +2018,7 @@
             }
             // card label
             if (!this.data.label && info.label) {
-                this.$label([]);
+                this.$label(info.label);
             }
         }
         /** Card backgound image. */
@@ -2064,12 +2064,6 @@
             }
             if (typeof labels === 'string') {
                 labels = [labels];
-            }
-            if (this.data.name) {
-                const info = this.app.getCard(this.data.name);
-                if (info.label) {
-                    labels.push(info.label);
-                }
             }
             for (const label of labels) {
                 const info = this.lib.label[label];

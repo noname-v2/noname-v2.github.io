@@ -123,6 +123,9 @@ var main = {
             '主将技': ['只有武将为主将时才可以发动', 'orange'],
             '副将技': ['只有武将为副将时才可以发动', 'peach'],
             '阵法技': ['在全场存活角色数为4或更多时锁定生效的技能。拥有阵法技的角色可在准备阶段开始时或出牌阶段发起阵法召唤：满足此阵法技条件的未确定势力角色均可按逆时针顺序依次明置其一张武将牌（响应阵法召唤），以发挥阵法技的效果。', 'green']
+        },
+        label: {
+            'hezong': ['合纵', '合纵', '出牌阶段限一次，你可将至多三张带有合纵标记的手牌交给一名其他角色（不能与你势力相同）。若该角色与你势力不同，则你摸等量的牌。']
         }
     },
     hero: {
@@ -406,6 +409,48 @@ var main = {
             distance: [1, -1],
             subpack: '君主专属'
         }
+    },
+    pile: {
+        'standard:sha': {
+            spade: [4, 7, 8],
+            club: [4, 6, 7, 8],
+            heart: [10, 11]
+        },
+        'maneuver:huosha': {
+            diamond: [8, 9]
+        },
+        'maneuver:leisha': {
+            club: [[5, 'hezong']],
+            spade: [9, 10, [11, 'hezong']]
+        },
+        'standard:shan': {
+            heart: [4, 5, 6, 7],
+            diamond: [6, 7, 13]
+        },
+        'standard:tao': {
+            heart: [8, 9],
+            diamond: [2, [3, 'hezong']]
+        },
+        'maneuver:jiu': {
+            club: [9],
+            spade: [[6, 'hezong']]
+        },
+        qinglong: { spade: [5] },
+        fangtian: { diamond: [12] },
+        mingguang: { spade: [2] },
+        huxin: { club: [[2, 'hezong']] },
+        jingfan: { heart: [[3, 'hezong']] },
+        yuxi: { club: [1] },
+        'maneuver:muniu': { diamond: [5] },
+        lianjun: { heart: [1] },
+        chiling: { club: [3] },
+        'standard:wuxie': { spade: [13] },
+        diaohu: { heart: [[2, 'hezong']], diamond: [[10, 'hezong']] },
+        luli: { club: [10], spade: [12] },
+        'hegemony:guowuxie': { diamond: [11], club: [13] },
+        shuiyan: { club: [12], heart: [13] },
+        xietian: { spade: [[1, 'hezong']], diamond: [[1, 'hezong'], [4, 'hezong']] },
+        huoshao: { spade: [[3, 'hezong']], club: [[11, 'hezong']], heart: [[12, 'hezong']] }
     }
 };
 

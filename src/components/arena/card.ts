@@ -86,7 +86,7 @@ export class Card extends Component {
 
 		// card label
 		if (!this.data.label && info.label) {
-			this.$label([]);
+			this.$label(info.label);
 		}
 	}
 
@@ -138,13 +138,6 @@ export class Card extends Component {
 
 		if (typeof labels === 'string') {
 			labels = [labels];
-		}
-
-		if (this.data.name) {
-			const info = this.app.getCard(this.data.name);
-			if (info.label) {
-				labels.push(info.label);
-			}
 		}
 
 		for (const label of labels) {
