@@ -186,7 +186,7 @@ export class Lobby extends Component {
             const name = this.app.accessExtension(pack, 'cardpack');
             const toggle = this.sidebar.pane.addToggle([name, e => {
                 const collection = this.ui.create('collection');
-                collection.setup(pack, 'card');
+                collection.setup(pack, 'card+pile');
                 collection.pop(e);
             }], result => {
                 this.freeze();

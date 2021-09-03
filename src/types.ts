@@ -36,12 +36,16 @@ export interface Mode<T extends Task = Task> {
     [key: string]: any;
 }
 
+/** Format of card pile. */
+export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
+
 /** Basic extension structure. */
 export interface Extension<T extends Task = Task> {
     mode?: Mode<T>;
     hero?: Dict;
     card?: Dict;
     skill?: Dict;
+    pile?: Pile;
     heropack?: string;
     cardpack?: string;
     tags?: string[];

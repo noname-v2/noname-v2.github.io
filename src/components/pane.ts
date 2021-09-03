@@ -77,7 +77,6 @@ export class Pane extends Component {
         const gallery = this.addGallery(nrows, ncols);
         gallery.node.classList.add('pop');
         gallery.node.style.height = `${galleryHeight}px`;
-        gallery.node.addEventListener('mousedown', e => e.stopPropagation());
 
 		return [gallery, galleryWidth, galleryHeight];
 	}

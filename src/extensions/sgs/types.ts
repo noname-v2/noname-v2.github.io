@@ -7,7 +7,7 @@ export type { PopConfirm, PopContent } from '../../components/arena/pop';
 
 /** Built-in types that may be used by extensions. */
 export type { Link } from '../../worker/link';
-export type { Config, Select, FilterThis } from '../../types';
+export type { Config, Select, Pile, FilterThis } from '../../types';
 export type { Dict }
 
 /** Game classes */
@@ -66,13 +66,9 @@ export interface SkillData {
     [key: string]: any;
 };
 
-/** Card pile format. */
-export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
-
 /** Basic SGS extension structure. */
 export interface SGS extends Extension<Task> {
     hero?: Dict<HeroData>;
     card?: Dict<CardData>;
     skill?: Dict<SkillData>;
-    pile?: Pile;
 }
