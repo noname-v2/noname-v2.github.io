@@ -115,7 +115,7 @@ export class Card extends Component {
 
 	/** Card number. */
 	$number(num: number) {
-		const text = this.lib.number[num];
+		const text = this.lib.number[num-1];
 		this.number.innerHTML = text ?? '';
 		if (text) {
 			this.node.classList.add('number-shown');

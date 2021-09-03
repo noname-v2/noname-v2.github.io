@@ -2039,7 +2039,7 @@
         }
         /** Card number. */
         $number(num) {
-            const text = this.lib.number[num];
+            const text = this.lib.number[num - 1];
             this.number.innerHTML = text ?? '';
             if (text) {
                 this.node.classList.add('number-shown');
@@ -2158,9 +2158,9 @@
                     if (pile) {
                         // add pile toggle
                         const toggle = this.ui.createElement('widget', caption);
-                        toggle.innerHTML = '显示牌堆';
                         toggle.classList.add('toggle');
                         let shown = false;
+                        let pileCount = 0;
                         this.ui.bind(toggle, () => {
                             if (shown) {
                                 pileGallery.node.style.display = 'none';
@@ -2182,10 +2182,11 @@
                         pileGallery.node.classList.add('pop');
                         pileGallery.node.style.width = `${width}px`;
                         pileGallery.node.style.height = `${height}px`;
-                        for (let name in pile) {
-                            const id = pack + ':' + name;
+                        for (const name in pile) {
+                            const id = name.includes(':') ? name : pack + ':' + name;
                             for (const suit in pile[name]) {
                                 for (const num of pile[name][suit]) {
+                                    pileCount++;
                                     pileGallery.add(() => {
                                         const card = this.ui.create('card');
                                         card.data.name = id;
@@ -2198,6 +2199,10 @@
                                 }
                             }
                         }
+                        toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
+                        if (debug) {
+                            this.checkPile(pile);
+                        }
                     }
                 }
             }
@@ -2206,6 +2211,27 @@
             this.location = e;
             await this.app.popup(this);
             this.gallery.checkPage();
+        }
+        /** Check card numbers in pile. */
+        checkPile(pile) {
+            const suits = {};
+            const nums = {};
+            for (const name in pile) {
+                for (const suit in pile[name]) {
+                    suits[suit] ??= 0;
+                    for (let num of pile[name][suit]) {
+                        if (Array.isArray(num)) {
+                            num = num[0];
+                        }
+                        const numstr = this.lib.number[num - 1];
+                        nums[numstr] ??= 0;
+                        nums[numstr]++;
+                        suits[suit]++;
+                    }
+                }
+            }
+            console.log(suits);
+            console.log(nums);
         }
     }
 

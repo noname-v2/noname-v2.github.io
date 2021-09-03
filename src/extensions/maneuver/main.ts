@@ -95,5 +95,41 @@ export default {
             fire: ['火'],
             thunder: ['雷']
         }
+    },
+    pile: {
+        huosha: {
+            heart: [4, 7, 10],
+            diamond: [4, 5]
+        },
+        leisha: {
+            spade: [4, 5, 6, 7, 8],
+            club: [5, 6, 7, 8]
+        },
+        'standard:shan': {
+            heart: [8, 9, 11, 12],
+            diamond: [6, 7, 8, 10, 11]
+        },
+        'standard:tao': {
+            heart: [5, 6],
+            diamond: [2, 3]
+        },
+        jiu: {
+            diamond: [9],
+            spade: [3, 9],
+            club: [3, 9]
+        },
+        hualiu: { diamond: [13] },
+		baiyin: { club: [1] },
+		tengjia: { spade: [2], club: [2] },
+		guding: { spade: [1] },
+		zhuque: { diamond: [1] },
+        huogong: { heart: [2, 3], diamond: [12] },
+        tiesuo: { spade: [11, 12], club: [10, 11, 12, 13] },
+        'standard:wuxie': {
+            heart: [1, 13],
+            spade: [13]
+        },
+        bingliang: { spade: [10], club: [4] },
+        muniu: { diamond: [5] }
     }
 } as SGS;

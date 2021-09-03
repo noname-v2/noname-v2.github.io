@@ -426,7 +426,47 @@ export default {
     },
     pile: {
         sha: {
-            spade: [7, 9, 9, 0, 0, 10, 10]
-        }
+            spade: [7, 8, 8, 9, 9, 10, 10],
+            club: [2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 10, 10, 11, 11],
+            heart: [10, 10, 11],
+            diamond: [6, 7, 8, 9, 10, 13]
+        },
+        shan: {
+            heart: [2, 2, 13],
+            diamond: [2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11]
+        },
+        tao: {
+            heart: [3, 4, 6, 7, 8, 9, 12],
+            diamond: [12]
+        },
+        bagua: { spade: [2], club: [2] },
+        jueying: { spade: [5] },
+        dilu: { club: [5] },
+        zhuahuang: { heart: [13] },
+        chitu: { heart: [5] },
+        dawan: { spade: [13] },
+        zixin: { diamond: [13] },
+        zhuge: { club: [1], diamond: [1] },
+        cixiong: { spade: [2] },
+        qinggang: { spade: [6] },
+		qinglong: { spade: [5] },
+		zhangba: { spade: [12] },
+		guanshi: { diamond: [5] },
+		fangtian: { diamond: [12] },
+		qilin: { heart: [5] },
+		wugu: { heart: [3, 4] },
+		taoyuan: { heart: [1] },
+		nanman: { spade: [7, 13], club: [7] },
+		wanjian: { heart: [1] },
+		juedou: { spade: [1], club: [1], diamond: [1] },
+		wuzhong: { heart: [7, 8, 9, 11] },
+		shunshou: { spade: [3, 4, 11], diamond: [3, 4] },
+		guohe: { spade: [3, 4, 12], club: [3, 4], heart: [12] },
+		jiedao: { club: [12, 13] },
+		wuxie: { spade: [11], club: [12, 13], diamond: [12] },
+		lebu: { spade: [6], club: [6], heart:[6] },
+		hanbing: { spade: [2] },
+		renwang: { club: [2] },
+		shandian: { spade: [1], heart: [12] }
     }
 } as SGS;
