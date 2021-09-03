@@ -109,9 +109,9 @@ export class Collection extends Popup {
                     }
 
                     toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
-                    if (debug) {
-                        this.checkPile(pile);
-                    }
+                    // if (debug) {
+                    //     this.checkPile(pile);
+                    // }
                 }
             }
         }
