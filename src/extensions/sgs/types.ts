@@ -47,7 +47,7 @@ export interface CardData {
     subtype?: string;
     decoration?: string;
     originated?: string;
-    label?: [string, string?];
+    label?: string;
     caption?: string | [string, string];
     subpack?: string;
     range?: number;

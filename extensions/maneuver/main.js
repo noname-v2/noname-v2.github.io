@@ -11,7 +11,7 @@ var main = {
             type: 'basic',
             decoration: 'fire',
             originated: 'standard.sha',
-            label: ['火', 'darkred']
+            label: 'fire'
         },
         leisha: {
             name: '雷杀',
@@ -20,7 +20,7 @@ var main = {
             type: 'basic',
             decoration: 'thunder',
             originated: 'standard.sha',
-            label: ['雷', 'darkblue']
+            label: 'thunder'
         },
         jiu: {
             name: '酒',
@@ -89,6 +89,10 @@ var main = {
     lib: {
         subtype: {
             'equip.treasure': '宝物'
+        },
+        label: {
+            fire: ['火', 'darkred'],
+            thunder: ['雷', 'darkblue']
         }
     }
 };

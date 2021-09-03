@@ -90,10 +90,16 @@ noname-card {
 
 		// card label
 		> noname-label {
-			font-family: var(--app-label-font);
-			bottom: 4px;
-			left: 4px;
-			font-size: 24px;
+			// font-family: var(--app-label-font);
+			// bottom: 4px;
+			// left: 4px;
+			// font-size: 24px;
+
+			font-family: sans-serif;
+			bottom: 8px;
+			left: 8px;
+			font-size: 14px;
+			border-radius: 2px;
 		}
 
 		// card distance or range

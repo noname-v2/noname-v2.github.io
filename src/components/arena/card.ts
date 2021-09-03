@@ -126,25 +126,29 @@ export class Card extends Component {
 	}
 
 	/** Card label. */
-	$label(label?: string | [string, (string | null)?, string?, string?]) {
+	$label(labels?: string | string[]) {
 		this.label.innerHTML = '';
-
-		if (typeof label === 'string' && this.lib.label[label]) {
-			// pre-defined label
-			label = this.lib.label[label];
-		}
 		
-		if (Array.isArray(label)) {
-			// label with color and intro
-			this.label.innerHTML = label[0];
-			if (label[1]) {
-				this.ui.setColor(this.label, label[1]);
+		if (!labels) {
+			return;
+		}
+
+		if (typeof labels === 'string') {
+			labels = [labels];
+		}
+
+		for (const label of labels) {
+			const info = this.lib.label[label];
+			const node = this.ui.createElement('span');
+			node.innerHTML = info[0];
+			if (info[1]) {
+				this.ui.setColor(node, info[1]);
 			}
 
 			// context menu
-			const name = label[2], intro = label[3];
+			const name = info[2], intro = info[3];
 			if (name || intro) {
-				this.ui.bind(this.label, {oncontext: (e) => {
+				this.ui.bind(node, {oncontext: (e) => {
 					const menu = this.ui.create('popup');
 					menu.pane.width = 160;
                     menu.pane.node.classList.add('intro');
@@ -157,10 +161,8 @@ export class Card extends Component {
                     menu.open(e);
 				}});
 			}
-		}
-		else if (typeof label === 'string') {
-			// text-only label
-			this.label.innerHTML = label;
+
+			this.label.appendChild(node);
 		}
 	}
 

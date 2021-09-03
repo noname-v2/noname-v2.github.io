@@ -794,7 +794,7 @@ var main = {
             type: 'trick',
             subtype: 'instant',
             originated: 'standard:wuxie',
-            label: ['國']
+            label: 'hege'
         },
         yiyi: {
             name: '以逸待劳',
@@ -827,6 +827,11 @@ var main = {
             type: 'equip',
             subtype: 'weapon',
             range: 2
+        }
+    },
+    lib: {
+        label: {
+            hege: ['國']
         }
     }
 };

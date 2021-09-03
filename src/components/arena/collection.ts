@@ -70,9 +70,11 @@ export class Collection extends Popup {
                                     const card = this.ui.create('card');
                                     card.data.name = id;
                                     card.data.suit = suit;
+                                    console.log(id, suit, num)
                                     if (typeof num === 'number') {
                                         card.data.number = num;
                                     }
+                                    return card.node;
                                 });
                             }
                         }
