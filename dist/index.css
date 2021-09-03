@@ -796,6 +796,22 @@ noname-pane > noname-caption.large {
   margin-bottom: -4px;
   font-size: 30px;
 }
+noname-pane > noname-caption > noname-widget.toggle {
+  border-radius: var(--widget-radius-sharp);
+  position: absolute;
+  font-family: var(--app-font);
+  font-size: 14px;
+  padding: 3px 5px 3px 5px;
+  right: 18px;
+  cursor: pointer;
+}
+noname-pane > noname-caption > noname-widget.toggle > noname-image {
+  width: calc(100% - 2 * var(--widget-image-margin-sharp));
+  height: calc(100% - 2 * var(--widget-image-margin-sharp));
+  left: var(--widget-image-margin-sharp);
+  top: var(--widget-image-margin-sharp);
+  border-radius: var(--widget-image-radius-sharp);
+}
 noname-pane > noname-text {
   width: calc(100% - 20px);
   padding: 5px 10px 5px 10px;

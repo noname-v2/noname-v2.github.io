@@ -25,7 +25,7 @@ export class Collection extends Popup {
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
             this.pane.node.classList.add('auto');
-            this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+            const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
             const [gallery, width, height] = this.pane.addPopGallery(n, this.nrows, this.ncols);
             this.gallery = gallery;
             gallery.node.style.width = `${width}px`;
@@ -57,7 +57,30 @@ export class Collection extends Popup {
             if (type === 'card+pile') {
                 const pile = this.app.accessExtension(pack, 'pile') as Pile;
                 if (pile) {
+                    // add pile toggle
+                    const toggle = this.ui.createElement('widget', caption);
+                    toggle.innerHTML = '显示牌堆';
+                    toggle.classList.add('toggle');
+                    let shown = false;
+                    this.ui.bind(toggle, () => {
+                        if (shown) {
+                            pileGallery.node.style.display = 'none';
+                            toggle.dataset.fill = '';
+                            gallery.node.style.display = '';
+                            gallery.checkPage();
+                        }
+                        else {
+                            gallery.node.style.display = 'none';
+                            toggle.dataset.fill = 'blue';
+                            pileGallery.node.style.display = '';
+                            pileGallery.checkPage();
+                        }
+                        shown = !shown;
+                    });
+
+                    // add pile gallery
                     const pileGallery = this.pileGallery = this.pane.addGallery(gallery.nrows as number, gallery.ncols as number);
+                    pileGallery.node.style.display = 'none';
                     pileGallery.node.classList.add('pop');
                     pileGallery.node.style.width = `${width}px`;
                     pileGallery.node.style.height = `${height}px`;
@@ -70,7 +93,6 @@ export class Collection extends Popup {
                                     const card = this.ui.create('card');
                                     card.data.name = id;
                                     card.data.suit = suit;
-                                    console.log(id, suit, num)
                                     if (typeof num === 'number') {
                                         card.data.number = num;
                                     }
@@ -88,6 +110,5 @@ export class Collection extends Popup {
         this.location = e;
         await this.app.popup(this);
         this.gallery.checkPage();
-        this.pileGallery?.checkPage();
     }
 }

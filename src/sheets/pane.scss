@@ -79,6 +79,16 @@ noname-pane {
 			margin-bottom: -4px;
 			font-size: 30px;
 		}
+
+		> noname-widget.toggle {
+			@include widget-sharp;
+			position: absolute;
+			font-family: var(--app-font);
+			font-size: 14px;
+			padding: 3px 5px 3px 5px;
+			right: 18px;
+			cursor: pointer;
+		}
 	}
 
 	// text
