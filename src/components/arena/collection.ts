@@ -20,6 +20,9 @@ export class Collection extends Popup {
     /** Number of gallery columns. */
     ncols = 5;
 
+    /** Align to center vertically. */
+    verticalCenter = true;
+
     setup(pack: string, type: 'hero' | 'card' | 'card+pile', render?: (id: string, node: HTMLElement) => void) {
         const section = type === 'card+pile' ? 'card' : type;
         const lib = this.app.accessExtension(pack, section);
@@ -27,7 +30,7 @@ export class Collection extends Popup {
         if (lib && n) {
             this.pane.node.classList.add('auto');
             const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-            const [gallery, width, height] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+            const [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
             this.gallery = gallery;
             gallery.node.style.width = `${width}px`;
 
@@ -61,8 +64,17 @@ export class Collection extends Popup {
                     // add pile toggle
                     const toggle = this.ui.createElement('widget', caption);
                     toggle.classList.add('toggle');
+
                     let shown = false;
                     let pileCount = 0;
+
+                    for (const name in pile) {
+                        for (const suit in pile[name]) {
+                            pileCount += pile[name][suit].length
+                        }
+                    }
+                    toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
+
                     this.ui.bind(toggle, () => {
                         if (shown) {
                             pileGallery.node.style.display = 'none';
@@ -80,11 +92,11 @@ export class Collection extends Popup {
                     });
 
                     // add pile gallery
-                    const pileGallery = this.pileGallery = this.pane.addGallery(gallery.nrows as number, gallery.ncols as number);
+                    const [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
+                    this.pileGallery = pileGallery;
                     pileGallery.node.style.display = 'none';
                     pileGallery.node.classList.add('pop');
                     pileGallery.node.style.width = `${width}px`;
-                    pileGallery.node.style.height = `${height}px`;
 
                     for (const name in pile) {
                         const id = name.includes(':') ? name : pack + ':' + name;
@@ -108,7 +120,6 @@ export class Collection extends Popup {
                         }
                     }
 
-                    toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
                     // if (debug) {
                     //     this.checkPile(pile);
                     // }

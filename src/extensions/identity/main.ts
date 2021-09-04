@@ -8,7 +8,7 @@ export default {
             main(T: TaskClass) {
                 return class Identity extends T {
                     /** Number of hero choices. */
-                    nheros = 15;
+                    nheros = 10;
 
                     /** Choice of heros for players. */
                     choices!: Set<string>;

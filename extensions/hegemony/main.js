@@ -880,7 +880,7 @@ var main = {
         'standard:zhangba': { spade: [12] },
         'standard:guanshi': { diamond: [5] },
         'sanjian': { diamond: [12] },
-        'standard:hanbin': { spade: [2] },
+        'standard:hanbing': { spade: [2] },
         'maneuver:zhuque': { diamond: [1] },
         'standard:qilin': { heart: [5] },
         'standard:wanjian': { heart: [1] },

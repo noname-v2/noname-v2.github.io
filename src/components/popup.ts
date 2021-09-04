@@ -28,6 +28,9 @@ export class Popup extends Component {
 	/** Location when opened. */
 	location?: Point;
 
+	/** Locate dialog to [center, left] instead of [top, left]. */
+	verticalCenter = false;
+
     init() {
 		this.node.classList.add('noname-popup');
 		
@@ -85,6 +88,10 @@ export class Popup extends Component {
 			const rect1 = this.pane.node.getBoundingClientRect();
 			const rect2 = this.app.zoomNode.getBoundingClientRect();
 			const zoom = this.app.zoom;
+
+			if (this.verticalCenter) {
+				y -= rect1.height / 2;
+			}
 
 			x += 2;
 			y -= 2;

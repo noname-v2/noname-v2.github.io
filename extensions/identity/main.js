@@ -6,7 +6,7 @@ var main = {
             main(T) {
                 return class Identity extends T {
                     /** Number of hero choices. */
-                    nheros = 15;
+                    nheros = 10;
                     /** Choice of heros for players. */
                     choices;
                     main() {
