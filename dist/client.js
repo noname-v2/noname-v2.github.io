@@ -4599,7 +4599,7 @@
             }).onfinish = callback ?? null;
         }
         /** Remove an item. */
-        delete(node, ref, callback) {
+        delete(node, ref, callback, align) {
             const idx = this.items.get(node);
             for (const [node, idx2] of this.items) {
                 if (idx2 > idx) {
@@ -4607,7 +4607,9 @@
                 }
             }
             this.items.delete(node);
-            this.align();
+            if (align !== false) {
+                this.align();
+            }
             const [dx, dy, scale, x] = this.#locate(node, ref);
             this.ui.animate(node, {
                 x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]

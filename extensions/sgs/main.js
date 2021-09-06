@@ -787,13 +787,26 @@ function pop(T) {
             for (const pack of packs) {
                 // separate by packs to improve performance
                 const name = this.app.accessExtension(pack, 'heropack');
-                menu.pane.addOption(name ?? pack, e => {
+                menu.pane.addOption(name ?? pack, () => {
                     // open hero gallery
                     menu.close();
                     if (!this.collections.has(pack)) {
                         this.#createCollection(pack);
                     }
                     this.collections.get(pack).pop();
+                });
+            }
+            // cancel this.#restore
+            if (this.picked.size) {
+                menu.pane.addOption('取消', () => {
+                    for (const id of this.picked) {
+                        this.tray.delete(this.clones.get(id), undefined, undefined, false);
+                    }
+                    this.tray.align();
+                    this.picked.clear();
+                    this.buttons.get('callPick').dataset.fill = '';
+                    this.#restored = false;
+                    menu.close();
                 });
             }
             menu.open(e);

@@ -39,7 +39,7 @@ export class Tray extends Component {
     }
 
     /** Remove an item. */
-    delete(node: HTMLElement, ref?: HTMLElement, callback?: () => void) {
+    delete(node: HTMLElement, ref?: HTMLElement, callback?: () => void, align?: boolean) {
         const idx = this.items.get(node)!;
         for (const [node, idx2] of this.items) {
             if (idx2 > idx) {
@@ -47,7 +47,10 @@ export class Tray extends Component {
             }
         }
         this.items.delete(node);
-        this.align();
+
+        if (align !== false) {
+            this.align();
+        }
 
         const [dx, dy, scale, x] = this.#locate(node, ref);
         this.ui.animate(node, {
