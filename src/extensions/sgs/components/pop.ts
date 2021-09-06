@@ -58,9 +58,10 @@ export function pop(T: typeof Pop) {
                 for (const id of picked) {
                     this.#pick(id);
                     const clone = this.clones.get(id)!;
-                    this.tray.appendChild(clone);
+                    this.tray.items.set(clone, this.tray.items.size);
+                    this.tray.node.appendChild(clone);
                 }
-                this.updateTray(null, null, false);
+                this.tray.align();
                 for (const id of picked) {
                     const clone = this.clones.get(id)!
                     const x = this.ui.getX(clone);
@@ -98,7 +99,7 @@ export function pop(T: typeof Pop) {
         /** Unpick an item. */
         #unpick(id: string) {
             this.picked.delete(id);
-            this.updateTray(null, this.clones.get(id)!, false);
+            this.tray.delete(this.clones.get(id)!);
             this.#save();
         }
 
@@ -120,7 +121,7 @@ export function pop(T: typeof Pop) {
                     else if (!node.classList.contains('selected')) {
                         // create clone of hero
                         this.#pick(id);
-                        this.updateTray(null, this.clones.get(id)!, true);
+                        this.tray.add(this.clones.get(id)!);
                         this.#save();
                         node.classList.add('selected');
                     }

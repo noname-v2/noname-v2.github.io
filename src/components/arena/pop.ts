@@ -1,4 +1,4 @@
-import { Component, Gallery, Timer, Player, Point } from '../../components';
+import { Component, Gallery, Timer, Player, Tray } from '../../components';
 import type { Select, FilterThis } from '../../types';
 
 /** Possible contents of pop sections. */
@@ -75,7 +75,7 @@ export class Pop extends Component {
     galleries = new Map<Gallery, [[number, number], string?]>();
 
     /** Container of clones of selected items. */
-    tray!: HTMLElement;
+    tray!: Tray;
 
     /** Operation blocked by animation. */
     #blocked: number | null = null;
@@ -90,159 +90,36 @@ export class Pop extends Component {
     click(id: string | number) {
         if (this.#blocked || this.#pending) return;
         const [item, clone] = this.items.get(id)!;
+        const blocked = this.#blocked = ++this.#blockCount;
+        const unblock = () => {
+            if (this.#blocked === blocked) {
+                this.#blocked = null;
+            }
+        }
+        setTimeout(unblock, 500);
+
         if (this.selected.has(id)) {
             this.selected.delete(id);
             item.classList.remove('selected');
-            this.updateTray(item, clone, false);
+            const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
+            const indicator = page.parentNode!.nextSibling as HTMLElement;
+            const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
+            const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
+            
+            // skip translate animation if item is not in current gallery page
+            if (idx !== idx2) {
+                this.tray.delete(clone, undefined, unblock);
+            }
+            else {
+                this.tray.delete(clone, item, unblock);
+            }
             this.check();
         }
         else if (!item.classList.contains('defer')) {
             this.selected.add(id);
             item.classList.add('selected');
-            this.updateTray(item, clone, true);
+            this.tray.add(clone, item, unblock);
             this.check();
-        }
-    }
-
-    /** Update tray item locations. */
-    updateTray(item: HTMLElement | null, clone: HTMLElement | null, add: boolean) {
-        const d = parseInt(this.app.css.pop['tray-height']) - 8;
-        const margin = parseInt(this.app.css.pop['tray-margin']);
-        const width = this.tray.clientWidth;
-        const clones: HTMLElement[] = [];
-        for (const node of Array.from(this.tray.childNodes)) {
-            if (node === clone) {
-                continue;
-            }
-            clones.push(node as HTMLElement);
-        }
-        clones.sort((a, b) => (this.ui.getX(a) - this.ui.getX(b)));
-        if (add && clone) {
-            clones.push(clone);
-        }
-
-        // determine spacing
-        const n = clones.length;
-        let spacing: number;
-        if ((width - margin) / (d + margin) > n) {
-            // use margin as spacing
-            spacing = margin;
-        }
-        else if ((width - 4) / (d + 4) > n) {
-            // spaced evenly
-            spacing = (width - n * d) / (n + 1);
-        }
-        else {
-            // leave 4px for left and right
-            spacing = (width - 8 - d) / (n - 1) - d;
-        }
-
-        // determine left most location
-        const length = d * n + spacing * (n - 1);
-        const left = (width - length) / 2;
-
-        // move a clone
-        const move = (node: HTMLElement, i: number) => {
-            this.ui.moveTo(node, {x: x(i), y: 0}, false);
-            indices.set(node, i);
-        };
-
-        // align items
-        const indices = new Map<HTMLElement, number>();
-        const x = (i: number) => left + i * (d + spacing);
-        for (let i = 0; i < clones.length; i++) {
-            clones[i].style.zIndex = i.toString();
-            move(clones[i], i);
-        }
-        for (const node of clones) {
-            this.ui.bind(node, {
-                movable: {x: [left, x(clones.length - 1)], y: [0, 0]},
-                onmove: e => {
-                    const j = Math.round((e.x - left) / (d + spacing));
-                    let current = indices.get(node)!;
-                    if (j !== current) {
-                        for (const node2 of clones) {
-                            if (node2 === node) {
-                                continue;
-                            }
-                            const k = indices.get(node2)!;
-                            if (j < current && k < current && k >= j) {
-                                move(node2, k + 1);
-                            }
-                            else if (j > current && k > current && k <= j) {
-                                move(node2, k - 1);
-                            }
-                        }
-                        indices.set(node, j);
-                    }
-                },
-                onmoveend: () => {
-                    move(node, indices.get(node)!);
-                    for (const node2 of clones) {
-                        node2.style.zIndex = indices.get(node2)!.toString();
-                    }
-                }
-            });
-        }
-
-        // add or remove diff
-        if (add && clone) {
-            this.tray.appendChild(clone);
-        }
-
-        if (clone) {
-            const rect1 = item ? item.getBoundingClientRect() : {} as any;
-            const rect2 = clone.getBoundingClientRect();
-            let dx = (rect1.x + rect1.width / 2 - rect2.width / 2 - rect2.x) / this.app.zoom;
-            let dy = (rect1.y + rect1.height / 2 - rect2.height / 2 - rect2.y) / this.app.zoom;
-            let scale: string | number = 1.5;
-            const x = this.ui.getX(clone);
-            const blocked = this.#blocked = ++this.#blockCount;
-            const unblock = () => {
-                if (this.#blocked === blocked) {
-                    this.#blocked = null;
-                }
-            }
-            setTimeout(unblock, 500);
-
-            if (add) {
-                if (!item) {
-                    // item added from elsewhere (e.g. hero pick)
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-                this.ui.animate(clone, {
-                    x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
-                }).onfinish = unblock;
-            }
-            else {
-                let zoom = false;
-                if (item) {
-                    const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
-                    const indicator = page.parentNode!.nextSibling as HTMLElement;
-                    const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
-                    const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
-                    
-                    // skip translate animation if item is not in current gallery page
-                    if (idx !== idx2) {
-                        zoom = true;
-                    }
-                }
-                else {
-                    zoom = true;
-                }
-                
-                if (zoom) {
-                    dx = 0;
-                    dy = 0;
-                    scale = 'var(--app-zoom-scale)';
-                }
-
-                this.ui.animate(clone, {
-                    x: [x, x + dx], y: [0, dy], scale: [1, scale], opacity: [1, 0]
-                }).onfinish = () => { clone.remove(); unblock() };
-            }
         }
     }
 
@@ -337,11 +214,10 @@ export class Pop extends Component {
     /** Add tray of selected items. */
     addTray() {
         const height = parseInt(this.app.css.pop['tray-height']);
-        const tray = this.tray = this.pane.add('bar');
-        tray.classList.add('tray');
-        tray.style.height = `${height}px`;
+        const margin = parseInt(this.app.css.pop['tray-margin']);
+        const tray = this.tray = this.pane.addTray(height - 8, margin);
+        tray.node.classList.add('round');
         this.height += height + 26;
-        tray.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
     }
 
     /** Remove with fade out animation. */

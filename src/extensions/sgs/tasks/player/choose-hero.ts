@@ -27,7 +27,7 @@ export function createHero(T: ReturnType<typeof createPop>) {
         }
 
         callPick(pop: Link, e: Point) {
-            pop.call('pick', [e, this.game.config.heropacks]);
+            pop.call('pick', [e, this.game.heropacks]);
         }
     }
 }

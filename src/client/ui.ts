@@ -415,15 +415,18 @@ export function dispatchMoveEnd(node: HTMLElement) {
     resetMove(node);
 }
 
+/** Options for ui.animate(). */
+interface AnimationOptions {
+    x?: (number | string)[],
+    y?: (number | string)[],
+    scale?: (number | string)[],
+    opacity?: (number | string)[],
+    auto?: boolean,
+    forward?: boolean
+};
+
 /** Wrapper of HTMLElement.animate(). */
-export function animate(node: HTMLElement, animation: {
-        x?: (number | string)[],
-        y?: (number | string)[],
-        scale?: (number | string)[],
-        opacity?: (number | string)[],
-        auto?: boolean,
-        forward?: boolean
-    }, config?: KeyframeAnimationOptions | number) {
+export function animate(node: HTMLElement, animation: AnimationOptions, config?: KeyframeAnimationOptions | number) {
     const keyframes = [];
     
     // get number of keyframes

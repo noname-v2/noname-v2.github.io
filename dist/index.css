@@ -783,6 +783,34 @@ noname-pane > noname-bar {
   text-align: center;
   margin: 16px 0 14px 0;
 }
+noname-pane > noname-tray.round {
+  margin: 14px 0 18px 0;
+  text-align: center;
+  border: var(--pop-border);
+  border-radius: var(--widget-radius);
+  width: calc(100% - 36px);
+  height: var(--pop-tray-height);
+  left: 16px;
+  display: block;
+  position: relative;
+}
+noname-pane > noname-tray.round > noname-widget {
+  cursor: pointer;
+  width: calc(var(--pop-tray-height) - 8px);
+  height: calc(var(--pop-tray-height) - 8px);
+  border-radius: 100%;
+  position: absolute;
+  top: 4px;
+  left: 0;
+  transition-property: opacity, transform;
+  transition-duration: var(--app-transition);
+}
+noname-pane > noname-tray.round > noname-widget.avatar {
+  background-position: var(--widget-avatar-position) !important;
+}
+noname-pane > noname-tray.round > noname-widget.movedown {
+  z-index: 10000 !important;
+}
 noname-pane > noname-caption {
   width: 100%;
   text-align: center;
@@ -983,31 +1011,6 @@ noname-arena noname-zoom > noname-pop > noname-image {
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-bar {
   margin: 12px 0 14px 0;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray {
-  margin: 14px 0 18px 0;
-  text-align: center;
-  border: var(--pop-border);
-  border-radius: var(--widget-radius);
-  width: calc(100% - 36px);
-  left: 16px;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget {
-  cursor: pointer;
-  width: calc(var(--pop-tray-height) - 8px);
-  height: calc(var(--pop-tray-height) - 8px);
-  border-radius: 100%;
-  position: absolute;
-  top: 4px;
-  left: 0;
-  transition-property: opacity, transform;
-  transition-duration: var(--app-transition);
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.avatar {
-  background-position: var(--widget-avatar-position) !important;
-}
-noname-arena noname-zoom > noname-pop > noname-pane > noname-bar.tray > noname-widget.movedown {
-  z-index: 10000 !important;
 }
 noname-arena noname-zoom > noname-pop > noname-pane > noname-caption {
   margin: 14px 0 12px 0;

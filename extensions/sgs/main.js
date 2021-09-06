@@ -338,7 +338,7 @@ function createHero(T) {
             super.main();
         }
         callPick(pop, e) {
-            pop.call('pick', [e, this.game.config.heropacks]);
+            pop.call('pick', [e, this.game.heropacks]);
         }
     };
 }
@@ -810,9 +810,10 @@ function pop(T) {
                 for (const id of picked) {
                     this.#pick(id);
                     const clone = this.clones.get(id);
-                    this.tray.appendChild(clone);
+                    this.tray.items.set(clone, this.tray.items.size);
+                    this.tray.node.appendChild(clone);
                 }
-                this.updateTray(null, null, false);
+                this.tray.align();
                 for (const id of picked) {
                     const clone = this.clones.get(id);
                     const x = this.ui.getX(clone);
@@ -848,7 +849,7 @@ function pop(T) {
         /** Unpick an item. */
         #unpick(id) {
             this.picked.delete(id);
-            this.updateTray(null, this.clones.get(id), false);
+            this.tray.delete(this.clones.get(id));
             this.#save();
         }
         /** Create a hero collection of an extension. */
@@ -869,7 +870,7 @@ function pop(T) {
                     else if (!node.classList.contains('selected')) {
                         // create clone of hero
                         this.#pick(id);
-                        this.updateTray(null, this.clones.get(id), true);
+                        this.tray.add(this.clones.get(id));
                         this.#save();
                         node.classList.add('selected');
                     }

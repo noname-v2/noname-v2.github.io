@@ -7,34 +7,6 @@ noname-arena noname-zoom > noname-pop {
     > noname-pane {
         > noname-bar {
             margin: 12px 0 14px 0;
-
-            &.tray {
-                margin: 14px 0 18px 0;
-                text-align: center;
-                border: var(--pop-border);
-                border-radius: var(--widget-radius);
-                width: calc(100% - 36px);
-                left: 16px;
-    
-                > noname-widget {
-                    cursor: pointer;
-                    width: calc(var(--pop-tray-height) - 8px);
-                    height: calc(var(--pop-tray-height) - 8px);
-                    border-radius: 100%;
-                    position: absolute;
-                    top: 4px;
-                    left: 0;
-                    @include transit;
-
-                    &.avatar {
-                        background-position: var(--widget-avatar-position) !important;
-                    }
-
-                    &.movedown {
-                        z-index: 10000 !important;
-                    }
-                }
-            }
         }
 
         > noname-caption {

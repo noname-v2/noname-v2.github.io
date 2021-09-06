@@ -99,6 +99,15 @@ export class Pane extends Component {
 		return toggle;
 	}
 
+	/** Add a tray. */
+	addTray(width: number, margin: number) {
+		const tray = this.ui.create('tray');
+		tray.width = width;
+		tray.margin = margin;
+		this.node.appendChild(tray.node);
+		return tray;
+	}
+
 	/** Align text nodes to center. */
 	alignText() {
 		for (const span of this.node.querySelectorAll<HTMLElement>('noname-pane > noname-text > noname-span')) {
