@@ -54,6 +54,9 @@ export class Lobby extends Component {
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
         this.ui.animate(this.seats, {scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1]});
+
+        // reduce opacity when a popup is opened
+        this.app.arena!.popups.add(this);
     }
 
     /** Update connected players. */

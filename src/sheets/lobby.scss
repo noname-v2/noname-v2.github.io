@@ -1,5 +1,6 @@
 noname-lobby {
 	@include layer;
+	transition: opacity var(--app-transition);
 
 	// area containing players
 	> noname-seats {

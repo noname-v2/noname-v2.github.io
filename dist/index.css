@@ -510,6 +510,7 @@ noname-lobby {
   left: 0;
   top: 0;
   position: absolute;
+  transition: opacity var(--app-transition);
 }
 noname-lobby > noname-seats {
   position: absolute;

@@ -31,7 +31,7 @@ export class Arena extends Component {
     controlZoom = this.ui.create('zoom', this.node);
 
     /** Popup components cleared when arena close. */
-    popups = new Set<Popup>();
+    popups = new Set<Component>();
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
@@ -111,7 +111,7 @@ export class Arena extends Component {
         dialog.arena = true;
 
         // other popups that are blurred by dialog.open()
-        const blurred = new Set<Popup>();
+        const blurred = new Set<Component>();
 
         dialog.onopen = () => {
             // blur arena, splash and other popups

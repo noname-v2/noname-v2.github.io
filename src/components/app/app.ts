@@ -416,7 +416,9 @@ export class App extends Component {
                 }
             }
 
-            this.arena!.popup(menu);
+            // open in arena
+            menu.arena = true;
+            menu.open();
         }});
     }
 
