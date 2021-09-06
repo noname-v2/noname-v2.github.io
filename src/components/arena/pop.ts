@@ -380,7 +380,7 @@ export class Pop extends Popup {
             this.node.style.height = `${this.height}px`;
             this.node.style.left = `calc(50% - ${this.width / 2}px)`;
             this.node.style.top = `calc(50% - ${this.height / 2}px)`;
-            this.ui.bind(this.node, {oncontext: () => {
+            this.ui.bind(this.pane.node, {oncontext: () => {
                 this.ui.moveTo(this.node, {x: 0, y: 0});
             }});
             this.app.arena!.appZoom.node.appendChild(this.node);

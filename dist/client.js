@@ -2563,6 +2563,7 @@
             if (this.removing) {
                 return;
             }
+            this.app.arena.popups.delete(this);
             super.remove(new Promise(resolve => {
                 let done = 0;
                 const onfinish = () => {
@@ -3218,7 +3219,7 @@
                 this.node.style.height = `${this.height}px`;
                 this.node.style.left = `calc(50% - ${this.width / 2}px)`;
                 this.node.style.top = `calc(50% - ${this.height / 2}px)`;
-                this.ui.bind(this.node, { oncontext: () => {
+                this.ui.bind(this.pane.node, { oncontext: () => {
                         this.ui.moveTo(this.node, { x: 0, y: 0 });
                     } });
                 this.app.arena.appZoom.node.appendChild(this.node);
@@ -4588,11 +4589,11 @@
         }
         /** Add an item. */
         add(node, ref, callback) {
+            node.style.zIndex = this.items.size.toString();
             this.items.set(node, this.items.size);
             this.align();
             this.node.appendChild(node);
             const [dx, dy, scale, x] = this.#locate(node, ref);
-            node.style.zIndex = this.items.size.toString();
             this.ui.animate(node, {
                 x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
             }).onfinish = callback ?? null;

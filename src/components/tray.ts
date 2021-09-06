@@ -27,12 +27,12 @@ export class Tray extends Component {
 
 	/** Add an item. */
     add(node: HTMLElement, ref?: HTMLElement, callback?: () => void) {
+        node.style.zIndex = this.items.size.toString();
         this.items.set(node, this.items.size);
         this.align();
         this.node.appendChild(node);
         
         const [dx, dy, scale, x] = this.#locate(node, ref);
-        node.style.zIndex = this.items.size.toString();
         this.ui.animate(node, {
             x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
         }).onfinish = callback ?? null;

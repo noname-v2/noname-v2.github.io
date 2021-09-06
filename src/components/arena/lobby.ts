@@ -148,6 +148,7 @@ export class Lobby extends Component {
             return;
         }
         
+        this.app.arena!.popups.delete(this);
         super.remove(new Promise<void>(resolve => {
             let done = 0;
             const onfinish = () => {

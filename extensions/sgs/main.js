@@ -814,6 +814,7 @@ function pop(T) {
                 for (const id of picked) {
                     this.#pick(id);
                     const clone = this.clones.get(id);
+                    clone.style.zIndex = this.tray.items.size.toString();
                     this.tray.items.set(clone, this.tray.items.size);
                     this.tray.node.appendChild(clone);
                 }
