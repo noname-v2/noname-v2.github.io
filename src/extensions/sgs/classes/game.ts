@@ -1,5 +1,5 @@
 import type { Game } from '../../../worker/game';
-import type { SGS, Player, Card, Skill } from '../types';
+import type { SGS, Player, Card, Skill, PileEntries } from '../types';
 
 export function game(G: typeof Game) {
     return class Game extends G {
@@ -8,11 +8,45 @@ export function game(G: typeof Game) {
         cards = new Map<number, Card>();
         skills = new Map<number, Skill>();
 
+        /** Available hero packs. */
+        get heropacks(): string[] {
+            const packs = [];
+
+            for (const pack of this.packs) {
+                if (this.config.banned.heropack?.includes(pack)) {
+                    continue;
+                }
+
+                if (this.accessExtension(pack, 'heropack')) {
+                    packs.push(pack);
+                }
+            }
+
+            return packs;
+        }
+
+        /** Available card packs. */
+        get cardpacks(): string[] {
+            const packs = [];
+
+            for (const pack of this.packs) {
+                if (this.config.banned.cardpack?.includes(pack)) {
+                    continue;
+                }
+
+                if (this.accessExtension(pack, 'cardpack')) {
+                    packs.push(pack);
+                }
+            }
+
+            return packs;
+        }
+
         /** Get a list of all heros. */
         getHeros() {
             const heros = new Set<string>();
 
-            for (const pack of this.packs) {
+            for (const pack of this.heropacks) {
                 const ext = this.accessExtension(pack) as SGS;
                 for (const name in ext?.hero) {
                     heros.add(pack + ':' + name);
@@ -20,6 +54,27 @@ export function game(G: typeof Game) {
             }
             
             return heros;
+        }
+
+        /** Get card pile entries. */
+        getPile() {
+            const pile: PileEntries = [];
+
+            for (const pack of this.cardpacks) {
+                const ext = this.accessExtension(pack) as SGS;
+                for (const name in ext?.pile) {
+                    for (const suit in ext?.pile[name]) {
+                        for (let entry of ext?.pile[name][suit]) {
+                            if (typeof entry === 'number') {
+                                entry = [entry];
+                            }
+                            pile.push([name, suit, ...entry]);
+                        }
+                    }
+                }
+            }
+            
+            return pile;
         }
 
         /** Backup game progress. */

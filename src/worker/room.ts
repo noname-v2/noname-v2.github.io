@@ -1,11 +1,11 @@
 import { Stage } from './stage';
-import { copy, apply, freeze, access } from '../utils';
+import { copy, apply, freeze } from '../utils';
 import { Task } from './task';
 import { Game } from './game';
 import { Link, createLink } from './link';
 import { importExtension, accessExtension } from '../extension';
 import type { UITick } from './worker';
-import type { Mode, Dict } from '../types';
+import type { ModeData, Dict } from '../types';
 
 /** Room that controls game flow and classes. */
 export class Room {
@@ -149,12 +149,12 @@ export class Room {
 
     /** Update extension-defined classes and game mode. */
     async #loadRuleset() {
-        const mode: Mode = {};
+        const mode: ModeData = {};
         const modeTasks = [];
         const exclude = ['tasks', 'components', 'classes'];
 
         for (const pack of this.#ruleset) {
-            const extMode: Mode = copy(accessExtension(pack)?.mode ?? {});
+            const extMode: ModeData = copy(accessExtension(pack)?.mode ?? {});
 
             // update game classes (including base Task class)
             for (const name in extMode.classes) {

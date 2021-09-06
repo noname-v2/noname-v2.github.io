@@ -1,12 +1,12 @@
 import { hub, room } from './globals';
 import { accessExtension, getHero, getCard } from '../extension';
 import * as utils from '../utils';
-import type { Mode, Dict } from '../types';
+import type { ModeData, Dict } from '../types';
 
 /** Game object used by stages. */
 export abstract class Game {
     /** Game mode. */
-    mode!: Mode;
+    mode!: ModeData;
 
     /** Game configuration. */
     config: Dict = {};

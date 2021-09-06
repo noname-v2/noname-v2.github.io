@@ -21,8 +21,49 @@ export interface Config {
     confirm?: [string | number | boolean, [string | null, string?]][]
 }
 
+/** SGS hero definition. */
+export interface HeroData {
+    name: string;
+    intro: string;
+    gender: string;
+    faction: string;
+    hp: number;
+    skills: string[];
+    subpack?: string;
+    [key: string]: any;
+};
+
+/** SGS card definition. */
+export interface CardData {
+    name: string;
+    intro: string;
+    type: string;
+    inherit?: string;
+    skills?: string[];
+    subtype?: string;
+    decoration?: string;
+    originated?: string;
+    label?: string;
+    caption?: string | [string, string];
+    subpack?: string;
+    range?: number;
+    distance?: number | [number, number];
+    [key: string]: any;
+};
+
+/** SGS skill definition. */
+export interface SkillData<T extends Task = Task> {
+    name: string;
+    intro: string;
+    type?: string;
+    task?: Class<T>;
+    inherit?: string;
+    trigger?: Dict<string>;
+    [key: string]: any;
+};
+
 /** Mode information. */
-export interface Mode<T extends Task = Task> {
+export interface ModeData<T extends Task = Task> {
     name?: string;
     intro?: string;
     extension?: string;
@@ -33,18 +74,21 @@ export interface Mode<T extends Task = Task> {
     inherit?: string;
     np?: number | number[];
     duration?: number;
+    minHeroCount?: number;
+    minPileCount?: number;
     [key: string]: any;
 }
 
 /** Format of card pile. */
 export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
+export type PileEntries = [string, string, number, ...string[]][];
 
 /** Basic extension structure. */
 export interface Extension<T extends Task = Task> {
-    mode?: Mode<T>;
-    hero?: Dict;
-    card?: Dict;
-    skill?: Dict;
+    mode?: ModeData<T>;
+    hero?: Dict<HeroData>;
+    card?: Dict<CardData>;
+    skill?: Dict<SkillData<T>>;
     pile?: Pile;
     heropack?: string;
     cardpack?: string;

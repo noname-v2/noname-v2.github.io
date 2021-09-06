@@ -186,6 +186,14 @@ function lobby(T) {
                 }
                 this.lobby.config = this.game.config;
             }
+            else if (type === 'start') {
+                this.lobby.call('checkStart', [
+                    this.game.mode.minHeroCount,
+                    this.game.getHeros().size,
+                    this.game.mode.minPileCount,
+                    this.game.getPile().length
+                ]);
+            }
         }
         /** Update info about joined players. */
         updatePeer(val, peer) {
@@ -200,20 +208,6 @@ function lobby(T) {
         }
         /** Remove lobby and start game. */
         cleanUp() {
-            // finalize packs
-            this.game.config.heropacks = [];
-            this.game.config.cardpacks = [];
-            for (const name of this.game.packs) {
-                const heropack = this.game.accessExtension(name, 'heropack');
-                const cardpack = this.game.accessExtension(name, 'cardpack');
-                if (heropack && !this.game.config.banned?.heropack?.includes(name)) {
-                    this.game.config.heropacks.push(name);
-                }
-                if (cardpack && !this.game.config.banned?.cardpack?.includes(name)) {
-                    this.game.config.cardpacks.push(name);
-                }
-            }
-            // remove lobby and disable further configuration change
             this.lobby.unlink();
             this.game.start();
         }
@@ -408,16 +402,60 @@ function game(G) {
         players = new Map();
         cards = new Map();
         skills = new Map();
+        /** Available hero packs. */
+        get heropacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.heropack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'heropack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
+        /** Available card packs. */
+        get cardpacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.cardpack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'cardpack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
         /** Get a list of all heros. */
         getHeros() {
             const heros = new Set();
-            for (const pack of this.packs) {
+            for (const pack of this.heropacks) {
                 const ext = this.accessExtension(pack);
                 for (const name in ext?.hero) {
                     heros.add(pack + ':' + name);
                 }
             }
             return heros;
+        }
+        /** Get card pile entries. */
+        getPile() {
+            const pile = [];
+            for (const pack of this.cardpacks) {
+                const ext = this.accessExtension(pack);
+                for (const name in ext?.pile) {
+                    for (const suit in ext?.pile[name]) {
+                        for (let entry of ext?.pile[name][suit]) {
+                            if (typeof entry === 'number') {
+                                entry = [entry];
+                            }
+                            pile.push([name, suit, ...entry]);
+                        }
+                    }
+                }
+            }
+            return pile;
         }
         /** Backup game progress. */
         backup() {
@@ -855,6 +893,8 @@ const components = {
 var main = {
     mode: {
         tasks, classes, components,
+        minHeroCount: 50,
+        minPileCount: 100,
         config: {
             online: {
                 name: '联机模式',

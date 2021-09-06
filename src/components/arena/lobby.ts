@@ -44,7 +44,8 @@ export class Lobby extends Component {
         this.listen('sync');
         this.sidebar.ready.then(() => {
             this.sidebar.setHeader('返回', () => arena.back());
-            this.sidebar.setFooter('开始游戏', () => this.respond());
+            this.sidebar.setFooter('开始游戏', () => this.yield(['start']));
+            // this.sidebar.setFooter('开始游戏', () => this.respond());
         });
 
         this.sidebar.pane.node.classList.add('fixed');
@@ -118,6 +119,19 @@ export class Lobby extends Component {
     /** Re-enable toggles. */
     unfreeze() {
         this.sidebar.pane.node.classList.remove('pending');
+    }
+
+    /** Check if there's enough heros and cards to start game. */
+    checkStart([h1, h2, c1, c2]: number[]) {
+        if (h1 > h2) {
+            this.app.alert('无法开始', {content: `武将数量不足（<span class="mono">${h2}/${h1}</span>）。`});
+        }
+        else if (c1 > c2) {
+            this.app.alert('无法开始', {content: `牌堆数量不足（<span class="mono">${c2}/${c1}</span>）。`});
+        }
+        else {
+            this.respond();
+        }
     }
 
     /** Remove with fade and slide animation. */

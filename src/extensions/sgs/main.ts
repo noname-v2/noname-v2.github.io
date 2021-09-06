@@ -6,6 +6,8 @@ import { components } from './components/index';
 export default {
     mode: { 
         tasks, classes, components,
+        minHeroCount: 50,
+        minPileCount: 100,
         config: {
             online: {
                 name: '联机模式',

@@ -23,7 +23,10 @@ var main = {
                             if (player.link.seat === 0) {
                                 this.game.zhu = player;
                                 player.link.identity = 'zhu';
-                                heros.set(id, this.getChoices());
+                                heros.set(id, {
+                                    items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
+                                    num: 1
+                                });
                                 this.addTask('chooseHero', {
                                     heros, forced: true, pick: this.game.config.pick
                                 });
@@ -33,9 +36,13 @@ var main = {
                     }
                     chooseRest() {
                         const heros = new Map();
+                        const nheros = Math.min(this.nheros, Math.floor(this.choices.size) / (this.game.players.size - 1));
                         for (const id of this.game.players.keys()) {
                             if (id !== this.game.zhu.id) {
-                                heros.set(id, this.getChoices());
+                                heros.set(id, {
+                                    items: Array.from(this.game.utils.rgets(this.choices, nheros, true)),
+                                    num: 1
+                                });
                             }
                         }
                         this.addTask('chooseHero', {

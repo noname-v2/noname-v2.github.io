@@ -134,6 +134,14 @@ export function lobby(T: TaskClass) {
                 }
                 this.lobby.config = this.game.config;
             }
+            else if (type === 'start') {
+                this.lobby.call('checkStart', [
+                    this.game.mode.minHeroCount,
+                    this.game.getHeros().size,
+                    this.game.mode.minPileCount,
+                    this.game.getPile().length
+                ])
+            }
         }
 
         /** Update info about joined players. */
@@ -150,22 +158,6 @@ export function lobby(T: TaskClass) {
 
         /** Remove lobby and start game. */
         cleanUp() {
-            // finalize packs
-            this.game.config.heropacks = [];
-            this.game.config.cardpacks = [];
-
-            for (const name of this.game.packs) {
-                const heropack = this.game.accessExtension(name, 'heropack');
-                const cardpack = this.game.accessExtension(name, 'cardpack');
-                if (heropack && !this.game.config.banned?.heropack?.includes(name)) {
-                    this.game.config.heropacks.push(name);
-                }
-                if (cardpack && !this.game.config.banned?.cardpack?.includes(name)) {
-                    this.game.config.cardpacks.push(name);
-                }
-            }
-
-            // remove lobby and disable further configuration change
             this.lobby.unlink();
             this.game.start();
         }
