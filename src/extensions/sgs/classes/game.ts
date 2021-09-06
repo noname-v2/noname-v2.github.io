@@ -49,7 +49,11 @@ export function game(G: typeof Game) {
             for (const pack of this.heropacks) {
                 const ext = this.accessExtension(pack) as SGS;
                 for (const name in ext?.hero) {
-                    heros.add(pack + ':' + name);
+                    const id = pack + ':' + name;
+                    if (this.config.banned?.hero?.includes(id)) {
+                        continue;
+                    }
+                    heros.add(id);
                 }
             }
             

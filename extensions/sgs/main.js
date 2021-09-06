@@ -434,7 +434,11 @@ function game(G) {
             for (const pack of this.heropacks) {
                 const ext = this.accessExtension(pack);
                 for (const name in ext?.hero) {
-                    heros.add(pack + ':' + name);
+                    const id = pack + ':' + name;
+                    if (this.config.banned?.hero?.includes(id)) {
+                        continue;
+                    }
+                    heros.add(id);
                 }
             }
             return heros;
