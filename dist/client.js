@@ -817,13 +817,13 @@
         return access(extensions.get(ext), keys) ?? null;
     }
     /** Get hero info. */
-    function getHero(hero) {
-        const [ext, name] = split(hero);
+    function getHero(id) {
+        const [ext, name] = split(id);
         return accessExtension(ext, 'hero', name);
     }
     /** Get card info. */
-    function getCard(card) {
-        const [ext, name] = split(card);
+    function getCard(id) {
+        const [ext, name] = split(id);
         return accessExtension(ext, 'card', name);
     }
 
@@ -1549,6 +1549,44 @@
             }
             this.popups.clear();
         }
+        /** Bind context menu to hero intro. */
+        bindHero(node, id) {
+            this.ui.bind(node, { oncontext: e => {
+                    const info = this.getHero(id);
+                    if (!info) {
+                        return;
+                    }
+                    const menu = this.ui.create('popup');
+                    menu.pane.node.classList.add('intro-wide');
+                    menu.pane.addCaption(info.name ?? id);
+                    menu.pane.width = 180;
+                    menu.location = e;
+                    menu.arena = true;
+                    for (let skill of info.skills ?? []) {
+                        let pack;
+                        if (skill.includes(':')) {
+                            [pack, skill] = this.utils.split(skill);
+                        }
+                        else {
+                            pack = this.utils.split(id)[0];
+                        }
+                        const info = this.accessExtension(pack, 'skill', skill);
+                        if (info) {
+                            menu.pane.addSection(info.name ?? skill);
+                            if (info.intro) {
+                                menu.pane.addText(info.intro);
+                            }
+                        }
+                    }
+                    menu.open();
+                } });
+        }
+        /** Bind context menu to card intro. */
+        bindCard() {
+        }
+        /** Bind context menu to player intro. */
+        bindPlayer() {
+        }
         /** Get extension meta data. */
         async getMeta(pack, full = false) {
             try {
@@ -1656,6 +1694,8 @@
         hidden = true;
         /** Location when opened. */
         location;
+        /** Append to app.arena instead of app. */
+        arena = false;
         /** Locate dialog to [center, left] instead of [top, left]. */
         verticalCenter = false;
         init() {
@@ -1696,7 +1736,12 @@
                 this.node.classList.add(this.size);
             }
             this.node.classList.add('hidden');
-            this.app.zoomNode.appendChild(this.node);
+            if (this.arena) {
+                this.app.arena.appZoom.node.appendChild(this.node);
+            }
+            else {
+                this.app.zoomNode.appendChild(this.node);
+            }
             if (location) {
                 // determine position of the menu
                 if (this.transition === null) {
@@ -2939,9 +2984,7 @@
                     const player = this.ui.create('player');
                     player.initHero(hero);
                     // bind context menu
-                    this.ui.bind(player.node, { oncontext: () => {
-                            player.data.heroName = 'Right';
-                        } });
+                    this.app.bindHero(player.node, hero);
                     // add to this.items
                     if (!Array.isArray(select)) {
                         const clone = this.ui.createElement('widget.avatar');

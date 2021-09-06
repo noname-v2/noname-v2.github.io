@@ -2,7 +2,7 @@ import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
 import { importExtension, accessExtension, getHero, getCard } from '../../extension';
-import type { ExtensionMeta, Dict } from '../../types';
+import type { ExtensionMeta, HeroData, CardData, Dict } from '../../types';
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -382,6 +382,53 @@ export class App extends Component {
             popup.close();
         }
         this.popups.clear();
+    }
+
+    /** Bind context menu to hero intro. */
+    bindHero(node: HTMLElement, id: string) {
+        this.ui.bind(node, {oncontext: e => {
+            const info = this.getHero(id);
+            if (!info) {
+                return;
+            }
+
+            const menu = this.ui.create('popup');
+            menu.pane.node.classList.add('intro-wide');
+            menu.pane.addCaption(info.name ?? id);
+            menu.pane.width = 180;
+            menu.location = e;
+            menu.arena = true;
+            
+            for (let skill of info.skills ?? []) {
+                let pack;
+                if (skill.includes(':')) {
+                    [pack, skill] = this.utils.split(skill);
+                }
+                else {
+                    pack = this.utils.split(id)[0];
+                }
+                
+                const info = this.accessExtension(pack, 'skill', skill);
+                if (info) {
+                    menu.pane.addSection(info.name ?? skill);
+                    if (info.intro) {
+                        menu.pane.addText(info.intro);
+                    }
+                }
+            }
+
+            menu.open();
+        }});
+    }
+
+    /** Bind context menu to card intro. */
+    bindCard() {
+
+    }
+
+    /** Bind context menu to player intro. */
+    bindPlayer() {
+
     }
 
     /** Get extension meta data. */

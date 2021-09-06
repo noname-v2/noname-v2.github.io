@@ -819,6 +819,9 @@ noname-pane > noname-caption {
   margin-top: 8px;
   margin-bottom: -8px;
 }
+noname-pane > noname-caption:last-child {
+  margin-bottom: 8px;
+}
 noname-pane > noname-caption.large {
   margin-top: 12px;
   margin-bottom: -4px;
@@ -1105,20 +1108,26 @@ noname-popup > noname-pane.auto {
   width: auto;
   height: auto;
 }
-noname-popup > noname-pane.intro {
+noname-popup > noname-pane.intro, noname-popup > noname-pane.intro-wide {
   border-radius: var(--widget-radius-sharp);
   width: 180px;
   height: auto;
 }
-noname-popup > noname-pane.intro > noname-image {
+noname-popup > noname-pane.intro > noname-image, noname-popup > noname-pane.intro-wide > noname-image {
   width: calc(100% - 2 * var(--widget-image-margin-sharp));
   height: calc(100% - 2 * var(--widget-image-margin-sharp));
   left: var(--widget-image-margin-sharp);
   top: var(--widget-image-margin-sharp);
   border-radius: var(--widget-image-radius-sharp);
 }
-noname-popup > noname-pane.intro > noname-text:last-child {
+noname-popup > noname-pane.intro > noname-text:last-child, noname-popup > noname-pane.intro-wide > noname-text:last-child {
   margin-bottom: 10px;
+}
+noname-popup > noname-pane.intro > noname-caption + noname-section, noname-popup > noname-pane.intro-wide > noname-caption + noname-section {
+  margin-top: 15px;
+}
+noname-popup > noname-pane.intro-wide {
+  width: 200px;
 }
 
 noname-sidebar {

@@ -28,6 +28,9 @@ export class Popup extends Component {
 	/** Location when opened. */
 	location?: Point;
 
+	/** Append to app.arena instead of app. */
+	arena: boolean = false;
+
 	/** Locate dialog to [center, left] instead of [top, left]. */
 	verticalCenter = false;
 
@@ -76,7 +79,13 @@ export class Popup extends Component {
 		}
 
 		this.node.classList.add('hidden');
-        this.app.zoomNode.appendChild(this.node);
+
+		if (this.arena) {
+			this.app.arena!.appZoom.node.appendChild(this.node);
+		}
+        else {
+			this.app.zoomNode.appendChild(this.node);
+		}
 
 		if (location) {
 			// determine position of the menu

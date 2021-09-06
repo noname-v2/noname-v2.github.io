@@ -59,7 +59,7 @@ noname-popup {
             height: auto;
         }
 
-        &.intro {
+        &.intro, &.intro-wide {
             @include widget-sharp;
             width: 180px;
             height: auto;
@@ -67,6 +67,14 @@ noname-popup {
             > noname-text:last-child {
                 margin-bottom: 10px;
             }
+
+            > noname-caption + noname-section {
+                margin-top: 15px;
+            }
+        }
+
+        &.intro-wide {
+            width: 200px;
         }
     }
 }

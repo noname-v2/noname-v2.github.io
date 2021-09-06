@@ -149,9 +149,7 @@ export class Pop extends Component {
                 player.initHero(hero);
 
                 // bind context menu
-                this.ui.bind(player.node, {oncontext: () => {
-                    player.data.heroName = 'Right';
-                }});
+                this.app.bindHero(player.node, hero);
 
                 // add to this.items
                 if (!Array.isArray(select)) {

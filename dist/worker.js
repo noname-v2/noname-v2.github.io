@@ -366,13 +366,13 @@
         return access(extensions.get(ext), keys) ?? null;
     }
     /** Get hero info. */
-    function getHero(hero) {
-        const [ext, name] = split(hero);
+    function getHero(id) {
+        const [ext, name] = split(id);
         return accessExtension(ext, 'hero', name);
     }
     /** Get card info. */
-    function getCard(card) {
-        const [ext, name] = split(card);
+    function getCard(id) {
+        const [ext, name] = split(id);
         return accessExtension(ext, 'card', name);
     }
 

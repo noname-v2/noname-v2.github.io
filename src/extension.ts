@@ -1,5 +1,5 @@
 import { freeze, access, split } from './utils';
-import type { Extension } from './types';
+import type { Extension, HeroData, CardData } from './types';
 import type { lib } from './client/globals';
 
 /** Map of loaded extensions. */
@@ -35,13 +35,13 @@ export function accessExtension(path: string, ...paths: string[]): any {
 }
 
 /** Get hero info. */
-export function getHero(hero: string) {
-    const [ext, name] = split(hero);
+export function getHero(id: string): HeroData {
+    const [ext, name] = split(id);
     return accessExtension(ext, 'hero', name);
 }
 
 /** Get card info. */
-export function getCard(card: string) {
-    const [ext, name] = split(card);
+export function getCard(id: string): CardData {
+    const [ext, name] = split(id);
     return accessExtension(ext, 'card', name);
 }

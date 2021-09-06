@@ -106,6 +106,10 @@ noname-pane {
 		margin-top: 8px;
 		margin-bottom: -8px;
 
+		&:last-child {
+			margin-bottom: 8px;
+		}
+
 		&.large {
 			margin-top: 12px;
 			margin-bottom: -4px;
