@@ -2392,6 +2392,8 @@
         spectateButton = this.ui.createElement('widget.button');
         /** Container of spectators. */
         spectateBar = this.ui.createElement('bar');
+        /** Sections containing banned heros. */
+        banned;
         get #config() {
             const arena = this.app.arena;
             return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
@@ -2531,7 +2533,17 @@
                 const name = this.app.accessExtension(pack, 'heropack');
                 const toggle = this.sidebar.pane.addToggle([name, e => {
                         const collection = this.ui.create('collection');
-                        collection.setup(pack, 'hero');
+                        collection.setup(pack, 'hero', (id, node) => {
+                            this.ui.bind(node, () => {
+                                if (this.mine) {
+                                    this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                                }
+                            });
+                            this.banned[2].set(id, node);
+                            if (this.data.config?.banned?.hero?.includes(id)) {
+                                node.classList.add('defer');
+                            }
+                        });
                         collection.pop(e);
                     }], result => {
                     this.freeze();
@@ -2553,6 +2565,14 @@
                 });
                 this.cardToggles.set(pack, toggle);
             }
+            // banned heros
+            this.banned = [
+                this.sidebar.pane.addSection('禁将'),
+                this.sidebar.pane.addTray('round'),
+                new Map()
+            ];
+            this.banned[0].style.display = 'none';
+            this.banned[1].node.style.display = 'none';
         }
         $owner() {
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
@@ -2561,7 +2581,7 @@
                 this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
             }
         }
-        $config(config) {
+        $config(config, oldConfig) {
             this.unfreeze();
             // update toggles
             for (const [key, toggle] of this.configToggles) {
@@ -2602,6 +2622,39 @@
             }
             for (const [name, toggle] of this.cardToggles) {
                 toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
+            }
+            // update banned hero
+            if (config.banned?.hero?.length) {
+                const old = oldConfig?.banned?.hero;
+                if (old) {
+                    for (const id of old) {
+                        this.banned[2].get(id)?.classList.remove('defer');
+                    }
+                }
+                const tray = this.banned[1];
+                this.banned[0].style.display = '';
+                tray.node.innerHTML = '';
+                tray.node.style.display = '';
+                tray.items.clear();
+                for (const id of config.banned.hero) {
+                    const clone = this.ui.createElement('widget.avatar');
+                    this.ui.setImage(clone, id);
+                    this.ui.bind(clone, () => {
+                        if (this.mine) {
+                            this.yield(['banned', 'hero/' + id, true]);
+                        }
+                    });
+                    tray.items.set(clone, tray.items.size);
+                    this.banned[2].get(id)?.classList.add('defer');
+                }
+                tray.align();
+                for (const clone of tray.items.keys()) {
+                    tray.node.appendChild(clone);
+                }
+            }
+            else {
+                this.banned[0].style.display = 'none';
+                this.banned[1].node.style.display = 'none';
             }
         }
         $npmax(npmax) {
@@ -2943,9 +2996,7 @@
         /** Add tray of selected items. */
         addTray() {
             const height = parseInt(this.app.css.pop['tray-height']);
-            const margin = parseInt(this.app.css.pop['tray-margin']);
-            const tray = this.tray = this.pane.addTray(height - 8, margin);
-            tray.node.classList.add('round');
+            this.tray = this.pane.addTray('round');
             this.height += height + 26;
         }
         /** Remove with fade out animation. */
@@ -3593,10 +3644,9 @@
             return toggle;
         }
         /** Add a tray. */
-        addTray(width, margin) {
+        addTray(mode) {
             const tray = this.ui.create('tray');
-            tray.width = width;
-            tray.margin = margin;
+            tray.setup(mode);
             this.node.appendChild(tray.node);
             return tray;
         }
@@ -4461,6 +4511,16 @@
         items = new Map();
         init() {
             this.node.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
+        }
+        /** Set display mode. */
+        setup(mode) {
+            if (mode === 'round') {
+                const height = parseInt(this.app.css.pop['tray-height']);
+                const margin = parseInt(this.app.css.pop['tray-margin']);
+                this.width = height - 8;
+                this.margin = margin;
+                this.node.classList.add('round');
+            }
         }
         /** Add an item. */
         add(node, ref, callback) {

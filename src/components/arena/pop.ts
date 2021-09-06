@@ -214,9 +214,7 @@ export class Pop extends Component {
     /** Add tray of selected items. */
     addTray() {
         const height = parseInt(this.app.css.pop['tray-height']);
-        const margin = parseInt(this.app.css.pop['tray-margin']);
-        const tray = this.tray = this.pane.addTray(height - 8, margin);
-        tray.node.classList.add('round');
+        this.tray = this.pane.addTray('round');
         this.height += height + 26;
     }
 

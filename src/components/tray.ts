@@ -14,6 +14,17 @@ export class Tray extends Component {
         this.node.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
     }
 
+    /** Set display mode. */
+    setup(mode: 'round' | 'card') {
+        if (mode === 'round') {
+            const height = parseInt(this.app.css.pop['tray-height']);
+            const margin = parseInt(this.app.css.pop['tray-margin']);
+            this.width = height - 8;
+            this.margin = margin;
+            this.node.classList.add('round');
+        }
+    }
+
 	/** Add an item. */
     add(node: HTMLElement, ref?: HTMLElement, callback?: () => void) {
         this.items.set(node, this.items.size);

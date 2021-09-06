@@ -100,10 +100,9 @@ export class Pane extends Component {
 	}
 
 	/** Add a tray. */
-	addTray(width: number, margin: number) {
+	addTray(mode: 'round' | 'card') {
 		const tray = this.ui.create('tray');
-		tray.width = width;
-		tray.margin = margin;
+		tray.setup(mode);
 		this.node.appendChild(tray.node);
 		return tray;
 	}

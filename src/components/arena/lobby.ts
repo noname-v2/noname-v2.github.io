@@ -1,5 +1,5 @@
 import { hub } from '../../client/client';
-import { Component, Toggle, Player, Point } from '../../components';
+import { Component, Toggle, Player, Tray } from '../../components';
 import type { Config, Dict } from '../../types';
 
 export class Lobby extends Component {
@@ -32,6 +32,9 @@ export class Lobby extends Component {
 
     /** Container of spectators. */
     spectateBar = this.ui.createElement('bar');
+
+    /** Sections containing banned heros. */
+    banned!: [HTMLElement, Tray, Map<string, HTMLElement>];
 
     get #config() {
         const arena = this.app.arena!;
@@ -185,7 +188,17 @@ export class Lobby extends Component {
             const name = this.app.accessExtension(pack, 'heropack');
             const toggle = this.sidebar.pane.addToggle([name, e => {
                     const collection = this.ui.create('collection');
-                    collection.setup(pack, 'hero');
+                    collection.setup(pack, 'hero', (id, node) => {
+                        this.ui.bind(node, () => {
+                            if (this.mine) {
+                                this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                            }
+                        });
+                        this.banned[2].set(id, node);
+                        if (this.data.config?.banned?.hero?.includes(id)) {
+                            node.classList.add('defer');
+                        }
+                    });
                     collection.pop(e);
                 }], result => {
                 this.freeze();
@@ -208,6 +221,15 @@ export class Lobby extends Component {
             });
             this.cardToggles.set(pack, toggle);
         }
+
+        // banned heros
+        this.banned = [
+            this.sidebar.pane.addSection('禁将'),
+            this.sidebar.pane.addTray('round'),
+            new Map()
+        ];
+        this.banned[0].style.display = 'none';
+        this.banned[1].node.style.display = 'none';
     }
 
     $owner() {
@@ -218,7 +240,7 @@ export class Lobby extends Component {
         }
     }
 
-    $config(config: Dict) {
+    $config(config: Dict, oldConfig: Dict) {
         this.unfreeze();
 
         // update toggles
@@ -263,6 +285,40 @@ export class Lobby extends Component {
         }
         for (const [name, toggle] of this.cardToggles) {
             toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
+        }
+
+        // update banned hero
+        if (config.banned?.hero?.length) {
+            const old = oldConfig?.banned?.hero;
+            if (old) {
+                for (const id of old) {
+                    this.banned[2].get(id)?.classList.remove('defer');
+                }
+            }
+            const tray = this.banned[1];
+            this.banned[0].style.display = '';
+            tray.node.innerHTML = '';
+            tray.node.style.display = '';
+            tray.items.clear();
+            for (const id of config.banned.hero) {
+                const clone = this.ui.createElement('widget.avatar');
+                this.ui.setImage(clone, id);
+                this.ui.bind(clone, () => {
+                    if (this.mine) {
+                        this.yield(['banned', 'hero/' + id, true]);
+                    }
+                });
+                tray.items.set(clone, tray.items.size);
+                this.banned[2].get(id)?.classList.add('defer');
+            }
+            tray.align();
+            for (const clone of tray.items.keys()) {
+                tray.node.appendChild(clone);
+            }
+        }
+        else {
+            this.banned[0].style.display = 'none';
+            this.banned[1].node.style.display = 'none';
         }
     }
 
