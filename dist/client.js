@@ -1503,21 +1503,21 @@
                 return promise;
             }
         }
-        /** Displa a popup. */
+        /** Display a popup. */
         async popup(dialog, id) {
             const dialogID = id ?? ++this.#dialogCount;
             this.popups.get(dialogID)?.close();
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
             // other popups that are blurred by dialog.open()
-            const blurred = [];
+            const blurred = new Set();
             dialog.onopen = () => {
                 // blur arena, splash and other popups
                 this.node.classList.add('popped');
                 for (const [id, popup] of this.popups) {
                     if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                         popup.node.classList.add('blurred');
-                        blurred.push(id);
+                        blurred.add(id);
                     }
                 }
                 if (typeof onopen === 'function') {
@@ -1533,7 +1533,7 @@
                 for (const id of blurred) {
                     this.popups.get(id)?.node.classList.remove('blurred');
                 }
-                blurred.length = 0;
+                blurred.clear();
                 if (typeof onclose === 'function') {
                     onclose();
                 }
@@ -1561,7 +1561,6 @@
                     menu.pane.addCaption(info.name ?? id);
                     menu.pane.width = 180;
                     menu.location = e;
-                    menu.arena = true;
                     for (let skill of info.skills ?? []) {
                         let pack;
                         if (skill.includes(':')) {
@@ -1578,7 +1577,7 @@
                             }
                         }
                     }
-                    menu.open();
+                    this.arena.popup(menu);
                 } });
         }
         /** Bind context menu to card intro. */
@@ -1861,8 +1860,6 @@
     }
 
     class Arena extends Component {
-        /** Set of all pops. */
-        pops = new Set();
         /** A dialog has been popped before this.remove() is called. */
         faded = false;
         /** Confirming exit. */
@@ -1881,6 +1878,8 @@
         appZoom = this.ui.create('zoom');
         /** Layer containing control panel. */
         controlZoom = this.ui.create('zoom', this.node);
+        /** Popup components cleared when arena close. */
+        popups = new Set();
         /** Connected remote clients. */
         get peers() {
             const ids = this.data.peers;
@@ -1943,6 +1942,44 @@
             super.remove(this.ui.animate(this.node, {
                 opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
             }));
+        }
+        /** Display a popup. */
+        async popup(dialog) {
+            const onopen = dialog.onopen;
+            const onclose = dialog.onclose;
+            dialog.arena = true;
+            // other popups that are blurred by dialog.open()
+            const blurred = new Set();
+            dialog.onopen = () => {
+                // blur arena, splash and other popups
+                this.arenaZoom.node.classList.add('blurred');
+                for (const popup of this.popups) {
+                    if (popup !== dialog && !popup.node.classList.contains('blurred')) {
+                        popup.node.classList.add('blurred');
+                        blurred.add(popup);
+                    }
+                }
+                if (typeof onopen === 'function') {
+                    onopen();
+                }
+            };
+            dialog.onclose = () => {
+                // unblur
+                this.popups.delete(dialog);
+                if (this.popups.size === 0) {
+                    this.arenaZoom.node.classList.remove('blurred');
+                }
+                for (const popup of blurred) {
+                    popup.node.classList.remove('blurred');
+                }
+                blurred.clear();
+                if (typeof onclose === 'function') {
+                    onclose();
+                }
+            };
+            this.popups.add(dialog);
+            await dialog.ready;
+            dialog.open();
         }
         /** Back to splash screen. */
         async back() {
@@ -2122,22 +2159,6 @@
                 if (info[1]) {
                     this.ui.setColor(node, info[1]);
                 }
-                // context menu
-                const name = info[2], intro = info[3];
-                if (name || intro) {
-                    this.ui.bind(node, { oncontext: (e) => {
-                            const menu = this.ui.create('popup');
-                            menu.pane.width = 160;
-                            menu.pane.node.classList.add('intro');
-                            if (name) {
-                                menu.pane.addCaption(name);
-                            }
-                            if (intro) {
-                                menu.pane.addText(intro);
-                            }
-                            menu.open(e);
-                        } });
-                }
                 this.label.appendChild(node);
             }
         }
@@ -2193,6 +2214,7 @@
                             const player = this.ui.create('player');
                             player.initHero(id);
                             node = player.node;
+                            this.app.bindHero(node, id);
                         }
                         else {
                             const card = this.ui.create('card');
@@ -2272,7 +2294,7 @@
         }
         async pop(e) {
             this.location = e;
-            await this.app.popup(this);
+            await this.app.arena.popup(this);
             this.gallery.checkPage();
         }
         /** Check card numbers in pile. */
@@ -2898,13 +2920,11 @@
         }
     }
 
-    class Pop extends Component {
+    class Pop extends Popup {
         /** Height based on content height. */
         height = 24;
         /** Width based on content width. */
         width = 0;
-        /** Content container. */
-        pane = this.ui.create('pane', this.node);
         /** Timer bar. */
         timer = null;
         /** All items.
@@ -3049,26 +3069,25 @@
             if (this.removing) {
                 return;
             }
-            super.remove(this.ui.animate(this.node, {
-                scale: [1, 'var(--app-zoom-scale)'],
-                opacity: [1, 0]
-            }));
-            this.app.arena.pops.delete(this);
-            this.checkPops();
-            // remove all timers of the same player with the same start time
-            if (this.mine && this.timer) {
-                for (const id of this.app.arena.data.players) {
-                    const player = this.getComponent(id);
-                    if (player?.mine && player.timer?.starttime === this.timer.starttime) {
-                        player.timer.node.remove();
+            if (this.mine) {
+                super.remove(this.ui.animate(this.node, {
+                    scale: [1, 'var(--app-zoom-scale)'],
+                    opacity: [1, 0]
+                }));
+                this.onclose();
+                // remove all timers of the same player with the same start time
+                if (this.timer) {
+                    for (const id of this.app.arena.data.players) {
+                        const player = this.getComponent(id);
+                        if (player?.mine && player.timer?.starttime === this.timer.starttime) {
+                            player.timer.node.remove();
+                        }
                     }
                 }
             }
-        }
-        /** Update arena classes. */
-        checkPops() {
-            const arena = this.app.arena;
-            arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
+            else {
+                super.remove();
+            }
         }
         /** Update move range. */
         resize() {
@@ -3200,22 +3219,18 @@
                     } });
                 this.app.arena.appZoom.node.appendChild(this.node);
                 // animate fade in
-                this.app.arena.pops.add(this);
-                this.checkPops();
-                this.ui.animate(this.node, {
-                    scale: ['var(--app-zoom-scale)', 1],
-                    opacity: [0, 1]
-                }).onfinish = () => this.resize();
+                this.app.arena.popup(this);
+                setTimeout(() => this.resize(), 500);
                 this.listen('resize');
             }
-            else {
-                setTimeout(() => this.checkPops());
+            else if (!this.app.arena.popups.size) {
+                this.app.arena.arenaZoom.node.classList.remove('blurred');
             }
         }
         $timer(config) {
             if (config) {
                 setTimeout(() => {
-                    const timer = this.ui.create('timer', this.node);
+                    const timer = this.ui.create('timer', this.pane.node);
                     timer.width = this.width;
                     timer.start(config, this, false);
                     this.app.arena.node.classList.add('pop-timer');

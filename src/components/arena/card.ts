@@ -147,24 +147,6 @@ export class Card extends Component {
 			if (info[1]) {
 				this.ui.setColor(node, info[1]);
 			}
-
-			// context menu
-			const name = info[2], intro = info[3];
-			if (name || intro) {
-				this.ui.bind(node, {oncontext: (e) => {
-					const menu = this.ui.create('popup');
-					menu.pane.width = 160;
-                    menu.pane.node.classList.add('intro');
-					if (name) {
-						menu.pane.addCaption(name);
-					}
-					if (intro) {
-						menu.pane.addText(intro);
-					}
-                    menu.open(e);
-				}});
-			}
-
 			this.label.appendChild(node);
 		}
 	}

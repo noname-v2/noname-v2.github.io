@@ -77,4 +77,29 @@ noname-popup {
             width: 200px;
         }
     }
+
+
+
+	// popup pane in arena
+	&.pop > noname-pane {
+		> noname-bar {
+			margin: 12px 0 14px 0;
+		}
+	
+		> noname-caption {
+			margin: 14px 0 12px 0;
+		}
+	
+		> noname-timer {
+			position: absolute;
+			left: 0;
+			width: 100%;
+			bottom: 0;
+			background: var(--pop-timer-background);
+	
+			> noname-div {
+				background: var(--pop-timer-bar-background);
+			}
+		}
+	}
 }

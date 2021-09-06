@@ -330,7 +330,7 @@ export class App extends Component {
         }
     }
 
-    /** Displa a popup. */
+    /** Display a popup. */
     async popup(dialog: Popup, id?: string) {
         const dialogID = id ?? ++this.#dialogCount;
         this.popups.get(dialogID)?.close();
@@ -338,7 +338,7 @@ export class App extends Component {
         const onclose = dialog.onclose;
 
         // other popups that are blurred by dialog.open()
-        const blurred: (string | number)[] = [];
+        const blurred = new Set<string | number>();
 
         dialog.onopen = () => {
             // blur arena, splash and other popups
@@ -346,7 +346,7 @@ export class App extends Component {
             for (const [id, popup] of this.popups) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
-                    blurred.push(id);
+                    blurred.add(id);
                 }
             }
 
@@ -364,7 +364,7 @@ export class App extends Component {
             for (const id of blurred) {
                 this.popups.get(id)?.node.classList.remove('blurred');
             }
-            blurred.length = 0;
+            blurred.clear();
 
             if (typeof onclose === 'function') {
                 onclose();
@@ -397,7 +397,6 @@ export class App extends Component {
             menu.pane.addCaption(info.name ?? id);
             menu.pane.width = 180;
             menu.location = e;
-            menu.arena = true;
             
             for (let skill of info.skills ?? []) {
                 let pack;
@@ -417,7 +416,7 @@ export class App extends Component {
                 }
             }
 
-            menu.open();
+            this.arena!.popup(menu);
         }});
     }
 

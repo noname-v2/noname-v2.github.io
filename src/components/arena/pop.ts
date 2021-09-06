@@ -1,4 +1,5 @@
 import { Component, Gallery, Timer, Player, Tray } from '../../components';
+import { Popup } from '../popup';
 import type { Select, FilterThis } from '../../types';
 
 /** Possible contents of pop sections. */
@@ -45,15 +46,12 @@ export type PopSection<T extends keyof PopSectionContent = keyof PopSectionConte
 /** Full content of a pop. */
 export type PopContent = PopSection[] | PopSection;
 
-export class Pop extends Component {
+export class Pop extends Popup {
     /** Height based on content height. */
     height = 24;
     
     /** Width based on content width. */
     width = 0;
-
-    /** Content container. */
-    pane = this.ui.create('pane', this.node);
 
     /** Timer bar. */
     timer: Timer | null = null;
@@ -221,29 +219,28 @@ export class Pop extends Component {
         if (this.removing) {
             return;
         }
-        
-        super.remove(this.ui.animate(this.node, {
-            scale: [1, 'var(--app-zoom-scale)'],
-            opacity: [1, 0]
-        }));
-        this.app.arena!.pops.delete(this);
-        this.checkPops();
 
-        // remove all timers of the same player with the same start time
-        if (this.mine && this.timer) {
-            for (const id of this.app.arena!.data.players) {
-                const player = this.getComponent(id) as (Player | undefined);
-                if (player?.mine && player.timer?.starttime === this.timer.starttime) {
-                    player.timer.node.remove();
+        if (this.mine) {
+            super.remove(this.ui.animate(this.node, {
+                scale: [1, 'var(--app-zoom-scale)'],
+                opacity: [1, 0]
+            }));
+    
+            this.onclose!();
+    
+            // remove all timers of the same player with the same start time
+            if (this.timer) {
+                for (const id of this.app.arena!.data.players) {
+                    const player = this.getComponent(id) as (Player | undefined);
+                    if (player?.mine && player.timer?.starttime === this.timer.starttime) {
+                        player.timer.node.remove();
+                    }
                 }
             }
         }
-    }
-
-    /** Update arena classes. */
-    checkPops() {
-        const arena = this.app.arena!;
-        arena.arenaZoom.node.classList[arena.pops.size ? 'add' : 'remove']('blurred');
+        else {
+            super.remove();
+        }
     }
 
     /** Update move range. */
@@ -389,23 +386,19 @@ export class Pop extends Component {
             this.app.arena!.appZoom.node.appendChild(this.node);
 
             // animate fade in
-            this.app.arena!.pops.add(this);
-            this.checkPops();
-            this.ui.animate(this.node, {
-                scale: ['var(--app-zoom-scale)', 1],
-                opacity: [0, 1]
-            }).onfinish = () => this.resize();
+            this.app.arena!.popup(this);
+            setTimeout(() => this.resize(), 500);
             this.listen('resize');
         }
-        else {
-            setTimeout(() => this.checkPops())
+        else if (!this.app.arena!.popups.size) {
+            this.app.arena!.arenaZoom.node.classList.remove('blurred');
         }
     }
 
     $timer(config?: [number, number]) {
         if (config) {
             setTimeout(() => {
-                const timer = this.ui.create('timer', this.node);
+                const timer = this.ui.create('timer', this.pane.node);
                 timer.width = this.width;
                 timer.start(config, this, false);
                 this.app.arena!.node.classList.add('pop-timer');

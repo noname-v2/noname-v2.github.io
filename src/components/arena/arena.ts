@@ -1,11 +1,8 @@
 import * as client from '../../client/client';
 import { set } from '../../client/globals';
-import { Component, Peer, Pop } from '../../components';
+import { Component, Peer, Popup } from '../../components';
 
 export class Arena extends Component {
-    /** Set of all pops. */
-    pops = new Set();
-
     /** A dialog has been popped before this.remove() is called. */
     faded = false;
 
@@ -32,6 +29,9 @@ export class Arena extends Component {
 
     /** Layer containing control panel. */
     controlZoom = this.ui.create('zoom', this.node);
+
+    /** Popup components cleared when arena close. */
+    popups = new Set<Popup>();
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
@@ -102,6 +102,51 @@ export class Arena extends Component {
         super.remove(this.ui.animate(this.node, {
             opacity: [this.faded ? 'var(--app-blurred-opacity)' : 1, 0]
         }));
+    }
+
+    /** Display a popup. */
+    async popup(dialog: Popup) {
+        const onopen = dialog.onopen;
+        const onclose = dialog.onclose;
+        dialog.arena = true;
+
+        // other popups that are blurred by dialog.open()
+        const blurred = new Set<Popup>();
+
+        dialog.onopen = () => {
+            // blur arena, splash and other popups
+            this.arenaZoom.node.classList.add('blurred');
+            for (const popup of this.popups) {
+                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
+                    popup.node.classList.add('blurred');
+                    blurred.add(popup);
+                }
+            }
+
+            if (typeof onopen === 'function') {
+                onopen();
+            }
+        };
+
+        dialog.onclose = () => {
+            // unblur
+            this.popups.delete(dialog);
+            if (this.popups.size === 0) {
+                this.arenaZoom.node.classList.remove('blurred');
+            }
+            for (const popup of blurred) {
+                popup.node.classList.remove('blurred');
+            }
+            blurred.clear();
+
+            if (typeof onclose === 'function') {
+                onclose();
+            }
+        };
+
+        this.popups.add(dialog);
+        await dialog.ready;
+        dialog.open();
     }
     
     /** Back to splash screen. */

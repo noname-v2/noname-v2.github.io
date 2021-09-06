@@ -43,6 +43,7 @@ export class Collection extends Popup {
                         const player = this.ui.create('player');
                         player.initHero(id);
                         node = player.node;
+                        this.app.bindHero(node, id);
                     }
                     else {
                         const card = this.ui.create('card');
@@ -130,7 +131,7 @@ export class Collection extends Popup {
 
     async pop(e?: Point) {
         this.location = e;
-        await this.app.popup(this);
+        await this.app.arena!.popup(this);
         this.gallery.checkPage();
     }
 
