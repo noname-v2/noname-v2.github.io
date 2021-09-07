@@ -132,6 +132,9 @@ export class Pop extends Popup {
         this.height += height;
         this.width = Math.max(this.width, width);
 
+        // avoid conflict with move operation
+        gallery.node.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
+
         if (!Array.isArray(select)) {
             let num = select.num;
             if (typeof num === 'number') {

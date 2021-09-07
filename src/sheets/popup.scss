@@ -105,6 +105,7 @@ noname-popup {
     &.flex-side {
         width: calc(100% - 221px);
         left: 221px;
+        --popup-transform: 1;
     
         > noname-pane {
             @include layer;
@@ -124,6 +125,10 @@ noname-popup {
 
                     > noname-player {
                         transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
+                    }
+
+                    > noname-card {
+                        transform: scale(calc(var(--pop-card-scale) * var(--pop-flex-zoom)));
                     }
                 }
             }

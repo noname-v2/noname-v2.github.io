@@ -17,6 +17,9 @@ export class Collection extends Popup {
     /** Card pile gallery. */
     pileGallery?: Gallery;
 
+    /** Card pile toggle. */
+    pileToggle?: HTMLElement;
+
     /** Number of gallery columns. */
     nrows = 2;
 
@@ -86,7 +89,7 @@ export class Collection extends Popup {
                 const pile = this.app.accessExtension(pack, 'pile') as Pile;
                 if (pile) {
                     // add pile toggle
-                    const toggle = this.ui.createElement('widget', caption);
+                    const toggle = this.pileToggle = this.ui.createElement('widget', caption);
                     toggle.classList.add('toggle');
 
                     let shown = false;
@@ -116,11 +119,21 @@ export class Collection extends Popup {
                     });
 
                     // add pile gallery
-                    const [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
-                    this.pileGallery = pileGallery;
-                    pileGallery.node.style.display = 'none';
-                    pileGallery.node.classList.add('pop');
-                    pileGallery.node.style.width = `${width}px`;
+                    let pileGallery: Gallery;
+                    if (this.flex) {
+                        pileGallery = this.ui.create('gallery');
+                        pileGallery.node.classList.add('pop');
+                        pileGallery.ncols = gallery.ncols;
+                        pileGallery.nrows = gallery.nrows;
+                        this.pane.node.appendChild(pileGallery.node);
+                    }
+                    else {
+                        [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
+                        this.pileGallery = pileGallery;
+                        pileGallery.node.style.display = 'none';
+                        pileGallery.node.classList.add('pop');
+                        pileGallery.node.style.width = `${width}px`;
+                    }
 
                     for (const name in pile) {
                         const id = name.includes(':') ? name : pack + ':' + name;

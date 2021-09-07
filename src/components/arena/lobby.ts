@@ -1,5 +1,5 @@
 import { hub } from '../../client/client';
-import { Component, Toggle, Player, Tray } from '../../components';
+import { Component, Toggle, Player, Tray, Collection } from '../../components';
 import type { Config, Dict } from '../../types';
 
 export class Lobby extends Component {
@@ -8,6 +8,9 @@ export class Lobby extends Component {
 
     /** Player seats. */
     seats = this.ui.createElement('seats', this.node);
+
+    /** Collection background. */
+    collectionBackground = this.ui.createElement('background', this.node);
 
     /** Toggles for mode configuration. */
     configToggles = new Map<string, Toggle>();
@@ -36,6 +39,9 @@ export class Lobby extends Component {
     /** Sections containing banned heros. */
     banned!: [HTMLElement, Tray, Map<string, HTMLElement>];
 
+    /** Cache of collections. */
+    collections = new Map<string, Collection>();
+
     get #config() {
         const arena = this.app.arena!;
         return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
@@ -54,9 +60,6 @@ export class Lobby extends Component {
         this.sidebar.pane.node.classList.add('fixed');
         this.ui.animate(this.sidebar.node, {x: [-220, 0]});
         this.ui.animate(this.seats, {scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1]});
-
-        // reduce opacity when a popup is opened
-        this.app.arena!.popups.add(this.seats);
     }
 
     /** Update connected players. */
@@ -148,7 +151,6 @@ export class Lobby extends Component {
             return;
         }
         
-        this.app.arena!.popups.delete(this.seats);
         super.remove(new Promise<void>(resolve => {
             let done = 0;
             const onfinish = () => {
@@ -156,9 +158,27 @@ export class Lobby extends Component {
                     resolve();
                 }
             }
-            this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
-            this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
+
+            let slide = true;
+            for (const popup of this.collections.values()) {
+                if (!popup.hidden) {
+                    done++;
+                    slide = false;
+                    break;
+                }
+            }
+            if (slide) {
+                this.ui.animate(this.sidebar.node, {x: [0, -220]}, {fill: 'forwards'}).onfinish = onfinish;
+                this.ui.animate(this.seats, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
+            }
+            else {
+                this.ui.animate(this.node, {opacity: [1, 0]}, {fill: 'forwards'}).onfinish = onfinish;
+            }
         }));
+
+        for (const popup of this.collections.values()) {
+            popup.close();
+        }
     }
 
     $pane(configs: {heropacks: string[], cardpacks: string[], configs: Dict<Config>}) {
@@ -192,22 +212,9 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const pack of configs.heropacks) {
             const name = this.app.accessExtension(pack, 'heropack');
-            const toggle = this.sidebar.pane.addToggle([name, () => {
-                    const collection = this.ui.create('collection');
-                    collection.flex = true;
-                    collection.setup(pack, 'hero', (id, node) => {
-                        this.ui.bind(node, () => {
-                            if (this.mine) {
-                                this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
-                            }
-                        });
-                        this.banned[2].set(id, node);
-                        if (this.data.config?.banned?.hero?.includes(id)) {
-                            node.classList.add('defer');
-                        }
-                    });
-                    collection.pop();
-                }], result => {
+            const toggle = this.sidebar.pane.addToggle([
+                name, () => this.#openCollection(pack, 'hero')
+            ], result => {
                 this.freeze();
                 this.yield(['banned', 'heropack/' + pack, result]);
             });
@@ -218,11 +225,9 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const pack of configs.cardpacks) {
             const name = this.app.accessExtension(pack, 'cardpack');
-            const toggle = this.sidebar.pane.addToggle([name, () => {
-                const collection = this.ui.create('collection');
-                collection.setup(pack, 'card+pile');
-                collection.pop();
-            }], result => {
+            const toggle = this.sidebar.pane.addToggle([
+                name, () => this.#openCollection(pack, 'card+pile')
+            ], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);
             });
@@ -295,13 +300,14 @@ export class Lobby extends Component {
         }
 
         // update banned hero
-        if (config.banned?.hero?.length) {
-            const old = oldConfig?.banned?.hero;
-            if (old) {
-                for (const id of old) {
-                    this.banned[2].get(id)?.classList.remove('defer');
-                }
+        const old = oldConfig?.banned?.hero;
+        if (old) {
+            for (const id of old) {
+                this.banned[2].get(id)?.classList.remove('defer');
             }
+        }
+
+        if (config.banned?.hero?.length) {
             const tray = this.banned[1];
             this.banned[0].style.display = '';
             tray.node.innerHTML = '';
@@ -414,5 +420,76 @@ export class Lobby extends Component {
             }
             this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
         }
+    }
+
+    #openCollection(pack: string, type: 'hero' | 'card+pile') {
+        const id = type + '|' + pack;
+        let collection: Collection;
+        if (!this.collections.has(id)) {
+            collection = this.ui.create('collection');
+            collection.arena = true;
+            collection.flex = true;
+            collection.ready.then(() => {
+                this.ui.bind(collection.pane.node, () => collection.close());
+            });
+            collection.setup(pack, type, (id, node) => {
+                if (type === 'hero') {
+                    this.ui.bind(node, () => {
+                        if (this.mine) {
+                            this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                        }
+                    });
+                    this.banned[2].set(id, node);
+                    if (this.data.config?.banned?.hero?.includes(id)) {
+                        node.classList.add('defer');
+                    }
+                }
+            });
+            this.collections.set(id, collection);
+
+            // open and close animations
+            collection.onopen = () => {
+                let node: HTMLElement;
+                for (const popup of this.collections.values()) {
+                    if (popup !== collection) {
+                        popup.close();
+                    }
+                }
+                this.node.classList.add('collection');
+                if (collection.pileToggle?.dataset.fill) {
+                    collection.pileGallery?.checkPage();
+                    node = collection.pileGallery?.node!;
+                }
+                else {
+                    collection.gallery.checkPage();
+                    node = collection.gallery.node;
+                }
+                if (node) {
+                    this.ui.animate(node, {scale: ['var(--pop-transform)', 1]});
+                }
+            };
+            collection.onclose = () => {
+                this.node.classList.remove('collection');
+                if (this.removing) {
+                    return;
+                }
+                for (const popup of this.collections.values()) {
+                    if (!popup.hidden) {
+                        return;
+                    }
+                }
+                let node: HTMLElement;
+                if (collection.pileToggle?.dataset.fill) {
+                    node = collection.pileGallery?.node!;
+                }
+                else {
+                    node = collection.gallery.node;
+                }
+                if (node) {
+                    this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});
+                }
+            };
+        }
+        this.collections.get(id)!.open();
     }
 }

@@ -59,7 +59,9 @@ export class Popup extends Component {
 		this.ui.animate(this.pane.node, {
 			opacity: [1, 0], scale: [1, 'var(--popup-transform)']
 		}, this.app.getTransition(this.transition)).onfinish = () => {
-			this.node.remove();
+			if (this.hidden) {
+				this.node.remove();
+			}
 		};
 	}
 

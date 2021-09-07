@@ -724,6 +724,20 @@ noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div
 noname-lobby > noname-sidebar.online > noname-chat > noname-content > noname-div > noname-div.chat:first-child > .emote {
   margin-left: 98px;
 }
+noname-lobby > noname-background {
+  background: var(--pop-flex-background);
+  left: 221px;
+  width: calc(100% - 221px);
+  transition: opacity var(--app-transition);
+  opacity: 0;
+  pointer-events: none;
+}
+noname-lobby.collection > noname-background {
+  opacity: 1;
+}
+noname-lobby.collection > noname-seats {
+  opacity: var(--app-blurred-opacity);
+}
 noname-lobby.hidden > noname-seats, noname-lobby.hidden > noname-bar {
   transform: scale(0.8);
 }
@@ -1109,6 +1123,7 @@ noname-popup.pop > noname-pane > noname-timer > noname-div {
 noname-popup.flex-side {
   width: calc(100% - 221px);
   left: 221px;
+  --popup-transform: 1;
 }
 noname-popup.flex-side > noname-pane {
   width: 100%;
@@ -1133,6 +1148,9 @@ noname-popup.flex-side > noname-pane > noname-gallery noname-item {
 }
 noname-popup.flex-side > noname-pane > noname-gallery noname-item > noname-player {
   transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
+}
+noname-popup.flex-side > noname-pane > noname-gallery noname-item > noname-card {
+  transform: scale(calc(var(--pop-card-scale) * var(--pop-flex-zoom)));
 }
 
 noname-sidebar {

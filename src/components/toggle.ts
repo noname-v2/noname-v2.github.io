@@ -25,7 +25,7 @@ export class Toggle extends Component {
     setup(...[caption, onclick, choices]: ToggleOptions) {
         if (Array.isArray(caption)) {
             this.ui.format(this.span, caption[0]);
-            this.ui.bind(this.span, {oncontext: e => {
+            const onclick = (e: Point) => {
                 if (typeof caption[1] === 'function') {
                     caption[1](e);
                 }
@@ -36,7 +36,8 @@ export class Toggle extends Component {
                     menu.pane.addText(caption[1]);
                     menu.open(e);
                 }
-            }});
+            };
+            this.ui.bind(this.span, { oncontext: onclick, onclick });
         }
         else {
             this.ui.format(this.span, caption);

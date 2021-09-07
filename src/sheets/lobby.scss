@@ -258,6 +258,25 @@ noname-lobby {
 		}
 	}
 
+	> noname-background {
+		background: var(--pop-flex-background);
+		left: 221px;
+		width: calc(100% - 221px);
+		transition: opacity var(--app-transition);
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	&.collection {
+		> noname-background {
+			opacity: 1;
+		}
+
+		> noname-seats {
+			opacity: var(--app-blurred-opacity);
+		}
+	}
+
 	// zoom effect when open and close
 	&.hidden {
 		> noname-seats, > noname-bar {
