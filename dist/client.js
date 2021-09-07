@@ -2558,6 +2558,8 @@
         heroButtons = new Map();
         /** Cache of collections. */
         collections = new Map();
+        /** Start game button is clicked and awaiting start. */
+        #starting = 0;
         get #config() {
             const arena = this.app.arena;
             return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
@@ -2572,8 +2574,6 @@
             this.listen('sync');
             this.sidebar.ready.then(() => {
                 this.sidebar.setHeader('返回', () => arena.back());
-                this.sidebar.setFooter('开始游戏', () => this.yield(['start']));
-                // this.sidebar.setFooter('开始游戏', () => this.respond());
             });
             this.sidebar.pane.node.classList.add('fixed');
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
@@ -2615,10 +2615,19 @@
                     const peer = players[i];
                     this.players[i].data.heroImage = peer.data.avatar;
                     this.players[i].data.heroName = peer.data.nickname;
+                    if (peer.owner === this.owner) {
+                        this.players[i].data.marker = '房主';
+                        this.players[i].marker.dataset.tglow = 'blue';
+                    }
+                    else {
+                        this.players[i].data.marker = peer.data.ready ? '已准备' : '';
+                        this.players[i].marker.dataset.tglow = 'green';
+                    }
                 }
                 else {
                     this.players[i].data.heroImage = null;
                     this.players[i].data.heroName = null;
+                    this.players[i].data.marker = null;
                 }
             }
             // update spectate button
@@ -2631,6 +2640,23 @@
             }
             else {
                 this.seats.classList.add('offline');
+            }
+            // update footer
+            if (!this.mine) {
+                const peer = this.app.arena.peer;
+                if (peer.data.ready) {
+                    this.sidebar.footer.firstChild.innerHTML = '取消准备';
+                }
+                else {
+                    this.sidebar.footer.firstChild.innerHTML = '准备';
+                }
+            }
+            // check if all players are ready
+            if (this.#starting && this.#checkPrepare()) {
+                clearInterval(this.#starting);
+                this.#starting = 0;
+                this.respond();
+                this.app.popups.get('lobbyReady')?.close();
             }
         }
         /** Disable all toggles until command received from worker. */
@@ -2650,8 +2676,29 @@
                 else if (c1 > c2) {
                     this.app.alert('无法开始', { content: `牌堆数量不足（<span class="mono">${c2}/${c1}</span>）。` });
                 }
-                else {
+                if (this.#checkPrepare()) {
                     this.respond();
+                }
+                else {
+                    if (this.#starting)
+                        return;
+                    this.app.alert('开始', { ok: '取消', id: 'lobbyReady' }).then(() => {
+                        clearInterval(this.#starting);
+                        this.#starting = 0;
+                    });
+                    const dialog = this.app.popups.get('lobbyReady');
+                    let n = 15;
+                    const update = () => {
+                        dialog.data.content = `有玩家尚未准备，<span class="mono">${n}</span>秒后游戏将无视未准备玩家并开始游戏。`;
+                        if (--n === 0) {
+                            clearInterval(this.#starting);
+                            this.#starting = 0;
+                            this.respond();
+                            dialog.close();
+                        }
+                    };
+                    update();
+                    this.#starting = window.setInterval(update, 1000);
                 }
             }
         }
@@ -2769,8 +2816,22 @@
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
             this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
             if (this.mine) {
+                this.sidebar.ready.then(() => this.sidebar.setFooter('开始游戏', () => this.yield(['start'])));
                 this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
             }
+            else {
+                this.sidebar.footer.classList.add('alter');
+                this.sidebar.ready.then(() => this.sidebar.setFooter('准备', () => {
+                    const peer = this.app.arena.peer;
+                    if (peer.data.ready) {
+                        peer.yield('unprepare');
+                    }
+                    else {
+                        peer.yield('prepare');
+                    }
+                }));
+            }
+            this.sidebar.showFooter();
         }
         $config(config, oldConfig) {
             this.unfreeze();
@@ -2970,6 +3031,14 @@
                 this.spectateButton.classList[n < np ? 'remove' : 'add']('disabled');
             }
         }
+        #checkPrepare() {
+            for (const peer of this.app.arena.peers || []) {
+                if (!peer.mine && peer.data.playing && !peer.data.ready) {
+                    return false;
+                }
+            }
+            return true;
+        }
         #togglePick(id, on, save = true) {
             const picked = new Set(this.db.get(this.#pick));
             picked[on ? 'add' : 'delete'](id);
@@ -3100,6 +3169,11 @@
                 trigger('sync');
             }
         }
+        $ready() {
+            if (this.app.arena?.peers) {
+                trigger('sync');
+            }
+        }
     }
 
     class Player extends Component {
@@ -3121,6 +3195,8 @@
         faction = this.ui.createElement('label', this.content);
         /** HP bar. */
         hp = this.ui.createElement('hp', this.content);
+        /** Status marker. */
+        marker = this.ui.createElement('caption.marker', this.content);
         /** Timer bar. */
         timer = null;
         initHero(name) {
@@ -3146,6 +3222,9 @@
         }
         $nickname(name) {
             this.ui.format(this.nickname, name ?? '');
+        }
+        $marker(stat) {
+            this.ui.format(this.marker, stat ?? '');
         }
         $faction(faction) {
             const info = this.lib.faction[faction];

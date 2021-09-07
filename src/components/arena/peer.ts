@@ -7,4 +7,10 @@ export class Peer extends Component {
             trigger('sync');
         }
     }
+
+    $ready() {
+        if (this.app.arena?.peers) {
+            trigger('sync');
+        }
+    }
 }

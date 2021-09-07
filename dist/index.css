@@ -947,6 +947,14 @@ noname-player > noname-content > noname-caption {
   font-size: 22px;
   writing-mode: vertical-rl;
 }
+noname-player > noname-content > noname-caption.marker {
+  writing-mode: unset;
+  bottom: 10px;
+  top: auto;
+  width: 100%;
+  left: 0;
+  text-align: center;
+}
 noname-player > noname-content > noname-label {
   top: 5px;
   right: 5px;
@@ -1236,6 +1244,15 @@ noname-sidebar > noname-caption.footer:hover {
 }
 noname-sidebar > noname-caption.footer.clickdown {
   background: var(--sidebar-footer-background-down);
+}
+noname-sidebar > noname-caption.footer.alter {
+  background: var(--sidebar-alter-background);
+}
+noname-sidebar > noname-caption.footer.alter:hover {
+  background: var(--sidebar-alter-background-hover);
+}
+noname-sidebar > noname-caption.footer.alter.clickdown {
+  background: var(--sidebar-alter-background-down);
 }
 noname-sidebar.with-footer noname-pane {
   height: calc(100% - 92px);

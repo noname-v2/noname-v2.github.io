@@ -154,6 +154,12 @@ export function lobby(T: TaskClass) {
                 peer.playing = true;
                 this.game.hub.update();
             }
+            else if (val === 'prepare') {
+                peer.ready = true;
+            }
+            else if (val === 'unprepare') {
+                peer.ready = false;
+            }
         }
 
         /** Remove lobby and start game. */

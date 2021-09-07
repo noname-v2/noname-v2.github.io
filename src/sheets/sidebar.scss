@@ -70,6 +70,16 @@ noname-sidebar {
 			&.clickdown {
 				background: var(--sidebar-footer-background-down);
 			}
+
+			&.alter {
+				background: var(--sidebar-alter-background);
+				&:hover {
+					background: var(--sidebar-alter-background-hover);
+				}
+				&.clickdown {
+					background: var(--sidebar-alter-background-down);
+				}
+			}
 		}
 	}
 

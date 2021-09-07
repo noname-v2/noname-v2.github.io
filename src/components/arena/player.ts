@@ -28,6 +28,9 @@ export class Player extends Component {
     /** HP bar. */
     hp = this.ui.createElement('hp', this.content);
 
+    /** Status marker. */
+    marker = this.ui.createElement('caption.marker', this.content);
+
     /** Timer bar. */
     timer: Timer | null = null;
 
@@ -40,7 +43,7 @@ export class Player extends Component {
         this.data.hp = info.hp;
     }
 
-    $heroImage(name: string | null) {
+    $heroImage(name?: string) {
         if (name) {
             this.node.classList.add('hero-shown');
             this.ui.setImage(this.heroImage, name);
@@ -51,13 +54,17 @@ export class Player extends Component {
         }
     }
 
-    $heroName(name: string | null) {
+    $heroName(name?: string) {
         this.ui.format(this.heroName, name ?? '');
     }
 
 	$nickname(name?: string) {
 		this.ui.format(this.nickname, name ?? '');
 	}
+
+    $marker(stat?: string) {
+        this.ui.format(this.marker, stat ?? '');
+    }
 
     $faction(faction: string) {
         const info = this.lib.faction[faction];

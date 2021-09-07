@@ -229,7 +229,7 @@ const skill = {
     },
     fanxiang: {
         name: '返乡',
-        intro: '@(觉醒技) 准备阶段，若有至少一名已受伤且你发动过@(meteor:skill.liangzhu)令其摸牌的角色，则你加1点体力上限，然后回复1点体力，失去@(meteor:skill.liangzhu)并获得@(standard:xiaoji)。'
+        intro: '@(觉醒技) 准备阶段，若有至少一名已受伤且你发动过@(meteor:skill.liangzhu)令其摸牌的角色，则你加1点体力上限，然后回复1点体力，失去@(meteor:skill.liangzhu)并获得@(standard:skill.xiaoji)。'
     },
     wuyan: {
         name: '无言',

@@ -130,7 +130,10 @@
 		"footer-shadow": "rgba(0, 0, 0, 0.3) 0 0 0 1px, rgba(0, 0, 0, 0.2) 0 -3px 10px inset",
 		"footer-background": "linear-gradient(rgba(150, 47, 47, 1), rgba(132, 43, 43, 1))",
 		"footer-background-hover": "linear-gradient(rgb(180, 47, 47), rgb(162, 43, 43))",
-		"footer-background-down": "linear-gradient(rgb(210, 106, 47), rgb(210, 98, 43))"
+		"footer-background-down": "linear-gradient(rgb(210, 106, 47), rgb(210, 98, 43))",
+		"alter-background": "linear-gradient(rgba(37, 140, 37, 0.8), rgba(33, 122, 33, 0.8))",
+		"alter-background-hover": "linear-gradient(rgba(37, 170, 37, 0.8), rgba(33, 152, 33, 0.8))",
+		"alter-background-down": "linear-gradient(rgba(37, 170, 37), rgb(33, 152, 33))"
 	},
 
 	"gallery": {
