@@ -44,13 +44,6 @@ noname-gallery {
                     > * {
                         @include layer;
                     }
-
-                    > noname-player.selected, > noname-card.selected {
-                        // opacity: var(--app-defer-opacity);
-                        > noname-background {
-                            box-shadow: var(--glow-red);
-                        }
-                    }
                 }
 
                 > div {
@@ -137,4 +130,13 @@ noname-gallery {
             transform: scale(calc(var(--pop-width-value) / var(--card-width-value)));
         }
 	}
+}
+
+noname-popup:not(.no-select) noname-gallery noname-item {
+    > noname-player.selected, > noname-card.selected {
+        // opacity: var(--app-defer-opacity);
+        > noname-background {
+            box-shadow: var(--glow-red);
+        }
+    }
 }

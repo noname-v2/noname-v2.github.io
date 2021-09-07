@@ -303,9 +303,6 @@ noname-gallery > noname-pages > noname-page > noname-layer > noname-item > * {
   top: 0;
   position: absolute;
 }
-noname-gallery > noname-pages > noname-page > noname-layer > noname-item > noname-player.selected > noname-background, noname-gallery > noname-pages > noname-page > noname-layer > noname-item > noname-card.selected > noname-background {
-  box-shadow: var(--glow-red);
-}
 noname-gallery > noname-pages > noname-page > noname-layer > div {
   flex-basis: 100%;
 }
@@ -373,6 +370,10 @@ noname-gallery.pop noname-item > noname-card {
   width: var(--card-width);
   aspect-ratio: 1/var(--card-ratio);
   transform: scale(calc(var(--pop-width-value) / var(--card-width-value)));
+}
+
+noname-popup:not(.no-select) noname-gallery noname-item > noname-player.selected > noname-background, noname-popup:not(.no-select) noname-gallery noname-item > noname-card.selected > noname-background {
+  box-shadow: var(--glow-red);
 }
 
 html, body {
@@ -447,6 +448,10 @@ noname-image.avatar {
 
 .mono {
   font-family: ui-monospace, monospace;
+}
+
+.display-none {
+  display: none !important;
 }
 
 .keyword {

@@ -37,7 +37,13 @@ export class Lobby extends Component {
     spectateBar = this.ui.createElement('bar');
 
     /** Sections containing banned heros. */
-    banned!: [HTMLElement, Tray, Map<string, HTMLElement>];
+    banned!: [HTMLElement, Tray];
+
+    /** Sections containing banned heros. */
+    picked!: [HTMLElement, Tray, Map<string, HTMLElement>];
+
+    /** Map of hero buttons in collection. */
+    heroButtons = new Map<string, HTMLElement>();
 
     /** Cache of collections. */
     collections = new Map<string, Collection>();
@@ -45,6 +51,11 @@ export class Lobby extends Component {
     get #config() {
         const arena = this.app.arena!;
         return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
+    }
+
+    /** ID in db for picked heros. */
+    get #pick() {
+        return this.app.arena!.data.mode + ':online_picked';
     }
 
     init() {
@@ -237,11 +248,31 @@ export class Lobby extends Component {
         // banned heros
         this.banned = [
             this.sidebar.pane.addSection('禁将'),
-            this.sidebar.pane.addTray('round'),
-            new Map()
+            this.sidebar.pane.addTray('round')
         ];
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
+
+        // picked heros
+        this.picked = [
+            this.sidebar.pane.addSection('点将'),
+            this.sidebar.pane.addTray('round'),
+            new Map()
+        ];
+        this.picked[0].style.display = 'none';
+        this.picked[1].node.style.display = 'none';
+        this.ui.bind(this.picked[1].node, () => {
+            if (!this.picked[1].items.size) {
+                this.app.alert('点将', {content: '点击左侧武将包名称，然后选择要使用的武将。'})
+            }
+        });
+
+        const picked = this.db.get(this.#pick);
+        if (picked) {
+            for (const id of picked) {
+                this.#togglePick(id, true, false);
+            }
+        }
     }
 
     $owner() {
@@ -303,7 +334,7 @@ export class Lobby extends Component {
         const old = oldConfig?.banned?.hero;
         if (old) {
             for (const id of old) {
-                this.banned[2].get(id)?.classList.remove('defer');
+                this.heroButtons.get(id)?.classList.remove('defer');
             }
         }
 
@@ -322,7 +353,7 @@ export class Lobby extends Component {
                     }
                 });
                 tray.items.set(clone, tray.items.size);
-                this.banned[2].get(id)?.classList.add('defer');
+                this.heroButtons.get(id)?.classList.add('defer');
             }
             tray.align();
             for (const clone of tray.items.keys()) {
@@ -332,6 +363,25 @@ export class Lobby extends Component {
         else {
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
+        }
+
+        // update picked hero
+        if (config.pick && this.app.arena!.peers) {
+            this.picked[0].style.display = '';
+            if (this.picked[1].node.style.display) {
+                this.picked[1].node.style.display = '';
+                this.picked[1].align();
+            }
+            for (const collection of this.collections.values()) {
+                collection.node.classList.remove('no-select');
+            }
+        }
+        else {
+            this.picked[0].style.display = 'none';
+            this.picked[1].node.style.display = 'none';
+            for (const collection of this.collections.values()) {
+                collection.node.classList.add('no-select');
+            }
         }
     }
 
@@ -422,6 +472,33 @@ export class Lobby extends Component {
         }
     }
 
+    #togglePick(id: string, on: boolean, save: boolean = true) {
+        const picked = new Set(this.db.get(this.#pick));
+        picked[on ? 'add' : 'delete'](id);
+        if (save) {
+            this.db.set(this.#pick, picked.size ? Array.from(picked) : null);
+        }
+        this.heroButtons.get(id)?.classList[on ? 'add' : 'remove']('selected');
+
+        if (!this.picked[2].has(id)) {
+            const clone = this.ui.createElement('widget.avatar');
+            this.ui.setImage(clone, id);
+            this.ui.bind(clone, () => {
+                this.#togglePick(id, false);
+            });
+            this.picked[2].set(id, clone);
+        }
+
+        const clone = this.picked[2].get(id)!;
+        if (save) {
+            this.picked[1][on ? 'add' : 'delete'](clone);
+        }
+        else {
+            this.picked[1].items.set(clone, this.picked[1].items.size);
+            this.picked[1].node.appendChild(clone);
+        }
+    }
+
     #openCollection(pack: string, type: 'hero' | 'card+pile') {
         const id = type + '|' + pack;
         if (!this.collections.has(id)) {
@@ -434,16 +511,28 @@ export class Lobby extends Component {
             collection.setup(pack, type, (id, node) => {
                 if (type === 'hero') {
                     this.ui.bind(node, () => {
-                        if (this.mine) {
-                            this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                        // if (this.mine) {
+                        //     this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                        // }
+                        // else {
+                            
+                        // }
+                        if (this.data.config.pick && this.app.arena!.peers) {
+                            this.#togglePick(id, !node.classList.contains('selected'));
                         }
                     });
-                    this.banned[2].set(id, node);
+                    this.heroButtons.set(id, node);
                     if (this.data.config?.banned?.hero?.includes(id)) {
                         node.classList.add('defer');
                     }
+                    if (this.db.get(this.#pick)?.includes(id)) {
+                        node.classList.add('selected');
+                    }
                 }
             });
+            if (!this.data.config.pick || !this.app.arena!.peers) {
+                collection.node.classList.add('no-select');
+            }
             this.collections.set(id, collection);
 
             // open and close animations
