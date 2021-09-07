@@ -101,8 +101,8 @@ export class Tray extends Component {
         const left = (width - length) / 2;
 
         // determine aligned location
-        const x = (i: number) => left + i * (d + spacing);
-        const movable: Region = {x: [left, x(this.items.size - 1)], y: [0, 0]};
+        const x = (i: number) => left + (this.items.size - i - 1) * (d + spacing);
+        const movable: Region = {x: [left, x(0)], y: [0, 0]};
         const move = (node: HTMLElement, i: number) => {
             this.ui.moveTo(node, {x: x(i), y: 0}, false);
             this.items.set(node, i);
@@ -113,7 +113,7 @@ export class Tray extends Component {
             this.ui.bind(node, {
                 movable,
                 onmove: e => {
-                    const j = Math.round((e.x - left) / (d + spacing));
+                    const j = this.items.size - Math.round((e.x - left) / (d + spacing)) - 1;
                     let current = this.items.get(node)!;
                     if (j !== current) {
                         for (const [node2, k] of this.items) {

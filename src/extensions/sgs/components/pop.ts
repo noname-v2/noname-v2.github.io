@@ -89,6 +89,7 @@ export function pop(T: typeof Pop) {
             if (!this.clones.has(id)) {
                 const clone = this.ui.createElement('widget.avatar');
                 clone.dataset.shadow = 'blue';
+                this.app.bindHero(clone, id);
                 this.ui.setImage(clone, id);
                 let clicked = false;
                 this.ui.bind(clone, () => {

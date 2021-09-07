@@ -264,7 +264,7 @@ export class Lobby extends Component {
         this.picked[1].node.style.display = 'none';
         this.ui.bind(this.picked[1].node, () => {
             if (!this.picked[1].items.size) {
-                this.app.alert('点将', {content: '点击左侧武将包名称，然后选择要使用的武将。'})
+                this.app.alert('点将', {content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。'})
             }
         });
 

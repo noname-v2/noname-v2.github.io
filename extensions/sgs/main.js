@@ -842,6 +842,7 @@ function pop(T) {
             if (!this.clones.has(id)) {
                 const clone = this.ui.createElement('widget.avatar');
                 clone.dataset.shadow = 'blue';
+                this.app.bindHero(clone, id);
                 this.ui.setImage(clone, id);
                 let clicked = false;
                 this.ui.bind(clone, () => {
@@ -949,15 +950,9 @@ var main = {
             },
             pick: {
                 name: '点将',
-                intro: '允许玩家自由选择武将。',
+                intro: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。',
                 init: false,
                 requires: 'online'
-            },
-            late_pick: {
-                name: '点将',
-                intro: '允许玩家自由选择武将。',
-                init: true,
-                requires: '!online'
             },
             speed: {
                 name: '游戏速度',

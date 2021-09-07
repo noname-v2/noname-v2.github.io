@@ -159,6 +159,7 @@ export class Pop extends Popup {
                     this.ui.setImage(clone, hero);
                     this.ui.bind(clone, onclick);
                     this.ui.bind(player.node, onclick);
+                    this.app.bindHero(clone, hero);
                     this.items.set(hero, [player.node, clone, gallery])
                 }
                 return player.node;

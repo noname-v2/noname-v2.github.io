@@ -2755,7 +2755,7 @@
             this.picked[1].node.style.display = 'none';
             this.ui.bind(this.picked[1].node, () => {
                 if (!this.picked[1].items.size) {
-                    this.app.alert('点将', { content: '点击左侧武将包名称，然后选择要使用的武将。' });
+                    this.app.alert('点将', { content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。' });
                 }
             });
             const picked = this.db.get(this.#pick);
@@ -3298,6 +3298,7 @@
                         this.ui.setImage(clone, hero);
                         this.ui.bind(clone, onclick);
                         this.ui.bind(player.node, onclick);
+                        this.app.bindHero(clone, hero);
                         this.items.set(hero, [player.node, clone, gallery]);
                     }
                     return player.node;
@@ -4933,8 +4934,8 @@
             const length = d * n + spacing * (n - 1);
             const left = (width - length) / 2;
             // determine aligned location
-            const x = (i) => left + i * (d + spacing);
-            const movable = { x: [left, x(this.items.size - 1)], y: [0, 0] };
+            const x = (i) => left + (this.items.size - i - 1) * (d + spacing);
+            const movable = { x: [left, x(0)], y: [0, 0] };
             const move = (node, i) => {
                 this.ui.moveTo(node, { x: x(i), y: 0 }, false);
                 this.items.set(node, i);
@@ -4944,7 +4945,7 @@
                 this.ui.bind(node, {
                     movable,
                     onmove: e => {
-                        const j = Math.round((e.x - left) / (d + spacing));
+                        const j = this.items.size - Math.round((e.x - left) / (d + spacing)) - 1;
                         let current = this.items.get(node);
                         if (j !== current) {
                             for (const [node2, k] of this.items) {
