@@ -1,7 +1,7 @@
 export const skill = {
     kangkai: {
         name: '慷忾',
-        intro: '当一名角色成为@(standard.sha)的目标后，若你与其距离1以内，则你可以摸一张牌，然后交给其一张牌并展示之。若此牌为装备牌，该角色可以使用此牌。'
+        intro: '当一名角色成为@(standard:card.sha)的目标后，若你与其距离1以内，则你可以摸一张牌，然后交给其一张牌并展示之。若此牌为装备牌，该角色可以使用此牌。'
     },
     gongao: {
         name: '功獒',
@@ -9,7 +9,7 @@ export const skill = {
     },
     juyi: {
         name: '举义',
-        intro: '@(觉醒技) 准备阶段，若你已受伤且体力上限大于全场角色数，你将手牌摸至等同于体力上限的张数，然后获得@(myth.benghuai)和@(meteor.weizhong)。'
+        intro: '@(觉醒技) 准备阶段，若你已受伤且体力上限大于全场角色数，你将手牌摸至等同于体力上限的张数，然后获得@(myth:skill.benghuai)和@(meteor:skill.weizhong)。'
     },
     weizhong: {
         name: '威重',
@@ -29,7 +29,7 @@ export const skill = {
     },
     qiangwu: {
         name: '枪舞',
-        intro: '出牌阶段限一次，你可以进行判定，然后本回合你使用点数小于判定结果的@(standard.sha)无距离限制，点数大于判定结果的@(standard.sha)无次数限制。'
+        intro: '出牌阶段限一次，你可以进行判定，然后本回合你使用点数小于判定结果的@(standard:card.sha)无距离限制，点数大于判定结果的@(standard:card.sha)无次数限制。'
     },
     hongde: {
         name: '弘德',
@@ -45,7 +45,7 @@ export const skill = {
     },
     shouxi: {
         name: '守玺',
-        intro: '当你成为@(standard.sha)的目标后，你可声明一种牌名（每种牌名限一次），然后除非使用者弃置一张你声明的牌，并获得你的一张牌，否则此@(standard.sha)无效。'
+        intro: '当你成为@(standard:card.sha)的目标后，你可声明一种牌名（每种牌名限一次），然后除非使用者弃置一张你声明的牌，并获得你的一张牌，否则此@(standard:card.sha)无效。'
     },
     huimin: {
         name: '惠民',
@@ -53,11 +53,11 @@ export const skill = {
     },
     tianming: {
         name: '天命',
-        intro: '当你成为@(standard.sha)的目标后，你可以先弃置两张牌再摸两张牌。然后全场体力值最大的其他角色也可以如此做。'
+        intro: '当你成为@(standard:card.sha)的目标后，你可以先弃置两张牌再摸两张牌。然后全场体力值最大的其他角色也可以如此做。'
     },
     mizhao: {
         name: '密诏',
-        intro: '出牌阶段限一次，你可以将所有手牌交给一名其他角色，然后令该角色与另一名其他角色拼点，拼点赢的角色视为对拼点没赢的角色使用一张@(standard.sha)。'
+        intro: '出牌阶段限一次，你可以将所有手牌交给一名其他角色，然后令该角色与另一名其他角色拼点，拼点赢的角色视为对拼点没赢的角色使用一张@(standard:card.sha)。'
     },
     andong: {
         name: '安东',
@@ -65,7 +65,7 @@ export const skill = {
     },
     yingshi: {
         name: '应势',
-        intro: '出牌阶段开始时，若没有武将牌旁有“酬”的角色，你可将所有红桃牌置于一名其他角色的武将牌旁，称为“酬”。若如此做，当一名角色使用@(standard.sha)对武将牌旁有“酬”的角色造成伤害后，其可以获得一张“酬”。当武将牌旁有“酬”的角色死亡时，你获得所有“酬”。'
+        intro: '出牌阶段开始时，若没有武将牌旁有“酬”的角色，你可将所有红桃牌置于一名其他角色的武将牌旁，称为“酬”。若如此做，当一名角色使用@(standard:card.sha)对武将牌旁有“酬”的角色造成伤害后，其可以获得一张“酬”。当武将牌旁有“酬”的角色死亡时，你获得所有“酬”。'
     },
     xunxun: {
         name: '恂恂',
@@ -117,7 +117,7 @@ export const skill = {
     },
     limu: {
         name: '立牧',
-        intro: '出牌阶段，你可以将一张方块牌当@(standard.lebu)自己使用，然后回复1点体力；你的判定区有牌时，你对攻击范围内的其他角色使用牌没有次数和距离限制。'
+        intro: '出牌阶段，你可以将一张方块牌当@(standard:card.lebu)自己使用，然后回复1点体力；你的判定区有牌时，你对攻击范围内的其他角色使用牌没有次数和距离限制。'
     },
     yishe: {
         name: '义舍',
@@ -137,7 +137,7 @@ export const skill = {
     },
     danxin: {
         name: '殚心',
-        intro: '当你受到伤害后，你可以摸一张牌，或修改@(meteor.jiaozhao)。'
+        intro: '当你受到伤害后，你可以摸一张牌，或修改@(meteor:skill.jiaozhao)。'
     },
     xianfu: {
         name: '先辅',
@@ -149,11 +149,11 @@ export const skill = {
     },
     jianzheng: {
         name: '谏征',
-        intro: '其他角色使用@(standard.sha)指定除你外的角色时，若你在其攻击范围内，你可以将一张手牌置于牌堆顶，取消所有目标，然后若此@(standard.sha)不为黑色，你成为目标。'
+        intro: '其他角色使用@(standard:card.sha)指定除你外的角色时，若你在其攻击范围内，你可以将一张手牌置于牌堆顶，取消所有目标，然后若此@(standard:card.sha)不为黑色，你成为目标。'
     },
     zhuandui: {
         name: '专对',
-        intro: '当你使用@(standard.sha)指定目标后，你可以与其拼点，若你赢，其不能响应此@(standard.sha)；当你成为@(standard.sha)的目标后，你可以与其拼点，若你赢，此@(standard.sha)对你无效。'
+        intro: '当你使用@(standard:card.sha)指定目标后，你可以与其拼点，若你赢，其不能响应此@(standard:card.sha)；当你成为@(standard:card.sha)的目标后，你可以与其拼点，若你赢，此@(standard:card.sha)对你无效。'
     },
     tianbian: {
         name: '天辩',
@@ -165,7 +165,7 @@ export const skill = {
     },
     shuimeng: {
         name: '说盟',
-        intro: '出牌阶段结束时，你可以与一名角色拼点：若你赢，视为你使用@(standard.wuzhong)；若你没赢，视为拼点角色对你使用@(standard.guohe)。'
+        intro: '出牌阶段结束时，你可以与一名角色拼点：若你赢，视为你使用@(standard:card.wuzhong)；若你没赢，视为拼点角色对你使用@(standard:card.guohe)。'
     },
     guanwei: {
         name: '观微',
@@ -181,7 +181,7 @@ export const skill = {
     },
     jiexun: {
         name: '诫训',
-        intro: '结束阶段，你令一名其他角色摸场上方块牌数张牌，然后弃置X张牌（X为此技能发动次数）。若其因此弃置了所有牌，则你失去@(meteor.jiexun)，修改@(meteor.funan)。'
+        intro: '结束阶段，你令一名其他角色摸场上方块牌数张牌，然后弃置X张牌（X为此技能发动次数）。若其因此弃置了所有牌，则你失去@(meteor:skill.jiexun)，修改@(meteor:skill.funan)。'
     },
     bizhuan: {
         name: '辟撰',
@@ -205,7 +205,7 @@ export const skill = {
     },
     chenqing: {
         name: '陈情',
-        intro: '每轮限一次，当一名角色进入濒死状态时，你可以令另一名其他角色摸四张牌，然后弃置四张牌，若花色各不相同，则其视为对处于濒死状态的角色使用一张@(standard.tao)。'
+        intro: '每轮限一次，当一名角色进入濒死状态时，你可以令另一名其他角色摸四张牌，然后弃置四张牌，若花色各不相同，则其视为对处于濒死状态的角色使用一张@(standard:card.tao)。'
     },
     mozhi: {
         name: '默识',
@@ -217,11 +217,11 @@ export const skill = {
     },
     fengliang: {
         name: '逢亮',
-        intro: '@(觉醒技) 当你进入濒死状态时，你减1点体力上限并将体力回复至2点，然后获得@(myth.tiaoxin)，并修改@(meteor.kunfen)。'
+        intro: '@(觉醒技) 当你进入濒死状态时，你减1点体力上限并将体力回复至2点，然后获得@(myth:skill.tiaoxin)，并修改@(meteor:skill.kunfen)。'
     },
     juesi: {
         name: '决死',
-        intro: '出牌阶段，你可以弃置一张@(standard.sha)并选择你攻击范围内的一名其他角色，然后该角色弃置一张牌。若其弃置的不是@(standard.sha)且你的体力值小于等于该角色，则视为你对其使用@(standard.juedou)。'
+        intro: '出牌阶段，你可以弃置一张@(standard:card.sha)并选择你攻击范围内的一名其他角色，然后该角色弃置一张牌。若其弃置的不是@(standard:card.sha)且你的体力值小于等于该角色，则视为你对其使用@(standard:card.juedou)。'
     },
     liangzhu: {
         name: '良助',
@@ -229,7 +229,7 @@ export const skill = {
     },
     fanxiang: {
         name: '返乡',
-        intro: '@(觉醒技) 准备阶段，若有至少一名已受伤且你发动过@(meteor.liangzhu)令其摸牌的角色，则你加1点体力上限，然后回复1点体力，失去@(meteor.liangzhu)并获得@(standard.xiaoji)。'
+        intro: '@(觉醒技) 准备阶段，若有至少一名已受伤且你发动过@(meteor:skill.liangzhu)令其摸牌的角色，则你加1点体力上限，然后回复1点体力，失去@(meteor:skill.liangzhu)并获得@(standard:xiaoji)。'
     },
     wuyan: {
         name: '无言',
@@ -245,7 +245,7 @@ export const skill = {
     },
     songsang: {
         name: '送丧',
-        intro: '@(限定技) 当其他角色死亡时，若你已受伤，你可回复1点体力；若你未受伤，你可加1点体力上限。若如此做，你获得@(meteor.zhanji)。'
+        intro: '@(限定技) 当其他角色死亡时，若你已受伤，你可回复1点体力；若你未受伤，你可加1点体力上限。若如此做，你获得@(meteor:skill.zhanji)。'
     },
     zhanji: {
         name: '展骥',
@@ -257,15 +257,15 @@ export const skill = {
     },
     linglong: {
         name: '玲珑',
-        intro: '@(锁定技) 若你的装备区里没有防具牌，你视为装备着@(standard.bagua)；若你的装备区里没有坐骑牌，你的手牌上限+1；若你的装备区里没有宝物牌，你视为拥有@(standard.qicai)。'
+        intro: '@(锁定技) 若你的装备区里没有防具牌，你视为装备着@(standard:card.bagua)；若你的装备区里没有坐骑牌，你的手牌上限+1；若你的装备区里没有宝物牌，你视为拥有@(standard:qicai)。'
     },
     jixu: {
         name: '击虚',
-        intro: '出牌阶段限一次，你可令体力值相同的至少一名其他角色各猜测你的手牌区里是否有@(standard.sha)。系统公布这些角色各自的选择和猜测结果。若你的手牌区里：有@(standard.sha)，当你于此阶段内使用@(standard.sha)选择目标后，你令所有选择“否”的角色也成为此@(standard.sha)的目标；没有@(standard.sha)，你弃置所有选择“是”的角色的各一张牌。你摸X张牌（X为猜错的角色数）。若没有猜错的角色，你结束此阶段。'
+        intro: '出牌阶段限一次，你可令体力值相同的至少一名其他角色各猜测你的手牌区里是否有@(standard:card.sha)。系统公布这些角色各自的选择和猜测结果。若你的手牌区里：有@(standard:card.sha)，当你于此阶段内使用@(standard:card.sha)选择目标后，你令所有选择“否”的角色也成为此@(standard:card.sha)的目标；没有@(standard:card.sha)，你弃置所有选择“是”的角色的各一张牌。你摸X张牌（X为猜错的角色数）。若没有猜错的角色，你结束此阶段。'
     },
     zhenwei: {
         name: '镇卫',
-        intro: '当其他角色成为@(standard.sha)或黑色锦囊牌的唯一目标时，若其体力值小于你，你可以弃置一张牌并选择一项：1.摸一张牌，然后将目标转移给你；2.令此牌无效，回合结束后归还使用者。'
+        intro: '当其他角色成为@(standard:card.sha)或黑色锦囊牌的唯一目标时，若其体力值小于你，你可以弃置一张牌并选择一项：1.摸一张牌，然后将目标转移给你；2.令此牌无效，回合结束后归还使用者。'
     },
     duliang: {
         name: '督粮',
@@ -277,7 +277,7 @@ export const skill = {
     },
     fuman: {
         name: '抚蛮',
-        intro: '出牌阶段每名角色限一次，你可以将一张@(standard.sha)交给一名其他角色，然后其使用\'抚蛮\'牌时，你摸一张牌。'
+        intro: '出牌阶段每名角色限一次，你可以将一张@(standard:card.sha)交给一名其他角色，然后其使用\'抚蛮\'牌时，你摸一张牌。'
     },
     ziyuan: {
         name: '资援',
@@ -289,7 +289,7 @@ export const skill = {
     },
     youdi: {
         name: '诱敌',
-        intro: '结束阶段，你可以令一名其他角色弃置你一张手牌，若弃置的牌不是@(standard.sha)，则你获得其一张牌；若弃置的牌不是黑色，则你摸一张牌。'
+        intro: '结束阶段，你可以令一名其他角色弃置你一张手牌，若弃置的牌不是@(standard:card.sha)，则你获得其一张牌；若弃置的牌不是黑色，则你摸一张牌。'
     },
     duanfa: {
         name: '断发',
@@ -297,23 +297,23 @@ export const skill = {
     },
     qizhou: {
         name: '绮胄',
-        intro: '@(锁定技) 你根据装备区里牌的花色数获得以下技能：1种或以上-@(standard.mashu)；2种或以上-@(standard.yingzi)；3种或以上-@(meteor.duanbing)；4种-@(standard.fenwei)。'
+        intro: '@(锁定技) 你根据装备区里牌的花色数获得以下技能：1种或以上-@(standard:skill.mashu)；2种或以上-@(standard:skill.yingzi)；3种或以上-@(meteor:skill.duanbing)；4种-@(standard:fenwei)。'
     },
     duanbing: {
         name: '短兵',
-        intro: '你使用@(standard.sha)可以多选择一名距离为1的角色为目标'
+        intro: '你使用@(standard:card.sha)可以多选择一名距离为1的角色为目标'
     },
     shanxi: {
         name: '闪袭',
-        intro: '出牌阶段限一次，你可以弃置一张红色基本牌，然后弃置攻击范围内的一名角色的一张牌，若弃置的牌是@(standard.shan)，你观看其手牌，若弃置的不是@(standard.shan)，其观看你的手牌。 '
+        intro: '出牌阶段限一次，你可以弃置一张红色基本牌，然后弃置攻击范围内的一名角色的一张牌，若弃置的牌是@(standard:card.shan)，你观看其手牌，若弃置的不是@(standard:card.shan)，其观看你的手牌。 '
     },
     qinguo: {
         name: '勤国',
-        intro: '当你于回合内使用装备牌结算结束后，你可视为使用一张@(standard.sha)。当你的装备区里的牌移动后，或装备牌移至你的装备区后，若你装备区里的牌数与你的体力值相等且与此次移动之前你装备区里的牌数不等，你回复1点体力。'
+        intro: '当你于回合内使用装备牌结算结束后，你可视为使用一张@(standard:card.sha)。当你的装备区里的牌移动后，或装备牌移至你的装备区后，若你装备区里的牌数与你的体力值相等且与此次移动之前你装备区里的牌数不等，你回复1点体力。'
     },
     kannan: {
         name: '戡难',
-        intro: '出牌阶段，若你于此阶段内发动过此技能的次数小于X（X为你的体力值），你可与你于此阶段内未以此法拼点过的一名角色拼点。若：你赢，你使用的下一张@(standard.sha)的伤害值基数+1且你于此阶段内不能发动此技能；其赢，其使用的下一张@(standard.sha)的伤害值基数+1。'
+        intro: '出牌阶段，若你于此阶段内发动过此技能的次数小于X（X为你的体力值），你可与你于此阶段内未以此法拼点过的一名角色拼点。若：你赢，你使用的下一张@(standard:card.sha)的伤害值基数+1且你于此阶段内不能发动此技能；其赢，其使用的下一张@(standard:card.sha)的伤害值基数+1。'
     },
     weilu: {
         name: '威虏',
@@ -333,11 +333,11 @@ export const skill = {
     },
     wuji: {
         name: '武继',
-        intro: '@(觉醒技) 结束阶段，若你本回合造成了3点或更多伤害，你加1点体力上限并回复1点体力，失去“虎啸”，然后获得@(standard.qinglong)。'	
+        intro: '@(觉醒技) 结束阶段，若你本回合造成了3点或更多伤害，你加1点体力上限并回复1点体力，失去“虎啸”，然后获得@(standard:qinglong)。'	
     },
     fengpo: {
         name: '凤魄',
-        intro: '你在回合内使用第一张@(standard.sha)或@(standard.juedou)指定一个目标后，你可以选择一项：1.摸X张牌；2.此牌造成的伤害+X。（X为其方块手牌数）'	
+        intro: '你在回合内使用第一张@(standard:card.sha)或@(standard:card.juedou)指定一个目标后，你可以选择一项：1.摸X张牌；2.此牌造成的伤害+X。（X为其方块手牌数）'	
     },
     wengua: {
         name: '问卦',
@@ -345,11 +345,11 @@ export const skill = {
     },
     fuzhu: {
         name: '伏诛',
-        intro: '一名男性角色的结束阶段内，若牌堆剩余牌数小于等于你体力值的十倍，则你可以依次对其使用牌堆中所有的@(standard.sha)。'	
+        intro: '一名男性角色的结束阶段内，若牌堆剩余牌数小于等于你体力值的十倍，则你可以依次对其使用牌堆中所有的@(standard:card.sha)。'	
     },
     yinbing: {
         name: '引兵',
-        intro: '结束阶段，你可以将任意张非基本牌置于你的武将牌上；当你受到@(standard.sha)或@(standard.juedou)造成的伤害后，你移去一张\'引兵\'牌。'	
+        intro: '结束阶段，你可以将任意张非基本牌置于你的武将牌上；当你受到@(standard:card.sha)或@(standard:card.juedou)造成的伤害后，你移去一张\'引兵\'牌。'	
     },
     juedi: {
         name: '绝地',
@@ -361,11 +361,11 @@ export const skill = {
     },
     qiaomeng: {
         name: '趫猛',
-        intro: '当你使用的黑色@(standard.sha)对一名角色造成伤害后，你可弃置其装备区里的一张牌。若此牌为坐骑牌，你获得之。'	
+        intro: '当你使用的黑色@(standard:card.sha)对一名角色造成伤害后，你可弃置其装备区里的一张牌。若此牌为坐骑牌，你获得之。'	
     },
     luanzhan: {
         name: '乱战',
-        intro: '你使用@(standard.sha)或黑色普通锦囊牌可以多选择X名角色为目标；当你使用@(standard.sha)或黑色普通锦囊牌指定目标后，若此牌的目标角色数小于X，则X减至0。（X为你于本局游戏内造成过伤害的次数）'	
+        intro: '你使用@(standard:card.sha)或黑色普通锦囊牌可以多选择X名角色为目标；当你使用@(standard:card.sha)或黑色普通锦囊牌指定目标后，若此牌的目标角色数小于X，则X减至0。（X为你于本局游戏内造成过伤害的次数）'	
     },
     jijun: {
         name: '集军',

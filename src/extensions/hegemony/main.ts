@@ -6,6 +6,7 @@ export default {
     mode,
     heropack: '国战标准',
     cardpack: '国战标准',
+    requires: ['myth'],
     tags: ['guess-side', 'hero-hidden!', 'double-hero!'],
     skill,
     hero: {
@@ -55,7 +56,7 @@ export default {
             gender: 'male',
             faction: 'wei',
             hp: 3,
-            skills: ['standard.tiandu', 'yiji']
+            skills: ['standard:tiandu', 'yiji']
         },
         zhenji: {
             name: '甄姬',
@@ -63,7 +64,7 @@ export default {
             gender: 'female',
             faction: 'wei',
             hp: 3,
-            skills: ['luoshen', 'standard.qingguo']
+            skills: ['luoshen', 'standard:qingguo']
         },
         xiahouyuan: {
             name: '夏侯渊',
@@ -79,7 +80,7 @@ export default {
             gender: 'male',
             faction: 'wei',
             hp: 4,
-            skills: ['myth.qiaobian']
+            skills: ['myth:qiaobian']
         },
         xuhuang: {
             name: '徐晃',
@@ -111,7 +112,7 @@ export default {
             gender: 'male',
             faction: 'wei',
             hp: 3,
-            skills: ['myth.quhu', 'myth.jieming']
+            skills: ['myth:quhu', 'myth:jieming']
         },
         caopi: {
             name: '曹丕',
@@ -176,7 +177,7 @@ export default {
             gender: 'male',
             faction: 'shu',
             hp: 4,
-            skills: ['standard.mashu', 'tieji']
+            skills: ['standard:mashu', 'tieji']
         },
         huangyueying: {
             name: '黄月英',
@@ -216,7 +217,7 @@ export default {
             gender: 'male',
             faction: 'shu',
             hp: 3,
-            skills: ['bazhen', 'myth.huoji', 'myth.kanpo']
+            skills: ['bazhen', 'myth:huoji', 'myth:kanpo']
         },
         liushan: {
             name: '刘禅',
@@ -224,7 +225,7 @@ export default {
             gender: 'male',
             faction: 'shu',
             hp: 3,
-            skills: ['myth.xiangle', 'myth.fangquan']
+            skills: ['myth:xiangle', 'myth:fangquan']
         },
         menghuo: {
             name: '孟获',
@@ -232,7 +233,7 @@ export default {
             gender: 'male',
             faction: 'shu',
             hp: 4,
-            skills: ['myth.huoshou', 'zaiqi']
+            skills: ['myth:huoshou', 'zaiqi']
         },
         zhurong: {
             name: '祝融',
@@ -240,7 +241,7 @@ export default {
             gender: 'female',
             faction: 'shu',
             hp: 4,
-            skills: ['myth.juxiang', 'lieren']
+            skills: ['myth:juxiang', 'lieren']
         },
         ganfuren: {
             name: '甘夫人',
@@ -264,7 +265,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 4,
-            skills: ['standard.qixi']
+            skills: ['standard:qixi']
         },
         lvmeng: {
             name: '吕蒙',
@@ -288,7 +289,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 3,
-            skills: ['standard.yingzi', 'standard.fanjian']
+            skills: ['standard:yingzi', 'standard:fanjian']
         },
         daqiao: {
             name: '大乔',
@@ -296,7 +297,7 @@ export default {
             gender: 'female',
             faction: 'wu',
             hp: 3,
-            skills: ['guose', 'standard.liuli']
+            skills: ['guose', 'standard:liuli']
         },
         luxun: {
             name: '陆逊',
@@ -320,7 +321,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 4,
-            skills: ['myth.yinghun']
+            skills: ['myth:yinghun']
         },
         xiaoqiao: {
             name: '小乔',
@@ -328,7 +329,7 @@ export default {
             gender: 'female',
             faction: 'wu',
             hp: 3,
-            skills: ['myth.tianxiang', 'hongyan']
+            skills: ['myth:tianxiang', 'hongyan']
         },
         taishici: {
             name: '太史慈',
@@ -336,7 +337,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 4,
-            skills: ['myth.tianyi']
+            skills: ['myth:tianyi']
         },
         zhoutai: {
             name: '周泰',
@@ -352,7 +353,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 3,
-            skills: ['myth.haoshi', 'myth.dimeng']
+            skills: ['myth:haoshi', 'myth:dimeng']
         },
         zhangzhaozhanghong: {
             name: '张昭张紘',
@@ -360,7 +361,7 @@ export default {
             gender: 'male',
             faction: 'wu',
             hp: 3,
-            skills: ['myth.zhijian', 'myth.guzheng']
+            skills: ['myth:zhijian', 'myth:guzheng']
         },
         dingfeng: {
             name: '丁奉',
@@ -376,7 +377,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 3,
-            skills: ['chuli', 'standard.jijiu']
+            skills: ['chuli', 'standard:jijiu']
         },
         lvbu: {
             name: '吕布',
@@ -384,7 +385,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 5,
-            skills: ['standard.wushuang']
+            skills: ['standard:wushuang']
         },
         diaochan: {
             name: '貂蝉',
@@ -392,7 +393,7 @@ export default {
             gender: 'female',
             faction: 'qun',
             hp: 3,
-            skills: ['standard.lijian', 'biyue']
+            skills: ['standard:lijian', 'biyue']
         },
         yuanshao: {
             name: '袁绍',
@@ -416,7 +417,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 3,
-            skills: ['myth.wansha', 'weimu', 'myth.luanwu']
+            skills: ['myth:wansha', 'weimu', 'myth:luanwu']
         },
         pangde: {
             name: '庞德',
@@ -424,7 +425,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 4,
-            skills: ['standard.mashu', 'myth.jianchu']
+            skills: ['standard:mashu', 'myth:jianchu']
         },
         zhangjiao: {
             name: '张角',
@@ -432,7 +433,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 3,
-            skills: ['leiji', 'myth.guidao']
+            skills: ['leiji', 'myth:guidao']
         },
         caiwenji: {
             name: '蔡文姬',
@@ -440,7 +441,7 @@ export default {
             gender: 'female',
             faction: 'qun',
             hp: 3,
-            skills: ['myth.beige', 'myth.duanchang']
+            skills: ['myth:beige', 'myth:duanchang']
         },
         mateng: {
             name: '马腾',
@@ -495,7 +496,7 @@ export default {
         guowuxie: {
             name: '无懈可击·国',
             caption: '无懈可击',
-            intro: '一张锦囊牌生效前，对此牌使用。抵消此牌对一名角色及其相同势力产生的效果，或抵消另一张@(standard.wuxie)产生的效果。',
+            intro: '一张锦囊牌生效前，对此牌使用。抵消此牌对一名角色及其相同势力产生的效果，或抵消另一张@(standard:card.wuxie)产生的效果。',
             type: 'trick',
             subtype: 'instant',
             originated: 'standard:wuxie',

@@ -21,7 +21,7 @@ export const skill = {
     },
     luoyi: {
         name: '裸衣',
-        intro: '摸牌阶段，你可以少摸一张牌，然后本回合你使用@(standard.sha)或@(standard.juedou)造成的伤害+1。'
+        intro: '摸牌阶段，你可以少摸一张牌，然后本回合你使用@(standard:card.sha)或@(standard:card.juedou)造成的伤害+1。'
     },
     yiji: {
         name: '遗计',
@@ -33,11 +33,11 @@ export const skill = {
     },
     shensu: {
         name: '神速',
-        intro: '你可以做出如下选择：1.跳过判定阶段和摸牌阶段。2.跳过出牌阶段并弃置一张装备牌。你每选择一项，便视为你使用一张无距离限制的@(standard.sha)。'
+        intro: '你可以做出如下选择：1.跳过判定阶段和摸牌阶段。2.跳过出牌阶段并弃置一张装备牌。你每选择一项，便视为你使用一张无距离限制的@(standard:card.sha)。'
     },
     duanliang: {
         name: '断粮',
-        intro: '出牌阶段，你可以明置此武将牌；你可以将一张黑色基本牌或黑色装备牌当@(maneuver.bingliang)使用；你可以对距离为2的角色使用@(maneuver.bingliang)。'
+        intro: '出牌阶段，你可以明置此武将牌；你可以将一张黑色基本牌或黑色装备牌当@(maneuver:card.bingliang)使用；你可以对距离为2的角色使用@(maneuver:card.bingliang)。'
     },
     jushou: {
         name: '据守',
@@ -65,11 +65,11 @@ export const skill = {
     },
     wusheng: {
         name: '武圣',
-        intro: '你可以将一张红色牌当@(standard.sha)使用或打出。'
+        intro: '你可以将一张红色牌当@(standard:card.sha)使用或打出。'
     },
     paoxiao: {
         name: '咆哮',
-        intro: '① @(锁定技) 你使用@(standard.sha)无次数限制。② @(锁定技) 当你于当前回合使用第二张@(standard.sha)时，你摸一张牌。'
+        intro: '① @(锁定技) 你使用@(standard:card.sha)无次数限制。② @(锁定技) 当你于当前回合使用第二张@(standard:card.sha)时，你摸一张牌。'
     },
     guanxing: {
         name: '观星',
@@ -77,11 +77,11 @@ export const skill = {
     },
     kongcheng: {
         name: '空城',
-        intro: '@(锁定技) 若你没有手牌，当你成为@(standard.sha)或@(standard.juedou)的目标时，取消之。你的回合外，其他角色交给你的牌置于你的武将牌上。摸牌阶段开始时，你获得你武将牌上的牌。'
+        intro: '@(锁定技) 若你没有手牌，当你成为@(standard:card.sha)或@(standard:card.juedou)的目标时，取消之。你的回合外，其他角色交给你的牌置于你的武将牌上。摸牌阶段开始时，你获得你武将牌上的牌。'
     },
     longdan: {
         name: '龙胆',
-        intro: '你可以将@(standard.sha)当@(standard.shan)、@(standard.shan)当@(standard.sha)使用或打出。当你通过发动@(standard_hege.longdan)使用的@(standard.sha)被一名角色使用的@(standard.shan)抵消时，你可以对另一名角色造成1点普通伤害。当一名角色使用的@(standard.sha)被你通过发动@(standard_hege.longdan)使用的@(standard.shan)抵消时，你可以令另一名其他角色回复1点体力。'
+        intro: '你可以将@(standard:card.sha)当@(standard:card.shan)、@(standard:card.shan)当@(standard:card.sha)使用或打出。当你通过发动@(hegemony:skill.longdan)使用的@(standard:card.sha)被一名角色使用的@(standard:card.shan)抵消时，你可以对另一名角色造成1点普通伤害。当一名角色使用的@(standard:card.sha)被你通过发动@(hegemony:skill.longdan)使用的@(standard:card.shan)抵消时，你可以令另一名其他角色回复1点体力。'
     },
     tieji: {
         name: '铁骑',
@@ -97,7 +97,7 @@ export const skill = {
     },
     liegong: {
         name: '烈弓',
-        intro: '当你于出牌阶段内使用@(standard.sha)指定一个目标后，若该角色的手牌数不小于你的体力值或不大于你的攻击范围，则你可以令其不能使用@(standard.shan)响应此@(standard.sha)。'
+        intro: '当你于出牌阶段内使用@(standard:card.sha)指定一个目标后，若该角色的手牌数不小于你的体力值或不大于你的攻击范围，则你可以令其不能使用@(standard:card.shan)响应此@(standard:card.sha)。'
     },
     kuanggu: {
         name: '狂骨',
@@ -105,7 +105,7 @@ export const skill = {
     },
     lianhuan: {
         name: '连环',
-        intro: '你可以将一张梅花手牌当@(maneuver.tiesuo)使用或重铸。'
+        intro: '你可以将一张梅花手牌当@(maneuver:card.tiesuo)使用或重铸。'
     },
     niepan: {
         name: '涅槃',
@@ -113,7 +113,7 @@ export const skill = {
     },
     bazhen: {
         name: '八阵',
-        intro: '@(锁定技) 若你的装备区里没有防具牌，你视为装备着@(standard.bagua)；出牌阶段，你可以明置此武将牌。'
+        intro: '@(锁定技) 若你的装备区里没有防具牌，你视为装备着@(standard:card.bagua)；出牌阶段，你可以明置此武将牌。'
     },
     zaiqi: {
         name: '再起',
@@ -121,7 +121,7 @@ export const skill = {
     },
     lieren: {
         name: '烈刃',
-        intro: '当你使用@(standard.sha)对目标角色造成伤害后，你可以与其拼点，若你赢，你获得其一张牌。'
+        intro: '当你使用@(standard:card.sha)对目标角色造成伤害后，你可以与其拼点，若你赢，你获得其一张牌。'
     },
     shushen: {
         name: '淑慎',
@@ -145,19 +145,19 @@ export const skill = {
     },
     kurou: {
         name: '苦肉',
-        intro: '出牌阶段限一次，你可以弃一张牌。若如此做，你失去1点体力，然后摸三张牌，最后此阶段你使用@(standard.sha)的次数上限+1。'
+        intro: '出牌阶段限一次，你可以弃一张牌。若如此做，你失去1点体力，然后摸三张牌，最后此阶段你使用@(standard:card.sha)的次数上限+1。'
     },
     guose: {
         name: '国色',
-        intro: '你可以将一张方块牌当@(standard.lebu)使用。'
+        intro: '你可以将一张方块牌当@(standard:card.lebu)使用。'
     },
     duoshi: {
         name: '度势',
-        intro: '出牌阶段限四次，你可以将一张红色手牌当@(standard_hege.yiyi)使用。'
+        intro: '出牌阶段限四次，你可以将一张红色手牌当@(hegemony:card.yiyi)使用。'
     },
     qianxun: {
         name: '谦逊',
-        intro: '@(锁定技) 当你成为@(standard.shunshou)或@(standard.lebu)的目标时，则取消之。'
+        intro: '@(锁定技) 当你成为@(standard:card.shunshou)或@(standard:card.lebu)的目标时，则取消之。'
     },
     jieyin: {
         name: '结姻',
@@ -193,11 +193,11 @@ export const skill = {
     },
     luanji: {
         name: '乱击',
-        intro: '出牌阶段，你可以将两张手牌当@(standard.wanjian)使用（不能使用本回合发动此技能时已用过的花色） 。若如此做，当与你势力相同的角色因响应此@(standard.wanjian)而打出的@(standard.shan)结算结束时，其可以摸一张牌。'
+        intro: '出牌阶段，你可以将两张手牌当@(standard:card.wanjian)使用（不能使用本回合发动此技能时已用过的花色） 。若如此做，当与你势力相同的角色因响应此@(standard:card.wanjian)而打出的@(standard:card.shan)结算结束时，其可以摸一张牌。'
     },
     shuangxiong: {
         name: '双雄',
-        intro: '摸牌阶段，你可以改为进行判定，你获得生效后的判定牌，然后本回合你可以将与判定结果颜色不同的一张手牌当@(standard.juedou)使用。'
+        intro: '摸牌阶段，你可以改为进行判定，你获得生效后的判定牌，然后本回合你可以将与判定结果颜色不同的一张手牌当@(standard:card.juedou)使用。'
     },
     weimu: {
         name: '帷幕',
@@ -205,7 +205,7 @@ export const skill = {
     },
     leiji: {
         name: '雷击',
-        intro: '当你使用或打出@(standard.shan)时，你可以令一名其他角色进行判定，若结果为黑桃，你对该角色造成2点雷电伤害。'
+        intro: '当你使用或打出@(standard:card.shan)时，你可以令一名其他角色进行判定，若结果为黑桃，你对该角色造成2点雷电伤害。'
     },
     xiongyi: {
         name: '雄异',
@@ -221,7 +221,7 @@ export const skill = {
     },
     shuangren: {
         name: '双刃',
-        intro: '出牌阶段开始时，你可以与一名角色拼点。若你赢，你视为对其或与其势力相同的另一名角色使用一张@(standard.sha)（此@(standard.sha)不计入限制的次数）；若你没赢，你结束出牌阶段。'
+        intro: '出牌阶段开始时，你可以与一名角色拼点。若你赢，你视为对其或与其势力相同的另一名角色使用一张@(standard:card.sha)（此@(standard:card.sha)不计入限制的次数）；若你没赢，你结束出牌阶段。'
     },
     sijian: {
         name: '死谏',
@@ -233,7 +233,7 @@ export const skill = {
     },
     kuangfu: {
         name: '狂斧',
-        intro: '当你使用@(standard.sha)对目标角色造成伤害后，你可以将其装备区里的一张牌置入你的装备区或弃置之。'
+        intro: '当你使用@(standard:card.sha)对目标角色造成伤害后，你可以将其装备区里的一张牌置入你的装备区或弃置之。'
     },
     huoshui: {
         name: '祸水',

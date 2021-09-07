@@ -339,15 +339,10 @@
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
-    async function importExtension(extname, index) {
+    async function importExtension(extname) {
         if (!extensions.has(extname)) {
             const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
             extensions.set(extname, ext);
-            if (index) {
-                for (const section in ext.lib) {
-                    Object.assign(index[section], ext.lib[section]);
-                }
-            }
         }
         return extensions.get(extname);
     }

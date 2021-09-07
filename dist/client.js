@@ -617,17 +617,42 @@
             return;
         }
         const sections = content.split('@(');
-        for (let i = 0; i < sections.length; i++) {
+        const keywords = [];
+        for (let i = 1; i < sections.length; i++) {
             let [name, content] = split(sections[i], ')');
-            if (content) {
-                if (lib.keyword[name]) ;
-                else if (!isNaN(name)) {
-                    content = toCN(name) + content;
+            if (typeof content === 'string') {
+                if (lib.keyword[name]) {
+                    keywords.push(lib.keyword[name]);
+                    name = '<span class="keyword">' + name + '</span>';
                 }
-                sections[i] = content;
+                else if (!isNaN(name)) {
+                    name = toCN(name);
+                }
+                sections[i] = name + content;
             }
         }
         node.innerHTML = sections.join('');
+        // render keywords
+        const spans = node.querySelectorAll('span.keyword');
+        for (let i = 0; i < keywords.length; i++) {
+            const info = keywords[i];
+            if (info[1]) {
+                spans[i].dataset.color = info[1];
+            }
+            if (info[2]) {
+                spans[i].innerHTML = info[2];
+            }
+            if (info[0]) {
+                const onclick = (e) => {
+                    const menu = create('popup');
+                    menu.pane.width = 160;
+                    menu.pane.node.classList.add('intro');
+                    menu.pane.addText(info[0]);
+                    menu.open(e);
+                };
+                bind(spans[i], { onclick, oncontext: onclick });
+            }
+        }
     }
     /** Count active childNodes. */
     function countActive(node) {
@@ -790,15 +815,10 @@
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
-    async function importExtension(extname, index) {
+    async function importExtension(extname) {
         if (!extensions.has(extname)) {
             const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
             extensions.set(extname, ext);
-            if (index) {
-                for (const section in ext.lib) {
-                    Object.assign(index[section], ext.lib[section]);
-                }
-            }
         }
         return extensions.get(extname);
     }
@@ -960,10 +980,13 @@
             await app.sleep('fast');
         }
         // extension dependencies
+        const allPacks = new Set();
         const requires = new Set();
+        const autoKeywords = new Map();
         // overwrite component constructors by mode
         for (const pack of ruleset) {
-            const ext = await importExtension(pack, lib);
+            allPacks.add(pack);
+            const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
                 const cls = componentClasses$1.get(tag) ?? backups.get('component');
                 componentClasses$1.set(tag, ext.mode.components[tag](cls));
@@ -973,10 +996,16 @@
                     requires.add(pack);
                 }
             }
+            if (ext.mode?.autoKeywords) {
+                for (const section in ext.mode.autoKeywords) {
+                    autoKeywords.set(section, ext.mode.autoKeywords[section]);
+                }
+            }
         }
         // import packs
         for (const pack of packs) {
-            const ext = await importExtension(pack, lib);
+            allPacks.add(pack);
+            const ext = await importExtension(pack);
             if (ext.requires) {
                 for (const pack of ext.requires) {
                     requires.add(pack);
@@ -984,7 +1013,21 @@
             }
         }
         for (const pack of requires) {
-            await importExtension(pack, lib);
+            allPacks.add(pack);
+            await importExtension(pack);
+        }
+        // fill lib and automatic keywords
+        for (const pack of allPacks) {
+            const ext = accessExtension(pack);
+            for (const section in ext.lib) {
+                Object.assign(lib[section], ext.lib[section]);
+            }
+            for (const [section, color] of autoKeywords) {
+                for (const name in ext[section]) {
+                    const info = ext[section][name];
+                    lib.keyword[pack + ':' + section + '.' + name] = [info.intro, color, info.name];
+                }
+            }
         }
     }
     /**

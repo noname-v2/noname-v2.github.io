@@ -5,7 +5,7 @@ const skill = {
     },
     jiushi: {
         name: '酒诗',
-        intro: '你可以将武将牌从正面翻至背面，视为使用一张@(maneuver.jiu)；当你受到伤害后，你可以从背面翻至正面。'
+        intro: '你可以将武将牌从正面翻至背面，视为使用一张@(maneuver:card.jiu)；当你受到伤害后，你可以从背面翻至正面。'
     },
     zhenjun: {
         name: '镇军',
@@ -25,7 +25,7 @@ const skill = {
     },
     xuanhuo: {
         name: '眩惑',
-        intro: '摸牌阶段，你可以改为令一名其他角色摸两张牌，然后除非该角色对你选择的另一名角色使用一张@(standard.sha)，否则你获得其两张牌。'
+        intro: '摸牌阶段，你可以改为令一名其他角色摸两张牌，然后除非该角色对你选择的另一名角色使用一张@(standard:card.sha)，否则你获得其两张牌。'
     },
     sanyao: {
         name: '散谣',
@@ -37,11 +37,11 @@ const skill = {
     },
     zhuhai: {
         name: '诛害',
-        intro: '其他角色的结束阶段，若该角色本回合造成过伤害，则你可以对其使用一张@(standard.sha)。'
+        intro: '其他角色的结束阶段，若该角色本回合造成过伤害，则你可以对其使用一张@(standard:card.sha)。'
     },
     qianxin: {
         name: '潜心',
-        intro: '@(觉醒技)，当你造成伤害后，若你已受伤，你减1点体力上限，然后获得@(contest.jianyan)。'
+        intro: '@(觉醒技)，当你造成伤害后，若你已受伤，你减1点体力上限，然后获得@(contest:skill.jianyan)。'
     },
     jianyan: {
         name: '荐言',
@@ -61,31 +61,31 @@ const skill = {
     },
     pojun: {
         name: '破军',
-        intro: '出牌阶段，你使用@(standard.sha)指定目标后，你可以将其至多X张牌（X为其体力值）移出游戏直到回合结束。'
+        intro: '出牌阶段，你使用@(standard:card.sha)指定目标后，你可以将其至多X张牌（X为其体力值）移出游戏直到回合结束。'
     },
     mingce: {
         name: '明策',
-        intro: '出牌阶段限一次，你可以将一张装备牌或@(standard.sha)交给一名其他角色，然后其选择一项：1.视为对你选择的另一名角色使用一张@(standard.sha);2.摸一张牌。'
+        intro: '出牌阶段限一次，你可以将一张装备牌或@(standard:card.sha)交给一名其他角色，然后其选择一项：1.视为对你选择的另一名角色使用一张@(standard:card.sha);2.摸一张牌。'
     },
     zhichi: {
         name: '智迟',
-        intro: '@(锁定技)，当你于回合外受到伤害后，本回合@(standard.sha)和普通锦囊牌对你无效。'
+        intro: '@(锁定技)，当你于回合外受到伤害后，本回合@(standard:card.sha)和普通锦囊牌对你无效。'
     },
     xianzhen: {
         name: '陷阵',
-        intro: '出牌阶段限一次，你可以与一名角色拼点：若你赢，本回合你无视该角色的防具，且对其使用牌没有距离和次数限制；若你没赢，本回合你不能使用@(standard.sha)。'
+        intro: '出牌阶段限一次，你可以与一名角色拼点：若你赢，本回合你无视该角色的防具，且对其使用牌没有距离和次数限制；若你没赢，本回合你不能使用@(standard:card.sha)。'
     },
     jinjiu: {
         name: '禁酒',
-        intro: '@(锁定技)，你的@(maneuver.jiu)视为@(standard.sha)。'
+        intro: '@(锁定技)，你的@(maneuver:card.jiu)视为@(standard:card.sha)。'
     },
     jiangchi: {
         name: '将驰',
-        intro: '摸牌阶段结束时，你可以选择一项：1、摸一张牌，若如此做，你本回合内不能使用或打出@(standard.sha)。 2、弃置一张牌，若如此做，出牌阶段你使用@(standard.sha)无距离限制且你可以额外使用一张@(standard.sha)，直到回合结束。'
+        intro: '摸牌阶段结束时，你可以选择一项：1、摸一张牌，若如此做，你本回合内不能使用或打出@(standard:card.sha)。 2、弃置一张牌，若如此做，出牌阶段你使用@(standard:card.sha)无距离限制且你可以额外使用一张@(standard:card.sha)，直到回合结束。'
     },
     zhenlie: {
         name: '贞烈',
-        intro: '当你成为@(standard.sha)或普通锦囊牌的目标后，你可以失去1点体力使此牌对你无效，然后你弃置使用者一张牌。'
+        intro: '当你成为@(standard:card.sha)或普通锦囊牌的目标后，你可以失去1点体力使此牌对你无效，然后你弃置使用者一张牌。'
     },
     miji: {
         name: '秘计',
@@ -105,7 +105,7 @@ const skill = {
     },
     zili: {
         name: '自立',
-        intro: '@(觉醒技)，准备阶段，若\'权\'的数量大于等于3，你回复1点体力或摸两张牌，然后减1点体力上限，获得@(contest.paiyi)。'
+        intro: '@(觉醒技)，准备阶段，若\'权\'的数量大于等于3，你回复1点体力或摸两张牌，然后减1点体力上限，获得@(contest:skill.paiyi)。'
     },
     paiyi: {
         name: '排异',
@@ -113,7 +113,7 @@ const skill = {
     },
     fuhun: {
         name: '父魂',
-        intro: '你可以将两张手牌当@(standard.sha)使用或打出；当你于出牌阶段以此法造成伤害后，本回合获得@(standard:skill.wusheng)和@(standard:skill.paoxiao)'
+        intro: '你可以将两张手牌当@(standard:card.sha)使用或打出；当你于出牌阶段以此法造成伤害后，本回合获得@(standard:skill.wusheng)和@(standard:skill.paoxiao)'
     },
     dangxian: {
         name: '当先',
@@ -137,11 +137,11 @@ const skill = {
     },
     lihuo: {
         name: '疠火',
-        intro: '你使用普通的@(standard.sha)可以改为火@(standard.sha)，若此@(standard.sha)造成过伤害，你失去1点体力；你使用火@(standard.sha)可以多选择一个目标。'
+        intro: '你使用普通的@(standard:card.sha)可以改为火@(standard:card.sha)，若此@(standard:card.sha)造成过伤害，你失去1点体力；你使用火@(standard:card.sha)可以多选择一个目标。'
     },
     chunlao: {
         name: '醇醪',
-        intro: '结束阶段，若你没有\'醇\'，你可以将任意张@(standard.sha)置于武将牌上，称为\'醇\'；当一名角色处于濒死状态时，你可以移去一张\'醇\'，视为该角色使用一张@(maneuver.jiu)。'
+        intro: '结束阶段，若你没有\'醇\'，你可以将任意张@(standard:card.sha)置于武将牌上，称为\'醇\'；当一名角色处于濒死状态时，你可以移去一张\'醇\'，视为该角色使用一张@(maneuver:card.jiu)。'
     },
     gongqi: {
         name: '弓骑',
@@ -181,7 +181,7 @@ const skill = {
     },
     longyin: {
         name: '龙吟',
-        intro: '当一名角色于其出牌阶段内使用@(standard.sha)时，你可以弃置一张牌，令此@(standard.sha)不计入出牌阶段的使用次数，然后若此@(standard.sha)为红色，你摸一张牌。'
+        intro: '当一名角色于其出牌阶段内使用@(standard:card.sha)时，你可以弃置一张牌，令此@(standard:card.sha)不计入出牌阶段的使用次数，然后若此@(standard:card.sha)为红色，你摸一张牌。'
     },
     qiaoshui: {
         name: '巧说',
@@ -193,15 +193,15 @@ const skill = {
     },
     xiansi: {
         name: '陷嗣',
-        intro: '准备阶段，你可以将至多两名角色的各一张牌置于武将牌上，称为\'逆\'；其他角色可以移去两张\'逆\'，视为对你使用@(standard.sha)。'
+        intro: '准备阶段，你可以将至多两名角色的各一张牌置于武将牌上，称为\'逆\'；其他角色可以移去两张\'逆\'，视为对你使用@(standard:card.sha)。'
     },
     anjian: {
         name: '暗箭',
-        intro: '当你受到@(standard.sha)造成的伤害后，你可以弃置一张牌，然后获得伤害来源装备区里的武器牌。'
+        intro: '当你受到@(standard:card.sha)造成的伤害后，你可以弃置一张牌，然后获得伤害来源装备区里的武器牌。'
     },
     duodao: {
         name: '夺刀',
-        intro: '@(锁定技)，当你使用@(standard.sha)对目标角色造成伤害时，若你不在其攻击范围内，则此伤害+1。'
+        intro: '@(锁定技)，当你使用@(standard:card.sha)对目标角色造成伤害时，若你不在其攻击范围内，则此伤害+1。'
     },
     zhiyan: {
         name: '直言',
@@ -221,7 +221,7 @@ const skill = {
     },
     qiuyuan: {
         name: '救援',
-        intro: '当你成为@(standard.sha)的目标时，你可以令另一名其他角色交给你一张@(standard.shan)，否则也成为此@(standard.sha)的目标。'
+        intro: '当你成为@(standard:card.sha)的目标时，你可以令另一名其他角色交给你一张@(standard:card.shan)，否则也成为此@(standard:card.sha)的目标。'
     },
     juece: {
         name: '绝策',
@@ -237,15 +237,15 @@ const skill = {
     },
     sidi: {
         name: '司敌',
-        intro: '其他角色出牌阶段开始时，你可以弃置一张非基本牌（须与你装备区里的牌颜色相同），然后该角色不能使用和打出与此牌颜色相同的牌。此阶段结束时，若其没有使用@(standard.sha)，视为你对其使用一张@(standard.sha)。'
+        intro: '其他角色出牌阶段开始时，你可以弃置一张非基本牌（须与你装备区里的牌颜色相同），然后该角色不能使用和打出与此牌颜色相同的牌。此阶段结束时，若其没有使用@(standard:card.sha)，视为你对其使用一张@(standard:card.sha)。'
     },
     shenduan: {
         name: '慎断',
-        intro: '当你的一张黑色基本牌弃置后，你可以将此牌当@(maneuver.bingliang)使用。'
+        intro: '当你的一张黑色基本牌弃置后，你可以将此牌当@(maneuver:card.bingliang)使用。'
     },
     yonglve: {
         name: '勇略',
-        intro: '其他角色的判定阶段开始时，若其在你攻击范围内，你可以弃置其判定区里的一张牌，然后视为你对其使用一张@(standard.sha)，若此@(standard.sha)没有造成过伤害，则你摸一张牌。'
+        intro: '其他角色的判定阶段开始时，若其在你攻击范围内，你可以弃置其判定区里的一张牌，然后视为你对其使用一张@(standard:card.sha)，若此@(standard:card.sha)没有造成过伤害，则你摸一张牌。'
     },
     pindi: {
         name: '品第',
@@ -257,7 +257,7 @@ const skill = {
     },
     benxi: {
         name: '奔袭',
-        intro: '@(锁定技)，当你于回合内使用牌时，本回合你计算与其他角色的距离-1；若你与所有其他角色的距离均为1，则你无视防具且你使用@(standard.sha)可以多选择一个目标。'
+        intro: '@(锁定技)，当你于回合内使用牌时，本回合你计算与其他角色的距离-1；若你与所有其他角色的距离均为1，则你无视防具且你使用@(standard:card.sha)可以多选择一个目标。'
     },
     qiangzhi: {
         name: '强识',
@@ -269,11 +269,11 @@ const skill = {
     },
     zhongyong: {
         name: '忠勇',
-        intro: '当你使用@(standard.sha)后，你可以将此@(standard.sha)或目标角色使用的@(standard.shan)交给一名其他角色，若其获得的牌为红色，则其可以对你攻击范围内的角色使用一张@(standard.sha)。'
+        intro: '当你使用@(standard:card.sha)后，你可以将此@(standard:card.sha)或目标角色使用的@(standard:card.shan)交给一名其他角色，若其获得的牌为红色，则其可以对你攻击范围内的角色使用一张@(standard:card.sha)。'
     },
     zenhui: {
         name: '谮毁',
-        intro: '出牌阶段限一次，当你使用@(standard.sha)或黑色普通锦囊牌指定唯一目标时，你可以令另一名角色选择一项：1.交给你一张牌，然后代替你成为此牌的使用者；2.也成为此牌的目标。'
+        intro: '出牌阶段限一次，当你使用@(standard:card.sha)或黑色普通锦囊牌指定唯一目标时，你可以令另一名角色选择一项：1.交给你一张牌，然后代替你成为此牌的使用者；2.也成为此牌的目标。'
     },
     jiaojin: {
         name: '骄矜',
@@ -317,7 +317,7 @@ const skill = {
     },
     mingjian: {
         name: '明鉴',
-        intro: '出牌阶段限一次，你可以将所有手牌交给一名其他角色，然后该角色下回合的手牌上限+1，且出牌阶段内可以多使用一张@(standard.sha)。'
+        intro: '出牌阶段限一次，你可以将所有手牌交给一名其他角色，然后该角色下回合的手牌上限+1，且出牌阶段内可以多使用一张@(standard:card.sha)。'
     },
     xingshuai: {
         name: '兴衰',
@@ -329,7 +329,7 @@ const skill = {
     },
     qingxi: {
         name: '倾袭',
-        intro: '当你使用@(standard.sha)对目标角色造成伤害时，若你的装备区里有武器牌，你可令其选择一项：1.弃置等同于此武器牌攻击范围张数的手牌，然后弃置此牌；2.令此伤害+1。'
+        intro: '当你使用@(standard:card.sha)对目标角色造成伤害时，若你的装备区里有武器牌，你可令其选择一项：1.弃置等同于此武器牌攻击范围张数的手牌，然后弃置此牌；2.令此伤害+1。'
     },
     huomo: {
         name: '活墨',
@@ -341,11 +341,11 @@ const skill = {
     },
     zhanjue: {
         name: '战绝',
-        intro: '出牌阶段，你可以将所有手牌当@(standard.juedou)使用，然后你和受伤的角色各摸一张牌。若你摸过两张或更多的牌，则本回合\'战绝\'失效。'
+        intro: '出牌阶段，你可以将所有手牌当@(standard:card.juedou)使用，然后你和受伤的角色各摸一张牌。若你摸过两张或更多的牌，则本回合\'战绝\'失效。'
     },
     qinwang: {
         name: '勤王',
-        intro: '@(主公技)，你可以弃置一张牌，然后发动一次@(standard.jijiang)。响应此@(standard.jijiang)打出@(standard.sha)的角色摸一张牌。'
+        intro: '@(主公技)，你可以弃置一张牌，然后发动一次@(standard:skill.jijiang)。响应此@(standard:skill.jijiang)打出@(standard:card.sha)的角色摸一张牌。'
     },
     qiaoshi: {
         name: '樵拾',
@@ -353,15 +353,15 @@ const skill = {
     },
     yanyu: {
         name: '燕语',
-        intro: '出牌阶段，你可以重铸@(standard.sha)；出牌阶段结束时，若你于此阶段内重铸过两张或更多的@(standard.sha)，则你可以令一名男性角色摸两张牌。'
+        intro: '出牌阶段，你可以重铸@(standard:card.sha)；出牌阶段结束时，若你于此阶段内重铸过两张或更多的@(standard:card.sha)，则你可以令一名男性角色摸两张牌。'
     },
     wurong: {
         name: '怃戎',
-        intro: '出牌阶段限一次，你可以和一名其他角色同时展示一张手牌：若你展示的是@(standard.sha)且该角色不是@(standard.shan)，你弃置此@(standard.sha)，然后对其造成1点伤害；若你展示的不是@(standard.sha)且该角色是@(standard.shan)，你弃置此牌，然后获得其一张牌。'
+        intro: '出牌阶段限一次，你可以和一名其他角色同时展示一张手牌：若你展示的是@(standard:card.sha)且该角色不是@(standard:card.shan)，你弃置此@(standard:card.sha)，然后对其造成1点伤害；若你展示的不是@(standard:card.sha)且该角色是@(standard:card.shan)，你弃置此牌，然后获得其一张牌。'
     },
     shizhi: {
         name: '矢志',
-        intro: '@(锁定技)，若你的体力值为1，你的@(standard.shan)视为@(standard.sha)。'
+        intro: '@(锁定技)，若你的体力值为1，你的@(standard:card.shan)视为@(standard:card.sha)。'
     },
     yanzhu: {
         name: '宴诛',
@@ -393,7 +393,7 @@ const skill = {
     },
     shifei: {
         name: '饰非',
-        intro: '当你需要使用或打出@(standard.shan)时，你可以令当前回合角色摸一张牌，然后若其手牌不是唯一最多，则你弃置最多的角色一张牌，视为你使用或打出一张@(standard.shan)。'
+        intro: '当你需要使用或打出@(standard:card.shan)时，你可以令当前回合角色摸一张牌，然后若其手牌不是唯一最多，则你弃置最多的角色一张牌，视为你使用或打出一张@(standard:card.shan)。'
     }
 };
 

@@ -9,6 +9,11 @@ export default {
         tasks, classes, components,
         minHeroCount: 50,
         minPileCount: 100,
+        autoKeywords: {
+            hero: 'steel',
+            card: 'gold',
+            skill: 'orange'
+        },
         config: {
             online: {
                 name: '联机模式',
@@ -75,7 +80,7 @@ export default {
             'qun': ['群', 'yellow']
         },
         keyword: {
-            '主公技': ['只有身份为主公时才可以发动', 'orange'],
+            '主公技': ['只有身份为主公时才可以发动', 'red'],
             '锁定技': ['技能于其发动时机若能发动则必须发动', 'blue'],
             '限定技': ['技能于一局游戏内只能发动一次', 'purple'],
             '觉醒技': ['① 技能于其发动时机若能发动则必须发动；② 技能于一局游戏内只能发动一次', 'green']

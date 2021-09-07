@@ -1,5 +1,5 @@
 import type { Task } from './worker/task';
-import type { Component } from './components';
+import type { Component, TextColor } from './components';
 import type { accessExtension, getHero, getCard} from './extension';
 import type { lib } from './client/globals';
 
@@ -76,6 +76,7 @@ export interface ModeData<T extends Task = Task> {
     duration?: number;
     minHeroCount?: number;
     minPileCount?: number;
+    autoKeywords?: Dict<TextColor>;
     [key: string]: any;
 }
 

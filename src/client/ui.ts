@@ -520,19 +520,43 @@ export function format(node: HTMLElement, content: string) {
         return;
     }
     const sections = content.split('@(');
-    for (let i = 0; i < sections.length; i++) {
+    const keywords = [];
+    for (let i = 1; i < sections.length; i++) {
         let [name, content] = split(sections[i], ')');
-        if (content) {
+        if (typeof content === 'string') {
             if (lib.keyword[name]) {
-                //////
+                keywords.push(lib.keyword[name]);
+                name = '<span class="keyword">' + name + '</span>';
             }
             else if (!isNaN(name as any)) {
-                content = toCN(name) + content;
+                name = toCN(name);
             }
-            sections[i] = content;
+            sections[i] = name + content;
         }
     }
     node.innerHTML = sections.join('');
+
+    // render keywords
+    const spans = node.querySelectorAll<HTMLElement>('span.keyword');
+    for (let i = 0; i < keywords.length; i++) {
+        const info = keywords[i];
+        if (info[1]) {
+            spans[i].dataset.color = info[1];
+        }
+        if (info[2]) {
+            spans[i].innerHTML = info[2];
+        }
+        if (info[0]) {
+            const onclick = (e: Point) => {
+                const menu = create('popup');
+                menu.pane.width = 160;
+                menu.pane.node.classList.add('intro');
+                menu.pane.addText(info[0]);
+                menu.open(e);
+            };
+            bind(spans[i], { onclick, oncontext: onclick });
+        }
+    }
 }
 
 /** Count active childNodes. */

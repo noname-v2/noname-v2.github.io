@@ -129,7 +129,7 @@ export default {
             gender: 'male',
             faction: 'qun',
             hp: 4,
-            'skills': ['standard.mashu', 'jianchu']
+            'skills': ['standard:mashu', 'jianchu']
         },
         yanliangwenchou: {
             name: '颜良文丑',

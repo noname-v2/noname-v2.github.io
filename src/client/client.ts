@@ -1,10 +1,10 @@
-import { importExtension } from '../extension';
+import { importExtension, accessExtension } from '../extension';
 import { rng } from '../utils';
 import { create } from './ui';
 import { backups, componentClasses, restore, app, splash, lib } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
-import type { Component } from '../components';
+import type { Component, TextColor } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
 /** Hub configuration. */
@@ -178,11 +178,14 @@ async function loadArena(ruleset: string[], packs: string[]) {
     }
 
     // extension dependencies
+    const allPacks = new Set<string>();
     const requires = new Set<string>();
+    const autoKeywords = new Map<string, TextColor>();
 
     // overwrite component constructors by mode
     for (const pack of ruleset) {
-        const ext = await importExtension(pack, lib);
+        allPacks.add(pack);
+        const ext = await importExtension(pack);
         for (const tag in ext.mode?.components) {
             const cls = componentClasses.get(tag) ?? backups.get('component');
             componentClasses.set(tag, ext.mode!.components[tag](cls));
@@ -192,11 +195,17 @@ async function loadArena(ruleset: string[], packs: string[]) {
                 requires.add(pack);
             }
         }
+        if (ext.mode?.autoKeywords) {
+            for (const section in ext.mode.autoKeywords) {
+                autoKeywords.set(section, ext.mode.autoKeywords[section]);
+            }
+        }
     }
     
     // import packs
     for (const pack of packs) {
-        const ext = await importExtension(pack, lib);
+        allPacks.add(pack);
+        const ext = await importExtension(pack);
         if (ext.requires) {
             for (const pack of ext.requires) {
                 requires.add(pack);
@@ -205,7 +214,22 @@ async function loadArena(ruleset: string[], packs: string[]) {
     }
 
     for (const pack of requires) {
-        await importExtension(pack, lib);
+        allPacks.add(pack);
+        await importExtension(pack);
+    }
+
+    // fill lib and automatic keywords
+    for (const pack of allPacks) {
+        const ext = accessExtension(pack);
+        for (const section in ext.lib) {
+            Object.assign((lib as any)[section], ext.lib[section]);
+        }
+        for (const [section, color] of autoKeywords) {
+            for (const name in ext[section]) {
+                const info = ext[section][name];
+                lib.keyword[pack + ':' + section + '.' + name] = [info.intro, color, info.name];
+            }
+        }
     }
 }
 

@@ -5,7 +5,7 @@ const skill = {
     },
     jixi: {
         name: '急袭',
-        intro: '@(主将技) 此武将牌减少半个阴阳鱼；你可以将一张“田”当@(standard.shunshou)使用。'
+        intro: '@(主将技) 此武将牌减少半个阴阳鱼；你可以将一张“田”当@(standard:card.shunshou)使用。'
     },
     huyuan: {
         name: '护援',
@@ -13,7 +13,7 @@ const skill = {
     },
     heyi: {
         name: '鹤翼',
-        intro: '@(阵法技) 与你处于同一队列的其他角色拥有@(conqueror.feiying)。'
+        intro: '@(阵法技) 与你处于同一队列的其他角色拥有@(conqueror:skill.feiying)。'
     },
     feiying: {
         name: '飞影',
@@ -29,15 +29,15 @@ const skill = {
     },
     yizhi: {
         name: '遗志',
-        intro: '@(副将技) 此武将牌上单独的阴阳鱼个数-1。若你的主将拥有技能@(standard_hege.guanxing)，则将其描述中的X改为5；若你的主将没有技能@(standard_hege.guanxing)，则你拥有技能@(standard_hege.guanxing)。'
+        intro: '@(副将技) 此武将牌上单独的阴阳鱼个数-1。若你的主将拥有技能@(hegemony:skill.guanxing)，则将其描述中的X改为5；若你的主将没有技能@(hegemony:skill.guanxing)，则你拥有技能@(hegemony:skill.guanxing)。'
     },
     tianfu: {
         name: '天覆',
-        intro: '@(主将技) @(阵法技) 若当前回合角色与你处于同一队列，你拥有技能@(myth.kanpo)。'
+        intro: '@(主将技) @(阵法技) 若当前回合角色与你处于同一队列，你拥有技能@(myth:skill.kanpo)。'
     },
     yicheng: {
         name: '疑城',
-        intro: '当与你势力相同的一名角色成为@(standard.sha)的目标后，你可以令该角色摸一张牌然后弃置一张牌。'
+        intro: '当与你势力相同的一名角色成为@(standard:card.sha)的目标后，你可以令该角色摸一张牌然后弃置一张牌。'
     },
     shangyi: {
         name: '尚义',
@@ -45,11 +45,11 @@ const skill = {
     },
     niaoxiang: {
         name: '鸟翔',
-        intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard.sha)指定被围攻角色为目标后，你令该角色需依次使用两张@(standard.shan)才能抵消。'
+        intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard:card.sha)指定被围攻角色为目标后，你令该角色需依次使用两张@(standard:card.shan)才能抵消。'
     },
     zhendu: {
         name: '鸠毒',
-        intro: '其他角色的出牌阶段开始时，你可以弃置一张手牌，然后该角色视为使用一张@(maneuver.jiu)，且你对其造成1点伤害。'
+        intro: '其他角色的出牌阶段开始时，你可以弃置一张手牌，然后该角色视为使用一张@(maneuver:card.jiu)，且你对其造成1点伤害。'
     },
     qiluan: {
         name: '戚乱',
@@ -73,11 +73,11 @@ const skill = {
     },
     cunsi: {
         name: '存嗣',
-        intro: '出牌阶段，你可以移除此武将牌并选择一名角色，然后其获得技能@(conqueror.yongjue)'
+        intro: '出牌阶段，你可以移除此武将牌并选择一名角色，然后其获得技能@(conqueror:skill.yongjue)'
     },
     yongjue: {
         name: '勇决',
-        intro: '若与你势力相同的一名角色于其回合内使用的第一张牌为@(standard.sha)，则该角色可以在此@(standard.sha)结算完成后获得之），若你没有获得@(conqueror.yongjue)，则获得@(conqueror.yongjue)的角色摸两张牌。'
+        intro: '若与你势力相同的一名角色于其回合内使用的第一张牌为@(standard:card.sha)，则该角色可以在此@(standard:card.sha)结算完成后获得之），若你没有获得@(conqueror:skill.yongjue)，则获得@(conqueror:skill.yongjue)的角色摸两张牌。'
     },
     yingyang: {
         name: '鹰扬',
@@ -85,7 +85,7 @@ const skill = {
     },
     hunshang: {
         name: '魂殇',
-        intro: '@(副将技) 此武将牌减少半个阴阳鱼；准备阶段，若你的体力值不大于1，则你本回合获得@(standard.yingzi)和@(myth.yinghun)。'
+        intro: '@(副将技) 此武将牌减少半个阴阳鱼；准备阶段，若你的体力值不大于1，则你本回合获得@(standard:skill.yingzi)和@(myth:skill.yinghun)。'
     },
     duanxie: {
         name: '断绁',
@@ -101,15 +101,19 @@ const skill = {
     },
     baoling: {
         name: '暴凌',
-        intro: '@(主将技) @(锁定技) 出牌阶段结束时，若你有副将，则你移除副将，然后加3点体力上限，回复3点体力，并获得@(myth.benghuai)。'
+        intro: '@(主将技) @(锁定技) 出牌阶段结束时，若你有副将，则你移除副将，然后加3点体力上限，回复3点体力，并获得@(myth:skill.benghuai)。'
     },
     chuanxin: {
         name: '穿心',
-        intro: '可预亮,当你于出牌阶段内使用@(standard.sha)或@(standard.juedou)对目标角色造成伤害时，若其与你势力不同且有副将，你可以防止此伤害。若如此做，该角色选择一项：1.弃置装备区里的所有牌，若如此做，其失去1点体力；2.移除副将。'
+        intro: '可预亮,当你于出牌阶段内使用@(standard:card.sha)或@(standard:card.juedou)对目标角色造成伤害时，若其与你势力不同且有副将，你可以防止此伤害。若如此做，该角色选择一项：1.弃置装备区里的所有牌，若如此做，其失去1点体力；2.移除副将。'
     },
     fengshi: {
         name: '锋矢',
-        intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard.sha)指定被围攻角色为目标后，可令该角色弃置装备区里的一张牌。'
+        intro: '@(阵法技) 在同一个围攻关系中，若你是围攻角色，则你或另一名围攻角色使用@(standard:card.sha)指定被围攻角色为目标后，可令该角色弃置装备区里的一张牌。'
+    },
+    qice: {
+        name: '奇策',
+        intro: '出牌阶段限一次，你可以将所有手牌当任意一张普通锦囊牌使用，你不能以此法使用目标数超过X的牌（X为你的手牌数），然后你可以@(变更副将)。'
     }
 };
 
@@ -117,12 +121,14 @@ var main = {
     cardpack: '君临天下',
     heropack: '君临天下',
     tags: ['hero-hidden!', 'double-hero!'],
+    requires: ['meteor', 'contest'],
     skill,
     lib: {
         keyword: {
             '主将技': ['只有武将为主将时才可以发动', 'orange'],
             '副将技': ['只有武将为副将时才可以发动', 'peach'],
-            '阵法技': ['在全场存活角色数为4或更多时锁定生效的技能。拥有阵法技的角色可在准备阶段开始时或出牌阶段发起阵法召唤：满足此阵法技条件的未确定势力角色均可按逆时针顺序依次明置其一张武将牌（响应阵法召唤），以发挥阵法技的效果。', 'green']
+            '阵法技': ['在全场存活角色数为4或更多时锁定生效的技能。拥有阵法技的角色可在准备阶段开始时或出牌阶段发起阵法召唤：满足此阵法技条件的未确定势力角色均可按逆时针顺序依次明置其一张武将牌（响应阵法召唤），以发挥阵法技的效果。', 'green'],
+            '变更副将': ['从未出场的武将中选择一名任务副将。', 'steel']
         },
         label: {
             'hezong': ['合纵', null, '合纵', '出牌阶段限一次，你可将至多三张带有合纵标记的手牌交给一名其他角色（不能与你势力相同）。若该角色与你势力不同，则你摸等量的牌。']
@@ -208,7 +214,7 @@ var main = {
             gender: 'male',
             faction: 'wei',
             hp: 3,
-            skills: ['meteror.xunxun', 'meteror.wangxi']
+            skills: ['meteor:xunxun', 'meteor:wangxi']
         },
         zangba: {
             name: '臧霸',
@@ -226,7 +232,7 @@ var main = {
             gender: 'male',
             faction: 'shu',
             hp: 4,
-            skills: ['standard.mashu', 'qianxi']
+            skills: ['standard:mashu', 'qianxi']
         },
         mifuren: {
             name: '糜夫人',
@@ -280,13 +286,13 @@ var main = {
             gender: 'male',
             faction: 'wei',
             hp: 3,
-            skills: ['qice', 'zhiyu']
+            skills: ['qice', 'contest:zhiyu']
         }
     },
     card: {
         chiling: {
             name: '敕令',
-            intro: '出牌阶段，对所有没有势力的角色使用。目标角色选择一项：1、明置一张武将牌，然后摸一张牌；2、弃置一张装备牌；3、失去1点体力。当@(conqueror:card.chiling)因判定或弃置而置入弃牌堆时，系统将之移出游戏，然后系统于当前回合结束后视为对所有没有势力的角色使用@(conqueror.chiling)。',
+            intro: '出牌阶段，对所有没有势力的角色使用。目标角色选择一项：1、明置一张武将牌，然后摸一张牌；2、弃置一张装备牌；3、失去1点体力。当@(conqueror:card.chiling)因判定或弃置而置入弃牌堆时，系统将之移出游戏，然后系统于当前回合结束后视为对所有没有势力的角色使用@(conqueror:card.chiling)。',
             type: 'trick',
             subtype: 'instant',
             subpack: '势备篇'
@@ -337,7 +343,7 @@ var main = {
         },
         qinglong: {
             name: '青龙偃月刀',
-            intro: '你使用@(standard.sha)指定一名角色为目标后，该角色不能明置武将牌，直到此@(standard.sha)结算完毕。',
+            intro: '你使用@(standard:card.sha)指定一名角色为目标后，该角色不能明置武将牌，直到此@(standard:card.sha)结算完毕。',
             type: 'equip',
             subtype: 'weapon',
             range: 3,
@@ -345,7 +351,7 @@ var main = {
         },
         fangtian: {
             name: '方天画戟',
-            intro: '你使用的@(standard.sha)可以指定任意名势力各不相同的角色及未确定势力的角色为目标。当此@(standard.sha)被一名目标角色使用@(standard.shan)抵消时，此@(standard.sha)对其他目标角色无效。',
+            intro: '你使用的@(standard:card.sha)可以指定任意名势力各不相同的角色及未确定势力的角色为目标。当此@(standard:card.sha)被一名目标角色使用@(standard:card.shan)抵消时，此@(standard:card.sha)对其他目标角色无效。',
             type: 'equip',
             subtype: 'weapon',
             range: 4,
@@ -353,14 +359,14 @@ var main = {
         },
         huxin: {
             name: '护心镜',
-            intro: '当你受到伤害时，若伤害值大于或等于你的体力值，则你可以将@(conqueror.huxin)置入弃牌堆，然后防止此伤害。',
+            intro: '当你受到伤害时，若伤害值大于或等于你的体力值，则你可以将@(conqueror:card.huxin)置入弃牌堆，然后防止此伤害。',
             type: 'equip',
             subtype: 'armor',
             subpack: '势备篇'
         },
         mingguang: {
             name: '明光铠',
-            intro: '@(锁定技) 当你成为@(conqueror.huoshao)、@(maneuver.huogong)或火@(standard.sha)的目标时，取消之；若你是小势力角色，你不会被横置。',
+            intro: '@(锁定技) 当你成为@(conqueror:card.huoshao)、@(maneuver:card.huogong)或火@(standard:card.sha)的目标时，取消之；若你是小势力角色，你不会被横置。',
             type: 'equip',
             subtype: 'armor',
             subpack: '势备篇'
@@ -375,28 +381,28 @@ var main = {
         },
         yuxi: {
             name: '玉玺',
-            intro: '@(锁定技) 若你有明置的武将牌，你的势力视为唯一的大势力；锁定技，摸牌阶段，若你有明置的武将牌，你多摸一张牌；锁定技，出牌阶段开始时，若你有明置的武将牌，你视为使用@(standard_hege.zhiji)。',
+            intro: '@(锁定技) 若你有明置的武将牌，你的势力视为唯一的大势力；锁定技，摸牌阶段，若你有明置的武将牌，你多摸一张牌；锁定技，出牌阶段开始时，若你有明置的武将牌，你视为使用@(hegemony:skill.zhiji)。',
             type: 'equip',
             subtype: 'treasure',
             subpack: '势备篇'
         },
         dinglan: {
             name: '定澜夜明珠',
-            intro: '@(锁定技) 你视为拥有技能@(standard_hege.zhiheng)，若你已经有@(standard_hege.zhiheng)，则改为取消弃置牌数的限制。',
+            intro: '@(锁定技) 你视为拥有技能@(hegemony:skill.zhiheng)，若你已经有@(hegemony:skill.zhiheng)，则改为取消弃置牌数的限制。',
             type: 'equip',
             subtype: 'treasure',
             subpack: '君主专属'
         },
         feilong: {
             name: '飞龙夺凤',
-            intro: '当你使用@(standard.sha)指定一名角色为目标后，你可令该角色弃置一张牌。你使用@(standard.sha)杀死一名角色后，若你所属的势力是全场最少的（或之一），你可令该角色的使用者选择是否从未使用的武将牌中选择一张与你势力相同的武将牌重新加入游戏。',
+            intro: '当你使用@(standard:card.sha)指定一名角色为目标后，你可令该角色弃置一张牌。你使用@(standard:card.sha)杀死一名角色后，若你所属的势力是全场最少的（或之一），你可令该角色的使用者选择是否从未使用的武将牌中选择一张与你势力相同的武将牌重新加入游戏。',
             type: 'equip',
             subtype: 'weapon',
             subpack: '君主专属'
         },
         taiping: {
             name: '太平要术',
-            intro: '@(锁定技) 防止你受到的所有属性伤害；全场每有一名与你势力相同的角色存活，所有此势力角色的手牌上限便+1；当你失去装备区里的@(conqueror.taiping)时，你失去1点体力，然后摸两张牌。',
+            intro: '@(锁定技) 防止你受到的所有属性伤害；全场每有一名与你势力相同的角色存活，所有此势力角色的手牌上限便+1；当你失去装备区里的@(conqueror:card.taiping)时，你失去1点体力，然后摸两张牌。',
             type: 'equip',
             subtype: 'treasure',
             subpack: '君主专属'

@@ -24,7 +24,7 @@ export let arena: Arena | null = null;
 /** Extention items that are indexed. */
 export const lib = {
     /** Keywords in intro. */
-    keyword: {} as Dict<[string, TextColor]>,
+    keyword: {} as Dict<[string, TextColor?, string?]>,
 
     /** factions from extensions. */
     faction: {} as Dict<[string, GlowColor]>,

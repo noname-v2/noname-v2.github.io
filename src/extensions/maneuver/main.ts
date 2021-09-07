@@ -8,24 +8,24 @@ export default {
         huosha: {
             name: '火杀',
             caption: ['殺', 'darkred'],
-            intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard.shan)或受到一点火属性伤害。',
+            intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard:card.shan)或受到一点火属性伤害。',
             type: 'basic',
             decoration: 'fire',
-            originated: 'standard.sha',
+            originated: 'standard:sha',
             label: 'fire'
         },
         leisha: {
             name: '雷杀',
             caption: ['殺', 'darkblue'],
-            intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard.shan)或受到一点雷属性伤害。',
+            intro: '出牌阶段，对攻击范围内的一名角色使用，令其使用一张@(standard:card.shan)或受到一点雷属性伤害。',
             type: 'basic',
             decoration: 'thunder',
-            originated: 'standard.sha',
+            originated: 'standard:sha',
             label: 'thunder'
         },
         jiu: {
             name: '酒',
-            intro: '出牌阶段，对自己使用，令自己的下一张使用的@(standard.sha)造成的伤害+1（每回合限使用1次）；濒死阶段，对自己使用，回复1点体力',
+            intro: '出牌阶段，对自己使用，令自己的下一张使用的@(standard:card.sha)造成的伤害+1（每回合限使用1次）；濒死阶段，对自己使用，回复1点体力',
             caption: '酒',
             type: 'basic'
         },
@@ -56,33 +56,33 @@ export default {
         },
         zhuque: {
             name: '朱雀羽扇',
-            intro: '你可以将一张普通@(standard.sha)当@(maneuver.huosha)使用。',
+            intro: '你可以将一张普通@(standard:card.sha)当@(maneuver:card.huosha)使用。',
             type: 'equip',
             subtype: 'weapon',
             range: 4
         },
         guding: {
             name: '古锭刀',
-            intro: '@(锁定技) 当你使用@(standard.sha)对目标角色造成伤害时，若其没有手牌，此伤害+1。',
+            intro: '@(锁定技) 当你使用@(standard:card.sha)对目标角色造成伤害时，若其没有手牌，此伤害+1。',
             type: 'equip',
             subtype: 'weapon',
             range: 2
         },
         tengjia: {
             name: '藤甲',
-            intro: '@(锁定技) @(standard.nanman)、@(standard.wanjian)和普通@(standard.sha)对你无效。你每次受到火焰伤害时，该伤害+1。',
+            intro: '@(锁定技) @(standard:card.nanman)、@(standard:card.wanjian)和普通@(standard:card.sha)对你无效。你每次受到火焰伤害时，该伤害+1。',
             type: 'equip',
             subtype: 'armor'
         },
         baiyin: {
             name: '白银狮子',
-            intro: '@(锁定技) 你每次受到伤害时，最多承受1点伤害（防止多余的伤害）；当你失去装备区里的@(maneuver.baiyin)时，你回复1点体力。',
+            intro: '@(锁定技) 你每次受到伤害时，最多承受1点伤害（防止多余的伤害）；当你失去装备区里的@(maneuver:card.baiyin)时，你回复1点体力。',
             type: 'equip',
             subtype: 'armor'
         },
         muniu: {
             name: '木牛流马',
-            intro: '出牌阶段限一次，你可以将一张手牌扣置于你装备区里的@(maneuver.muniu)下，若如此做，你可以将此装备移动到一名其他角色的装备区里；你可以将此装备牌下的牌如手牌般使用或打出。',
+            intro: '出牌阶段限一次，你可以将一张手牌扣置于你装备区里的@(maneuver:card.muniu)下，若如此做，你可以将此装备移动到一名其他角色的装备区里；你可以将此装备牌下的牌如手牌般使用或打出。',
             type: 'equip',
             subtype: 'treasure'
         }

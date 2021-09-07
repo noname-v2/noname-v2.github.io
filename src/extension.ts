@@ -1,20 +1,14 @@
 import { freeze, access, split } from './utils';
 import type { Extension, HeroData, CardData } from './types';
-import type { lib } from './client/globals';
 
 /** Map of loaded extensions. */
 const extensions = new Map<string, Extension>();
 
 /** Load extension. */
-export async function importExtension(extname: string, index?: typeof lib) {
+export async function importExtension(extname: string) {
     if (!extensions.has(extname)) {
         const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
         extensions.set(extname, ext);
-        if (index) {
-            for (const section in ext.lib) {
-                Object.assign((index as any)[section], ext.lib[section]);
-            }
-        }
     }
     return extensions.get(extname)!;
 }
