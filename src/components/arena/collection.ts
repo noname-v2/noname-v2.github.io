@@ -11,9 +11,6 @@ export class Collection extends Popup {
     /** Gallery object. */
     gallery!: Gallery;
 
-    /** Width of the gallery (if not this.flex). */
-    galleryWidth?: number;
-
     /** Card pile gallery. */
     pileGallery?: Gallery;
 
@@ -28,9 +25,6 @@ export class Collection extends Popup {
 
     /** Use dynamic nrows and ncols. */
     flex: boolean = false;
-
-    /** Align to center vertically. */
-    verticalCenter = true;
 
     setup(pack: string, type: 'hero' | 'card' | 'card+pile', render?: (id: string, node: HTMLElement) => void) {
         const section = type === 'card+pile' ? 'card' : type;
@@ -57,8 +51,8 @@ export class Collection extends Popup {
                 [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                 gallery.node.style.width = `${width}px`;
             }
-            gallery.node.classList.add('force-indicator');
             this.gallery = gallery;
+            gallery.node.classList.add('force-indicator');
 
             // add gallery items
             for (const name in lib) {
@@ -129,11 +123,11 @@ export class Collection extends Popup {
                     }
                     else {
                         [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
-                        this.pileGallery = pileGallery;
                         pileGallery.node.style.display = 'none';
                         pileGallery.node.classList.add('pop');
                         pileGallery.node.style.width = `${width}px`;
                     }
+                    this.pileGallery = pileGallery;
                     pileGallery.node.classList.add('force-indicator');
 
                     for (const name in pile) {

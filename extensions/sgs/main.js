@@ -952,7 +952,14 @@ var main = {
             pick: {
                 name: '点将',
                 intro: '允许玩家自由选择武将。',
-                init: false
+                init: false,
+                requires: 'online'
+            },
+            late_pick: {
+                name: '点将',
+                intro: '允许玩家自由选择武将。',
+                init: true,
+                requires: '!online'
             },
             speed: {
                 name: '游戏速度',

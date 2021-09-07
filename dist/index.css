@@ -303,6 +303,9 @@ noname-gallery > noname-pages > noname-page > noname-layer > noname-item > * {
   top: 0;
   position: absolute;
 }
+noname-gallery > noname-pages > noname-page > noname-layer > noname-item > noname-player.selected > noname-background, noname-gallery > noname-pages > noname-page > noname-layer > noname-item > noname-card.selected > noname-background {
+  box-shadow: var(--glow-red);
+}
 noname-gallery > noname-pages > noname-page > noname-layer > div {
   flex-basis: 100%;
 }
@@ -360,9 +363,6 @@ noname-gallery.pop noname-item > noname-player, noname-gallery.pop noname-item n
 }
 noname-gallery.pop noname-item > noname-player > noname-background, noname-gallery.pop noname-item noname-card > noname-background {
   transition: box-shadow var(--app-transition);
-}
-noname-gallery.pop noname-item > noname-player.selected > noname-background, noname-gallery.pop noname-item noname-card.selected > noname-background {
-  box-shadow: var(--glow-red);
 }
 noname-gallery.pop noname-item > noname-player {
   width: var(--player-width);

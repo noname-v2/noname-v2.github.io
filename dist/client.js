@@ -2201,8 +2201,6 @@
         items = new Map();
         /** Gallery object. */
         gallery;
-        /** Width of the gallery (if not this.flex). */
-        galleryWidth;
         /** Card pile gallery. */
         pileGallery;
         /** Card pile toggle. */
@@ -2213,8 +2211,6 @@
         ncols = 5;
         /** Use dynamic nrows and ncols. */
         flex = false;
-        /** Align to center vertically. */
-        verticalCenter = true;
         setup(pack, type, render) {
             const section = type === 'card+pile' ? 'card' : type;
             const lib = this.app.accessExtension(pack, section);
@@ -2239,8 +2235,8 @@
                     [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                     gallery.node.style.width = `${width}px`;
                 }
-                gallery.node.classList.add('force-indicator');
                 this.gallery = gallery;
+                gallery.node.classList.add('force-indicator');
                 // add gallery items
                 for (const name in lib) {
                     gallery.add(() => {
@@ -2305,11 +2301,11 @@
                         }
                         else {
                             [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
-                            this.pileGallery = pileGallery;
                             pileGallery.node.style.display = 'none';
                             pileGallery.node.classList.add('pop');
                             pileGallery.node.style.width = `${width}px`;
                         }
+                        this.pileGallery = pileGallery;
                         pileGallery.node.classList.add('force-indicator');
                         for (const name in pile) {
                             const id = name.includes(':') ? name : pack + ':' + name;
@@ -2863,9 +2859,8 @@
         }
         #openCollection(pack, type) {
             const id = type + '|' + pack;
-            let collection;
             if (!this.collections.has(id)) {
-                collection = this.ui.create('collection');
+                const collection = this.ui.create('collection');
                 collection.arena = true;
                 collection.flex = true;
                 collection.ready.then(() => {
@@ -2928,7 +2923,8 @@
                     }
                 };
             }
-            this.collections.get(id).open();
+            const collection = this.collections.get(id);
+            collection[collection.hidden ? 'open' : 'close']();
         }
     }
 

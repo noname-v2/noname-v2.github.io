@@ -424,9 +424,8 @@ export class Lobby extends Component {
 
     #openCollection(pack: string, type: 'hero' | 'card+pile') {
         const id = type + '|' + pack;
-        let collection: Collection;
         if (!this.collections.has(id)) {
-            collection = this.ui.create('collection');
+            const collection = this.ui.create('collection');
             collection.arena = true;
             collection.flex = true;
             collection.ready.then(() => {
@@ -490,6 +489,7 @@ export class Lobby extends Component {
                 }
             };
         }
-        this.collections.get(id)!.open();
+        const collection = this.collections.get(id)!;
+        collection[collection.hidden ? 'open' : 'close']();
     }
 }

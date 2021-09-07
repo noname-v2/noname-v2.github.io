@@ -44,6 +44,13 @@ noname-gallery {
                     > * {
                         @include layer;
                     }
+
+                    > noname-player.selected, > noname-card.selected {
+                        // opacity: var(--app-defer-opacity);
+                        > noname-background {
+                            box-shadow: var(--glow-red);
+                        }
+                    }
                 }
 
                 > div {
@@ -115,13 +122,6 @@ noname-gallery {
             > noname-background {
                 transition: box-shadow var(--app-transition);
             }
-            
-			&.selected {
-				// opacity: var(--app-defer-opacity);
-                > noname-background {
-                    box-shadow: var(--glow-red);
-                }
-			}
 		}
 
         > noname-player {

@@ -28,7 +28,7 @@ export const mode = {
                         });
                     }
                     this.addTask('chooseHero', {
-                        heros, forced: true, pick: this.game.config.pick
+                        heros, forced: true, pick: this.game.config.late_pick && !this.game.hub.connected
                     });
                     this.addTask('loop');
                 }
