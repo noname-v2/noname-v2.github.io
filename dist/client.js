@@ -3439,10 +3439,19 @@
                 return;
             }
             if (this.mine) {
-                super.remove(this.ui.animate(this.node, {
+                const config = {
                     scale: [1, 'var(--app-zoom-scale)'],
                     opacity: [1, 0]
-                }));
+                };
+                const x = this.ui.getX(this.node);
+                const y = this.ui.getY(this.node);
+                if (x) {
+                    config.x = [x, x];
+                }
+                if (y) {
+                    config.y = [y, y];
+                }
+                super.remove(this.ui.animate(this.node, config));
                 this.onclose();
                 // remove all timers of the same player with the same start time
                 if (this.timer) {

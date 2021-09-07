@@ -10,6 +10,9 @@ export type Region = {x: [number, number], y: [number, number]};
 /** Transition duration names. */
 export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
 
+/** Options for ui.animate(). */
+export type { AnimationOptions } from './client/ui';
+
 /** All component classes. */
 export * from '../build/components';
 

@@ -1,4 +1,4 @@
-import { Component, Gallery, Timer, Player, Tray } from '../../components';
+import { AnimationOptions, Gallery, Timer, Player, Tray } from '../../components';
 import { Popup } from '../popup';
 import type { Select, FilterThis } from '../../types';
 
@@ -225,11 +225,22 @@ export class Pop extends Popup {
         }
 
         if (this.mine) {
-            super.remove(this.ui.animate(this.node, {
+            const config: AnimationOptions = {
                 scale: [1, 'var(--app-zoom-scale)'],
                 opacity: [1, 0]
-            }));
+            }
+            const x = this.ui.getX(this.node);
+            const y = this.ui.getY(this.node);
     
+            if (x) {
+                config.x = [x, x];
+            }
+    
+            if (y) {
+                config.y = [y, y];
+            }
+
+            super.remove(this.ui.animate(this.node, config));
             this.onclose!();
     
             // remove all timers of the same player with the same start time

@@ -416,7 +416,7 @@ export function dispatchMoveEnd(node: HTMLElement) {
 }
 
 /** Options for ui.animate(). */
-interface AnimationOptions {
+export interface AnimationOptions {
     x?: (number | string)[],
     y?: (number | string)[],
     scale?: (number | string)[],
