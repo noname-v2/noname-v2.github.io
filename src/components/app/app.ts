@@ -10,6 +10,7 @@ interface DialogOptions {
     content?: string;
     id?: string;
     timeout?: number;
+    temp?: boolean;
 }
 
 /** Options used by ui.confirm(). */
@@ -313,6 +314,9 @@ export class App extends Component {
     /** Display confirm message. */
     choose(caption: string, config: DialogOptions={}): Promise<string | null> {
         const dialog = this.ui.create('dialog');
+        if (config.temp) {
+            dialog.temp = true;
+        }
         dialog.update({caption, content: config.content ?? '', buttons: config.buttons});
         const promise = new Promise<string | null>(resolve => {
             dialog.onclose = () => {

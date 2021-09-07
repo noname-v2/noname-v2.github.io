@@ -1540,6 +1540,9 @@
         /** Display confirm message. */
         choose(caption, config = {}) {
             const dialog = this.ui.create('dialog');
+            if (config.temp) {
+                dialog.temp = true;
+            }
             dialog.update({ caption, content: config.content ?? '', buttons: config.buttons });
             const promise = new Promise(resolve => {
                 dialog.onclose = () => {
@@ -2980,12 +2983,30 @@
                 collection.setup(pack, type, (id, node) => {
                     if (type === 'hero') {
                         this.ui.bind(node, () => {
-                            // if (this.mine) {
-                            //     this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
-                            // }
-                            // else {
-                            // }
-                            if (this.data.config.pick && this.app.arena.peers) {
+                            if (this.mine) {
+                                if (this.data.config.pick && this.app.arena.peers) {
+                                    const picked = node.classList.contains('selected');
+                                    const banned = node.classList.contains('defer');
+                                    this.app.choose(this.app.getHero(id).name, {
+                                        buttons: [
+                                            ['pick', '点将', picked ? 'red' : ''],
+                                            ['ban', '禁用', banned ? 'blue' : '']
+                                        ],
+                                        temp: true
+                                    }).then(item => {
+                                        if (item === 'pick') {
+                                            this.#togglePick(id, !picked);
+                                        }
+                                        else if (item === 'ban') {
+                                            this.yield(['banned', 'hero/' + id, banned]);
+                                        }
+                                    });
+                                }
+                                else {
+                                    this.yield(['banned', 'hero/' + id, node.classList.contains('defer')]);
+                                }
+                            }
+                            else if (this.data.config.pick && this.app.arena.peers) {
                                 this.#togglePick(id, !node.classList.contains('selected'));
                             }
                         });
