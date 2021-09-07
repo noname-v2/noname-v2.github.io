@@ -37,10 +37,10 @@ export class Lobby extends Component {
     spectateBar = this.ui.createElement('bar');
 
     /** Sections containing banned heros. */
-    banned!: [HTMLElement, Tray];
+    banned!: [HTMLElement, Tray, Map<string, HTMLElement>];
 
     /** Sections containing banned heros. */
-    picked!: [HTMLElement, Tray, Map<string, HTMLElement>];
+    picked!: [HTMLElement, Tray, Map<string, HTMLElement>, boolean];
 
     /** Map of hero buttons in collection. */
     heroButtons = new Map<string, HTMLElement>();
@@ -248,7 +248,8 @@ export class Lobby extends Component {
         // banned heros
         this.banned = [
             this.sidebar.pane.addSection('禁将'),
-            this.sidebar.pane.addTray('round')
+            this.sidebar.pane.addTray('round'),
+            new Map()
         ];
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
@@ -257,7 +258,7 @@ export class Lobby extends Component {
         this.picked = [
             this.sidebar.pane.addSection('点将'),
             this.sidebar.pane.addTray('round'),
-            new Map()
+            new Map(), false
         ];
         this.picked[0].style.display = 'none';
         this.picked[1].node.style.display = 'none';
@@ -331,45 +332,72 @@ export class Lobby extends Component {
         }
 
         // update banned hero
-        const old = oldConfig?.banned?.hero;
-        if (old) {
-            for (const id of old) {
-                this.heroButtons.get(id)?.classList.remove('defer');
+        let changed = false;
+        const oldBanned = new Set<string>(oldConfig?.banned?.hero);
+        const newBanned = new Set<string>(config.banned?.hero);
+        if (oldBanned.size !== newBanned.size) {
+            changed = true;
+        }
+        else {
+            for (const id of oldBanned) {
+                if (!newBanned.has(id)) {
+                    changed = true;
+                    break;
+                }
             }
         }
 
-        if (config.banned?.hero?.length) {
+        if (changed) {
             const tray = this.banned[1];
-            this.banned[0].style.display = '';
-            tray.node.innerHTML = '';
-            tray.node.style.display = '';
-            tray.items.clear();
-            for (const id of config.banned.hero) {
-                const clone = this.ui.createElement('widget.avatar');
-                this.ui.setImage(clone, id);
-                this.ui.bind(clone, () => {
-                    if (this.mine) {
-                        this.yield(['banned', 'hero/' + id, true]);
+
+            if (newBanned.size) {
+                this.banned[0].style.display = '';
+                tray.node.style.display = '';
+                
+                // add new banned
+                for (const id of newBanned) {
+                    if (!oldBanned.has(id)) {
+                        if (!this.banned[2].has(id)) {
+                            const clone = this.ui.createElement('widget.avatar');
+                            this.ui.setImage(clone, id);
+                            this.ui.bind(clone, () => {
+                                if (this.mine) {
+                                    this.yield(['banned', 'hero/' + id, true]);
+                                }
+                            });
+                            this.app.bindHero(clone, id);
+                            this.banned[2].set(id, clone);
+                        }
+
+                        this.heroButtons.get(id)?.classList.add('defer');
+                        tray.addSilent(this.banned[2].get(id)!);
                     }
-                });
-                tray.items.set(clone, tray.items.size);
-                this.heroButtons.get(id)?.classList.add('defer');
+                }
+                
+                // remove old banned
+                for (const id of oldBanned) {
+                    if (!newBanned.has(id)) {
+                        this.heroButtons.get(id)?.classList.remove('defer');
+                        tray.deleteSilent(this.banned[2].get(id)!);
+                    }
+                }
+
+                tray.align();
             }
-            tray.align();
-            for (const clone of tray.items.keys()) {
-                tray.node.appendChild(clone);
+            else {
+                this.banned[0].style.display = 'none';
+                this.banned[1].node.style.display = 'none';
+                tray.items.clear();
+                tray.node.innerHTML = '';
             }
-        }
-        else {
-            this.banned[0].style.display = 'none';
-            this.banned[1].node.style.display = 'none';
         }
 
         // update picked hero
         if (config.pick && this.app.arena!.peers) {
             this.picked[0].style.display = '';
-            if (this.picked[1].node.style.display) {
-                this.picked[1].node.style.display = '';
+            this.picked[1].node.style.display = '';
+            if (!this.picked[3]) {
+                this.picked[3] = true;
                 this.picked[1].align();
             }
             for (const collection of this.collections.values()) {
@@ -486,6 +514,7 @@ export class Lobby extends Component {
             this.ui.bind(clone, () => {
                 this.#togglePick(id, false);
             });
+            this.app.bindHero(clone, id);
             this.picked[2].set(id, clone);
         }
 
@@ -494,8 +523,7 @@ export class Lobby extends Component {
             this.picked[1][on ? 'add' : 'delete'](clone);
         }
         else {
-            this.picked[1].items.set(clone, this.picked[1].items.size);
-            this.picked[1].node.appendChild(clone);
+            this.picked[1].addSilent(clone);
         }
     }
 

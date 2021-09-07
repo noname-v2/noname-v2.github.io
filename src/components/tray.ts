@@ -38,12 +38,19 @@ export class Tray extends Component {
         }).onfinish = callback ?? null;
     }
 
+    /** Add an item without triggering align. */
+    addSilent(node: HTMLElement) {
+        node.style.zIndex = this.items.size.toString();
+        this.items.set(node, this.items.size);
+    }
+
     /** Remove an item. */
     delete(node: HTMLElement, ref?: HTMLElement, callback?: () => void, align?: boolean) {
         const idx = this.items.get(node)!;
         for (const [node, idx2] of this.items) {
             if (idx2 > idx) {
                 this.items.set(node, idx2 - 1);
+                node.style.zIndex = (idx2 - 1).toString();
             }
         }
         this.items.delete(node);
@@ -61,6 +68,11 @@ export class Tray extends Component {
                 callback();
             }
         };
+    }
+
+    /** Remove an item without triggering align. */
+    deleteSilent(node: HTMLElement) {
+        this.delete(node, undefined, undefined, false);
     }
 
     align() {
@@ -126,6 +138,12 @@ export class Tray extends Component {
                 }
             });
             move(node, this.items.get(node)!);
+
+            if (node.parentNode !== this.node) {
+                this.node.appendChild(node);
+                const x = this.ui.getX(node);
+                this.ui.animate(node, {x: [x, x], opacity: [0, 1], scale: ['var(--app-zoom-scale)', 1]});
+            }
         }
     }
 

@@ -2740,7 +2740,8 @@
             // banned heros
             this.banned = [
                 this.sidebar.pane.addSection('禁将'),
-                this.sidebar.pane.addTray('round')
+                this.sidebar.pane.addTray('round'),
+                new Map()
             ];
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
@@ -2748,7 +2749,7 @@
             this.picked = [
                 this.sidebar.pane.addSection('点将'),
                 this.sidebar.pane.addTray('round'),
-                new Map()
+                new Map(), false
             ];
             this.picked[0].style.display = 'none';
             this.picked[1].node.style.display = 'none';
@@ -2814,43 +2815,65 @@
                 toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
             }
             // update banned hero
-            const old = oldConfig?.banned?.hero;
-            if (old) {
-                for (const id of old) {
-                    this.heroButtons.get(id)?.classList.remove('defer');
-                }
-            }
-            if (config.banned?.hero?.length) {
-                const tray = this.banned[1];
-                this.banned[0].style.display = '';
-                tray.node.innerHTML = '';
-                tray.node.style.display = '';
-                tray.items.clear();
-                for (const id of config.banned.hero) {
-                    const clone = this.ui.createElement('widget.avatar');
-                    this.ui.setImage(clone, id);
-                    this.ui.bind(clone, () => {
-                        if (this.mine) {
-                            this.yield(['banned', 'hero/' + id, true]);
-                        }
-                    });
-                    tray.items.set(clone, tray.items.size);
-                    this.heroButtons.get(id)?.classList.add('defer');
-                }
-                tray.align();
-                for (const clone of tray.items.keys()) {
-                    tray.node.appendChild(clone);
-                }
+            let changed = false;
+            const oldBanned = new Set(oldConfig?.banned?.hero);
+            const newBanned = new Set(config.banned?.hero);
+            if (oldBanned.size !== newBanned.size) {
+                changed = true;
             }
             else {
-                this.banned[0].style.display = 'none';
-                this.banned[1].node.style.display = 'none';
+                for (const id of oldBanned) {
+                    if (!newBanned.has(id)) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if (changed) {
+                const tray = this.banned[1];
+                if (newBanned.size) {
+                    this.banned[0].style.display = '';
+                    tray.node.style.display = '';
+                    // add new banned
+                    for (const id of newBanned) {
+                        if (!oldBanned.has(id)) {
+                            if (!this.banned[2].has(id)) {
+                                const clone = this.ui.createElement('widget.avatar');
+                                this.ui.setImage(clone, id);
+                                this.ui.bind(clone, () => {
+                                    if (this.mine) {
+                                        this.yield(['banned', 'hero/' + id, true]);
+                                    }
+                                });
+                                this.app.bindHero(clone, id);
+                                this.banned[2].set(id, clone);
+                            }
+                            this.heroButtons.get(id)?.classList.add('defer');
+                            tray.addSilent(this.banned[2].get(id));
+                        }
+                    }
+                    // remove old banned
+                    for (const id of oldBanned) {
+                        if (!newBanned.has(id)) {
+                            this.heroButtons.get(id)?.classList.remove('defer');
+                            tray.deleteSilent(this.banned[2].get(id));
+                        }
+                    }
+                    tray.align();
+                }
+                else {
+                    this.banned[0].style.display = 'none';
+                    this.banned[1].node.style.display = 'none';
+                    tray.items.clear();
+                    tray.node.innerHTML = '';
+                }
             }
             // update picked hero
             if (config.pick && this.app.arena.peers) {
                 this.picked[0].style.display = '';
-                if (this.picked[1].node.style.display) {
-                    this.picked[1].node.style.display = '';
+                this.picked[1].node.style.display = '';
+                if (!this.picked[3]) {
+                    this.picked[3] = true;
                     this.picked[1].align();
                 }
                 for (const collection of this.collections.values()) {
@@ -2960,6 +2983,7 @@
                 this.ui.bind(clone, () => {
                     this.#togglePick(id, false);
                 });
+                this.app.bindHero(clone, id);
                 this.picked[2].set(id, clone);
             }
             const clone = this.picked[2].get(id);
@@ -2967,8 +2991,7 @@
                 this.picked[1][on ? 'add' : 'delete'](clone);
             }
             else {
-                this.picked[1].items.set(clone, this.picked[1].items.size);
-                this.picked[1].node.appendChild(clone);
+                this.picked[1].addSilent(clone);
             }
         }
         #openCollection(pack, type) {
@@ -4855,12 +4878,18 @@
                 x: [x + dx, x], y: [dy, 0], scale: [scale, 1], opacity: [0, 1]
             }).onfinish = callback ?? null;
         }
+        /** Add an item without triggering align. */
+        addSilent(node) {
+            node.style.zIndex = this.items.size.toString();
+            this.items.set(node, this.items.size);
+        }
         /** Remove an item. */
         delete(node, ref, callback, align) {
             const idx = this.items.get(node);
             for (const [node, idx2] of this.items) {
                 if (idx2 > idx) {
                     this.items.set(node, idx2 - 1);
+                    node.style.zIndex = (idx2 - 1).toString();
                 }
             }
             this.items.delete(node);
@@ -4876,6 +4905,10 @@
                     callback();
                 }
             };
+        }
+        /** Remove an item without triggering align. */
+        deleteSilent(node) {
+            this.delete(node, undefined, undefined, false);
         }
         align() {
             // determine spacing
@@ -4936,6 +4969,11 @@
                     }
                 });
                 move(node, this.items.get(node));
+                if (node.parentNode !== this.node) {
+                    this.node.appendChild(node);
+                    const x = this.ui.getX(node);
+                    this.ui.animate(node, { x: [x, x], opacity: [0, 1], scale: ['var(--app-zoom-scale)', 1] });
+                }
             }
         }
         #locate(node, ref) {

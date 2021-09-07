@@ -800,7 +800,7 @@ function pop(T) {
             if (this.picked.size) {
                 menu.pane.addOption('取消', () => {
                     for (const id of this.picked) {
-                        this.tray.delete(this.clones.get(id), undefined, undefined, false);
+                        this.tray.deleteSilent(this.clones.get(id));
                     }
                     this.tray.align();
                     this.picked.clear();
@@ -827,16 +827,9 @@ function pop(T) {
                 for (const id of picked) {
                     this.#pick(id);
                     const clone = this.clones.get(id);
-                    clone.style.zIndex = this.tray.items.size.toString();
-                    this.tray.items.set(clone, this.tray.items.size);
-                    this.tray.node.appendChild(clone);
+                    this.tray.addSilent(clone);
                 }
                 this.tray.align();
-                for (const id of picked) {
-                    const clone = this.clones.get(id);
-                    const x = this.ui.getX(clone);
-                    this.ui.animate(clone, { x: [x, x], opacity: [0, 1] });
-                }
                 this.buttons.get('callPick').dataset.fill = 'blue';
                 return true;
             }
