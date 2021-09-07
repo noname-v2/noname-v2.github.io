@@ -113,7 +113,7 @@ export const skill = {
     },
     fuhun: {
         name: '父魂',
-        intro: '你可以将两张手牌当@(standard.sha)使用或打出；当你于出牌阶段以此法造成伤害后，本回合获得@(standard.wusheng)和@(standard.paoxiao)'
+        intro: '你可以将两张手牌当@(standard.sha)使用或打出；当你于出牌阶段以此法造成伤害后，本回合获得@(standard:skill.wusheng)和@(standard:skill.paoxiao)'
     },
     dangxian: {
         name: '当先',

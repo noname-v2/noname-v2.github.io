@@ -177,12 +177,20 @@ async function loadArena(ruleset: string[], packs: string[]) {
         await app.sleep('fast');
     }
 
+    // extension dependencies
+    const requires = new Set<string>();
+
     // overwrite component constructors by mode
     for (const pack of ruleset) {
         const ext = await importExtension(pack, lib);
         for (const tag in ext.mode?.components) {
             const cls = componentClasses.get(tag) ?? backups.get('component');
             componentClasses.set(tag, ext.mode!.components[tag](cls));
+        }
+        if (ext.requires) {
+            for (const pack of ext.requires) {
+                requires.add(pack);
+            }
         }
     }
     
@@ -191,9 +199,13 @@ async function loadArena(ruleset: string[], packs: string[]) {
         const ext = await importExtension(pack, lib);
         if (ext.requires) {
             for (const pack of ext.requires) {
-                await importExtension(pack, lib);
+                requires.add(pack);
             }
         }
+    }
+
+    for (const pack of requires) {
+        await importExtension(pack, lib);
     }
 }
 

@@ -92,7 +92,7 @@ noname-gallery {
         }
     }
 
-    &.with-indicator {
+    &.with-indicator, &.force-indicator {
         > noname-pages {
             height: calc(100% - 10px);
         }
@@ -127,14 +127,14 @@ noname-gallery {
         > noname-player {
 			width:  var(--player-width);
             aspect-ratio: 1 / var(--player-ratio);
-			transform: scale(var(--pop-player-scale));
+			transform: scale(calc(var(--pop-width-value) / var(--player-width-value)));
 
         }
 
         > noname-card {
             width:  var(--card-width);
             aspect-ratio: 1 / var(--card-ratio);
-            transform: scale(var(--pop-card-scale));
+            transform: scale(calc(var(--pop-width-value) / var(--card-width-value)));
         }
 	}
 }

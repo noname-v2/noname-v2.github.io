@@ -959,6 +959,8 @@
         if (arena) {
             await app.sleep('fast');
         }
+        // extension dependencies
+        const requires = new Set();
         // overwrite component constructors by mode
         for (const pack of ruleset) {
             const ext = await importExtension(pack, lib);
@@ -966,15 +968,23 @@
                 const cls = componentClasses$1.get(tag) ?? backups.get('component');
                 componentClasses$1.set(tag, ext.mode.components[tag](cls));
             }
+            if (ext.requires) {
+                for (const pack of ext.requires) {
+                    requires.add(pack);
+                }
+            }
         }
         // import packs
         for (const pack of packs) {
             const ext = await importExtension(pack, lib);
             if (ext.requires) {
                 for (const pack of ext.requires) {
-                    await importExtension(pack, lib);
+                    requires.add(pack);
                 }
             }
+        }
+        for (const pack of requires) {
+            await importExtension(pack, lib);
         }
     }
     /**
@@ -2185,7 +2195,7 @@
         }
     }
 
-    /** A collection of all items in an extension. */
+    /** A collection of all heros or cards in an extension. */
     class Collection extends Popup {
         /** Gallery items. */
         items = new Map();
@@ -2229,6 +2239,7 @@
                     [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                     gallery.node.style.width = `${width}px`;
                 }
+                gallery.node.classList.add('force-indicator');
                 this.gallery = gallery;
                 // add gallery items
                 for (const name in lib) {
@@ -2299,6 +2310,7 @@
                             pileGallery.node.classList.add('pop');
                             pileGallery.node.style.width = `${width}px`;
                         }
+                        pileGallery.node.classList.add('force-indicator');
                         for (const name in pile) {
                             const id = name.includes(':') ? name : pack + ':' + name;
                             for (const suit in pile[name]) {
@@ -2884,11 +2896,11 @@
                     this.node.classList.add('collection');
                     if (collection.pileToggle?.dataset.fill) {
                         collection.pileGallery?.checkPage();
-                        node = collection.pileGallery?.node;
+                        node = collection.pileGallery?.pages;
                     }
                     else {
                         collection.gallery.checkPage();
-                        node = collection.gallery.node;
+                        node = collection.gallery.pages;
                     }
                     if (node) {
                         this.ui.animate(node, { scale: ['var(--pop-transform)', 1] });
@@ -2906,10 +2918,10 @@
                     }
                     let node;
                     if (collection.pileToggle?.dataset.fill) {
-                        node = collection.pileGallery?.node;
+                        node = collection.pileGallery?.pages;
                     }
                     else {
-                        node = collection.gallery.node;
+                        node = collection.gallery.pages;
                     }
                     if (node) {
                         this.ui.animate(node, { scale: [1, 'var(--pop-transform)'] });

@@ -910,6 +910,7 @@ const components = {
 };
 
 var main = {
+    requires: ['standard', 'maneuver'],
     mode: {
         tasks, classes, components,
         minHeroCount: 50,

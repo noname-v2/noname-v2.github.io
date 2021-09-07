@@ -458,11 +458,11 @@ export class Lobby extends Component {
                 this.node.classList.add('collection');
                 if (collection.pileToggle?.dataset.fill) {
                     collection.pileGallery?.checkPage();
-                    node = collection.pileGallery?.node!;
+                    node = collection.pileGallery?.pages!;
                 }
                 else {
                     collection.gallery.checkPage();
-                    node = collection.gallery.node;
+                    node = collection.gallery.pages;
                 }
                 if (node) {
                     this.ui.animate(node, {scale: ['var(--pop-transform)', 1]});
@@ -480,10 +480,10 @@ export class Lobby extends Component {
                 }
                 let node: HTMLElement;
                 if (collection.pileToggle?.dataset.fill) {
-                    node = collection.pileGallery?.node!;
+                    node = collection.pileGallery?.pages!;
                 }
                 else {
-                    node = collection.gallery.node;
+                    node = collection.gallery.pages;
                 }
                 if (node) {
                     this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});

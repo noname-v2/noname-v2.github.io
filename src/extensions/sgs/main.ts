@@ -4,6 +4,7 @@ import { classes } from './classes/index';
 import { components } from './components/index';
 
 export default {
+    requires: ['standard', 'maneuver'],
     mode: { 
         tasks, classes, components,
         minHeroCount: 50,

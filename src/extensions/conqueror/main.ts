@@ -174,7 +174,7 @@ export default {
     card: {
         chiling: {
             name: '敕令',
-            intro: '出牌阶段，对所有没有势力的角色使用。目标角色选择一项：1、明置一张武将牌，然后摸一张牌；2、弃置一张装备牌；3、失去1点体力。当@(conqueror.chiling)因判定或弃置而置入弃牌堆时，系统将之移出游戏，然后系统于当前回合结束后视为对所有没有势力的角色使用@(conqueror.chiling)。',
+            intro: '出牌阶段，对所有没有势力的角色使用。目标角色选择一项：1、明置一张武将牌，然后摸一张牌；2、弃置一张装备牌；3、失去1点体力。当@(conqueror:card.chiling)因判定或弃置而置入弃牌堆时，系统将之移出游戏，然后系统于当前回合结束后视为对所有没有势力的角色使用@(conqueror.chiling)。',
             type: 'trick',
             subtype: 'instant',
             subpack: '势备篇'

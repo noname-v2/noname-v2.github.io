@@ -338,15 +338,15 @@ noname-gallery > noname-indicator > noname-dot.current > noname-layer:last-child
 noname-gallery > noname-indicator > noname-dot.current > noname-layer:first-child {
   opacity: 0;
 }
-noname-gallery.with-indicator > noname-pages {
+noname-gallery.with-indicator > noname-pages, noname-gallery.force-indicator > noname-pages {
   height: calc(100% - 10px);
 }
-noname-gallery.with-indicator > noname-indicator {
+noname-gallery.with-indicator > noname-indicator, noname-gallery.force-indicator > noname-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-noname-gallery.with-indicator > noname-indicator > * {
+noname-gallery.with-indicator > noname-indicator > *, noname-gallery.force-indicator > noname-indicator > * {
   position: relative;
 }
 noname-gallery.pop noname-item {
@@ -367,12 +367,12 @@ noname-gallery.pop noname-item > noname-player.selected > noname-background, non
 noname-gallery.pop noname-item > noname-player {
   width: var(--player-width);
   aspect-ratio: 1/var(--player-ratio);
-  transform: scale(var(--pop-player-scale));
+  transform: scale(calc(var(--pop-width-value) / var(--player-width-value)));
 }
 noname-gallery.pop noname-item > noname-card {
   width: var(--card-width);
   aspect-ratio: 1/var(--card-ratio);
-  transform: scale(var(--pop-card-scale));
+  transform: scale(calc(var(--pop-width-value) / var(--card-width-value)));
 }
 
 html, body {
@@ -1139,6 +1139,9 @@ noname-popup.flex-side > noname-pane {
 noname-popup.flex-side > noname-pane > noname-caption {
   margin-top: 16px;
 }
+noname-popup.flex-side > noname-pane > noname-caption > noname-widget.toggle {
+  right: 30px;
+}
 noname-popup.flex-side > noname-pane > noname-gallery {
   height: calc(100% - 60px);
 }
@@ -1147,10 +1150,10 @@ noname-popup.flex-side > noname-pane > noname-gallery noname-item {
   width: calc(var(--pop-width) * var(--pop-flex-zoom));
 }
 noname-popup.flex-side > noname-pane > noname-gallery noname-item > noname-player {
-  transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
+  transform: scale(calc(var(--pop-width-value) / var(--player-width-value) * var(--pop-flex-zoom)));
 }
 noname-popup.flex-side > noname-pane > noname-gallery noname-item > noname-card {
-  transform: scale(calc(var(--pop-card-scale) * var(--pop-flex-zoom)));
+  transform: scale(calc(var(--pop-width-value) / var(--card-width-value) * var(--pop-flex-zoom)));
 }
 
 noname-sidebar {

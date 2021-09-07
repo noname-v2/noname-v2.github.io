@@ -35,6 +35,7 @@
 
 	"player": {
 		"width": "150px",
+		"width-value": "150",
 		"ratio": "1.4",
 		"background": "rgba(0, 0, 0, 0.4)",
 		"back-background": "rgba(0, 0, 0, 0.4)",
@@ -57,7 +58,9 @@
 
 	"card": {
 		"width": "105px",
+		"width-value": "105",
 		"ratio": "1.4",
+		"player-ratio": "0.7",
 		"background": "@(card.webp)",
 		"back-background": "@(cardback.webp)",
 		"entry-background": "@(wood.webp)",
@@ -71,8 +74,7 @@
 
 	"pop": {
 		"width": "85px",
-		"player-scale": "0.567",
-		"card-scale": "0.81",
+		"width-value": "85",
 		"margin": "8",
 		"transform": "0.5",
 		"flex-margin": "8px",

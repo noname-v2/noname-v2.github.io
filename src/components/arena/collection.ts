@@ -3,7 +3,7 @@ import { Popup } from '../popup';
 import type { Point, Gallery } from '../../components';
 import type { Pile, Dict } from '../../types';
 
-/** A collection of all items in an extension. */
+/** A collection of all heros or cards in an extension. */
 export class Collection extends Popup {
     /** Gallery items. */
     items = new Map<string, HTMLElement>();
@@ -57,7 +57,7 @@ export class Collection extends Popup {
                 [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                 gallery.node.style.width = `${width}px`;
             }
-
+            gallery.node.classList.add('force-indicator');
             this.gallery = gallery;
 
             // add gallery items
@@ -134,6 +134,7 @@ export class Collection extends Popup {
                         pileGallery.node.classList.add('pop');
                         pileGallery.node.style.width = `${width}px`;
                     }
+                    pileGallery.node.classList.add('force-indicator');
 
                     for (const name in pile) {
                         const id = name.includes(':') ? name : pack + ':' + name;

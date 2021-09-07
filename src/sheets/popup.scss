@@ -114,6 +114,10 @@ noname-popup {
 
             > noname-caption {
                 margin-top: 16px;
+
+                > noname-widget.toggle {
+                    right: 30px;
+                }
             }
 
             > noname-gallery {
@@ -124,11 +128,11 @@ noname-popup {
                     width: calc(var(--pop-width) * var(--pop-flex-zoom));
 
                     > noname-player {
-                        transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
+                        transform: scale(calc(var(--pop-width-value) / var(--player-width-value) * var(--pop-flex-zoom)));
                     }
 
                     > noname-card {
-                        transform: scale(calc(var(--pop-card-scale) * var(--pop-flex-zoom)));
+                        transform: scale(calc(var(--pop-width-value) / var(--card-width-value) * var(--pop-flex-zoom)));
                     }
                 }
             }
