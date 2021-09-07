@@ -11,6 +11,9 @@ export class Collection extends Popup {
     /** Gallery object. */
     gallery!: Gallery;
 
+    /** Width of the gallery (if not this.flex). */
+    galleryWidth?: number;
+
     /** Card pile gallery. */
     pileGallery?: Gallery;
 
@@ -20,6 +23,9 @@ export class Collection extends Popup {
     /** Number of gallery columns. */
     ncols = 5;
 
+    /** Use dynamic nrows and ncols. */
+    flex: boolean = false;
+
     /** Align to center vertically. */
     verticalCenter = true;
 
@@ -28,11 +34,28 @@ export class Collection extends Popup {
         const lib = this.app.accessExtension(pack, section);
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
-            this.pane.node.classList.add('auto');
             const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-            const [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+            let gallery: Gallery;
+            let width = 0;
+
+            if (this.flex) {
+                this.node.classList.add('flex-side');
+                gallery = this.ui.create('gallery');
+                gallery.node.classList.add('pop');
+                const width = parseInt(this.app.css.pop.width);
+                const margin = parseInt(this.app.css.pop.margin);
+                const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+                gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+                gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+                this.pane.node.appendChild(gallery.node);
+            }
+            else {
+                this.pane.node.classList.add('auto');
+                [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+                gallery.node.style.width = `${width}px`;
+            }
+
             this.gallery = gallery;
-            gallery.node.style.width = `${width}px`;
 
             // add gallery items
             for (const name in lib) {

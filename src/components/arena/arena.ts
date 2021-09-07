@@ -31,7 +31,7 @@ export class Arena extends Component {
     controlZoom = this.ui.create('zoom', this.node);
 
     /** Popup components cleared when arena close. */
-    popups = new Set<Component>();
+    popups = new Set<HTMLElement>();
 
     /** Connected remote clients. */
     get peers(): Peer[] | null {
@@ -111,14 +111,14 @@ export class Arena extends Component {
         dialog.arena = true;
 
         // other popups that are blurred by dialog.open()
-        const blurred = new Set<Component>();
+        const blurred = new Set<HTMLElement>();
 
         dialog.onopen = () => {
             // blur arena, splash and other popups
             this.arenaZoom.node.classList.add('blurred');
             for (const popup of this.popups) {
-                if (popup !== dialog && !popup.node.classList.contains('blurred')) {
-                    popup.node.classList.add('blurred');
+                if (popup !== dialog.node && !popup.classList.contains('blurred')) {
+                    popup.classList.add('blurred');
                     blurred.add(popup);
                 }
             }
@@ -130,12 +130,12 @@ export class Arena extends Component {
 
         dialog.onclose = () => {
             // unblur
-            this.popups.delete(dialog);
+            this.popups.delete(dialog.node);
             if (this.popups.size === 0) {
                 this.arenaZoom.node.classList.remove('blurred');
             }
             for (const popup of blurred) {
-                popup.node.classList.remove('blurred');
+                popup.classList.remove('blurred');
             }
             blurred.clear();
 
@@ -144,7 +144,7 @@ export class Arena extends Component {
             }
         };
 
-        this.popups.add(dialog);
+        this.popups.add(dialog.node);
         await dialog.ready;
         dialog.open();
     }

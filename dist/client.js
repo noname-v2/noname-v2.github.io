@@ -1956,8 +1956,8 @@
                 // blur arena, splash and other popups
                 this.arenaZoom.node.classList.add('blurred');
                 for (const popup of this.popups) {
-                    if (popup !== dialog && !popup.node.classList.contains('blurred')) {
-                        popup.node.classList.add('blurred');
+                    if (popup !== dialog.node && !popup.classList.contains('blurred')) {
+                        popup.classList.add('blurred');
                         blurred.add(popup);
                     }
                 }
@@ -1967,19 +1967,19 @@
             };
             dialog.onclose = () => {
                 // unblur
-                this.popups.delete(dialog);
+                this.popups.delete(dialog.node);
                 if (this.popups.size === 0) {
                     this.arenaZoom.node.classList.remove('blurred');
                 }
                 for (const popup of blurred) {
-                    popup.node.classList.remove('blurred');
+                    popup.classList.remove('blurred');
                 }
                 blurred.clear();
                 if (typeof onclose === 'function') {
                     onclose();
                 }
             };
-            this.popups.add(dialog);
+            this.popups.add(dialog.node);
             await dialog.ready;
             dialog.open();
         }
@@ -2189,12 +2189,16 @@
         items = new Map();
         /** Gallery object. */
         gallery;
+        /** Width of the gallery (if not this.flex). */
+        galleryWidth;
         /** Card pile gallery. */
         pileGallery;
         /** Number of gallery columns. */
         nrows = 2;
         /** Number of gallery columns. */
         ncols = 5;
+        /** Use dynamic nrows and ncols. */
+        flex = false;
         /** Align to center vertically. */
         verticalCenter = true;
         setup(pack, type, render) {
@@ -2202,11 +2206,26 @@
             const lib = this.app.accessExtension(pack, section);
             const n = Object.entries(lib ?? {}).length;
             if (lib && n) {
-                this.pane.node.classList.add('auto');
                 const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
-                const [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+                let gallery;
+                let width = 0;
+                if (this.flex) {
+                    this.node.classList.add('flex-side');
+                    gallery = this.ui.create('gallery');
+                    gallery.node.classList.add('pop');
+                    const width = parseInt(this.app.css.pop.width);
+                    const margin = parseInt(this.app.css.pop.margin);
+                    const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+                    gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+                    gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+                    this.pane.node.appendChild(gallery.node);
+                }
+                else {
+                    this.pane.node.classList.add('auto');
+                    [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+                    gallery.node.style.width = `${width}px`;
+                }
                 this.gallery = gallery;
-                gallery.node.style.width = `${width}px`;
                 // add gallery items
                 for (const name in lib) {
                     gallery.add(() => {
@@ -2480,7 +2499,7 @@
             this.ui.animate(this.sidebar.node, { x: [-220, 0] });
             this.ui.animate(this.seats, { scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1] });
             // reduce opacity when a popup is opened
-            this.app.arena.popups.add(this);
+            this.app.arena.popups.add(this.seats);
         }
         /** Update connected players. */
         sync() {
@@ -2563,7 +2582,7 @@
             if (this.removing) {
                 return;
             }
-            this.app.arena.popups.delete(this);
+            this.app.arena.popups.delete(this.seats);
             super.remove(new Promise(resolve => {
                 let done = 0;
                 const onfinish = () => {
@@ -2605,8 +2624,9 @@
             this.sidebar.pane.addSection('武将');
             for (const pack of configs.heropacks) {
                 const name = this.app.accessExtension(pack, 'heropack');
-                const toggle = this.sidebar.pane.addToggle([name, e => {
+                const toggle = this.sidebar.pane.addToggle([name, () => {
                         const collection = this.ui.create('collection');
+                        collection.flex = true;
                         collection.setup(pack, 'hero', (id, node) => {
                             this.ui.bind(node, () => {
                                 if (this.mine) {
@@ -2618,7 +2638,8 @@
                                 node.classList.add('defer');
                             }
                         });
-                        collection.pop(e);
+                        this.ui.bind(collection.pane.node, () => collection.close());
+                        collection.pop();
                     }], result => {
                     this.freeze();
                     this.yield(['banned', 'heropack/' + pack, result]);
@@ -2629,10 +2650,10 @@
             this.sidebar.pane.addSection('卡牌');
             for (const pack of configs.cardpacks) {
                 const name = this.app.accessExtension(pack, 'cardpack');
-                const toggle = this.sidebar.pane.addToggle([name, e => {
+                const toggle = this.sidebar.pane.addToggle([name, () => {
                         const collection = this.ui.create('collection');
                         collection.setup(pack, 'card+pile');
-                        collection.pop(e);
+                        collection.pop();
                     }], result => {
                     this.freeze();
                     this.yield(['banned', 'cardpack/' + pack, result]);

@@ -510,9 +510,9 @@ noname-lobby {
   left: 0;
   top: 0;
   position: absolute;
-  transition: opacity var(--app-transition);
 }
 noname-lobby > noname-seats {
+  transition: opacity var(--app-transition);
   position: absolute;
   width: 700px;
   height: 100%;
@@ -1105,6 +1105,34 @@ noname-popup.pop > noname-pane > noname-timer {
 }
 noname-popup.pop > noname-pane > noname-timer > noname-div {
   background: var(--pop-timer-bar-background);
+}
+noname-popup.flex-side {
+  width: calc(100% - 221px);
+  left: 221px;
+}
+noname-popup.flex-side > noname-pane {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  left: 0;
+  top: 0;
+  position: absolute;
+  background: none !important;
+  box-shadow: none !important;
+}
+noname-popup.flex-side > noname-pane > noname-caption {
+  margin-top: 16px;
+}
+noname-popup.flex-side > noname-pane > noname-gallery {
+  height: calc(100% - 60px);
+}
+noname-popup.flex-side > noname-pane > noname-gallery noname-item {
+  margin: var(--pop-flex-margin);
+  width: calc(var(--pop-width) * var(--pop-flex-zoom));
+}
+noname-popup.flex-side > noname-pane > noname-gallery noname-item > noname-player {
+  transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
 }
 
 noname-sidebar {

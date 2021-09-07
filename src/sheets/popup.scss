@@ -78,8 +78,6 @@ noname-popup {
         }
     }
 
-
-
 	// popup pane in arena
 	&.pop > noname-pane {
 		> noname-bar {
@@ -102,4 +100,33 @@ noname-popup {
 			}
 		}
 	}
+
+    // displayed fullscreen with sidebar
+    &.flex-side {
+        width: calc(100% - 221px);
+        left: 221px;
+    
+        > noname-pane {
+            @include layer;
+            background: none !important;
+            box-shadow: none !important;
+
+            > noname-caption {
+                margin-top: 16px;
+            }
+
+            > noname-gallery {
+                height: calc(100% - 60px);
+
+                noname-item {
+                    margin: var(--pop-flex-margin);
+                    width: calc(var(--pop-width) * var(--pop-flex-zoom));
+
+                    > noname-player {
+                        transform: scale(calc(var(--pop-player-scale) * var(--pop-flex-zoom)));
+                    }
+                }
+            }
+        }
+    }
 }

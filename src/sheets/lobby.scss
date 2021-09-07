@@ -1,9 +1,9 @@
 noname-lobby {
 	@include layer;
-	transition: opacity var(--app-transition);
-
+	
 	// area containing players
 	> noname-seats {
+		transition: opacity var(--app-transition);
 		position: absolute;
 		width: 700px;
 		height: 100%;

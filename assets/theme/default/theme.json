@@ -74,6 +74,8 @@
 		"player-scale": "0.567",
 		"card-scale": "0.81",
 		"margin": "8",
+		"flex-margin": "8px",
+		"flex-zoom": "1.2",
 		"tray-height": "60px",
 		"tray-margin": "16",
 		"timer-background": "rgba(0, 0, 0, 0.2)",

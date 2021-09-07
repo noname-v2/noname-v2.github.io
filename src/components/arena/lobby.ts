@@ -56,7 +56,7 @@ export class Lobby extends Component {
         this.ui.animate(this.seats, {scale: ['var(--app-zoom-scale)', 1], opacity: [0, 1]});
 
         // reduce opacity when a popup is opened
-        this.app.arena!.popups.add(this);
+        this.app.arena!.popups.add(this.seats);
     }
 
     /** Update connected players. */
@@ -148,7 +148,7 @@ export class Lobby extends Component {
             return;
         }
         
-        this.app.arena!.popups.delete(this);
+        this.app.arena!.popups.delete(this.seats);
         super.remove(new Promise<void>(resolve => {
             let done = 0;
             const onfinish = () => {
@@ -192,8 +192,9 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('武将');
         for (const pack of configs.heropacks) {
             const name = this.app.accessExtension(pack, 'heropack');
-            const toggle = this.sidebar.pane.addToggle([name, e => {
+            const toggle = this.sidebar.pane.addToggle([name, () => {
                     const collection = this.ui.create('collection');
+                    collection.flex = true;
                     collection.setup(pack, 'hero', (id, node) => {
                         this.ui.bind(node, () => {
                             if (this.mine) {
@@ -205,7 +206,7 @@ export class Lobby extends Component {
                             node.classList.add('defer');
                         }
                     });
-                    collection.pop(e);
+                    collection.pop();
                 }], result => {
                 this.freeze();
                 this.yield(['banned', 'heropack/' + pack, result]);
@@ -217,10 +218,10 @@ export class Lobby extends Component {
         this.sidebar.pane.addSection('卡牌');
         for (const pack of configs.cardpacks) {
             const name = this.app.accessExtension(pack, 'cardpack');
-            const toggle = this.sidebar.pane.addToggle([name, e => {
+            const toggle = this.sidebar.pane.addToggle([name, () => {
                 const collection = this.ui.create('collection');
                 collection.setup(pack, 'card+pile');
-                collection.pop(e);
+                collection.pop();
             }], result => {
                 this.freeze();
                 this.yield(['banned', 'cardpack/' + pack, result]);
