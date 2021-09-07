@@ -155,7 +155,12 @@ export function lobby(T: TaskClass) {
                 this.game.hub.update();
             }
             else if (val === 'prepare') {
-                peer.ready = true;
+                if (peer.owner === this.game.owner) {
+                    peer.ready = [14, Date.now()];
+                }
+                else {
+                    peer.ready = true;
+                }
             }
             else if (val === 'unprepare') {
                 peer.ready = false;

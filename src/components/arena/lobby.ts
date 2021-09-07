@@ -116,6 +116,7 @@ export class Lobby extends Component {
                 if (peer.owner === this.owner) {
                     this.players[i].data.marker = '房主';
                     this.players[i].marker.dataset.tglow = 'blue';
+                    this.players[i].data.timer = peer.data.ready || null;
                 }
                 else {
                     this.players[i].data.marker = peer.data.ready ? '已准备' : '';
@@ -188,7 +189,9 @@ export class Lobby extends Component {
                 this.app.alert('开始', {ok: '取消', id: 'lobbyReady'}).then(() => {
                     clearInterval(this.#starting);
                     this.#starting = 0;
+                    this.app.arena!.peer!.yield('unprepare');
                 });
+                this.app.arena!.peer!.yield('prepare');
                 const dialog = this.app.popups.get('lobbyReady') as Dialog;
                 let n = 15;
                 const update = () => {
