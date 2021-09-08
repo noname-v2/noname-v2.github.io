@@ -2270,34 +2270,42 @@
         ncols = 5;
         /** Use dynamic nrows and ncols. */
         flex = false;
-        setup(pack, type, render) {
+        setup(packs, type, render) {
+            const caption = this.pane.addCaption('<span></span>');
+            const captionSpan = caption.firstChild;
             const section = type === 'card+pile' ? 'card' : type;
-            const lib = this.app.accessExtension(pack, section);
-            const n = Object.entries(lib ?? {}).length;
-            if (lib && n) {
+            const pages = [];
+            // total number of items
+            let n = 0;
+            for (const pack of packs) {
+                n += Object.entries(this.app.accessExtension(pack, section)).length;
+            }
+            let gallery;
+            if (this.flex) {
+                this.node.classList.add('flex-side');
+                gallery = this.ui.create('gallery');
+                gallery.node.classList.add('pop');
+                const width = parseInt(this.app.css.pop.width);
+                const margin = parseInt(this.app.css.pop.margin);
+                const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+                gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+                gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+                this.pane.node.appendChild(gallery.node);
+            }
+            else {
+                let width;
+                this.pane.node.classList.add('auto');
+                [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+                gallery.node.style.width = `${width}px`;
+            }
+            this.gallery = gallery;
+            gallery.node.classList.add('force-indicator');
+            for (const pack of packs) {
+                const lib = this.app.accessExtension(pack, section);
                 const packname = this.app.accessExtension(pack, section + 'pack');
-                const caption = this.pane.addCaption('<span>' + packname + '</span>');
-                const captionSpan = caption.firstChild;
-                let gallery;
-                let width = 0;
-                if (this.flex) {
-                    this.node.classList.add('flex-side');
-                    gallery = this.ui.create('gallery');
-                    gallery.node.classList.add('pop');
-                    const width = parseInt(this.app.css.pop.width);
-                    const margin = parseInt(this.app.css.pop.margin);
-                    const zoom = parseFloat(this.app.css.pop['flex-zoom']);
-                    gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
-                    gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
-                    this.pane.node.appendChild(gallery.node);
+                if (pack === packs[0]) {
+                    captionSpan.innerHTML = packname;
                 }
-                else {
-                    this.pane.node.classList.add('auto');
-                    [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
-                    gallery.node.style.width = `${width}px`;
-                }
-                this.gallery = gallery;
-                gallery.node.classList.add('force-indicator');
                 // add gallery items
                 const subpacks = {};
                 const defaults = [];
@@ -2333,104 +2341,37 @@
                         return node;
                     });
                 };
-                const subpackList = [];
                 for (const subpack in subpacks) {
-                    subpackList.push(subpack);
+                    pages.push(packname + '·' + subpack);
                     for (const name of subpacks[subpack]) {
                         add(name);
                     }
                     gallery.add('pager');
                 }
-                if (subpackList.length) {
-                    gallery.onpage = page => {
-                        if (subpackList[page]) {
-                            captionSpan.innerHTML = packname + '·' + subpackList[page];
-                        }
-                        else {
-                            captionSpan.innerHTML = packname;
-                        }
-                    };
-                }
+                pages.push(packname);
                 for (const name of defaults) {
                     add(name);
                 }
-                // add card pile
-                if (type === 'card+pile') {
-                    const pile = this.app.accessExtension(pack, 'pile');
-                    if (pile) {
-                        // add pile toggle
-                        const toggle = this.pileToggle = this.ui.createElement('widget', caption);
-                        toggle.classList.add('toggle');
-                        let shown = false;
-                        let pileCount = 0;
-                        for (const name in pile) {
-                            for (const suit in pile[name]) {
-                                pileCount += pile[name][suit].length;
-                            }
+                gallery.add('pager');
+            }
+            // change section title when tunning page.
+            if (pages.length > 1) {
+                gallery.onpage = page => {
+                    const items = gallery.items;
+                    const item = gallery.pagedItems[page * gallery.getSize()];
+                    const idx = items.indexOf(item);
+                    let npages = 0;
+                    for (let i = 0; i < idx; i++) {
+                        if (items[i] === 'pager') {
+                            npages++;
                         }
-                        toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
-                        this.ui.bind(toggle, () => {
-                            if (shown) {
-                                pileGallery.node.style.display = 'none';
-                                toggle.dataset.fill = '';
-                                gallery.node.style.display = '';
-                                const page = gallery.checkPage();
-                                if (gallery.onpage) {
-                                    gallery.onpage(page);
-                                }
-                            }
-                            else {
-                                gallery.node.style.display = 'none';
-                                captionSpan.innerHTML = packname;
-                                toggle.dataset.fill = 'blue';
-                                pileGallery.node.style.display = '';
-                                pileGallery.checkPage();
-                            }
-                            shown = !shown;
-                        });
-                        // add pile gallery
-                        let pileGallery;
-                        if (this.flex) {
-                            pileGallery = this.ui.create('gallery');
-                            pileGallery.node.classList.add('pop');
-                            pileGallery.ncols = gallery.ncols;
-                            pileGallery.nrows = gallery.nrows;
-                            this.pane.node.appendChild(pileGallery.node);
-                        }
-                        else {
-                            [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
-                            pileGallery.node.style.display = 'none';
-                            pileGallery.node.classList.add('pop');
-                            pileGallery.node.style.width = `${width}px`;
-                        }
-                        this.pileGallery = pileGallery;
-                        pileGallery.node.classList.add('force-indicator');
-                        for (const name in pile) {
-                            const id = name.includes(':') ? name : pack + ':' + name;
-                            for (const suit in pile[name]) {
-                                for (const num of pile[name][suit]) {
-                                    pileCount++;
-                                    pileGallery.add(() => {
-                                        const card = this.ui.create('card');
-                                        card.data.name = id;
-                                        card.data.suit = suit;
-                                        if (typeof num === 'number') {
-                                            card.data.number = num;
-                                        }
-                                        else {
-                                            card.data.number = num[0];
-                                            card.data.label = num.slice(1);
-                                        }
-                                        return card.node;
-                                    });
-                                }
-                            }
-                        }
-                        // if (debug) {
-                        //     this.checkPile(pile);
-                        // }
                     }
-                }
+                    captionSpan.innerHTML = pages[npages];
+                };
+            }
+            // add toggle for displaying card pile
+            if (type === 'card+pile') {
+                this.#addPile(packs, caption);
             }
         }
         async pop(e) {
@@ -2458,6 +2399,86 @@
             }
             console.log(suits);
             console.log(nums);
+        }
+        #addPile(packs, caption) {
+            // total number of cards in card pile.
+            let pileCount = 0;
+            for (const pack of packs) {
+                const pile = this.app.accessExtension(pack, 'pile');
+                for (const name in pile) {
+                    for (const suit in pile[name]) {
+                        pileCount += pile[name][suit].length;
+                    }
+                }
+            }
+            if (pileCount === 0) {
+                return;
+            }
+            const gallery = this.gallery;
+            const toggle = this.pileToggle = this.ui.createElement('widget', caption);
+            toggle.classList.add('toggle');
+            toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
+            // add pile gallery
+            let pileGallery;
+            if (this.flex) {
+                pileGallery = this.ui.create('gallery');
+                pileGallery.node.classList.add('pop');
+                pileGallery.ncols = gallery.ncols;
+                pileGallery.nrows = gallery.nrows;
+                this.pane.node.appendChild(pileGallery.node);
+            }
+            else {
+                [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
+                pileGallery.node.style.display = 'none';
+                pileGallery.node.classList.add('pop');
+                pileGallery.node.style.width = this.gallery.node.style.width;
+            }
+            this.pileGallery = pileGallery;
+            pileGallery.node.classList.add('force-indicator');
+            // click to toggle card pile and card gallery
+            let shown = false;
+            this.ui.bind(toggle, () => {
+                if (shown) {
+                    pileGallery.node.style.display = 'none';
+                    toggle.dataset.fill = '';
+                    gallery.node.style.display = '';
+                    gallery.checkPage();
+                }
+                else {
+                    gallery.node.style.display = 'none';
+                    toggle.dataset.fill = 'blue';
+                    pileGallery.node.style.display = '';
+                    pileGallery.checkPage();
+                }
+                shown = !shown;
+            });
+            for (const pack of packs) {
+                const pile = this.app.accessExtension(pack, 'pile');
+                for (const name in pile) {
+                    const id = name.includes(':') ? name : pack + ':' + name;
+                    for (const suit in pile[name]) {
+                        for (const num of pile[name][suit]) {
+                            pileCount++;
+                            pileGallery.add(() => {
+                                const card = this.ui.create('card');
+                                card.data.name = id;
+                                card.data.suit = suit;
+                                if (typeof num === 'number') {
+                                    card.data.number = num;
+                                }
+                                else {
+                                    card.data.number = num[0];
+                                    card.data.label = num.slice(1);
+                                }
+                                return card.node;
+                            });
+                        }
+                    }
+                }
+                // if (debug) {
+                //     this.checkPile(pile);
+                // }
+            }
         }
     }
 
@@ -2610,6 +2631,8 @@
         heroButtons = new Map();
         /** Cache of collections. */
         collections = new Map();
+        /** Cache of mega collections. */
+        megaCollections = new Map();
         /** Start game button is clicked and awaiting start. */
         #starting = 0;
         get #config() {
@@ -2816,8 +2839,10 @@
                 this.configToggles.set(name, toggle);
             }
             // heropacks
-            this.sidebar.pane.addSection('武将');
+            const heroSection = this.sidebar.pane.addSection('武将');
+            const heropacks = [];
             for (const pack of configs.heropacks) {
+                heropacks.push(pack);
                 const name = this.app.accessExtension(pack, 'heropack');
                 const toggle = this.sidebar.pane.addToggle([
                     name, () => this.#openCollection(pack, 'hero')
@@ -2827,9 +2852,15 @@
                 });
                 this.heroToggles.set(pack, toggle);
             }
+            this.ui.bind(heroSection, {
+                onclick: () => this.#openMegaCollection(heropacks, 'hero'),
+                oncontext: () => this.#openMegaCollection(heropacks, 'hero')
+            });
             // cardpacks
-            this.sidebar.pane.addSection('卡牌');
+            const cardSection = this.sidebar.pane.addSection('卡牌');
+            const cardpacks = [];
             for (const pack of configs.cardpacks) {
+                cardpacks.push(pack);
                 const name = this.app.accessExtension(pack, 'cardpack');
                 const toggle = this.sidebar.pane.addToggle([
                     name, () => this.#openCollection(pack, 'card+pile')
@@ -2839,6 +2870,10 @@
                 });
                 this.cardToggles.set(pack, toggle);
             }
+            this.ui.bind(cardSection, {
+                onclick: () => this.#openMegaCollection(cardpacks, 'card+pile'),
+                oncontext: () => this.#openMegaCollection(cardpacks, 'card+pile')
+            });
             // banned heros
             this.banned = [
                 this.sidebar.pane.addSection('禁将'),
@@ -3118,16 +3153,74 @@
                 this.picked[1].addSilent(clone);
             }
         }
+        #createCollection() {
+            const collection = this.ui.create('collection');
+            collection.arena = true;
+            collection.flex = true;
+            collection.ready.then(() => {
+                this.ui.bind(collection.pane.node, () => collection.close());
+            });
+            // open and close animations
+            collection.onopen = () => {
+                let node;
+                for (const popup of this.collections.values()) {
+                    if (popup !== collection) {
+                        popup.close();
+                    }
+                }
+                this.node.classList.add('collection');
+                if (collection.pileToggle?.dataset.fill) {
+                    collection.pileGallery?.checkPage();
+                    node = collection.pileGallery?.pages;
+                }
+                else {
+                    collection.gallery.checkPage();
+                    node = collection.gallery.pages;
+                }
+                if (node) {
+                    this.ui.animate(node, { scale: ['var(--pop-transform)', 1] });
+                }
+            };
+            collection.onclose = () => {
+                this.node.classList.remove('collection');
+                if (this.removing) {
+                    return;
+                }
+                for (const popup of this.collections.values()) {
+                    if (!popup.hidden) {
+                        return;
+                    }
+                }
+                let node;
+                if (collection.pileToggle?.dataset.fill) {
+                    node = collection.pileGallery?.pages;
+                }
+                else {
+                    node = collection.gallery.pages;
+                }
+                if (node) {
+                    this.ui.animate(node, { scale: [1, 'var(--pop-transform)'] });
+                }
+            };
+            if (!this.data.config.pick || !this.app.arena.peers) {
+                collection.node.classList.add('no-select');
+            }
+            return collection;
+        }
+        #openMegaCollection(packs, type) {
+            if (!this.megaCollections.has(type)) {
+                const collection = this.#createCollection();
+                collection.setup(packs, type);
+                this.megaCollections.set(type, collection);
+            }
+            const collection = this.megaCollections.get(type);
+            collection[collection.hidden ? 'open' : 'close']();
+        }
         #openCollection(pack, type) {
             const id = type + '|' + pack;
             if (!this.collections.has(id)) {
-                const collection = this.ui.create('collection');
-                collection.arena = true;
-                collection.flex = true;
-                collection.ready.then(() => {
-                    this.ui.bind(collection.pane.node, () => collection.close());
-                });
-                collection.setup(pack, type, (id, node) => {
+                const collection = this.#createCollection();
+                collection.setup([pack], type, (id, node) => {
                     if (type === 'hero') {
                         this.ui.bind(node, () => {
                             if (this.mine) {
@@ -3166,52 +3259,7 @@
                         }
                     }
                 });
-                if (!this.data.config.pick || !this.app.arena.peers) {
-                    collection.node.classList.add('no-select');
-                }
                 this.collections.set(id, collection);
-                // open and close animations
-                collection.onopen = () => {
-                    let node;
-                    for (const popup of this.collections.values()) {
-                        if (popup !== collection) {
-                            popup.close();
-                        }
-                    }
-                    this.node.classList.add('collection');
-                    if (collection.pileToggle?.dataset.fill) {
-                        collection.pileGallery?.checkPage();
-                        node = collection.pileGallery?.pages;
-                    }
-                    else {
-                        collection.gallery.checkPage();
-                        node = collection.gallery.pages;
-                    }
-                    if (node) {
-                        this.ui.animate(node, { scale: ['var(--pop-transform)', 1] });
-                    }
-                };
-                collection.onclose = () => {
-                    this.node.classList.remove('collection');
-                    if (this.removing) {
-                        return;
-                    }
-                    for (const popup of this.collections.values()) {
-                        if (!popup.hidden) {
-                            return;
-                        }
-                    }
-                    let node;
-                    if (collection.pileToggle?.dataset.fill) {
-                        node = collection.pileGallery?.pages;
-                    }
-                    else {
-                        node = collection.gallery.pages;
-                    }
-                    if (node) {
-                        this.ui.animate(node, { scale: [1, 'var(--pop-transform)'] });
-                    }
-                };
             }
             const collection = this.collections.get(id);
             collection[collection.hidden ? 'open' : 'close']();
@@ -3775,7 +3823,10 @@
         get currentPage() {
             return this.pages.childNodes[Math.max(0, this.#currentPage)];
         }
-        get #pagedItems() {
+        get items() {
+            return this.#items;
+        }
+        get pagedItems() {
             if (this.#items.includes('pager')) {
                 const n = this.getSize();
                 const items = [];
@@ -3848,7 +3899,7 @@
         }
         /** Update page count and create page(s) if necessary. */
         updatePages() {
-            const pageCount = Math.ceil(this.#pagedItems.length / this.getSize());
+            const pageCount = Math.ceil(this.pagedItems.length / this.getSize());
             // add more pages
             while (pageCount > this.#pageCount) {
                 this.pages.appendChild(this.ui.createElement('page'));
@@ -3982,7 +4033,7 @@
             // page container
             const n = this.getSize();
             const layer = this.ui.createElement('layer');
-            const items = this.#pagedItems;
+            const items = this.pagedItems;
             for (let j = 0; j < n; j++) {
                 const item = items[i * n + j];
                 if (j && j % this.#currentSize[1] === 0) {

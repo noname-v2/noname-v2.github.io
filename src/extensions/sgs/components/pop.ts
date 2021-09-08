@@ -118,7 +118,7 @@ export function pop(T: typeof Pop) {
             const collection = this.ui.create('collection');
             collection.nrows = 3;
             collection.ncols = 7;
-            collection.setup(pack, 'hero', (id, node) => {
+            collection.setup([pack], 'hero', (id, node) => {
                 if (this.picked.has(id)) {
                     node.classList.add('selected');
                 }

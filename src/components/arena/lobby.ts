@@ -48,6 +48,9 @@ export class Lobby extends Component {
     /** Cache of collections. */
     collections = new Map<string, Collection>();
 
+    /** Cache of mega collections. */
+    megaCollections = new Map<string, Collection>();
+
     /** Start game button is clicked and awaiting start. */
     #starting = 0;
 
@@ -273,8 +276,10 @@ export class Lobby extends Component {
         }
 
         // heropacks
-        this.sidebar.pane.addSection('武将');
+        const heroSection = this.sidebar.pane.addSection('武将');
+        const heropacks: string[] = [];
         for (const pack of configs.heropacks) {
+            heropacks.push(pack);
             const name = this.app.accessExtension(pack, 'heropack');
             const toggle = this.sidebar.pane.addToggle([
                 name, () => this.#openCollection(pack, 'hero')
@@ -284,10 +289,16 @@ export class Lobby extends Component {
             });
             this.heroToggles.set(pack, toggle);
         }
+        this.ui.bind(heroSection, {
+            onclick: () => this.#openMegaCollection(heropacks, 'hero'),
+            oncontext: () => this.#openMegaCollection(heropacks, 'hero')
+        })
         
         // cardpacks
-        this.sidebar.pane.addSection('卡牌');
+        const cardSection = this.sidebar.pane.addSection('卡牌');
+        const cardpacks: string[] = [];
         for (const pack of configs.cardpacks) {
+            cardpacks.push(pack);
             const name = this.app.accessExtension(pack, 'cardpack');
             const toggle = this.sidebar.pane.addToggle([
                 name, () => this.#openCollection(pack, 'card+pile')
@@ -297,6 +308,10 @@ export class Lobby extends Component {
             });
             this.cardToggles.set(pack, toggle);
         }
+        this.ui.bind(cardSection, {
+            onclick: () => this.#openMegaCollection(cardpacks, 'card+pile'),
+            oncontext: () => this.#openMegaCollection(cardpacks, 'card+pile')
+        })
 
         // banned heros
         this.banned = [
@@ -603,16 +618,80 @@ export class Lobby extends Component {
         }
     }
 
+    #createCollection() {
+        const collection = this.ui.create('collection');
+        collection.arena = true;
+        collection.flex = true;
+        collection.ready.then(() => {
+            this.ui.bind(collection.pane.node, () => collection.close());
+        });
+
+        // open and close animations
+        collection.onopen = () => {
+            let node: HTMLElement;
+            for (const popup of this.collections.values()) {
+                if (popup !== collection) {
+                    popup.close();
+                }
+            }
+            this.node.classList.add('collection');
+            if (collection.pileToggle?.dataset.fill) {
+                collection.pileGallery?.checkPage();
+                node = collection.pileGallery?.pages!;
+            }
+            else {
+                collection.gallery.checkPage();
+                node = collection.gallery.pages;
+            }
+            if (node) {
+                this.ui.animate(node, {scale: ['var(--pop-transform)', 1]});
+            }
+        };
+
+        collection.onclose = () => {
+            this.node.classList.remove('collection');
+            if (this.removing) {
+                return;
+            }
+            for (const popup of this.collections.values()) {
+                if (!popup.hidden) {
+                    return;
+                }
+            }
+            let node: HTMLElement;
+            if (collection.pileToggle?.dataset.fill) {
+                node = collection.pileGallery?.pages!;
+            }
+            else {
+                node = collection.gallery.pages;
+            }
+            if (node) {
+                this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});
+            }
+        };
+        
+        if (!this.data.config.pick || !this.app.arena!.peers) {
+            collection.node.classList.add('no-select');
+        }
+
+        return collection;
+    }
+
+    #openMegaCollection(packs: string[], type: 'hero' | 'card+pile') {
+        if (!this.megaCollections.has(type)) {
+            const collection = this.#createCollection();
+            collection.setup(packs, type);
+            this.megaCollections.set(type, collection);
+        }
+        const collection = this.megaCollections.get(type)!;
+        collection[collection.hidden ? 'open' : 'close']();
+    }
+
     #openCollection(pack: string, type: 'hero' | 'card+pile') {
         const id = type + '|' + pack;
         if (!this.collections.has(id)) {
-            const collection = this.ui.create('collection');
-            collection.arena = true;
-            collection.flex = true;
-            collection.ready.then(() => {
-                this.ui.bind(collection.pane.node, () => collection.close());
-            });
-            collection.setup(pack, type, (id, node) => {
+            const collection = this.#createCollection();
+            collection.setup([pack], type, (id, node) => {
                 if (type === 'hero') {
                     this.ui.bind(node, () => {
                         if (this.mine) {
@@ -651,53 +730,7 @@ export class Lobby extends Component {
                     }
                 }
             });
-            if (!this.data.config.pick || !this.app.arena!.peers) {
-                collection.node.classList.add('no-select');
-            }
             this.collections.set(id, collection);
-
-            // open and close animations
-            collection.onopen = () => {
-                let node: HTMLElement;
-                for (const popup of this.collections.values()) {
-                    if (popup !== collection) {
-                        popup.close();
-                    }
-                }
-                this.node.classList.add('collection');
-                if (collection.pileToggle?.dataset.fill) {
-                    collection.pileGallery?.checkPage();
-                    node = collection.pileGallery?.pages!;
-                }
-                else {
-                    collection.gallery.checkPage();
-                    node = collection.gallery.pages;
-                }
-                if (node) {
-                    this.ui.animate(node, {scale: ['var(--pop-transform)', 1]});
-                }
-            };
-            collection.onclose = () => {
-                this.node.classList.remove('collection');
-                if (this.removing) {
-                    return;
-                }
-                for (const popup of this.collections.values()) {
-                    if (!popup.hidden) {
-                        return;
-                    }
-                }
-                let node: HTMLElement;
-                if (collection.pileToggle?.dataset.fill) {
-                    node = collection.pileGallery?.pages!;
-                }
-                else {
-                    node = collection.gallery.pages;
-                }
-                if (node) {
-                    this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});
-                }
-            };
         }
         const collection = this.collections.get(id)!;
         collection[collection.hidden ? 'open' : 'close']();

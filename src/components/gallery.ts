@@ -49,7 +49,11 @@ export class Gallery extends Component {
         return this.pages.childNodes[Math.max(0, this.#currentPage)] as HTMLElement;
     }
 
-    get #pagedItems() {
+    get items() {
+        return this.#items;
+    }
+
+    get pagedItems() {
         if (this.#items.includes('pager')) {
             const n = this.getSize();
             const items: Exclude<GalleryItem, 'pager'>[] = [];
@@ -131,7 +135,7 @@ export class Gallery extends Component {
 
     /** Update page count and create page(s) if necessary. */
     updatePages() {
-        const pageCount = Math.ceil(this.#pagedItems.length / this.getSize());
+        const pageCount = Math.ceil(this.pagedItems.length / this.getSize());
 
         // add more pages
         while (pageCount > this.#pageCount) {
@@ -284,7 +288,7 @@ export class Gallery extends Component {
         // page container
         const n = this.getSize();
         const layer = this.ui.createElement('layer');
-        const items = this.#pagedItems;
+        const items = this.pagedItems;
 
         for (let j = 0; j < n; j++) {
             const item = items[i * n + j];

@@ -26,36 +26,48 @@ export class Collection extends Popup {
     /** Use dynamic nrows and ncols. */
     flex: boolean = false;
 
-    setup(pack: string, type: 'hero' | 'card' | 'card+pile', render?: (id: string, node: HTMLElement) => void) {
+    setup(packs: string[], type: 'hero' | 'card' | 'card+pile', render?: (id: string, node: HTMLElement) => void) {
+        const caption = this.pane.addCaption('<span></span>');
+        const captionSpan = caption.firstChild as HTMLElement;
         const section = type === 'card+pile' ? 'card' : type;
-        const lib = this.app.accessExtension(pack, section);
-        const n = Object.entries(lib ?? {}).length;
-        if (lib && n) {
+        const pages: string[] = [];
+        
+        // total number of items
+        let n = 0;
+        for (const pack of packs) {
+            n += Object.entries(this.app.accessExtension(pack, section)).length;
+        }
+
+        let gallery: Gallery;
+
+        if (this.flex) {
+            this.node.classList.add('flex-side');
+            gallery = this.ui.create('gallery');
+            gallery.node.classList.add('pop');
+            const width = parseInt(this.app.css.pop.width);
+            const margin = parseInt(this.app.css.pop.margin);
+            const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+            gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+            gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+            this.pane.node.appendChild(gallery.node);
+        }
+        else {
+            let width;
+            this.pane.node.classList.add('auto');
+            [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+            gallery.node.style.width = `${width}px`;
+        }
+
+        this.gallery = gallery;
+        gallery.node.classList.add('force-indicator');
+
+        for (const pack of packs) {
+            const lib = this.app.accessExtension(pack, section);
             const packname = this.app.accessExtension(pack, section + 'pack');
-            const caption = this.pane.addCaption('<span>' + packname + '</span>');
-            const captionSpan = caption.firstChild as HTMLElement;
 
-            let gallery: Gallery;
-            let width = 0;
-
-            if (this.flex) {
-                this.node.classList.add('flex-side');
-                gallery = this.ui.create('gallery');
-                gallery.node.classList.add('pop');
-                const width = parseInt(this.app.css.pop.width);
-                const margin = parseInt(this.app.css.pop.margin);
-                const zoom = parseFloat(this.app.css.pop['flex-zoom']);
-                gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
-                gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
-                this.pane.node.appendChild(gallery.node);
+            if (pack === packs[0]) {
+                captionSpan.innerHTML = packname;
             }
-            else {
-                this.pane.node.classList.add('auto');
-                [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
-                gallery.node.style.width = `${width}px`;
-            }
-            this.gallery = gallery;
-            gallery.node.classList.add('force-indicator');
 
             // add gallery items
             const subpacks: Dict<string[]> = {};
@@ -94,113 +106,40 @@ export class Collection extends Popup {
                 });
             }
 
-            const subpackList: string[] = [];
             for (const subpack in subpacks) {
-                subpackList.push(subpack);
+                pages.push(packname + '·' + subpack);
                 for (const name of subpacks[subpack]) {
                     add(name);
                 }
                 gallery.add('pager');
             }
 
-            if (subpackList.length) {
-                gallery.onpage = page => {
-                    if (subpackList[page]) {
-                        captionSpan.innerHTML = packname + '·' + subpackList[page];
-                    }
-                    else {
-                        captionSpan.innerHTML = packname;
-                    }
-                }
-            }
-
+            pages.push(packname);
             for (const name of defaults) {
                 add(name);
             }
+            gallery.add('pager');
+        }
 
-            // add card pile
-            if (type === 'card+pile') {
-                const pile = this.app.accessExtension(pack, 'pile') as Pile;
-                if (pile) {
-                    // add pile toggle
-                    const toggle = this.pileToggle = this.ui.createElement('widget', caption);
-                    toggle.classList.add('toggle');
-
-                    let shown = false;
-                    let pileCount = 0;
-
-                    for (const name in pile) {
-                        for (const suit in pile[name]) {
-                            pileCount += pile[name][suit].length
-                        }
+        // change section title when tunning page.
+        if (pages.length > 1) {
+            gallery.onpage = page => {
+                const items = gallery.items;
+                const item = gallery.pagedItems[page * gallery.getSize()];
+                const idx = items.indexOf(item);
+                let npages = 0;
+                for (let i = 0; i < idx; i++) {
+                    if (items[i] === 'pager') {
+                        npages++;
                     }
-                    toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
-
-                    this.ui.bind(toggle, () => {
-                        if (shown) {
-                            pileGallery.node.style.display = 'none';
-                            toggle.dataset.fill = '';
-                            gallery.node.style.display = '';
-                            const page = gallery.checkPage();
-                            if (gallery.onpage) {
-                                gallery.onpage(page);
-                            }
-                        }
-                        else {
-                            gallery.node.style.display = 'none';
-                            captionSpan.innerHTML = packname;
-                            toggle.dataset.fill = 'blue';
-                            pileGallery.node.style.display = '';
-                            pileGallery.checkPage();
-                        }
-                        shown = !shown;
-                    });
-
-                    // add pile gallery
-                    let pileGallery: Gallery;
-                    if (this.flex) {
-                        pileGallery = this.ui.create('gallery');
-                        pileGallery.node.classList.add('pop');
-                        pileGallery.ncols = gallery.ncols;
-                        pileGallery.nrows = gallery.nrows;
-                        this.pane.node.appendChild(pileGallery.node);
-                    }
-                    else {
-                        [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
-                        pileGallery.node.style.display = 'none';
-                        pileGallery.node.classList.add('pop');
-                        pileGallery.node.style.width = `${width}px`;
-                    }
-                    this.pileGallery = pileGallery;
-                    pileGallery.node.classList.add('force-indicator');
-
-                    for (const name in pile) {
-                        const id = name.includes(':') ? name : pack + ':' + name;
-                        for (const suit in pile[name]) {
-                            for (const num of pile[name][suit]) {
-                                pileCount++;
-                                pileGallery.add(() => {
-                                    const card = this.ui.create('card');
-                                    card.data.name = id;
-                                    card.data.suit = suit;
-                                    if (typeof num === 'number') {
-                                        card.data.number = num;
-                                    }
-                                    else {
-                                        card.data.number = num[0];
-                                        card.data.label = num.slice(1);
-                                    }
-                                    return card.node;
-                                });
-                            }
-                        }
-                    }
-
-                    // if (debug) {
-                    //     this.checkPile(pile);
-                    // }
                 }
+                captionSpan.innerHTML = pages[npages];
             }
+        }
+
+        // add toggle for displaying card pile
+        if (type === 'card+pile') {
+            this.#addPile(packs, caption);
         }
     }
 
@@ -232,5 +171,95 @@ export class Collection extends Popup {
 
         console.log(suits);
         console.log(nums);
+    }
+
+    #addPile(packs: string[], caption: HTMLElement) {
+        // total number of cards in card pile.
+        let pileCount = 0;
+        
+        for (const pack of packs) {
+            const pile = this.app.accessExtension(pack, 'pile') as Pile;
+            for (const name in pile) {
+                for (const suit in pile[name]) {
+                    pileCount += pile[name][suit].length
+                }
+            }
+        }
+        
+        if (pileCount === 0) {
+            return;
+        }
+        
+        const gallery = this.gallery;
+        const toggle = this.pileToggle = this.ui.createElement('widget', caption);
+        toggle.classList.add('toggle');
+        toggle.innerHTML = `显示牌堆 (<span class="mono">${pileCount}</span>)`;
+        
+        // add pile gallery
+        let pileGallery: Gallery;
+        if (this.flex) {
+            pileGallery = this.ui.create('gallery');
+            pileGallery.node.classList.add('pop');
+            pileGallery.ncols = gallery.ncols;
+            pileGallery.nrows = gallery.nrows;
+            this.pane.node.appendChild(pileGallery.node);
+        }
+        else {
+            [pileGallery] = this.pane.addPopGallery(pileCount, this.nrows, this.ncols);
+            pileGallery.node.style.display = 'none';
+            pileGallery.node.classList.add('pop');
+            pileGallery.node.style.width = this.gallery.node.style.width;
+        }
+        
+        this.pileGallery = pileGallery;
+        pileGallery.node.classList.add('force-indicator');
+        
+        // click to toggle card pile and card gallery
+        let shown = false;
+        this.ui.bind(toggle, () => {
+            if (shown) {
+                pileGallery.node.style.display = 'none';
+                toggle.dataset.fill = '';
+                gallery.node.style.display = '';
+                gallery.checkPage();
+            }
+            else {
+                gallery.node.style.display = 'none';
+                toggle.dataset.fill = 'blue';
+                pileGallery.node.style.display = '';
+                pileGallery.checkPage();
+            }
+            shown = !shown;
+        });
+
+
+        for (const pack of packs) {
+            const pile = this.app.accessExtension(pack, 'pile') as Pile;
+            for (const name in pile) {
+                const id = name.includes(':') ? name : pack + ':' + name;
+                for (const suit in pile[name]) {
+                    for (const num of pile[name][suit]) {
+                        pileCount++;
+                        pileGallery.add(() => {
+                            const card = this.ui.create('card');
+                            card.data.name = id;
+                            card.data.suit = suit;
+                            if (typeof num === 'number') {
+                                card.data.number = num;
+                            }
+                            else {
+                                card.data.number = num[0];
+                                card.data.label = num.slice(1);
+                            }
+                            return card.node;
+                        });
+                    }
+                }
+            }
+
+            // if (debug) {
+            //     this.checkPile(pile);
+            // }
+        }
     }
 }
