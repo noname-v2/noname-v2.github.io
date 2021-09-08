@@ -1,6 +1,6 @@
 import type { Task } from './worker/task';
 import type { Component, Color } from './components';
-import type { accessExtension, getHero, getCard} from './extension';
+import type { accessExtension, getData} from './extension';
 import type { lib } from './client/globals';
 
 /** Plain object. */
@@ -123,8 +123,7 @@ export interface Select<T> {
 
 /** <this> of filter functions. */
 export interface FilterThis<T extends string | number> {
-    getHero: typeof getHero;
-    getCard: typeof getCard;
+    getData: typeof getData;
     accessExtension: typeof accessExtension;
     selected: T[];
     all: T[];

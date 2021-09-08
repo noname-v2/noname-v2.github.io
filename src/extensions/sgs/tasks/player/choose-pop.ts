@@ -50,7 +50,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             console.log(this.results);
         }
 
-        filter(selections: (string | number)[][], pop: Link) {
+        filter<T extends string | number>(selections: T[][], pop: Link) {
             if (typeof selections[0] === 'string') {
                 // custom operations defined by child classes
                 try {
@@ -60,7 +60,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             }
             else {
                 // map of sections and its selected items
-                const sections = new Map<Select<any>, [(string | number)[], (string | number)[]]>();
+                const sections = new Map<Select<any>, [T[], T[]]>();
                 
                 // get lists of all items and selected items
                 let all: any[] = [];
@@ -81,28 +81,9 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 }
 
                 // get selectable items
-                const selectable = [];
+                let selectable: T[] = [];
                 for (const [sel, [all, selected]] of sections) {
-                    const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-                    if (n > selected.length) {
-                        const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                        const filterThis: FilterThis<any> = {
-                            all, selected,
-                            getHero: this.game.getHero,
-                            getCard: this.game.getCard,
-                            accessExtension: this.game.accessExtension
-                        }
-                        for (const item of all) {
-                            if (!selected.includes(item)) {
-                                try {
-                                    if (func.apply(filterThis, [item, this])) {
-                                        selectable.push(item);
-                                    }
-                                }
-                                catch {}
-                            }
-                        }
-                    }
+                    selectable = selectable.concat(this.getSelectable(sel, all, selected));
                 }
 
                 // update pop

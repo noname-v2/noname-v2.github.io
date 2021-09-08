@@ -1,5 +1,5 @@
 import { freeze, access, split } from './utils';
-import type { Extension, HeroData, CardData } from './types';
+import type { Extension, HeroData, CardData, SkillData } from './types';
 
 /** Map of loaded extensions. */
 const extensions = new Map<string, Extension>();
@@ -29,13 +29,13 @@ export function accessExtension(path: string, ...paths: string[]): any {
 }
 
 /** Get hero info. */
-export function getHero(id: string): HeroData {
-    const [ext, name] = split(id);
-    return accessExtension(ext, 'hero', name);
+interface GetData {
+    hero: HeroData;
+    card: CardData;
+    skill: SkillData;
 }
 
-/** Get card info. */
-export function getCard(id: string): CardData {
+export function getData<T extends keyof GetData>(type: T, id: string): GetData[T] {
     const [ext, name] = split(id);
-    return accessExtension(ext, 'card', name);
+    return accessExtension(ext, type, name);
 }

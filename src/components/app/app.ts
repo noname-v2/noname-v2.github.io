@@ -1,7 +1,7 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
-import { importExtension, accessExtension, getHero, getCard } from '../../extension';
+import { importExtension, accessExtension, getData } from '../../extension';
 import type { ExtensionMeta, HeroData, CardData, Dict } from '../../types';
 
 /** Options used by ui.choose(). */
@@ -86,12 +86,8 @@ export class App extends Component {
         return accessExtension;
     }
 
-    get getHero() {
-        return getHero;
-    }
-
-    get getCard() {
-        return getCard;
+    get getData() {
+        return getData;
     }
 
     get connected() {
@@ -411,7 +407,7 @@ export class App extends Component {
     /** Bind context menu to hero intro. */
     bindHero(node: HTMLElement, id: string) {
         this.ui.bind(node, {oncontext: e => {
-            const info = this.getHero(id);
+            const info = this.getData('hero', id);
             if (!info) {
                 return;
             }

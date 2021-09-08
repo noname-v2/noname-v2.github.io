@@ -314,8 +314,7 @@ export class Pop extends Popup {
                         const filterThis: FilterThis<any> = {
                             selected: selected,
                             all: all.get(gallery)!,
-                            getHero: this.app.getHero,
-                            getCard: this.app.getCard,
+                            getData: this.app.getData,
                             accessExtension: this.app.accessExtension
                         }
                         item.classList[func.call(filterThis, id) ? 'remove' : 'add']('defer');
@@ -355,7 +354,9 @@ export class Pop extends Popup {
     setSelectable(selectable: (string | number)[]) {
         if (this.#pending) {
             for (const [id, [item]] of this.items) {
-                item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+                if (!item.classList.contains('selected')) {
+                    item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+                }
             }
             this.#pending = false;
         }

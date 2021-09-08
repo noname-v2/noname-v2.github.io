@@ -296,28 +296,9 @@ function createPop(T) {
                     }
                 }
                 // get selectable items
-                const selectable = [];
+                let selectable = [];
                 for (const [sel, [all, selected]] of sections) {
-                    const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-                    if (n > selected.length) {
-                        const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                        const filterThis = {
-                            all, selected,
-                            getHero: this.game.getHero,
-                            getCard: this.game.getCard,
-                            accessExtension: this.game.accessExtension
-                        };
-                        for (const item of all) {
-                            if (!selected.includes(item)) {
-                                try {
-                                    if (func.apply(filterThis, [item, this])) {
-                                        selectable.push(item);
-                                    }
-                                }
-                                catch { }
-                            }
-                        }
-                    }
+                    selectable = selectable.concat(this.getSelectable(sel, all, selected));
                 }
                 // update pop
                 pop.call('setSelectable', selectable);
@@ -377,11 +358,32 @@ function createChoose(T) {
         timeout = null;
         /** Allow not choosing. */
         forced = false;
+        /** Time limit for choosing. */
         getTimeout() {
             if (this.timeout === null && this.game.hub.connected) {
                 return this.game.config.timeout ?? null;
             }
             return this.timeout;
+        }
+        /** Get a list of selectable items. */
+        getSelectable(sel, all, selected) {
+            const selectable = [];
+            const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
+            if (n > selected.length) {
+                const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
+                const filterThis = this.game.createFilter(all, selected);
+                for (const item of all) {
+                    if (!selected.includes(item)) {
+                        try {
+                            if (func.apply(filterThis, [item, this])) {
+                                selectable.push(item);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            return selectable;
         }
     };
 }
@@ -494,6 +496,14 @@ function game(G) {
             const card = this.createInstance('card', this, 'card');
             this.cards.set(card.id, card);
             return card;
+        }
+        /** Create a filter. */
+        createFilter(all, selected) {
+            return {
+                all, selected,
+                getData: this.getData,
+                accessExtension: this.accessExtension
+            };
         }
     };
 }

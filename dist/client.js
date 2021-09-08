@@ -836,15 +836,9 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
-    /** Get hero info. */
-    function getHero(id) {
+    function getData(type, id) {
         const [ext, name] = split(id);
-        return accessExtension(ext, 'hero', name);
-    }
-    /** Get card info. */
-    function getCard(id) {
-        const [ext, name] = split(id);
-        return accessExtension(ext, 'card', name);
+        return accessExtension(ext, type, name);
     }
 
     /** Hub configuration. */
@@ -1345,11 +1339,8 @@
         get accessExtension() {
             return accessExtension;
         }
-        get getHero() {
-            return getHero;
-        }
-        get getCard() {
-            return getCard;
+        get getData() {
+            return getData;
         }
         get connected() {
             return this.arena?.data.peers ? true : false;
@@ -1624,7 +1615,7 @@
         /** Bind context menu to hero intro. */
         bindHero(node, id) {
             this.ui.bind(node, { oncontext: e => {
-                    const info = this.getHero(id);
+                    const info = this.getData('hero', id);
                     if (!info) {
                         return;
                     }
@@ -3288,7 +3279,7 @@
                                 if (this.data.config.pick && this.app.arena.peers) {
                                     const picked = node.classList.contains('selected');
                                     const banned = node.classList.contains('defer');
-                                    this.app.choose(this.app.getHero(id).name, {
+                                    this.app.choose(this.app.getData('hero', id).name, {
                                         buttons: [
                                             ['pick', '点将', picked ? 'red' : ''],
                                             ['ban', '禁用', banned ? 'blue' : '']
@@ -3369,7 +3360,7 @@
         /** Timer bar. */
         timer = null;
         initHero(name) {
-            const info = this.app.getHero(name);
+            const info = this.app.getData('hero', name);
             this.data.heroImage = name;
             this.data.heroName = info.name;
             this.data.faction = info.faction;
@@ -3684,8 +3675,7 @@
                             const filterThis = {
                                 selected: selected,
                                 all: all.get(gallery),
-                                getHero: this.app.getHero,
-                                getCard: this.app.getCard,
+                                getData: this.app.getData,
                                 accessExtension: this.app.accessExtension
                             };
                             item.classList[func.call(filterThis, id) ? 'remove' : 'add']('defer');
@@ -3722,7 +3712,9 @@
         setSelectable(selectable) {
             if (this.#pending) {
                 for (const [id, [item]] of this.items) {
-                    item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+                    if (!item.classList.contains('selected')) {
+                        item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
+                    }
                 }
                 this.#pending = false;
             }

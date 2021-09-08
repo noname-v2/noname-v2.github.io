@@ -740,7 +740,7 @@ export class Lobby extends Component {
                             if (this.data.config.pick && this.app.arena!.peers) {
                                 const picked = node.classList.contains('selected');
                                 const banned = node.classList.contains('defer');
-                                this.app.choose(this.app.getHero(id).name, {
+                                this.app.choose(this.app.getData('hero', id).name, {
                                     buttons: [
                                         ['pick', '点将', picked ? 'red' : ''],
                                         ['ban', '禁用', banned ? 'blue' : '']

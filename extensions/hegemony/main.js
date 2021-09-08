@@ -36,13 +36,13 @@ const mode = {
         }
     },
     choose(name) {
-        const faction = this.getHero(name).faction;
+        const faction = this.getData('hero', name).faction;
         if (this.selected.length) {
-            return faction === this.getHero(this.selected[0]).faction;
+            return faction === this.getData('hero', this.selected[0]).faction;
         }
         else {
             for (const hero of this.all) {
-                if (hero !== name && faction === this.getHero(hero).faction) {
+                if (hero !== name && faction === this.getData('hero', hero).faction) {
                     return true;
                 }
             }
