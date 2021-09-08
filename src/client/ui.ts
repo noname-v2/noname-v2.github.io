@@ -186,9 +186,9 @@ function pointerEnd(touch: boolean) {
             dispatchMoveEnd(moving[0]);
         }
 
-        // re-enable event trigger after 200ms
+        // re-enable event trigger after 310ms (slightly > app.css.transition)
         if (dispatched) {
-            window.setTimeout(() => dispatched = false, 200);
+            window.setTimeout(() => dispatched = false, 310);
         }
     }
 

@@ -349,7 +349,12 @@ function createHero(T) {
             super.main();
         }
         callPick(pop, e) {
-            pop.call('pick', [e, this.game.heropacks]);
+            if (this.game.hub.connected) {
+                pop.call('togglePick');
+            }
+            else {
+                pop.call('pick', [e, this.game.heropacks]);
+            }
         }
     };
 }
@@ -798,11 +803,36 @@ function pop(T) {
                 super.ok();
             }
         }
-        /** Load picked heros. */
-        addTray() {
-            super.addTray();
-            if (this.app.connected) {
+        /** Include picked items. */
+        getSelected() {
+            const selected = [];
+            const order = new Map();
+            for (const id of this.selected) {
+                selected.push(id);
+                order.set(id, this.tray.items.get(this.items.get(id)[1]) ?? Infinity);
+            }
+            for (const id of this.picked) {
+                selected.push(id);
+                order.set(id, this.tray.items.get(this.clones.get(id)) ?? Infinity);
+            }
+            selected.sort((a, b) => (order.get(b) - order.get(a)));
+            return selected;
+        }
+        /** Enable pick by default. */
+        addConfirm(confirm) {
+            super.addConfirm(confirm);
+            if (this.app.connected && this.buttons.get('callPick')) {
                 this.tray.ready.then(() => this.#restore());
+            }
+        }
+        /** Enable or disable pick. */
+        togglePick() {
+            const button = this.buttons.get('callPick');
+            if (button.dataset.fill) {
+                this.#clear();
+            }
+            else {
+                this.#restore();
             }
         }
         /** Open a popup to pick heros. */
@@ -826,13 +856,7 @@ function pop(T) {
             // cancel this.#restore
             if (this.picked.size) {
                 menu.pane.addOption('取消', () => {
-                    for (const id of this.picked) {
-                        this.tray.deleteSilent(this.clones.get(id));
-                    }
-                    this.tray.align();
-                    this.picked.clear();
-                    this.buttons.get('callPick').dataset.fill = '';
-                    this.#restored = false;
+                    this.#clear();
                     menu.close();
                 });
             }
@@ -842,6 +866,16 @@ function pop(T) {
         #save() {
             this.db.set(this.#id, Array.from(this.picked));
             this.buttons.get('callPick').dataset.fill = this.picked.size ? 'blue' : '';
+        }
+        /** Clear picked items. */
+        #clear() {
+            for (const id of this.picked) {
+                this.tray.deleteSilent(this.clones.get(id));
+            }
+            this.tray.align();
+            this.picked.clear();
+            this.buttons.get('callPick').dataset.fill = '';
+            this.#restored = false;
         }
         /** Restore from saved heros. */
         #restore() {
@@ -857,10 +891,7 @@ function pop(T) {
                     this.tray.addSilent(clone);
                 }
                 this.tray.align();
-                const button = this.buttons.get('callPick');
-                if (button) {
-                    button.dataset.fill = 'blue';
-                }
+                this.buttons.get('callPick').dataset.fill = 'blue';
                 return true;
             }
             else {

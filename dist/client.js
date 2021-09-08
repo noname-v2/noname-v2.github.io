@@ -336,9 +336,9 @@
                 dispatched = true;
                 dispatchMoveEnd(moving[0]);
             }
-            // re-enable event trigger after 200ms
+            // re-enable event trigger after 310ms (slightly > app.css.transition)
             if (dispatched) {
-                window.setTimeout(() => dispatched = false, 200);
+                window.setTimeout(() => dispatched = false, 310);
             }
         }
         if (clicking && clicking[2] === touch) {
@@ -3473,40 +3473,29 @@
         galleries = new Map();
         /** Container of clones of selected items. */
         tray;
-        /** Operation blocked by animation. */
-        #blocked = null;
         /** Awaiting filter results from worker. */
         #pending = false;
-        /** Current block ID. */
-        #blockCount = 0;
         /** Click on selectable items. */
         click(id) {
-            if (this.#blocked || this.#pending)
+            if (this.#pending)
                 return;
             const [item, clone] = this.items.get(id);
-            const blocked = this.#blocked = ++this.#blockCount;
-            const unblock = () => {
-                if (this.#blocked === blocked) {
-                    this.#blocked = null;
-                }
-            };
-            setTimeout(unblock, 500);
             if (this.selected.has(id)) {
                 this.selected.delete(id);
                 item.classList.remove('selected');
                 const [, , gallery] = this.items.get(id);
                 if (gallery.currentPage?.contains(item)) {
-                    this.tray.delete(clone, item, unblock);
+                    this.tray.delete(clone, item);
                 }
                 else {
-                    this.tray.delete(clone, undefined, unblock);
+                    this.tray.delete(clone);
                 }
                 this.check();
             }
             else if (!item.classList.contains('defer')) {
                 this.selected.add(id);
                 item.classList.add('selected');
-                this.tray.add(clone, item, unblock, true);
+                this.tray.add(clone, item, undefined, true);
                 this.check();
             }
         }

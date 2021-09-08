@@ -116,6 +116,9 @@ export interface Select<T> {
 
     /** Required number of selected items. */
     num: number | [number, number];
+
+    /** Additional data (e.g. mapping string to [name, suit, number] for vcard.) */
+    [key: string]: any;
 }
 
 /** <this> of filter functions. */

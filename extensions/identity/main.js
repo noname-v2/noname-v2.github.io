@@ -28,7 +28,7 @@ var main = {
                                     num: 1
                                 });
                                 this.addTask('chooseHero', {
-                                    heros, forced: true, pick: !this.game.hub.connected
+                                    heros, forced: true, pick: this.game.config.pick || !this.game.hub.connected
                                 });
                                 break;
                             }
@@ -46,15 +46,9 @@ var main = {
                             }
                         }
                         this.addTask('chooseHero', {
-                            heros, forced: true, pick: !this.game.hub.connected
+                            heros, forced: true, pick: this.game.config.pick || !this.game.hub.connected
                         });
                         this.addTask('loop');
-                    }
-                    getChoices() {
-                        return {
-                            items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            num: 1
-                        };
                     }
                 };
             }

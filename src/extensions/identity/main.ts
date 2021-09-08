@@ -33,7 +33,7 @@ export default {
                                     num: 1
                                 });
                                 this.addTask('chooseHero', {
-                                    heros, forced: true, pick: !this.game.hub.connected
+                                    heros, forced: true, pick: this.game.config.pick || !this.game.hub.connected
                                 });
                                 break;
                             }
@@ -52,16 +52,9 @@ export default {
                             }
                         }
                         this.addTask('chooseHero', {
-                            heros, forced: true, pick: !this.game.hub.connected
+                            heros, forced: true, pick: this.game.config.pick || !this.game.hub.connected
                         });
                         this.addTask('loop');
-                    }
-
-                    getChoices(): Select<string> {
-                        return {
-                            items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
-                            num: 1
-                        };
                     }
                 }
             }

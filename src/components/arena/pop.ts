@@ -17,10 +17,13 @@ interface PopSectionContent {
     hero: string[] | Select<string>;
 
     /** Card gallery. */
-    card: string[];
+    card: string[] | Select<number>;
+
+    /** Card gallery. */
+    player: string[] | Select<number>;
 
     /** Virtual card gallery. */
-    vcard: [string, string, number, ...string[]];
+    vcard: [string, string, number, ...string[]] | Select<string>;
 
     /** Skill gallery. */
     skill: string[];
@@ -75,43 +78,30 @@ export class Pop extends Popup {
     /** Container of clones of selected items. */
     tray!: Tray;
 
-    /** Operation blocked by animation. */
-    #blocked: number | null = null;
-
     /** Awaiting filter results from worker. */
     #pending: boolean = false;
 
-    /** Current block ID. */
-    #blockCount = 0;
-
     /** Click on selectable items. */
     click(id: string | number) {
-        if (this.#blocked || this.#pending) return;
+        if (this.#pending) return;
         const [item, clone] = this.items.get(id)!;
-        const blocked = this.#blocked = ++this.#blockCount;
-        const unblock = () => {
-            if (this.#blocked === blocked) {
-                this.#blocked = null;
-            }
-        }
-        setTimeout(unblock, 500);
 
         if (this.selected.has(id)) {
             this.selected.delete(id);
             item.classList.remove('selected');
             const [, , gallery] = this.items.get(id)!;
             if (gallery.currentPage?.contains(item)) {
-                this.tray.delete(clone, item, unblock);
+                this.tray.delete(clone, item);
             }
             else {
-                this.tray.delete(clone, undefined, unblock);
+                this.tray.delete(clone);
             }
             this.check();
         }
         else if (!item.classList.contains('defer')) {
             this.selected.add(id);
             item.classList.add('selected');
-            this.tray.add(clone, item, unblock, true);
+            this.tray.add(clone, item, undefined, true);
             this.check();
         }
     }
