@@ -114,8 +114,8 @@ export class Lobby extends Component {
                 this.players[i].data.heroImage = peer.data.avatar;
                 this.players[i].data.heroName = peer.data.nickname;
                 if (peer.owner === this.owner) {
-                    this.players[i].data.marker = '房主';
-                    this.players[i].marker.dataset.tglow = 'blue';
+                    this.players[i].data.marker = peer.data.ready ? '准备开始' : '房主';
+                    this.players[i].marker.dataset.tglow = peer.data.ready ? 'orange' : 'doger';
                     this.players[i].data.timer = peer.data.ready || null;
                 }
                 else {

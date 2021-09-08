@@ -39,6 +39,10 @@ export class Gallery extends Component {
      */
     #snap = this.platform.mobile || this.db.get('snap') || false;
 
+    get currentPage() {
+        return this.pages.childNodes[Math.max(0, this.#currentPage)] as HTMLElement;
+    }
+
     /** Listener for wheel event. */
     #wheelListener = (e: WheelEvent) => this.#wheel(e);
 

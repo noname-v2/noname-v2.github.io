@@ -1,4 +1,4 @@
-import type { Component, App, Arena, Splash, GlowColor, TextColor } from '../components';
+import type { Component, App, Arena, Splash, Color } from '../components';
 import type { Dict } from '../types';
 import { debug } from '../meta';
 
@@ -24,10 +24,10 @@ export let arena: Arena | null = null;
 /** Extention items that are indexed. */
 export const lib = {
     /** Keywords in intro. */
-    keyword: {} as Dict<[string, TextColor?, string?]>,
+    keyword: {} as Dict<[string, Color?, string?]>,
 
     /** factions from extensions. */
-    faction: {} as Dict<[string, GlowColor]>,
+    faction: {} as Dict<[string, Color]>,
 
     /** Card types from extensions. */
     type: {} as Dict<string>,

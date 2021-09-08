@@ -131,9 +131,9 @@
 		"footer-background": "linear-gradient(rgba(150, 47, 47, 1), rgba(132, 43, 43, 1))",
 		"footer-background-hover": "linear-gradient(rgb(180, 47, 47), rgb(162, 43, 43))",
 		"footer-background-down": "linear-gradient(rgb(210, 106, 47), rgb(210, 98, 43))",
-		"alter-background": "linear-gradient(rgba(37, 140, 37, 0.8), rgba(33, 122, 33, 0.8))",
-		"alter-background-hover": "linear-gradient(rgba(37, 170, 37, 0.8), rgba(33, 152, 33, 0.8))",
-		"alter-background-down": "linear-gradient(rgba(37, 170, 37), rgb(33, 152, 33))"
+		"alter-background": "linear-gradient(rgba(105, 140, 37, 0.8), rgba(71, 122, 33, 0.8))",
+		"alter-background-hover": "linear-gradient(rgba(85, 140, 37, 0.8), rgba(61, 122, 33, 0.8))",
+		"alter-background-down": "linear-gradient(rgba(85, 140, 37), rgb(61, 122, 33))"
 	},
 
 	"gallery": {
@@ -181,59 +181,30 @@
 	},
 
 	"color": {
+		"black": "rgb(0, 0, 0)",
+		"white": "rgb(255, 255, 255)",
 		"red": "rgb(242, 37, 0)",
-		"blue": "rgb(117, 186, 255)",
+		"blue": "rgb(0, 133, 255)",
 		"darkblue": "rgb(21, 46, 99)",
 		"darkred": "rgb(99, 21, 21)",
+		"doger": "rgb(78, 117, 140)",
+		"brown": "rgba(158, 89, 2)",
+		"green": "rgb(57, 123, 4)",
+		"rod": "rgb(175, 123, 0)",
+		"violet": "rgb(88, 0, 88)",
+		"sky": "rgb(117, 186, 255)",
 		"orange": "rgb(255, 119, 63)",
 		"yellow": "rgb(255, 239, 105)",
 		"gold": "rgb(255, 215, 0)",
-		"green": "rgb(104, 221, 127)",
+		"aqua": "rgb(104, 221, 127)",
 		"spring": "rgb(54, 205, 50)",
 		"tomato": "rgb(255, 99, 71)",
-		"brown": "rgb(180, 150, 85)",
 		"sand": "rgb(244, 164, 96)",
 		"purple": "rgb(233, 131, 255)",
 		"steel": "rgb(176, 196, 222)",
 		"wine": "rgb(128, 0, 0)",
 		"honey": "rgb(235, 175, 76)",
 		"peach": "rgb(255, 170, 170)",
-		"black": "rgb(0, 0, 0)"
-	},
-
-	"shadow": {
-		"blue": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 133, 255, 0.5) 0 0 3px, rgba(0, 133, 255, 0.6) 0 0 6px, rgba(0, 133, 255, 0.8) 0 0 8px",
-		"red": "rgba(0, 0, 0, 0.4) 0 0 0 1px,rgba(255, 0, 0, 0.4) 0 0 3px, rgba(255, 0, 0, 0.4) 0 0 6px, rgba(255, 0, 0, 0.8) 0 0 8px",
-		"yellow": "none",
-		"green": "none",
-		"brown": "none",
-		"purple": "none"
-	},
-
-	"glow": {
-		"blue": "rgba(0, 0, 0, 0.4) 0 0 0 1px, rgba(0, 133, 255, 0.5) 0 0 5px, rgba(0, 133, 255, 0.6) 0 0 12px, rgba(0, 133, 255, 0.8) 0 0 15px",
-		"red": "rgba(0, 0, 0, 0.4) 0 0 0 1px,rgba(255, 0, 0, 0.4) 0 0 5px, rgba(255, 0, 0, 0.4) 0 0 12px, rgba(255, 0, 0, 0.8) 0 0 15px",
-		"yellow": "none",
-		"green": "none",
-		"brown": "none",
-		"purple": "none"
-	},
-
-	"tshadow": {
-		"blue": "rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 2px, rgba(78, 117, 140,1) 0 0 2px,black 0 0 1px",
-		"red": "black 0 0 1px,rgba(191, 0, 0,0.2) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px,rgba(191, 0, 0,1) 0 0 2px, black 0 0 1px",
-		"yellow": "black 0 0 1px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 2px, rgba(255, 203, 0,1) 0 0 2px,black 0 0 1px",
-		"green": "rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 2px, rgba(57, 123, 4,1) 0 0 2px,black 0 0 1px",
-		"brown": "rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 2px, rgba(128, 59, 2,1) 0 0 2px,black 0 0 1px",
-		"purple": "rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 2px, rgba(100, 74, 139,1) 0 0 2px,black 0 0 1px"
-	},
-
-	"tglow": {
-		"blue": "rgba(78, 117, 140,1) 0 0 2px,rgba(78, 117, 140,1) 0 0 5px,rgba(78, 117, 140,1) 0 0 10px, rgba(78, 117, 140,1) 0 0 10px,rgba(78, 117, 140,1) 0 0 20px,rgba(78, 117, 140,1) 0 0 20px,black 0 0 1px",
-		"red": "black 0 0 1px,rgba(232, 53, 53,1) 0 0 2px,rgba(232, 53, 53,1) 0 0 5px,rgba(232, 53, 53,1) 0 0 10px, rgba(232, 53, 53,1) 0 0 10px,rgba(232, 53, 53,1) 0 0 20px,rgba(232, 53, 53,1) 0 0 20px",
-		"yellow": "black 0 0 1px,rgba(255, 203, 0,1) 0 0 2px,rgba(255, 203, 0,1) 0 0 5px,rgba(255, 203, 0,1) 0 0 10px, rgba(255, 203, 0,1) 0 0 10px",
-		"green": "rgba(57, 123, 4,1) 0 0 2px,rgba(57, 123, 4,1) 0 0 5px,rgba(57, 123, 4,1) 0 0 10px, rgba(57, 123, 4,1) 0 0 10px,rgba(57, 123, 4,1) 0 0 20px,rgba(57, 123, 4,1) 0 0 20px,black 0 0 1px",
-		"brown": "rgba(128, 59, 2,1) 0 0 2px,rgba(128, 59, 2,1) 0 0 5px,rgba(128, 59, 2,1) 0 0 10px, rgba(128, 59, 2,1) 0 0 10px,rgba(128, 59, 2,1) 0 0 20px,rgba(128, 59, 2,1) 0 0 20px,black 0 0 1px",
-		"purple": "rgba(100, 74, 139,1) 0 0 2px,rgba(100, 74, 139,1) 0 0 5px,rgba(100, 74, 139,1) 0 0 10px,rgba(100, 74, 139,1) 0 0 10px,rgba(100, 74, 139,1) 0 0 20px,rgba(100, 74, 139,1) 0 0 20px,black 0 0 1px"
+		"coffee": "rgb(180, 150, 85)"
 	}
 }

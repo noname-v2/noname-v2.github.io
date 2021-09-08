@@ -147,6 +147,22 @@ export class App extends Component {
         const currentTheme = await this.utils.readJSON<any>('assets/theme', name, 'theme.json');
         const defaultTheme = await this.utils.readJSON<any>('assets/theme', 'default', 'theme.json');
 
+        // add default styles for box-shadow and text-shadow
+        defaultTheme.shadow ??= {};
+        defaultTheme.glow ??= {};
+        defaultTheme.tshadow ??= {};
+        defaultTheme.tglow ??= {};
+
+        const alpha = (c: string, o: number) => c.replace(')', `, ${o})`).replace('rgb(', 'rgba(');
+
+        for (const name in defaultTheme.color) {
+            const c = defaultTheme.color[name];
+            defaultTheme.shadow[name] ??= `rgba(0, 0, 0, 0.4) 0 0 0 1px, ${alpha(c, 0.5)} 0 0 3px, ${alpha(c, 0.6)} 0 0 6px, ${alpha(c, 0.8)} 0 0 8px`;
+            defaultTheme.glow[name] ??= `rgba(0, 0, 0, 0.4) 0 0 0 1px, ${alpha(c, 0.5)} 0 0 5px, ${alpha(c, 0.6)} 0 0 12px, ${alpha(c, 0.8)} 0 0 15px`;
+            defaultTheme.tshadow[name] ??= `black 0 0 1px, ${c} 0 0 2px, ${c} 0 0 2px, ${c} 0 0 2px`;
+            defaultTheme.tglow[name] ??= `black 0 0 1px, ${c} 0 0 2px, ${c} 0 0 5px, ${c} 0 0 10px, ${c} 0 0 10px, ${c} 0 0 20px, ${c} 0 0 20px`;
+        }
+
         // theme stylesheet
         const sheet = this.#themeNode.sheet!;
         
@@ -182,7 +198,7 @@ export class App extends Component {
             this.css[section] = {};
 
             for (const entry in defaultTheme[section]) {
-                if (currentTheme[section] && currentTheme[section].hasOwnProperty(entry)) {
+                if (currentTheme[section]?.hasOwnProperty(entry)) {
                     // use the rule of current theme
                     this.css[section][entry] = await addRule(section + '-' + entry, currentTheme[section][entry], name);
                 }

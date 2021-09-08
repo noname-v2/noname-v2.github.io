@@ -1395,6 +1395,19 @@
             // fetch current and default theme defination
             const currentTheme = await this.utils.readJSON('assets/theme', name, 'theme.json');
             const defaultTheme = await this.utils.readJSON('assets/theme', 'default', 'theme.json');
+            // add default styles for box-shadow and text-shadow
+            defaultTheme.shadow ??= {};
+            defaultTheme.glow ??= {};
+            defaultTheme.tshadow ??= {};
+            defaultTheme.tglow ??= {};
+            const alpha = (c, o) => c.replace(')', `, ${o})`).replace('rgb(', 'rgba(');
+            for (const name in defaultTheme.color) {
+                const c = defaultTheme.color[name];
+                defaultTheme.shadow[name] ??= `rgba(0, 0, 0, 0.4) 0 0 0 1px, ${alpha(c, 0.5)} 0 0 3px, ${alpha(c, 0.6)} 0 0 6px, ${alpha(c, 0.8)} 0 0 8px`;
+                defaultTheme.glow[name] ??= `rgba(0, 0, 0, 0.4) 0 0 0 1px, ${alpha(c, 0.5)} 0 0 5px, ${alpha(c, 0.6)} 0 0 12px, ${alpha(c, 0.8)} 0 0 15px`;
+                defaultTheme.tshadow[name] ??= `black 0 0 1px, ${c} 0 0 2px, ${c} 0 0 2px, ${c} 0 0 2px`;
+                defaultTheme.tglow[name] ??= `black 0 0 1px, ${c} 0 0 2px, ${c} 0 0 5px, ${c} 0 0 10px, ${c} 0 0 10px, ${c} 0 0 20px, ${c} 0 0 20px`;
+            }
             // theme stylesheet
             const sheet = this.#themeNode.sheet;
             // get css rules from theme.json (fallback to default any entry not exist)
@@ -1424,7 +1437,7 @@
             for (const section in defaultTheme) {
                 this.css[section] = {};
                 for (const entry in defaultTheme[section]) {
-                    if (currentTheme[section] && currentTheme[section].hasOwnProperty(entry)) {
+                    if (currentTheme[section]?.hasOwnProperty(entry)) {
                         // use the rule of current theme
                         this.css[section][entry] = await addRule(section + '-' + entry, currentTheme[section][entry], name);
                     }
@@ -2616,8 +2629,8 @@
                     this.players[i].data.heroImage = peer.data.avatar;
                     this.players[i].data.heroName = peer.data.nickname;
                     if (peer.owner === this.owner) {
-                        this.players[i].data.marker = '房主';
-                        this.players[i].marker.dataset.tglow = 'blue';
+                        this.players[i].data.marker = peer.data.ready ? '准备开始' : '房主';
+                        this.players[i].marker.dataset.tglow = peer.data.ready ? 'orange' : 'doger';
                         this.players[i].data.timer = peer.data.ready || null;
                     }
                     else {
@@ -3328,16 +3341,12 @@
             if (this.selected.has(id)) {
                 this.selected.delete(id);
                 item.classList.remove('selected');
-                const page = item.parentNode.parentNode.parentNode;
-                const indicator = page.parentNode.nextSibling;
-                const idx = Array.from(page.parentNode.childNodes).indexOf(page);
-                const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current'));
-                // skip translate animation if item is not in current gallery page
-                if (idx !== idx2) {
-                    this.tray.delete(clone, undefined, unblock);
+                const [, , gallery] = this.items.get(id);
+                if (gallery.currentPage?.contains(item)) {
+                    this.tray.delete(clone, item, unblock);
                 }
                 else {
-                    this.tray.delete(clone, item, unblock);
+                    this.tray.delete(clone, undefined, unblock);
                 }
                 this.check();
             }
@@ -3720,6 +3729,9 @@
          * false: for mouse wheels, scroll with transform animation.
          */
         #snap = this.platform.mobile || this.db.get('snap') || false;
+        get currentPage() {
+            return this.pages.childNodes[Math.max(0, this.#currentPage)];
+        }
         /** Listener for wheel event. */
         #wheelListener = (e) => this.#wheel(e);
         init() {

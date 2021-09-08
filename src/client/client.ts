@@ -4,7 +4,7 @@ import { create } from './ui';
 import { backups, componentClasses, restore, app, splash, lib } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
-import type { Component, TextColor } from '../components';
+import type { Component, Color } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
 
 /** Hub configuration. */
@@ -180,7 +180,7 @@ async function loadArena(ruleset: string[], packs: string[]) {
     // extension dependencies
     const allPacks = new Set<string>();
     const requires = new Set<string>();
-    const autoKeywords = new Map<string, TextColor>();
+    const autoKeywords = new Map<string, Color>();
 
     // overwrite component constructors by mode
     for (const pack of ruleset) {

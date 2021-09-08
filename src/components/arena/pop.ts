@@ -99,17 +99,12 @@ export class Pop extends Popup {
         if (this.selected.has(id)) {
             this.selected.delete(id);
             item.classList.remove('selected');
-            const page = item.parentNode!.parentNode!.parentNode as HTMLElement;
-            const indicator = page.parentNode!.nextSibling as HTMLElement;
-            const idx = Array.from(page.parentNode!.childNodes).indexOf(page);
-            const idx2 = Array.from(indicator.childNodes).indexOf(indicator.querySelector('.current')!);
-            
-            // skip translate animation if item is not in current gallery page
-            if (idx !== idx2) {
-                this.tray.delete(clone, undefined, unblock);
+            const [, , gallery] = this.items.get(id)!;
+            if (gallery.currentPage?.contains(item)) {
+                this.tray.delete(clone, item, unblock);
             }
             else {
-                this.tray.delete(clone, item, unblock);
+                this.tray.delete(clone, undefined, unblock);
             }
             this.check();
         }
