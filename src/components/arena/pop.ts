@@ -111,7 +111,7 @@ export class Pop extends Popup {
         else if (!item.classList.contains('defer')) {
             this.selected.add(id);
             item.classList.add('selected');
-            this.tray.add(clone, item, unblock);
+            this.tray.add(clone, item, unblock, true);
             this.check();
         }
     }
@@ -165,6 +165,21 @@ export class Pop extends Popup {
         gallery.renderAll();
     }
 
+    /** Get selected items with order. */
+    getSelected() {
+        const selected = Array.from(this.selected);
+        selected.sort((a, b) => this.sort(a, b));
+        return selected
+    }
+
+    /** Sort by order in the tray. */
+    sort(a: string | number, b: string | number) {
+        const ai = this.tray.items.get(this.items.get(a)![1]) ?? Infinity;
+        const bi = this.tray.items.get(this.items.get(b)![1]) ?? Infinity;
+        return bi - ai;
+    }
+
+    /** Add buttons in bottom bar. */
     addConfirm(content: PopConfirm) {
         this.height += 50;
         this.width = Math.max(this.width, 230);
@@ -178,7 +193,7 @@ export class Pop extends Popup {
                 ok.dataset.fill = 'red';
                 ok.innerHTML = '确定';
                 this.ui.bind(ok, () => {
-                    this.respond(this.selected);
+                    this.respond(this.getSelected());
                     this.remove();
                 });
             }
@@ -205,7 +220,6 @@ export class Pop extends Popup {
             }
         }
     }
-
     /** Add tray of selected items. */
     addTray() {
         const height = parseInt(this.app.css.pop['tray-height']);

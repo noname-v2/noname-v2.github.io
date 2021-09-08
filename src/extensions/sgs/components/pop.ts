@@ -20,6 +20,24 @@ export function pop(T: typeof Pop) {
             return arena.data.mode + ':' + (arena.data.peers ? 'online_picked' : 'picked');
         }
 
+        /** Include picked items. */
+        ok() {
+            if (this.picked.size) {
+                this.respond([this.selected, this.picked]);
+            }
+            else {
+                super.ok();
+            }
+        }
+
+        /** Load picked heros. */
+        addTray() {
+            super.addTray();
+            if (this.app.connected) {
+                this.tray.ready.then(() => this.#restore());
+            }
+        }
+
         /** Open a popup to pick heros. */
         pick([e, packs]: [Point, string[]]) {
             if (!this.mine || this.#restore()) {
@@ -76,7 +94,10 @@ export function pop(T: typeof Pop) {
                     this.tray.addSilent(clone);
                 }
                 this.tray.align();
-                this.buttons.get('callPick')!.dataset.fill = 'blue';
+                const button = this.buttons.get('callPick');
+                if (button) {
+                    button.dataset.fill = 'blue';
+                }
                 return true;
             }
             else {
@@ -93,7 +114,7 @@ export function pop(T: typeof Pop) {
                 this.ui.setImage(clone, id);
                 let clicked = false;
                 this.ui.bind(clone, () => {
-                    if (clicked) {
+                    if (clicked || this.app.connected) {
                         return;
                     }
                     clicked = true;

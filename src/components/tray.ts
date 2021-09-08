@@ -26,9 +26,19 @@ export class Tray extends Component {
     }
 
 	/** Add an item. */
-    add(node: HTMLElement, ref?: HTMLElement, callback?: () => void) {
-        node.style.zIndex = this.items.size.toString();
-        this.items.set(node, this.items.size);
+    add(node: HTMLElement, ref?: HTMLElement, callback?: () => void, bottom: boolean = false) {
+        if (bottom) {
+            for (const [node, idx] of this.items) {
+                this.items.set(node, idx + 1);
+                node.style.zIndex = (idx + 1).toString();
+            }
+            node.style.zIndex = '0';
+            this.items.set(node, 0);
+        }
+        else {
+            node.style.zIndex = this.items.size.toString();
+            this.items.set(node, this.items.size);
+        }
         this.align();
         this.node.appendChild(node);
         

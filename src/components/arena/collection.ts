@@ -38,7 +38,7 @@ export class Collection extends Popup {
             n += Object.entries(this.app.accessExtension(pack, section)).length;
         }
         
-        const gallery = this.gallery = this.#createGallery(n);
+        const gallery = this.#createGallery(n);
         gallery.node.classList.add('force-indicator');
 
         for (const pack of packs) {
@@ -123,6 +123,23 @@ export class Collection extends Popup {
         }
     }
 
+    /** Create a collection of arbitary heros. */
+    setupHeros(caption: string, heros: string[]) {
+        this.pane.addCaption(caption);
+        const gallery = this.#createGallery(heros.length);
+        for (const id of heros) {
+            gallery.add(() => {
+                let node;
+                const player = this.ui.create('player');
+                player.initHero(id);
+                node = player.node;
+                this.app.bindHero(node, id);
+                return node;
+            });
+        }
+    }
+
+    /** Open collection. */
     async pop(e?: Point) {
         this.location = e;
         await this.app.arena!.popup(this);
@@ -175,6 +192,7 @@ export class Collection extends Popup {
             gallery.node.style.width = `${width}px`;
         }
 
+        this.gallery = gallery;
         return gallery;
     }
 

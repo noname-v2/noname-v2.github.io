@@ -1351,6 +1351,9 @@
         get getCard() {
             return getCard;
         }
+        get connected() {
+            return this.arena?.data.peers ? true : false;
+        }
         get #currentZoom() {
             return this.arena?.currentZoom ?? this.#zoom;
         }
@@ -2280,7 +2283,7 @@
             for (const pack of packs) {
                 n += Object.entries(this.app.accessExtension(pack, section)).length;
             }
-            const gallery = this.gallery = this.#createGallery(n);
+            const gallery = this.#createGallery(n);
             gallery.node.classList.add('force-indicator');
             for (const pack of packs) {
                 const lib = this.app.accessExtension(pack, section);
@@ -2356,6 +2359,22 @@
                 this.#addPile(packs, caption);
             }
         }
+        /** Create a collection of arbitary heros. */
+        setupHeros(caption, heros) {
+            this.pane.addCaption(caption);
+            const gallery = this.#createGallery(heros.length);
+            for (const id of heros) {
+                gallery.add(() => {
+                    let node;
+                    const player = this.ui.create('player');
+                    player.initHero(id);
+                    node = player.node;
+                    this.app.bindHero(node, id);
+                    return node;
+                });
+            }
+        }
+        /** Open collection. */
         async pop(e) {
             this.location = e;
             await this.app.arena.popup(this);
@@ -2402,6 +2421,7 @@
                 [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
                 gallery.node.style.width = `${width}px`;
             }
+            this.gallery = gallery;
             return gallery;
         }
         #addPile(packs, caption) {
@@ -2639,6 +2659,8 @@
         collections = new Map();
         /** Start game button is clicked and awaiting start. */
         #starting = 0;
+        /** Number of temporary collections. */
+        #tmpCount = 0;
         get #config() {
             const arena = this.app.arena;
             return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
@@ -2886,6 +2908,18 @@
             ];
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
+            const showBanned = () => {
+                const collection = this.#createCollection(true);
+                const heros = [];
+                for (const [id, clone] of this.banned[2]) {
+                    if (clone.parentNode === this.banned[1].node) {
+                        heros.push(id);
+                    }
+                }
+                collection.setupHeros('禁将', heros);
+                collection.open();
+            };
+            this.ui.bind(this.banned[0], { onclick: showBanned, oncontext: showBanned });
             // picked heros
             this.picked = [
                 this.sidebar.pane.addSection('点将'),
@@ -2899,6 +2933,18 @@
                     this.app.alert('点将', { content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。' });
                 }
             });
+            const showPicked = () => {
+                const collection = this.#createCollection(true);
+                const heros = [];
+                for (const [id, clone] of this.picked[2]) {
+                    if (clone.parentNode === this.picked[1].node) {
+                        heros.push(id);
+                    }
+                }
+                collection.setupHeros('点将', heros);
+                collection.open();
+            };
+            this.ui.bind(this.picked[0], { onclick: showPicked, oncontext: showPicked });
             const picked = this.db.get(this.#pick);
             if (picked) {
                 for (const id of picked) {
@@ -3160,13 +3206,18 @@
                 this.picked[1].addSilent(clone);
             }
         }
-        #createCollection() {
+        #createCollection(tmp = false) {
             const collection = this.ui.create('collection');
             collection.arena = true;
             collection.flex = true;
             collection.ready.then(() => {
                 this.ui.bind(collection.pane.node, () => collection.close());
             });
+            let id = '';
+            if (tmp) {
+                id = `${++this.#tmpCount}`;
+                this.collections.set(id, collection);
+            }
             // open and close animations
             collection.onopen = () => {
                 let node;
@@ -3207,6 +3258,9 @@
                 }
                 if (node) {
                     this.ui.animate(node, { scale: [1, 'var(--pop-transform)'] });
+                }
+                if (id) {
+                    this.collections.delete(id);
                 }
             };
             if (!this.data.config.pick || !this.app.arena.peers) {
@@ -3452,7 +3506,7 @@
             else if (!item.classList.contains('defer')) {
                 this.selected.add(id);
                 item.classList.add('selected');
-                this.tray.add(clone, item, unblock);
+                this.tray.add(clone, item, unblock, true);
                 this.check();
             }
         }
@@ -3497,6 +3551,19 @@
             // render all items to fill this.items
             gallery.renderAll();
         }
+        /** Get selected items with order. */
+        getSelected() {
+            const selected = Array.from(this.selected);
+            selected.sort((a, b) => this.sort(a, b));
+            return selected;
+        }
+        /** Sort by order in the tray. */
+        sort(a, b) {
+            const ai = this.tray.items.get(this.items.get(a)[1]) ?? Infinity;
+            const bi = this.tray.items.get(this.items.get(b)[1]) ?? Infinity;
+            return bi - ai;
+        }
+        /** Add buttons in bottom bar. */
         addConfirm(content) {
             this.height += 50;
             this.width = Math.max(this.width, 230);
@@ -3508,7 +3575,7 @@
                     ok.dataset.fill = 'red';
                     ok.innerHTML = '确定';
                     this.ui.bind(ok, () => {
-                        this.respond(this.selected);
+                        this.respond(this.getSelected());
                         this.remove();
                     });
                 }
@@ -5105,9 +5172,19 @@
             }
         }
         /** Add an item. */
-        add(node, ref, callback) {
-            node.style.zIndex = this.items.size.toString();
-            this.items.set(node, this.items.size);
+        add(node, ref, callback, bottom = false) {
+            if (bottom) {
+                for (const [node, idx] of this.items) {
+                    this.items.set(node, idx + 1);
+                    node.style.zIndex = (idx + 1).toString();
+                }
+                node.style.zIndex = '0';
+                this.items.set(node, 0);
+            }
+            else {
+                node.style.zIndex = this.items.size.toString();
+                this.items.set(node, this.items.size);
+            }
             this.align();
             this.node.appendChild(node);
             const [dx, dy, scale, x] = this.#locate(node, ref);

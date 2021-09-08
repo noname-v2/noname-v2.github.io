@@ -54,6 +54,9 @@ export class Lobby extends Component {
     /** Start game button is clicked and awaiting start. */
     #starting = 0;
 
+    /** Number of temporary collections. */
+    #tmpCount = 0;
+
     get #config() {
         const arena = this.app.arena!;
         return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
@@ -322,6 +325,19 @@ export class Lobby extends Component {
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
 
+        const showBanned = () => {
+            const collection = this.#createCollection(true);
+            const heros = [];
+            for (const [id, clone] of this.banned[2]) {
+                if (clone.parentNode === this.banned[1].node) {
+                    heros.push(id);
+                }
+            }
+            collection.setupHeros('禁将', heros);
+            collection.open();
+        };
+        this.ui.bind(this.banned[0], { onclick: showBanned, oncontext: showBanned });
+
         // picked heros
         this.picked = [
             this.sidebar.pane.addSection('点将'),
@@ -335,6 +351,19 @@ export class Lobby extends Component {
                 this.app.alert('点将', {content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。'})
             }
         });
+        
+        const showPicked = () => {
+            const collection = this.#createCollection(true);
+            const heros = [];
+            for (const [id, clone] of this.picked[2]) {
+                if (clone.parentNode === this.picked[1].node) {
+                    heros.push(id);
+                }
+            }
+            collection.setupHeros('点将', heros);
+            collection.open();
+        };
+        this.ui.bind(this.picked[0], { onclick: showPicked, oncontext: showPicked });
 
         const picked = this.db.get(this.#pick);
         if (picked) {
@@ -621,13 +650,20 @@ export class Lobby extends Component {
         }
     }
 
-    #createCollection() {
+    #createCollection(tmp: boolean = false) {
         const collection = this.ui.create('collection');
         collection.arena = true;
         collection.flex = true;
         collection.ready.then(() => {
             this.ui.bind(collection.pane.node, () => collection.close());
         });
+
+        let id = '';
+
+        if (tmp) {
+            id = `${++this.#tmpCount}`;
+            this.collections.set(id, collection);
+        }
 
         // open and close animations
         collection.onopen = () => {
@@ -670,6 +706,10 @@ export class Lobby extends Component {
             }
             if (node) {
                 this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});
+            }
+
+            if (id) {
+                this.collections.delete(id);
             }
         };
 

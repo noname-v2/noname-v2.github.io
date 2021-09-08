@@ -94,6 +94,10 @@ export class App extends Component {
         return getCard;
     }
 
+    get connected() {
+        return this.arena?.data.peers ? true : false;
+    }
+
     get #currentZoom(): Zoom {
         return this.arena?.currentZoom ?? this.#zoom;
     }
