@@ -3757,12 +3757,14 @@
         /** Add an item or an item constructor. */
         add(item) {
             // wrap item with container
-            if (typeof item === 'function') {
+            if (typeof item === 'function' || item === 'pager') {
                 this.#items.push(item);
             }
             else {
                 const container = this.ui.createElement('item');
-                container.appendChild(item);
+                if (item) {
+                    container.appendChild(item);
+                }
                 this.#items.push(container);
             }
             // re-render current page
@@ -3911,10 +3913,23 @@
                 return;
             }
             this.#rendered.add(i);
+            // page container
             const n = this.getSize();
             const layer = this.ui.createElement('layer');
+            // convert pager into gallery items
+            const items = [];
+            for (const item of this.#items) {
+                if (item === 'pager') {
+                    while (items.length % n !== 0) {
+                        items.push(null);
+                    }
+                }
+                else {
+                    items.push(item);
+                }
+            }
             for (let j = 0; j < n; j++) {
-                const item = this.#items[i * n + j];
+                const item = items[i * n + j];
                 if (j && j % this.#currentSize[1] === 0) {
                     layer.appendChild(document.createElement('div'));
                 }
@@ -3924,7 +3939,7 @@
                     if (rendered) {
                         container.appendChild(rendered);
                     }
-                    this.#items[i * n + j] = container;
+                    this.#items[this.#items.indexOf(item)] = container;
                     layer.appendChild(container);
                 }
                 else if (item) {

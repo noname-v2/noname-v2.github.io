@@ -1,6 +1,6 @@
 import { Component } from '../components';
 
-type GalleryItem = HTMLElement | ((item: HTMLElement) => HTMLElement | null | void);
+type GalleryItem = HTMLElement | ((item: HTMLElement) => HTMLElement | null | void) | null | 'pager';
 
 export class Gallery extends Component {
     /** Child classes use tag <noname-gallery> by default. */
@@ -71,12 +71,14 @@ export class Gallery extends Component {
     /** Add an item or an item constructor. */
     add(item: GalleryItem) {
         // wrap item with container
-        if (typeof item === 'function') {
+        if (typeof item === 'function' || item === 'pager') {
             this.#items.push(item);
         }
         else {
             const container = this.ui.createElement('item');
-            container.appendChild(item);
+            if (item) {
+                container.appendChild(item);
+            }
             this.#items.push(container);
         }
 
@@ -247,12 +249,26 @@ export class Gallery extends Component {
             return;
         }
         this.#rendered.add(i);
-
+        
+        // page container
         const n = this.getSize();
         const layer = this.ui.createElement('layer');
 
+        // convert pager into gallery items
+        const items: Exclude<GalleryItem, 'pager'>[] = [];
+        for (const item of this.#items) {
+            if (item === 'pager') {
+                while (items.length % n !== 0) {
+                    items.push(null);
+                }
+            }
+            else {
+                items.push(item);
+            }
+        }
+
         for (let j = 0; j < n; j++) {
-            const item = this.#items[i * n + j];
+            const item = items[i * n + j];
             if (j && j % this.#currentSize![1] === 0) {
                 layer.appendChild(document.createElement('div'));
             }
@@ -262,7 +278,7 @@ export class Gallery extends Component {
                 if (rendered) {
                     container.appendChild(rendered);
                 }
-                this.#items[i * n + j] = container;
+                this.#items[this.#items.indexOf(item)] = container;
                 layer.appendChild(container);
             }
             else if (item) {
