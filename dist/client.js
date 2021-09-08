@@ -2275,7 +2275,9 @@
             const lib = this.app.accessExtension(pack, section);
             const n = Object.entries(lib ?? {}).length;
             if (lib && n) {
-                const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+                const packname = this.app.accessExtension(pack, section + 'pack');
+                const caption = this.pane.addCaption('<span>' + packname + '</span>');
+                const captionSpan = caption.firstChild;
                 let gallery;
                 let width = 0;
                 if (this.flex) {
@@ -2297,7 +2299,19 @@
                 this.gallery = gallery;
                 gallery.node.classList.add('force-indicator');
                 // add gallery items
+                const subpacks = {};
+                const defaults = [];
                 for (const name in lib) {
+                    const subpack = lib[name].subpack;
+                    if (subpack) {
+                        subpacks[subpack] ??= [];
+                        subpacks[subpack].push(name);
+                    }
+                    else {
+                        defaults.push(name);
+                    }
+                }
+                const add = (name) => {
                     gallery.add(() => {
                         let node;
                         const id = pack + ':' + name;
@@ -2318,6 +2332,27 @@
                         }
                         return node;
                     });
+                };
+                const subpackList = [];
+                for (const subpack in subpacks) {
+                    subpackList.push(subpack);
+                    for (const name of subpacks[subpack]) {
+                        add(name);
+                    }
+                    gallery.add('pager');
+                }
+                if (subpackList.length) {
+                    gallery.onpage = page => {
+                        if (subpackList[page]) {
+                            captionSpan.innerHTML = packname + '·' + subpackList[page];
+                        }
+                        else {
+                            captionSpan.innerHTML = packname;
+                        }
+                    };
+                }
+                for (const name of defaults) {
+                    add(name);
                 }
                 // add card pile
                 if (type === 'card+pile') {
@@ -2339,10 +2374,14 @@
                                 pileGallery.node.style.display = 'none';
                                 toggle.dataset.fill = '';
                                 gallery.node.style.display = '';
-                                gallery.checkPage();
+                                const page = gallery.checkPage();
+                                if (gallery.onpage) {
+                                    gallery.onpage(page);
+                                }
                             }
                             else {
                                 gallery.node.style.display = 'none';
+                                captionSpan.innerHTML = packname;
                                 toggle.dataset.fill = 'blue';
                                 pileGallery.node.style.display = '';
                                 pileGallery.checkPage();
@@ -3714,6 +3753,8 @@
         nrows;
         /** Number of nodes in a row. */
         ncols;
+        /** Listener of page turn. */
+        onpage = null;
         /** Number of pages. */
         #pageCount = 0;
         /** Index of current page. */
@@ -3729,11 +3770,31 @@
          * false: for mouse wheels, scroll with transform animation.
          */
         #snap = this.platform.mobile || this.db.get('snap') || false;
+        /** Listener for wheel event. */
+        #wheelListener = (e) => this.#wheel(e);
         get currentPage() {
             return this.pages.childNodes[Math.max(0, this.#currentPage)];
         }
-        /** Listener for wheel event. */
-        #wheelListener = (e) => this.#wheel(e);
+        get #pagedItems() {
+            if (this.#items.includes('pager')) {
+                const n = this.getSize();
+                const items = [];
+                for (const item of this.#items) {
+                    if (item === 'pager') {
+                        while (items.length % n !== 0) {
+                            items.push(null);
+                        }
+                    }
+                    else {
+                        items.push(item);
+                    }
+                }
+                return items;
+            }
+            else {
+                return this.#items;
+            }
+        }
         init() {
             // enable horizontal scroll
             if (this.#snap) {
@@ -3787,7 +3848,7 @@
         }
         /** Update page count and create page(s) if necessary. */
         updatePages() {
-            const pageCount = Math.ceil(this.#items.length / this.getSize());
+            const pageCount = Math.ceil(this.#pagedItems.length / this.getSize());
             // add more pages
             while (pageCount > this.#pageCount) {
                 this.pages.appendChild(this.ui.createElement('page'));
@@ -3826,6 +3887,7 @@
             else if (this.#currentPage < 0) {
                 this.turnPage(0);
             }
+            return this.#currentPage;
         }
         /** Render all pages. */
         renderAll() {
@@ -3847,6 +3909,10 @@
             // update page indicator
             this.indicator.querySelector('.current')?.classList.remove('current');
             this.indicator.childNodes[page].classList.add('current');
+            // trigger turn page listener
+            if (this.onpage) {
+                this.onpage(page);
+            }
         }
         /** Callback when window resize. */
         resize() {
@@ -3916,18 +3982,7 @@
             // page container
             const n = this.getSize();
             const layer = this.ui.createElement('layer');
-            // convert pager into gallery items
-            const items = [];
-            for (const item of this.#items) {
-                if (item === 'pager') {
-                    while (items.length % n !== 0) {
-                        items.push(null);
-                    }
-                }
-                else {
-                    items.push(item);
-                }
-            }
+            const items = this.#pagedItems;
             for (let j = 0; j < n; j++) {
                 const item = items[i * n + j];
                 if (j && j % this.#currentSize[1] === 0) {

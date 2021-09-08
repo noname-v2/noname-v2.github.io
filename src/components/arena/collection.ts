@@ -31,7 +31,10 @@ export class Collection extends Popup {
         const lib = this.app.accessExtension(pack, section);
         const n = Object.entries(lib ?? {}).length;
         if (lib && n) {
-            const caption = this.pane.addCaption(this.app.accessExtension(pack, section + 'pack'));
+            const packname = this.app.accessExtension(pack, section + 'pack');
+            const caption = this.pane.addCaption('<span>' + packname + '</span>');
+            const captionSpan = caption.firstChild as HTMLElement;
+
             let gallery: Gallery;
             let width = 0;
 
@@ -55,7 +58,20 @@ export class Collection extends Popup {
             gallery.node.classList.add('force-indicator');
 
             // add gallery items
+            const subpacks: Dict<string[]> = {};
+            const defaults: string[] = [];
             for (const name in lib) {
+                const subpack = lib[name].subpack;
+                if (subpack) {
+                    subpacks[subpack] ??= [];
+                    subpacks[subpack].push(name);
+                }
+                else {
+                    defaults.push(name);
+                }
+            }
+
+            const add = (name: string) => {
                 gallery.add(() => {
                     let node;
                     const id = pack + ':' + name;
@@ -76,6 +92,30 @@ export class Collection extends Popup {
                     }
                     return node;
                 });
+            }
+
+            const subpackList: string[] = [];
+            for (const subpack in subpacks) {
+                subpackList.push(subpack);
+                for (const name of subpacks[subpack]) {
+                    add(name);
+                }
+                gallery.add('pager');
+            }
+
+            if (subpackList.length) {
+                gallery.onpage = page => {
+                    if (subpackList[page]) {
+                        captionSpan.innerHTML = packname + '·' + subpackList[page];
+                    }
+                    else {
+                        captionSpan.innerHTML = packname;
+                    }
+                }
+            }
+
+            for (const name of defaults) {
+                add(name);
             }
 
             // add card pile
@@ -101,10 +141,14 @@ export class Collection extends Popup {
                             pileGallery.node.style.display = 'none';
                             toggle.dataset.fill = '';
                             gallery.node.style.display = '';
-                            gallery.checkPage();
+                            const page = gallery.checkPage();
+                            if (gallery.onpage) {
+                                gallery.onpage(page);
+                            }
                         }
                         else {
                             gallery.node.style.display = 'none';
+                            captionSpan.innerHTML = packname;
                             toggle.dataset.fill = 'blue';
                             pileGallery.node.style.display = '';
                             pileGallery.checkPage();

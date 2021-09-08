@@ -18,6 +18,9 @@ export class Gallery extends Component {
     /** Number of nodes in a row. */
     ncols!: number | [number, number, number, number];
 
+    /** Listener of page turn. */
+    onpage: ((page: number) => void) | null = null;
+
     /** Number of pages. */
     #pageCount = 0;
 
@@ -39,12 +42,34 @@ export class Gallery extends Component {
      */
     #snap = this.platform.mobile || this.db.get('snap') || false;
 
+    /** Listener for wheel event. */
+    #wheelListener = (e: WheelEvent) => this.#wheel(e);
+
     get currentPage() {
         return this.pages.childNodes[Math.max(0, this.#currentPage)] as HTMLElement;
     }
 
-    /** Listener for wheel event. */
-    #wheelListener = (e: WheelEvent) => this.#wheel(e);
+    get #pagedItems() {
+        if (this.#items.includes('pager')) {
+            const n = this.getSize();
+            const items: Exclude<GalleryItem, 'pager'>[] = [];
+
+            for (const item of this.#items) {
+                if (item === 'pager') {
+                    while (items.length % n !== 0) {
+                        items.push(null);
+                    }
+                }
+                else {
+                    items.push(item);
+                }
+            }
+            return items;
+        }
+        else {
+            return this.#items as Exclude<GalleryItem, 'pager'>[];
+        }
+    }
 
     init() {
         // enable horizontal scroll
@@ -106,7 +131,7 @@ export class Gallery extends Component {
 
     /** Update page count and create page(s) if necessary. */
     updatePages() {
-        const pageCount = Math.ceil(this.#items.length / this.getSize());
+        const pageCount = Math.ceil(this.#pagedItems.length / this.getSize());
 
         // add more pages
         while (pageCount > this.#pageCount) {
@@ -151,6 +176,7 @@ export class Gallery extends Component {
         else if (this.#currentPage < 0) {
             this.turnPage(0);
         }
+        return this.#currentPage;
     }
 
     /** Render all pages. */
@@ -177,6 +203,11 @@ export class Gallery extends Component {
         // update page indicator
         this.indicator.querySelector('.current')?.classList.remove('current');
         (<HTMLElement>this.indicator.childNodes[page]).classList.add('current');
+
+        // trigger turn page listener
+        if (this.onpage) {
+            this.onpage(page);
+        }
     }
 
     /** Callback when window resize. */
@@ -253,19 +284,7 @@ export class Gallery extends Component {
         // page container
         const n = this.getSize();
         const layer = this.ui.createElement('layer');
-
-        // convert pager into gallery items
-        const items: Exclude<GalleryItem, 'pager'>[] = [];
-        for (const item of this.#items) {
-            if (item === 'pager') {
-                while (items.length % n !== 0) {
-                    items.push(null);
-                }
-            }
-            else {
-                items.push(item);
-            }
-        }
+        const items = this.#pagedItems;
 
         for (let j = 0; j < n; j++) {
             const item = items[i * n + j];
