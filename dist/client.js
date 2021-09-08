@@ -2280,25 +2280,7 @@
             for (const pack of packs) {
                 n += Object.entries(this.app.accessExtension(pack, section)).length;
             }
-            let gallery;
-            if (this.flex) {
-                this.node.classList.add('flex-side');
-                gallery = this.ui.create('gallery');
-                gallery.node.classList.add('pop');
-                const width = parseInt(this.app.css.pop.width);
-                const margin = parseInt(this.app.css.pop.margin);
-                const zoom = parseFloat(this.app.css.pop['flex-zoom']);
-                gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
-                gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
-                this.pane.node.appendChild(gallery.node);
-            }
-            else {
-                let width;
-                this.pane.node.classList.add('auto');
-                [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
-                gallery.node.style.width = `${width}px`;
-            }
-            this.gallery = gallery;
+            const gallery = this.gallery = this.#createGallery(n);
             gallery.node.classList.add('force-indicator');
             for (const pack of packs) {
                 const lib = this.app.accessExtension(pack, section);
@@ -2399,6 +2381,28 @@
             }
             console.log(suits);
             console.log(nums);
+        }
+        /** Create main gallery. */
+        #createGallery(n) {
+            let gallery;
+            if (this.flex) {
+                this.node.classList.add('flex-side');
+                gallery = this.ui.create('gallery');
+                gallery.node.classList.add('pop');
+                const width = parseInt(this.app.css.pop.width);
+                const margin = parseInt(this.app.css.pop.margin);
+                const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+                gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+                gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+                this.pane.node.appendChild(gallery.node);
+            }
+            else {
+                let width;
+                this.pane.node.classList.add('auto');
+                [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+                gallery.node.style.width = `${width}px`;
+            }
+            return gallery;
         }
         #addPile(packs, caption) {
             // total number of cards in card pile.
@@ -2629,10 +2633,10 @@
         picked;
         /** Map of hero buttons in collection. */
         heroButtons = new Map();
+        /** Map of hero buttons in mega collection. */
+        megaHeroButtons = new Map();
         /** Cache of collections. */
         collections = new Map();
-        /** Cache of mega collections. */
-        megaCollections = new Map();
         /** Start game button is clicked and awaiting start. */
         #starting = 0;
         get #config() {
@@ -2853,8 +2857,8 @@
                 this.heroToggles.set(pack, toggle);
             }
             this.ui.bind(heroSection, {
-                onclick: () => this.#openMegaCollection(heropacks, 'hero'),
-                oncontext: () => this.#openMegaCollection(heropacks, 'hero')
+                onclick: () => this.#openCollection(heropacks, 'hero'),
+                oncontext: () => this.#openCollection(heropacks, 'hero')
             });
             // cardpacks
             const cardSection = this.sidebar.pane.addSection('卡牌');
@@ -2871,8 +2875,8 @@
                 this.cardToggles.set(pack, toggle);
             }
             this.ui.bind(cardSection, {
-                onclick: () => this.#openMegaCollection(cardpacks, 'card+pile'),
-                oncontext: () => this.#openMegaCollection(cardpacks, 'card+pile')
+                onclick: () => this.#openCollection(cardpacks, 'card+pile'),
+                oncontext: () => this.#openCollection(cardpacks, 'card+pile')
             });
             // banned heros
             this.banned = [
@@ -3000,6 +3004,7 @@
                                 this.banned[2].set(id, clone);
                             }
                             this.heroButtons.get(id)?.classList.add('defer');
+                            this.megaHeroButtons.get(id)?.classList.add('defer');
                             tray.addSilent(this.banned[2].get(id));
                         }
                     }
@@ -3007,6 +3012,7 @@
                     for (const id of oldBanned) {
                         if (!newBanned.has(id)) {
                             this.heroButtons.get(id)?.classList.remove('defer');
+                            this.megaHeroButtons.get(id)?.classList.remove('defer');
                             tray.deleteSilent(this.banned[2].get(id));
                         }
                     }
@@ -3136,6 +3142,7 @@
                 this.db.set(this.#pick, picked.size ? Array.from(picked) : null);
             }
             this.heroButtons.get(id)?.classList[on ? 'add' : 'remove']('selected');
+            this.megaHeroButtons.get(id)?.classList[on ? 'add' : 'remove']('selected');
             if (!this.picked[2].has(id)) {
                 const clone = this.ui.createElement('widget.avatar');
                 this.ui.setImage(clone, id);
@@ -3207,20 +3214,20 @@
             }
             return collection;
         }
-        #openMegaCollection(packs, type) {
-            if (!this.megaCollections.has(type)) {
-                const collection = this.#createCollection();
-                collection.setup(packs, type);
-                this.megaCollections.set(type, collection);
+        #openCollection(packs, type) {
+            let id;
+            let mega = false;
+            if (typeof packs === 'string') {
+                id = type + '|' + packs;
+                packs = [packs];
             }
-            const collection = this.megaCollections.get(type);
-            collection[collection.hidden ? 'open' : 'close']();
-        }
-        #openCollection(pack, type) {
-            const id = type + '|' + pack;
+            else {
+                id = 'mega:' + type;
+                mega = true;
+            }
             if (!this.collections.has(id)) {
                 const collection = this.#createCollection();
-                collection.setup([pack], type, (id, node) => {
+                collection.setup(packs, type, (id, node) => {
                     if (type === 'hero') {
                         this.ui.bind(node, () => {
                             if (this.mine) {
@@ -3250,7 +3257,12 @@
                                 this.#togglePick(id, !node.classList.contains('selected'));
                             }
                         });
-                        this.heroButtons.set(id, node);
+                        if (mega) {
+                            this.megaHeroButtons.set(id, node);
+                        }
+                        else {
+                            this.heroButtons.set(id, node);
+                        }
                         if (this.data.config?.banned?.hero?.includes(id)) {
                             node.classList.add('defer');
                         }

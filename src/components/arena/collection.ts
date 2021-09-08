@@ -37,28 +37,8 @@ export class Collection extends Popup {
         for (const pack of packs) {
             n += Object.entries(this.app.accessExtension(pack, section)).length;
         }
-
-        let gallery: Gallery;
-
-        if (this.flex) {
-            this.node.classList.add('flex-side');
-            gallery = this.ui.create('gallery');
-            gallery.node.classList.add('pop');
-            const width = parseInt(this.app.css.pop.width);
-            const margin = parseInt(this.app.css.pop.margin);
-            const zoom = parseFloat(this.app.css.pop['flex-zoom']);
-            gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
-            gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
-            this.pane.node.appendChild(gallery.node);
-        }
-        else {
-            let width;
-            this.pane.node.classList.add('auto');
-            [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
-            gallery.node.style.width = `${width}px`;
-        }
-
-        this.gallery = gallery;
+        
+        const gallery = this.gallery = this.#createGallery(n);
         gallery.node.classList.add('force-indicator');
 
         for (const pack of packs) {
@@ -171,6 +151,31 @@ export class Collection extends Popup {
 
         console.log(suits);
         console.log(nums);
+    }
+
+    /** Create main gallery. */
+    #createGallery(n: number) {
+        let gallery: Gallery;
+
+        if (this.flex) {
+            this.node.classList.add('flex-side');
+            gallery = this.ui.create('gallery');
+            gallery.node.classList.add('pop');
+            const width = parseInt(this.app.css.pop.width);
+            const margin = parseInt(this.app.css.pop.margin);
+            const zoom = parseFloat(this.app.css.pop['flex-zoom']);
+            gallery.ncols = [1, 110 + margin * 1.5, margin, width * zoom];
+            gallery.nrows = [1, 30 + margin * 1.5, margin, width * zoom * parseFloat(this.app.css.player.ratio)];
+            this.pane.node.appendChild(gallery.node);
+        }
+        else {
+            let width;
+            this.pane.node.classList.add('auto');
+            [gallery, width] = this.pane.addPopGallery(n, this.nrows, this.ncols);
+            gallery.node.style.width = `${width}px`;
+        }
+
+        return gallery;
     }
 
     #addPile(packs: string[], caption: HTMLElement) {

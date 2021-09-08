@@ -45,11 +45,11 @@ export class Lobby extends Component {
     /** Map of hero buttons in collection. */
     heroButtons = new Map<string, HTMLElement>();
 
+    /** Map of hero buttons in mega collection. */
+    megaHeroButtons = new Map<string, HTMLElement>();
+
     /** Cache of collections. */
     collections = new Map<string, Collection>();
-
-    /** Cache of mega collections. */
-    megaCollections = new Map<string, Collection>();
 
     /** Start game button is clicked and awaiting start. */
     #starting = 0;
@@ -290,8 +290,8 @@ export class Lobby extends Component {
             this.heroToggles.set(pack, toggle);
         }
         this.ui.bind(heroSection, {
-            onclick: () => this.#openMegaCollection(heropacks, 'hero'),
-            oncontext: () => this.#openMegaCollection(heropacks, 'hero')
+            onclick: () => this.#openCollection(heropacks, 'hero'),
+            oncontext: () => this.#openCollection(heropacks, 'hero')
         })
         
         // cardpacks
@@ -309,8 +309,8 @@ export class Lobby extends Component {
             this.cardToggles.set(pack, toggle);
         }
         this.ui.bind(cardSection, {
-            onclick: () => this.#openMegaCollection(cardpacks, 'card+pile'),
-            oncontext: () => this.#openMegaCollection(cardpacks, 'card+pile')
+            onclick: () => this.#openCollection(cardpacks, 'card+pile'),
+            oncontext: () => this.#openCollection(cardpacks, 'card+pile')
         })
 
         // banned heros
@@ -452,6 +452,7 @@ export class Lobby extends Component {
                         }
 
                         this.heroButtons.get(id)?.classList.add('defer');
+                        this.megaHeroButtons.get(id)?.classList.add('defer');
                         tray.addSilent(this.banned[2].get(id)!);
                     }
                 }
@@ -460,6 +461,7 @@ export class Lobby extends Component {
                 for (const id of oldBanned) {
                     if (!newBanned.has(id)) {
                         this.heroButtons.get(id)?.classList.remove('defer');
+                        this.megaHeroButtons.get(id)?.classList.remove('defer');
                         tray.deleteSilent(this.banned[2].get(id)!);
                     }
                 }
@@ -598,6 +600,7 @@ export class Lobby extends Component {
             this.db.set(this.#pick, picked.size ? Array.from(picked) : null);
         }
         this.heroButtons.get(id)?.classList[on ? 'add' : 'remove']('selected');
+        this.megaHeroButtons.get(id)?.classList[on ? 'add' : 'remove']('selected');
 
         if (!this.picked[2].has(id)) {
             const clone = this.ui.createElement('widget.avatar');
@@ -669,7 +672,7 @@ export class Lobby extends Component {
                 this.ui.animate(node, {scale: [1, 'var(--pop-transform)']});
             }
         };
-        
+
         if (!this.data.config.pick || !this.app.arena!.peers) {
             collection.node.classList.add('no-select');
         }
@@ -677,21 +680,20 @@ export class Lobby extends Component {
         return collection;
     }
 
-    #openMegaCollection(packs: string[], type: 'hero' | 'card+pile') {
-        if (!this.megaCollections.has(type)) {
-            const collection = this.#createCollection();
-            collection.setup(packs, type);
-            this.megaCollections.set(type, collection);
+    #openCollection(packs: string | string[], type: 'hero' | 'card+pile') {
+        let id: string;
+        let mega = false;
+        if (typeof packs === 'string') {
+            id = type + '|' + packs;
+            packs = [packs];
         }
-        const collection = this.megaCollections.get(type)!;
-        collection[collection.hidden ? 'open' : 'close']();
-    }
-
-    #openCollection(pack: string, type: 'hero' | 'card+pile') {
-        const id = type + '|' + pack;
+        else {
+            id = 'mega:' + type;
+            mega = true;
+        }
         if (!this.collections.has(id)) {
             const collection = this.#createCollection();
-            collection.setup([pack], type, (id, node) => {
+            collection.setup(packs, type, (id, node) => {
                 if (type === 'hero') {
                     this.ui.bind(node, () => {
                         if (this.mine) {
@@ -721,7 +723,14 @@ export class Lobby extends Component {
                             this.#togglePick(id, !node.classList.contains('selected'));
                         }
                     });
-                    this.heroButtons.set(id, node);
+
+                    if (mega) {
+                        this.megaHeroButtons.set(id, node);
+                    }
+                    else {
+                        this.heroButtons.set(id, node);
+                    }
+
                     if (this.data.config?.banned?.hero?.includes(id)) {
                         node.classList.add('defer');
                     }
