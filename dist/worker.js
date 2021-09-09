@@ -416,7 +416,7 @@
         }
         /** Get a link. */
         get(id) {
-            return room.links.get(id);
+            return room.links.get(id)[0];
         }
         /** Create a link. */
         create(tag) {

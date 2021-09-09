@@ -229,8 +229,8 @@ function createPop(T) {
     return class ChoosePop extends T {
         /** Player IDs and their pop contents. */
         pop;
-        /** Created popups. */
-        pops = new Set();
+        /** Player IDs and created popups. */
+        pops = new Map();
         main() {
             this.add('openDialog');
             this.add('getResults');
@@ -245,7 +245,7 @@ function createPop(T) {
                     pop.content = content;
                     pop.await(timer[0]);
                     pop.monitor('filter');
-                    this.pops.add(pop);
+                    this.pops.set(player.id, pop);
                     if (timer[0]) {
                         pop.timer = timer;
                         player.link.timer = timer;
@@ -253,6 +253,7 @@ function createPop(T) {
                 }
             }
         }
+        /** Process client return values. */
         getResults() {
             for (const id of this.pop.keys()) {
                 const player = this.game.players.get(id);
@@ -260,18 +261,23 @@ function createPop(T) {
                     player.link.timer = null;
                 }
             }
-            for (const pop of this.pops) {
+            for (const [id, pop] of this.pops) {
+                // remove timers and close pop
                 pop.timer = null;
-                this.results.set(pop.owner, pop.result);
+                const player = this.game.players.get(id);
+                if (player?.link.timer) {
+                    player.link.timer = null;
+                }
+                this.results.set(id, pop.result);
                 pop.unlink();
-            }
-            for (const selected of this.results.values()) {
-                console.log(selected);
-                // const sec = selected.slice(0, 2);
-                // console.log(sec, this.checkSelection(sel, sec));
-                // from here: convert pop to single gallery
+                // check selection
+                const sels = this.getSelect(pop);
+                console.log(pop.result);
+                console.log(this.checkSelection(pop.result, sels));
+                console.log(this.checkSelection({ hero: pop.result.picked.slice(0, 2) }, sels));
             }
         }
+        /** Get selectable items and send to client. */
         filter(selected, pop) {
             if (Array.isArray(selected)) {
                 // custom operations defined by child classes
@@ -281,18 +287,21 @@ function createPop(T) {
                 catch { }
             }
             else {
-                // get lists of all items and selected items
-                const sels = {};
-                for (const section of pop.content) {
-                    const sel = section[1];
-                    if (Array.isArray(sel.items)) {
-                        sels[section[0]] = sel;
-                    }
-                }
                 // get selectable items
-                const selectable = this.getSelectable(selected, sels);
+                const selectable = this.getSelectable(selected, this.getSelect(pop));
                 pop.call('setSelectable', selectable);
             }
+        }
+        /** Get all selectable targets from PopContent. */
+        getSelect(pop) {
+            const sels = {};
+            for (const section of pop.content) {
+                const sel = section[1];
+                if (Array.isArray(sel.items)) {
+                    sels[section[0]] = sel;
+                }
+            }
+            return sels;
         }
     };
 }
@@ -348,6 +357,8 @@ function createChoose(T) {
         timeout = null;
         /** Allow not choosing. */
         forced = false;
+        /** Order when checking selection. */
+        order = ['skill', 'card', 'player'];
         /** Time limit for choosing. */
         getTimeout() {
             if (this.timeout === null && this.game.hub.connected) {
@@ -378,27 +389,46 @@ function createChoose(T) {
             return selectable;
         }
         /** Check if selected items are legal. */
-        checkSelection(sel, selected) {
-            // const n = selected.length;
-            // if (typeof sel.num === 'number') {
-            //     if (n !== sel.num) {
-            //         return false;
-            //     }
-            // }
-            // else if (Array.isArray(sel.num)) {
-            //     if (n < sel.num[0] || n > sel.num[1]) {
-            //         return false;
-            //     }
-            // }
-            // const current: T[] = [];
-            // const filter = this.game.createFilter(sel, selected, current, this);
-            // for (const item of selected) {
-            //     if (!filter(item)) {
-            //         return false;
-            //     }
-            //     current.push(item);
-            // }
-            // return true;
+        checkSelection(selected, sels) {
+            // fake selected items
+            const current = {};
+            // get section order
+            const order = [];
+            for (const section of this.order) {
+                if (sels[section]) {
+                    order.push(section);
+                }
+            }
+            for (const section in sels) {
+                if (!order.includes(section)) {
+                    order.push(section);
+                }
+                current[section] = [];
+            }
+            for (const section of order) {
+                // check number of selected items
+                const n = selected[section].length;
+                const sel = sels[section];
+                if (typeof sel.num === 'number') {
+                    if (n !== sel.num) {
+                        return false;
+                    }
+                }
+                else if (Array.isArray(sel.num)) {
+                    if (n < sel.num[0] || n > sel.num[1]) {
+                        return false;
+                    }
+                }
+                // check if selected items satisfy filter
+                const filter = this.game.createFilter(section, sel, current, selected, this);
+                for (const item of selected[section]) {
+                    if (!filter(item)) {
+                        return false;
+                    }
+                    current[section].push(item);
+                }
+            }
+            return true;
         }
     };
 }

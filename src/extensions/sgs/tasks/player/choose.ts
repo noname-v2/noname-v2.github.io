@@ -11,6 +11,9 @@ export function createChoose(T: TaskClass) {
         /** Allow not choosing. */
         forced: boolean = false;
 
+        /** Order when checking selection. */
+        order = ['skill', 'card', 'player'];
+
         /** Time limit for choosing. */
         getTimeout(): number | null {
             if (this.timeout === null && this.game.hub.connected) {
@@ -45,30 +48,50 @@ export function createChoose(T: TaskClass) {
         }
 
         /** Check if selected items are legal. */
-        checkSelection<T extends string | number>(sel: Select<T>, selected: T[]) {
-            // const n = selected.length;
-            // if (typeof sel.num === 'number') {
-            //     if (n !== sel.num) {
-            //         return false;
-            //     }
-            // }
-            // else if (Array.isArray(sel.num)) {
-            //     if (n < sel.num[0] || n > sel.num[1]) {
-            //         return false;
-            //     }
-            // }
+        checkSelection(selected: Selected, sels: Dict<Select>) {
+            // fake selected items
+            const current: Selected = {};
 
-            // const current: T[] = [];
-            // const filter = this.game.createFilter(sel, selected, current, this);
+            // get section order
+            const order: string[] = [];
+            for (const section of this.order) {
+                if (sels[section]) {
+                    order.push(section);
+                }
+            }
+            for (const section in sels) {
+                if (!order.includes(section)) {
+                    order.push(section);
+                }
+                current[section] = [];
+            }
 
-            // for (const item of selected) {
-            //     if (!filter(item)) {
-            //         return false;
-            //     }
-            //     current.push(item);
-            // }
+            for (const section of order) {
+                // check number of selected items
+                const n = selected[section].length;
+                const sel = sels[section];
+                if (typeof sel.num === 'number') {
+                    if (n !== sel.num) {
+                        return false;
+                    }
+                }
+                else if (Array.isArray(sel.num)) {
+                    if (n < sel.num[0] || n > sel.num[1]) {
+                        return false;
+                    }
+                }
 
-            // return true;
+                // check if selected items satisfy filter
+                const filter = this.game.createFilter(section, sel, current, selected, this);
+                for (const item of selected[section]) {
+                    if (!filter(item)) {
+                        return false;
+                    }
+                    current[section].push(item);
+                }
+            }
+            
+            return true;
         }
     }
 }

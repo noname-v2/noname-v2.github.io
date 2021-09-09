@@ -1,6 +1,7 @@
 import { hub, room } from './globals';
 import { accessExtension, getData, createFilter } from '../extension';
 import * as utils from '../utils';
+import type { Link } from './link';
 import type { ModeData, Dict } from '../types';
 
 /** Game object used by stages. */
@@ -45,8 +46,8 @@ export abstract class Game {
     }
 
     /** Get a link. */
-    get(id: number) {
-        return room.links.get(id);
+    get(id: number): Link {
+        return room.links.get(id)![0];
     }
 
     /** Create a link. */

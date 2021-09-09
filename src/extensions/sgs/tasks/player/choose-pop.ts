@@ -7,8 +7,8 @@ export function createPop(T: ReturnType<typeof createChoose>) {
         /** Player IDs and their pop contents. */
         pop!: Map<number, PopContent>;
 
-        /** Created popups. */
-        pops = new Set<Link>();
+        /** Player IDs and created popups. */
+        pops = new Map<number, Link>();
 
         main() {
             this.add('openDialog');
@@ -26,7 +26,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                     pop.content = content;
                     pop.await(timer[0]);
                     pop.monitor('filter');
-                    this.pops.add(pop);
+                    this.pops.set(player.id, pop);
                     if (timer[0]) {
                         pop.timer = timer;
                         player.link.timer = timer;
@@ -35,6 +35,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             }
         }
 
+        /** Process client return values. */
         getResults() {
             for (const id of this.pop.keys()) {
                 const player = this.game.players.get(id);
@@ -43,20 +44,25 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 }
             }
 
-            for (const pop of this.pops) {
+            for (const [id, pop] of this.pops) {
+                // remove timers and close pop
                 pop.timer = null;
-                this.results.set(pop.owner!, pop.result);
+                const player = this.game.players.get(id);
+                if (player?.link.timer) {
+                    player.link.timer = null;
+                }
+                this.results.set(id, pop.result);
                 pop.unlink();
-            }
 
-            for (const selected of this.results.values()) {
-                console.log(selected)
-                // const sec = selected.slice(0, 2);
-                // console.log(sec, this.checkSelection(sel, sec));
-                // from here: convert pop to single gallery
+                // // check selection
+                // const sels = this.getSelect(pop);
+                // console.log(pop.result);
+                // console.log(this.checkSelection(pop.result, sels));
+                // console.log(this.checkSelection({hero:pop.result.picked.slice(0, 2)}, sels));
             }
         }
 
+        /** Get selectable items and send to client. */
         filter(selected: Selected | [string, ...any[]], pop: Link) {
             if (Array.isArray(selected)) {
                 // custom operations defined by child classes
@@ -66,19 +72,22 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 catch {}
             }
             else {
-                // get selections from pop
-                const sels: Dict<Select> = {};
-                for (const section of pop.content) {
-                    const sel = section[1];
-                    if (Array.isArray(sel.items)) {
-                        sels[section[0]] = sel;
-                    }
-                }
-
                 // get selectable items
-                const selectable = this.getSelectable(selected, sels);
+                const selectable = this.getSelectable(selected, this.getSelect(pop));
                 pop.call('setSelectable', selectable);
             }
+        }
+
+        /** Get all selectable targets from PopContent. */
+        getSelect(pop: Link) {
+            const sels: Dict<Select> = {};
+            for (const section of pop.content) {
+                const sel = section[1];
+                if (Array.isArray(sel.items)) {
+                    sels[section[0]] = sel;
+                }
+            }
+            return sels;
         }
     }
 }
