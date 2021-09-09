@@ -414,6 +414,65 @@
         get getInfo() {
             return getInfo;
         }
+        /** Available hero packs. */
+        get heropacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.heropack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'heropack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
+        /** Available card packs. */
+        get cardpacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.cardpack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'cardpack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
+        /** Get a list of all heros. */
+        get heros() {
+            const heros = new Set();
+            for (const pack of this.heropacks) {
+                const ext = this.accessExtension(pack);
+                for (const name in ext?.hero) {
+                    const id = pack + ':' + name;
+                    if (this.config.banned?.hero?.includes(id)) {
+                        continue;
+                    }
+                    heros.add(id);
+                }
+            }
+            return heros;
+        }
+        /** Get card pile entries. */
+        get pile() {
+            const pile = [];
+            for (const pack of this.cardpacks) {
+                const ext = this.accessExtension(pack);
+                for (const name in ext?.pile) {
+                    for (const suit in ext?.pile[name]) {
+                        for (let entry of ext?.pile[name][suit]) {
+                            if (typeof entry === 'number') {
+                                entry = [entry];
+                            }
+                            pile.push([name, suit, ...entry]);
+                        }
+                    }
+                }
+            }
+            return pile;
+        }
         createFilter(section, selected, sels, task) {
             return createFilter(section, selected, sels, (id) => new Proxy(this.get(id), {
                 get(target, key) {

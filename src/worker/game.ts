@@ -3,7 +3,7 @@ import { accessExtension, getInfo, createFilter } from '../extension';
 import * as utils from '../utils';
 import type { Link } from './link';
 import type { Task } from './task';
-import type { ModeData, Dict, Select, Selected } from '../types';
+import type { ModeData, Dict, Select, Selected, PileEntries, Extension } from '../types';
 
 /** Game object used by stages. */
 export abstract class Game {
@@ -40,6 +40,79 @@ export abstract class Game {
 
     get getInfo() {
         return getInfo;
+    }
+
+    /** Available hero packs. */
+    get heropacks(): string[] {
+        const packs = [];
+
+        for (const pack of this.packs) {
+            if (this.config.banned.heropack?.includes(pack)) {
+                continue;
+            }
+
+            if (this.accessExtension(pack, 'heropack')) {
+                packs.push(pack);
+            }
+        }
+
+        return packs;
+    }
+
+    /** Available card packs. */
+    get cardpacks(): string[] {
+        const packs = [];
+
+        for (const pack of this.packs) {
+            if (this.config.banned.cardpack?.includes(pack)) {
+                continue;
+            }
+
+            if (this.accessExtension(pack, 'cardpack')) {
+                packs.push(pack);
+            }
+        }
+
+        return packs;
+    }
+
+    /** Get a list of all heros. */
+    get heros() {
+        const heros = new Set<string>();
+
+        for (const pack of this.heropacks) {
+            const ext = this.accessExtension(pack) as Extension;
+            for (const name in ext?.hero) {
+                const id = pack + ':' + name;
+                if (this.config.banned?.hero?.includes(id)) {
+                    continue;
+                }
+                heros.add(id);
+            }
+        }
+        
+        return heros;
+    }
+
+    /** Get card pile entries. */
+    get pile() {
+        const pile: PileEntries = [];
+
+        for (const pack of this.cardpacks) {
+            const ext = this.accessExtension(pack) as Extension;
+            for (const name in ext?.pile) {
+                for (const suit in ext?.pile[name]) {
+                    for (let entry of ext?.pile[name][suit]) {
+                        if (typeof entry === 'number') {
+                            entry = [entry];
+                        }
+                        pile.push([name, suit, ...entry]);
+                    }
+                }
+            }
+        }
+        
+        return pile;
     }
 
     createFilter(section: string, selected: Selected, sels: Dict<Select>, task: Task) {

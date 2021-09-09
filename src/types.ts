@@ -11,6 +11,9 @@ export interface Class<T=any> {
     (cls: {new(...args: any[]): T}): {new(...args: any[]): T} | Dict<{new(...args: any[]): T}>;
 };
 
+/** Link class reference. */
+export type { Link } from './worker/link';
+
 /** Mode configuration entry. */
 export interface Config {
     /** Display name. */

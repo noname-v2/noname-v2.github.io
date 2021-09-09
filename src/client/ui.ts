@@ -1,7 +1,7 @@
 import { android, ios } from '../platform';
 import { app, lib, componentClasses } from './globals';
 import { split } from '../utils';
-import type { ComponentTagMap } from '../classes';
+import type { ComponentTagMap } from './classes';
 import type { Point, Region } from '../components';
 
 /** Type for point location from an event. */

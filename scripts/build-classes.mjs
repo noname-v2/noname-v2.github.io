@@ -12,7 +12,7 @@ import walk from './walk.mjs';
 /**
  * Create an index of component classes.
  */
-export function buildClasses() {
+export function buildComponents() {
     const imports = [
         `import { Component } from '../src/client/component';`
     ];
@@ -44,4 +44,28 @@ export function buildClasses() {
         classes.join('\n') + '\n\n' +
         tags.join('\n') + '\n    [key: string]: Component;\n};\n');
     fs.writeFileSync('build/components.ts', types.join('\n'));
+}
+
+/**
+ * Create an index of task classes.
+ */
+ export function buildTasks() {
+    const imports = [
+        `import type { Task } from '../src/worker/task';`
+    ];
+
+    const classes = [
+        'export const taskClasses = new Map<string, { new(): Task }>();',
+    ];
+
+    for (const src of walk('src/tasks', '.ts')) {
+        // CamelCase class name
+        const tag = src.split('/').pop();
+        const cls = tag.split('-').map(capatalize).join('');
+        imports.push(`import { ${cls} } from '../src/tasks/${src}';`)
+        classes.push(`taskClasses.set('${tag}', ${cls});`);
+    }
+
+    // write to file
+    fs.writeFileSync('build/tasks.ts', imports.join('\n') + '\n\n' + classes.join('\n'));
 }

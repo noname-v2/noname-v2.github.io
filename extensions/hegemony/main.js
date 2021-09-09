@@ -13,7 +13,7 @@ const mode = {
                     this.add('chooseHero');
                 }
                 chooseHero() {
-                    const choices = this.game.getHeros();
+                    const choices = this.game.heros;
                     const heros = new Map();
                     const nheros = Math.min(this.nheros, Math.floor(choices.size / this.game.players.size));
                     for (const id of this.game.players.keys()) {

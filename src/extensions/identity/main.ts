@@ -22,7 +22,7 @@ export default {
                     }
 
                     chooseZhu() {
-                        this.choices = this.game.getHeros();
+                        this.choices = this.game.heros;
                         const heros = new Map();
                         for (const [id, player] of this.game.players) {
                             if (player.link.seat === 0) {

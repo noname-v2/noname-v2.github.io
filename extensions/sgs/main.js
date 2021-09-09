@@ -189,9 +189,9 @@ function lobby(T) {
             else if (type === 'start') {
                 this.lobby.call('checkStart', [
                     this.game.mode.minHeroCount,
-                    this.game.getHeros().size,
+                    this.game.heros.size,
                     this.game.mode.minPileCount,
-                    this.game.getPile().length
+                    this.game.pile.length
                 ]);
             }
         }
@@ -463,65 +463,6 @@ function game(G) {
         players = new Map();
         cards = new Map();
         skills = new Map();
-        /** Available hero packs. */
-        get heropacks() {
-            const packs = [];
-            for (const pack of this.packs) {
-                if (this.config.banned.heropack?.includes(pack)) {
-                    continue;
-                }
-                if (this.accessExtension(pack, 'heropack')) {
-                    packs.push(pack);
-                }
-            }
-            return packs;
-        }
-        /** Available card packs. */
-        get cardpacks() {
-            const packs = [];
-            for (const pack of this.packs) {
-                if (this.config.banned.cardpack?.includes(pack)) {
-                    continue;
-                }
-                if (this.accessExtension(pack, 'cardpack')) {
-                    packs.push(pack);
-                }
-            }
-            return packs;
-        }
-        /** Get a list of all heros. */
-        getHeros() {
-            const heros = new Set();
-            for (const pack of this.heropacks) {
-                const ext = this.accessExtension(pack);
-                for (const name in ext?.hero) {
-                    const id = pack + ':' + name;
-                    if (this.config.banned?.hero?.includes(id)) {
-                        continue;
-                    }
-                    heros.add(id);
-                }
-            }
-            return heros;
-        }
-        /** Get card pile entries. */
-        getPile() {
-            const pile = [];
-            for (const pack of this.cardpacks) {
-                const ext = this.accessExtension(pack);
-                for (const name in ext?.pile) {
-                    for (const suit in ext?.pile[name]) {
-                        for (let entry of ext?.pile[name][suit]) {
-                            if (typeof entry === 'number') {
-                                entry = [entry];
-                            }
-                            pile.push([name, suit, ...entry]);
-                        }
-                    }
-                }
-            }
-            return pile;
-        }
         /** Backup game progress. */
         backup() {
         }

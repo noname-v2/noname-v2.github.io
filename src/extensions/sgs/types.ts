@@ -7,7 +7,6 @@ export type { PopConfirm, PopContent } from '../../components/arena/pop';
 
 /** Built-in types that may be used by extensions. */
 export * from '../../types';
-export type { Link } from '../../worker/link';
 export type { Dict }
 
 /** Game classes */

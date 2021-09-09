@@ -137,9 +137,9 @@ export function lobby(T: TaskClass) {
             else if (type === 'start') {
                 this.lobby.call('checkStart', [
                     this.game.mode.minHeroCount,
-                    this.game.getHeros().size,
+                    this.game.heros.size,
                     this.game.mode.minPileCount,
-                    this.game.getPile().length
+                    this.game.pile.length
                 ])
             }
         }

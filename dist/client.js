@@ -2781,7 +2781,7 @@
                 else if (c1 > c2) {
                     this.app.alert('无法开始', { content: `牌堆数量不足（<span class="mono">${c2}/${c1}</span>）。` });
                 }
-                if (this.#checkPrepare()) {
+                else if (this.#checkPrepare()) {
                     this.respond();
                 }
                 else {
