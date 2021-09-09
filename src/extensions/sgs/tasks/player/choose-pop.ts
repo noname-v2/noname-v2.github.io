@@ -2,13 +2,16 @@ import type { PopContent } from '../../../../components/arena/pop';
 import type { createChoose } from './choose';
 import type { Link, Select, Selected, Dict } from '../../types';
 
-export function createPop(T: ReturnType<typeof createChoose>) {
+export function createChoosePop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {
         /** Player IDs and their pop contents. */
         pop!: Map<number, PopContent>;
 
         /** Player IDs and created popups. */
         pops = new Map<Link, number>();
+
+        /** Select configurations of players. */
+        selects = new Map<number, Dict<Select>>();
 
         main() {
             this.add('openDialog');
@@ -22,6 +25,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
                     const pop = this.game.create('pop');
+                    let order = 0;
                     pop.owner = player.owner;
                     pop.content = content;
                     pop.await(timer[0]);
@@ -35,9 +39,10 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                     // get selection configurations from content
                     const sels: Dict<Select> = {};
                     for (const section of content) {
-                        const sel = section[1];
-                        if (sel && Array.isArray((sel as Select).items)) {
-                            sels[section[0]] = sel as Select;
+                        const sel = section[1] as Select;
+                        if (sel && Array.isArray(sel.items)) {
+                            sel.order = order++;
+                            sels[section[0]] = sel;
                         }
                     }
                     this.selects.set(id, sels);

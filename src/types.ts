@@ -211,6 +211,9 @@ export interface Select<T extends string | number = string | number> {
     /** Name of the function that checks if item can be selected. */
     filter?: string;
 
+    /** Order of the select (in multiple selecs). */
+    order: number;
+
     /** Required number of selected items. */
     num: number | [number, number];
 

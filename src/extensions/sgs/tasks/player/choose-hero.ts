@@ -1,8 +1,8 @@
-import type { createPop } from './choose-pop';
+import type { createChoosePop } from './choose-pop';
 import type { PopConfirm, Select, Link } from '../../types';
 import type { Point } from '../../../../components';
 
-export function createHero(T: ReturnType<typeof createPop>) {
+export function createHero(T: ReturnType<typeof createChoosePop>) {
     return class ChoosePop extends T {
         heros!: Map<number, string[] | Select>;
         pick = false;

@@ -225,12 +225,14 @@ function lobby(T) {
     };
 }
 
-function createPop(T) {
+function createChoosePop(T) {
     return class ChoosePop extends T {
         /** Player IDs and their pop contents. */
         pop;
         /** Player IDs and created popups. */
         pops = new Map();
+        /** Select configurations of players. */
+        selects = new Map();
         main() {
             this.add('openDialog');
             this.add('getResults');
@@ -241,6 +243,7 @@ function createPop(T) {
                 const player = this.game.players.get(id);
                 if (player?.owner) {
                     const pop = this.game.create('pop');
+                    let order = 0;
                     pop.owner = player.owner;
                     pop.content = content;
                     pop.await(timer[0]);
@@ -255,6 +258,7 @@ function createPop(T) {
                     for (const section of content) {
                         const sel = section[1];
                         if (sel && Array.isArray(sel.items)) {
+                            sel.order = order++;
                             sels[section[0]] = sel;
                         }
                     }
@@ -348,12 +352,10 @@ function createHero(T) {
     };
 }
 
-function createTarget(T) {
-    return class ChooseTarget extends T {
-        // player IDs and their pop contents
-        pop;
+function createChoosePlayer(T) {
+    return class ChoosePlayer extends T {
         main() {
-            console.log('chooseTarget', this.select);
+            console.log('choosePlayer', this.select);
         }
         test2() {
         }
@@ -366,10 +368,6 @@ function createChoose(T) {
         timeout = null;
         /** Allow not choosing. */
         forced = false;
-        /** Order when checking selection. */
-        order = ['skill', 'card', 'player'];
-        /** Select configurations of players. */
-        selects = new Map();
         /** Time limit for choosing. */
         getTimeout() {
             if (this.timeout === null && this.game.hub.connected) {
@@ -399,19 +397,12 @@ function createChoose(T) {
         checkSelection(selected, sels) {
             // fake selected items
             const current = {};
-            // get section order
-            const order = [];
-            for (const section of this.order) {
-                if (sels[section]) {
-                    order.push(section);
-                }
-            }
             for (const section in sels) {
-                if (!order.includes(section)) {
-                    order.push(section);
-                }
                 current[section] = [];
             }
+            // get section order
+            const order = Object.keys(sels);
+            order.sort((a, b) => (sels[a].order - sels[b].order));
             for (const section of order) {
                 // check number of selected items
                 const n = selected[section].length;
@@ -443,12 +434,12 @@ function choose(T) {
     // abstract base class
     const choose = createChoose(T);
     // choose from a popup dialog
-    const choosePop = createPop(choose);
+    const choosePop = createChoosePop(choose);
     // choose players and / or cards
-    const chooseTarget = createTarget(choose);
+    const choosePlayer = createChoosePlayer(choose);
     // choose from a list of heros
     const chooseHero = createHero(choosePop);
-    return { choose, choosePop, chooseTarget, chooseHero };
+    return { choose, choosePop, choosePlayer, chooseHero };
 }
 
 function moveTo(T) {
@@ -880,12 +871,14 @@ function pop(T) {
         }
         /** Enable or disable pick. */
         togglePick() {
-            const button = this.buttons.get('callPick');
-            if (button.dataset.fill) {
-                this.#clear();
-            }
-            else {
-                this.#restore();
+            if (this.mine) {
+                const button = this.buttons.get('callPick');
+                if (button.dataset.fill) {
+                    this.#clear();
+                }
+                else {
+                    this.#restore();
+                }
             }
         }
         /** Open a popup to pick heros. */

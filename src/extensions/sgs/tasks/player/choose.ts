@@ -1,6 +1,6 @@
-import { createPop } from './choose-pop';
+import { createChoosePop } from './choose-pop';
 import { createHero } from './choose-hero';
-import { createTarget } from './choose-target';
+import { createChoosePlayer } from './choose-player';
 import type { TaskClass, Select, Selected, Dict } from '../../types';
 
 export function createChoose(T: TaskClass) {
@@ -10,12 +10,6 @@ export function createChoose(T: TaskClass) {
 
         /** Allow not choosing. */
         forced: boolean = false;
-
-        /** Order when checking selection. */
-        order = ['skill', 'card', 'player'];
-
-        /** Select configurations of players. */
-        selects = new Map<number, Dict<Select>>();
 
         /** Time limit for choosing. */
         getTimeout(): number | null {
@@ -49,20 +43,13 @@ export function createChoose(T: TaskClass) {
         checkSelection(selected: Selected, sels: Dict<Select>) {
             // fake selected items
             const current: Selected = {};
-
-            // get section order
-            const order: string[] = [];
-            for (const section of this.order) {
-                if (sels[section]) {
-                    order.push(section);
-                }
-            }
             for (const section in sels) {
-                if (!order.includes(section)) {
-                    order.push(section);
-                }
                 current[section] = [];
             }
+
+            // get section order
+            const order = Object.keys(sels);
+            order.sort((a, b) => (sels[a].order - sels[b].order));
 
             for (const section of order) {
                 // check number of selected items
@@ -99,13 +86,13 @@ export function choose(T: TaskClass) {
     const choose = createChoose(T);
 
     // choose from a popup dialog
-    const choosePop = createPop(choose);
+    const choosePop = createChoosePop(choose);
 
     // choose players and / or cards
-    const chooseTarget = createTarget(choose);
+    const choosePlayer = createChoosePlayer(choose);
 
     // choose from a list of heros
     const chooseHero = createHero(choosePop);
 
-    return { choose, choosePop, chooseTarget, chooseHero }
+    return { choose, choosePop, choosePlayer, chooseHero }
 }

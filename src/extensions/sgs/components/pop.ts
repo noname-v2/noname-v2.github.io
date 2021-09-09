@@ -58,12 +58,14 @@ export function pop(T: typeof Pop) {
 
         /** Enable or disable pick. */
         togglePick() {
-            const button = this.buttons.get('callPick')!;
-            if (button.dataset.fill) {
-                this.#clear();
-            }
-            else {
-                this.#restore();
+            if (this.mine) {
+                const button = this.buttons.get('callPick')!;
+                if (button.dataset.fill) {
+                    this.#clear();
+                }
+                else {
+                    this.#restore();
+                }
             }
         }
 

@@ -324,28 +324,11 @@ export class Lobby extends Component {
         ];
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
-
-        const showBanned = () => {
-            for (const [id, collection] of this.collections) {
-                if (!collection.hidden) {
-                    if (id.startsWith('ban:')) {
-                        collection.close();
-                        return;
-                    }
-                    break;
-                }
-            }
-            const collection = this.#createCollection('ban');
-            const heros = [];
-            for (const [id, clone] of this.banned[2]) {
-                if (clone.parentNode === this.banned[1].node) {
-                    heros.push(id);
-                }
-            }
-            collection.setupHeros('禁将', heros);
-            collection.open();
-        };
-        this.ui.bind(this.banned[0], { onclick: showBanned, oncontext: showBanned });
+        this.ui.bind(this.banned[0], {
+            onclick: () => this.#showBanned(),
+            oncontext: () => this.#showBanned()
+        });
+        this.ui.bind(this.banned[1].node, () => this.#showBanned());
 
         // picked heros
         this.picked = [
@@ -359,29 +342,15 @@ export class Lobby extends Component {
             if (!this.picked[1].items.size) {
                 this.app.alert('点将', {content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。'})
             }
+            else {
+                this.#showPicked();
+            }
         });
         
-        const showPicked = () => {
-            for (const [id, collection] of this.collections) {
-                if (!collection.hidden) {
-                    if (id.startsWith('pick:')) {
-                        collection.close();
-                        return;
-                    }
-                    break;
-                }
-            }
-            const collection = this.#createCollection('pick');
-            const heros = [];
-            for (const [id, clone] of this.picked[2]) {
-                if (clone.parentNode === this.picked[1].node) {
-                    heros.push(id);
-                }
-            }
-            collection.setupHeros('点将', heros);
-            collection.open();
-        };
-        this.ui.bind(this.picked[0], { onclick: showPicked, oncontext: showPicked });
+        this.ui.bind(this.picked[0], {
+            onclick: () => this.#showPicked(),
+            oncontext: () => this.#showPicked()
+        });
 
         const picked = this.db.get(this.#pick);
         if (picked) {
@@ -489,11 +458,7 @@ export class Lobby extends Component {
                         if (!this.banned[2].has(id)) {
                             const clone = this.ui.createElement('widget.avatar');
                             this.ui.setImage(clone, id);
-                            this.ui.bind(clone, () => {
-                                if (this.mine) {
-                                    this.yield(['banned', 'hero/' + id, true]);
-                                }
-                            });
+                            this.ui.bind(clone, () => this.#showBanned());
                             this.app.bindHero(clone, id);
                             this.banned[2].set(id, clone);
                         }
@@ -652,9 +617,7 @@ export class Lobby extends Component {
         if (!this.picked[2].has(id)) {
             const clone = this.ui.createElement('widget.avatar');
             this.ui.setImage(clone, id);
-            this.ui.bind(clone, () => {
-                this.#togglePick(id, false);
-            });
+            this.ui.bind(clone, () => this.#showPicked());
             this.app.bindHero(clone, id);
             this.picked[2].set(id, clone);
         }
@@ -683,7 +646,7 @@ export class Lobby extends Component {
             this.collections.set(id, collection);
         }
 
-        // open and close animations
+        // open animation
         collection.onopen = () => {
             let node: HTMLElement;
             for (const popup of this.collections.values()) {
@@ -705,6 +668,7 @@ export class Lobby extends Component {
             }
         };
 
+        // close animation
         collection.onclose = () => {
             this.node.classList.remove('collection');
             if (this.removing) {
@@ -801,5 +765,57 @@ export class Lobby extends Component {
         }
         const collection = this.collections.get(id)!;
         collection[collection.hidden ? 'open' : 'close']();
+    }
+
+    #showBanned() {
+        for (const [id, collection] of this.collections) {
+            if (!collection.hidden) {
+                if (id.startsWith('ban:')) {
+                    collection.close();
+                    return;
+                }
+                break;
+            }
+        }
+        const collection = this.#createCollection('ban');
+        const heros = [];
+        for (const [id, clone] of this.banned[2]) {
+            if (clone.parentNode === this.banned[1].node) {
+                heros.push(id);
+            }
+        }
+        collection.setupHeros('禁将', heros, (id, node) => {
+            if (this.mine) {
+                this.ui.bind(node, () => {
+                    this.yield(['banned', 'hero/' + id, node.classList.toggle('defer')]);
+                });
+            }
+        });
+        collection.open();
+    }
+
+    #showPicked() {
+        for (const [id, collection] of this.collections) {
+            if (!collection.hidden) {
+                if (id.startsWith('pick:')) {
+                    collection.close();
+                    return;
+                }
+                break;
+            }
+        }
+        const collection = this.#createCollection('pick');
+        const heros = [];
+        for (const [id, clone] of this.picked[2]) {
+            if (clone.parentNode === this.picked[1].node) {
+                heros.push(id);
+            }
+        }
+        collection.setupHeros('点将', heros, (id, node) => {
+            this.ui.bind(node, () => {
+                this.#togglePick(id, !node.classList.toggle('defer'));
+            });
+        });
+        collection.open();
     }
 }

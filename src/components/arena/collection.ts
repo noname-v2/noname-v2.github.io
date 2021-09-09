@@ -124,7 +124,7 @@ export class Collection extends Popup {
     }
 
     /** Create a collection of arbitary heros. */
-    setupHeros(caption: string, heros: string[]) {
+    setupHeros(caption: string, heros: string[], render?: (id: string, node: HTMLElement) => void) {
         this.pane.addCaption(caption);
         const gallery = this.#createGallery(heros.length);
         for (const id of heros) {
@@ -134,6 +134,9 @@ export class Collection extends Popup {
                 player.initHero(id);
                 node = player.node;
                 this.app.bindHero(node, id);
+                if (render) {
+                    render(id, node);
+                }
                 return node;
             });
         }
