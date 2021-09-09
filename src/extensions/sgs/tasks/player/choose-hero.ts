@@ -4,7 +4,7 @@ import type { Point } from '../../../../components';
 
 export function createHero(T: ReturnType<typeof createPop>) {
     return class ChoosePop extends T {
-        heros!: Map<number, string[] | Select<string>>;
+        heros!: Map<number, string[] | Select>;
         pick = false;
 
         main() {
@@ -24,8 +24,21 @@ export function createHero(T: ReturnType<typeof createPop>) {
                 ]);
             }
             super.main();
+            this.add('dispatchPick');
         }
 
+        /** Dispatch user-picked heros. */
+        dispatchPick() {
+            for (const [pop, id] of this.pops) {
+                // check selection
+                const sels = this.selects.get(id)!;
+                console.log(pop.result);
+                console.log(this.checkSelection(pop.result, sels));
+                console.log(this.checkSelection({hero:pop.result.picked.slice(0, 2)}, sels));
+            }
+        }
+
+        /** Callback when user clicks pick button. */
         callPick(pop: Link, e: Point) {
             if (this.game.hub.connected) {
                 pop.call('togglePick');

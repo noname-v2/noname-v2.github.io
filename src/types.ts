@@ -1,6 +1,6 @@
 import type { Task } from './worker/task';
 import type { Component, Color } from './components';
-import type { accessExtension, getData} from './extension';
+import type { accessExtension, getInfo} from './extension';
 import type { lib } from './client/globals';
 
 /** Plain object. */
@@ -106,7 +106,7 @@ export interface ExtensionMeta {
     images: string[];
 }
 
-/** Selectable items. */
+/** Selection configurations. */
 export interface Select<T extends string | number = string | number> {
     /** Items to choose from. */
     items: T[];
@@ -122,14 +122,12 @@ export interface Select<T extends string | number = string | number> {
 }
 
 /** Selected items. */
-export type Selected = Dict<(string | number)[]>;
+export type Selected<T extends string | number = string | number> = Dict<T[]>;
 
 /** <this> of filter functions. */
-export interface FilterThis<T extends string | number = string | number> {
-    getData: typeof getData;
+export interface FilterThis<T extends string | number = string | number> extends Select<T> {
+    getInfo: typeof getInfo;
     accessExtension: typeof accessExtension;
-    selected: T[];
-    items: T[];
-    allSelected: Dict<T[]>;
-    allItems: Dict<T[]>;
+    selected: Selected<T>;
+    selects: Dict<Select<T>>;
 }

@@ -14,13 +14,13 @@ interface PopSectionContent {
     text: string;
 
     /** Hero gallery. */
-    hero: string[] | Select<string>;
+    hero: string[] | Select;
 
     /** Card gallery. */
-    card: string[] | Select<number>;
+    card: string[] | Select;
 
     /** Virtual card gallery. */
-    vcard: [string, string, number, ...string[]] | Select<string>;
+    vcard: [string, string, number, ...string[]] | Select;
 
     /** Skill gallery. */
     skill: string[];
@@ -66,8 +66,8 @@ export class Pop extends Popup {
     /** Selected items in all sections. */
     selected: Selected = {};
 
-    /** All selectable items. */
-    items: Selected = {};
+    /** All select configurations. */
+    selects: Dict<Select> = {};
 
     /** Section data.
      * [0]: Gallery of the section.
@@ -126,9 +126,9 @@ export class Pop extends Popup {
 
         if (!Array.isArray(sel)) {
             const selected: string[] = [];
-            this.items.hero = sel.items;
+            this.selects.hero = sel;
             this.selected.hero = selected;
-            const filter = this.app.createFilter('hero', sel, this.selected, this.items);
+            const filter = this.app.createFilter('hero', this.selected, this.selects);
             this.galleries.hero = [gallery, filter, sel];
         }
 
@@ -280,7 +280,7 @@ export class Pop extends Popup {
         let ok = true;
         this.sort();
         for (const section in this.selected) {
-            const all = this.items[section];
+            const all = this.selects[section].items;
             const selected = this.selected[section];
             const [, filter, sel] = this.galleries[section];
             for (const id of all) {

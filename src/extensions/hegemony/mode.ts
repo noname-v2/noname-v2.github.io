@@ -41,13 +41,13 @@ export const mode = {
         }
     },
     choose(this: FilterThis<string>, name: string) {
-        const faction = this.getData('hero', name).faction;
-        if (this.selected.length) {
-            return faction === this.getData('hero', this.selected[0]).faction;
+        const faction = this.getInfo('hero', name).faction;
+        if (this.selected.hero.length) {
+            return faction === this.getInfo('hero', this.selected.hero[0]).faction;
         }
         else {
             for (const hero of this.items) {
-                if (hero !== name && faction === this.getData('hero', hero).faction) {
+                if (hero !== name && faction === this.getInfo('hero', hero).faction) {
                     return true;
                 }
             }

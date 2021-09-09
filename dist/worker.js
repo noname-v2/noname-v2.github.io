@@ -267,8 +267,6 @@
     class Task {
         /** Do not trigger before / after / skip event. */
         silent = false;
-        /** Map containing custom results. */
-        results = new Map();
         get game() {
             return room.game;
         }
@@ -360,25 +358,32 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
-    function getData(type, id) {
+    function getInfo(type, id) {
         const [ext, name] = split(id);
         return accessExtension(ext, type, name);
     }
     /** Create a filter to check if item is selectable. */
-    function createFilter(section, sel, allSelected, allItems, task) {
+    function createFilter(section, selected, sels, task) {
         // check if more items can be selected
-        const selected = allSelected[section];
-        const items = allItems[section];
+        const sel = sels[section];
         const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
         // get function from extension
         if (!sel.filter) {
-            return () => selected.length < max;
+            return () => selected[section].length < max;
         }
         const func = accessExtension(sel.filter);
         // wrap function with this and task argument
-        const filterThis = { selected, items, allSelected, allItems, getData, accessExtension };
+        const filterThis = {
+            selected: selected,
+            selects: sels,
+            getInfo,
+            accessExtension
+        };
+        for (const key in sel) {
+            filterThis[key] = sel[key];
+        }
         return (item) => {
-            if (selected.length >= max) {
+            if (selected[section].length >= max) {
                 return false;
             }
             return func.apply(filterThis, [item, task]);
@@ -408,8 +413,8 @@
         get accessExtension() {
             return accessExtension;
         }
-        get getData() {
-            return getData;
+        get getInfo() {
+            return getInfo;
         }
         get createFilter() {
             return createFilter;

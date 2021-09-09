@@ -1,7 +1,7 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
-import { importExtension, accessExtension, getData, createFilter } from '../../extension';
+import { importExtension, accessExtension, getInfo, createFilter } from '../../extension';
 import type { ExtensionMeta, Dict } from '../../types';
 
 /** Options used by ui.choose(). */
@@ -86,8 +86,8 @@ export class App extends Component {
         return accessExtension;
     }
 
-    get getData() {
-        return getData;
+    get getInfo() {
+        return getInfo;
     }
 
     get createFilter() {
@@ -411,7 +411,7 @@ export class App extends Component {
     /** Bind context menu to hero intro. */
     bindHero(node: HTMLElement, id: string) {
         this.ui.bind(node, {oncontext: e => {
-            const info = this.getData('hero', id);
+            const info = this.getInfo('hero', id);
             if (!info) {
                 return;
             }

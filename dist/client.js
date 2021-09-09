@@ -836,25 +836,32 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
-    function getData(type, id) {
+    function getInfo(type, id) {
         const [ext, name] = split(id);
         return accessExtension(ext, type, name);
     }
     /** Create a filter to check if item is selectable. */
-    function createFilter(section, sel, allSelected, allItems, task) {
+    function createFilter(section, selected, sels, task) {
         // check if more items can be selected
-        const selected = allSelected[section];
-        const items = allItems[section];
+        const sel = sels[section];
         const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
         // get function from extension
         if (!sel.filter) {
-            return () => selected.length < max;
+            return () => selected[section].length < max;
         }
         const func = accessExtension(sel.filter);
         // wrap function with this and task argument
-        const filterThis = { selected, items, allSelected, allItems, getData, accessExtension };
+        const filterThis = {
+            selected: selected,
+            selects: sels,
+            getInfo,
+            accessExtension
+        };
+        for (const key in sel) {
+            filterThis[key] = sel[key];
+        }
         return (item) => {
-            if (selected.length >= max) {
+            if (selected[section].length >= max) {
                 return false;
             }
             return func.apply(filterThis, [item, task]);
@@ -1359,8 +1366,8 @@
         get accessExtension() {
             return accessExtension;
         }
-        get getData() {
-            return getData;
+        get getInfo() {
+            return getInfo;
         }
         get createFilter() {
             return createFilter;
@@ -1638,7 +1645,7 @@
         /** Bind context menu to hero intro. */
         bindHero(node, id) {
             this.ui.bind(node, { oncontext: e => {
-                    const info = this.getData('hero', id);
+                    const info = this.getInfo('hero', id);
                     if (!info) {
                         return;
                     }
@@ -3302,7 +3309,7 @@
                                 if (this.data.config.pick && this.app.arena.peers) {
                                     const picked = node.classList.contains('selected');
                                     const banned = node.classList.contains('defer');
-                                    this.app.choose(this.app.getData('hero', id).name, {
+                                    this.app.choose(this.app.getInfo('hero', id).name, {
                                         buttons: [
                                             ['pick', '点将', picked ? 'red' : ''],
                                             ['ban', '禁用', banned ? 'blue' : '']
@@ -3383,7 +3390,7 @@
         /** Timer bar. */
         timer = null;
         initHero(name) {
-            const info = this.app.getData('hero', name);
+            const info = this.app.getInfo('hero', name);
             this.data.heroImage = name;
             this.data.heroName = info.name;
             this.data.faction = info.faction;
@@ -3481,8 +3488,8 @@
         entries = new Map();
         /** Selected items in all sections. */
         selected = {};
-        /** All selectable items. */
-        items = {};
+        /** All select configurations. */
+        selects = {};
         /** Section data.
          * [0]: Gallery of the section.
          * [1]: Filter function of the section.
@@ -3532,9 +3539,9 @@
             gallery.node.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
             if (!Array.isArray(sel)) {
                 const selected = [];
-                this.items.hero = sel.items;
+                this.selects.hero = sel;
                 this.selected.hero = selected;
-                const filter = this.app.createFilter('hero', sel, this.selected, this.items);
+                const filter = this.app.createFilter('hero', this.selected, this.selects);
                 this.galleries.hero = [gallery, filter, sel];
             }
             // add hero entries
@@ -3668,7 +3675,7 @@
             let ok = true;
             this.sort();
             for (const section in this.selected) {
-                const all = this.items[section];
+                const all = this.selects[section].items;
                 const selected = this.selected[section];
                 const [, filter, sel] = this.galleries[section];
                 for (const id of all) {

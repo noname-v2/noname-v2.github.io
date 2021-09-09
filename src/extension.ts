@@ -1,5 +1,5 @@
 import { freeze, access, split } from './utils';
-import type { Extension, HeroData, CardData, SkillData, Select, Selected, FilterThis } from './types';
+import type { Extension, HeroData, CardData, SkillData, Select, Selected, FilterThis, Dict } from './types';
 
 /** Map of loaded extensions. */
 const extensions = new Map<string, Extension>();
@@ -29,9 +29,9 @@ export function accessExtension(path: string, ...paths: string[]): any {
 }
 
 /** Get hero info. */
-interface GetData { hero: HeroData; card: CardData; skill: SkillData }
+interface GetInfo { hero: HeroData; card: CardData; skill: SkillData }
 
-export function getData<T extends keyof GetData>(type: T, id: string): GetData[T] {
+export function getInfo<T extends keyof GetInfo>(type: T, id: string): GetInfo[T] {
     const [ext, name] = split(id);
     return accessExtension(ext, type, name);
 }
@@ -39,25 +39,33 @@ export function getData<T extends keyof GetData>(type: T, id: string): GetData[T
 /** Create a filter to check if item is selectable. */
 export function createFilter(
     section: string,
-    sel: Select,
-    allSelected: Selected,
-    allItems: Selected,
+    selected: Selected,
+    sels: Dict<Select>,
     task?: any): (item: unknown) => boolean {
     // check if more items can be selected
-    const selected = allSelected[section];
-    const items = allItems[section];
+    const sel = sels[section];
     const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
 
     // get function from extension
     if (!sel.filter) {
-        return () => selected.length < max;
+        return () => selected[section].length < max;
     }
     const func = accessExtension(sel.filter);
 
     // wrap function with this and task argument
-    const filterThis: FilterThis =  { selected, items, allSelected, allItems, getData, accessExtension }
+    const filterThis = {
+        selected: selected,
+        selects: sels,
+        getInfo,
+        accessExtension
+    } as FilterThis;
+
+    for (const key in sel) {
+        filterThis[key] = sel[key];
+    }
+
     return (item: unknown) => {
-        if (selected.length >= max) {
+        if (selected[section].length >= max) {
             return false;
         }
         return func.apply(filterThis, [item, task]);

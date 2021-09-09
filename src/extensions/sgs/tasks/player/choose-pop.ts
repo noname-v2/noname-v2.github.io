@@ -8,7 +8,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
         pop!: Map<number, PopContent>;
 
         /** Player IDs and created popups. */
-        pops = new Map<number, Link>();
+        pops = new Map<Link, number>();
 
         main() {
             this.add('openDialog');
@@ -16,7 +16,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
         }
 
         openDialog() {
-            const timer = [this.getTimeout(), Date.now()]
+            const timer = [this.getTimeout(), Date.now()] as const;
 
             for (const [id, content] of this.pop) {
                 const player = this.game.players.get(id);
@@ -26,11 +26,21 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                     pop.content = content;
                     pop.await(timer[0]);
                     pop.monitor('filter');
-                    this.pops.set(player.id, pop);
+                    this.pops.set(pop, player.id);
                     if (timer[0]) {
                         pop.timer = timer;
                         player.link.timer = timer;
                     }
+
+                    // get selection configurations from content
+                    const sels: Dict<Select> = {};
+                    for (const section of content) {
+                        const sel = section[1];
+                        if (sel && Array.isArray((sel as Select).items)) {
+                            sels[section[0]] = sel as Select;
+                        }
+                    }
+                    this.selects.set(id, sels);
                 }
             }
         }
@@ -44,14 +54,13 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 }
             }
 
-            for (const [id, pop] of this.pops) {
+            for (const [pop, id] of this.pops) {
                 // remove timers and close pop
                 pop.timer = null;
                 const player = this.game.players.get(id);
                 if (player?.link.timer) {
                     player.link.timer = null;
                 }
-                this.results.set(id, pop.result);
                 pop.unlink();
 
                 // // check selection
@@ -73,21 +82,9 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             }
             else {
                 // get selectable items
-                const selectable = this.getSelectable(selected, this.getSelect(pop));
+                const selectable = this.getSelectable(selected, this.selects.get(this.pops.get(pop)!)!);
                 pop.call('setSelectable', selectable);
             }
-        }
-
-        /** Get all selectable targets from PopContent. */
-        getSelect(pop: Link) {
-            const sels: Dict<Select> = {};
-            for (const section of pop.content) {
-                const sel = section[1];
-                if (Array.isArray(sel.items)) {
-                    sels[section[0]] = sel;
-                }
-            }
-            return sels;
         }
     }
 }

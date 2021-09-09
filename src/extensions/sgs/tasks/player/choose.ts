@@ -14,6 +14,9 @@ export function createChoose(T: TaskClass) {
         /** Order when checking selection. */
         order = ['skill', 'card', 'player'];
 
+        /** Select configurations of players. */
+        selects = new Map<number, Dict<Select>>();
+
         /** Time limit for choosing. */
         getTimeout(): number | null {
             if (this.timeout === null && this.game.hub.connected) {
@@ -25,14 +28,9 @@ export function createChoose(T: TaskClass) {
         /** Get a list of selectable items. */
         getSelectable(selected: Selected, sels: Dict<Select>): (string | number)[] {
             const selectable: (string | number)[] = [];
-            const items: Selected = {};
 
             for (const section in sels) {
-                items[section] = sels[section].items;
-            }
-
-            for (const section in sels) {
-                const filter = this.game.createFilter(section, sels[section], selected, items, this);
+                const filter = this.game.createFilter(section, selected, sels, this);
                 try {
                     for (const item of sels[section].items) {
                         if (filter(item)) {
@@ -82,7 +80,7 @@ export function createChoose(T: TaskClass) {
                 }
 
                 // check if selected items satisfy filter
-                const filter = this.game.createFilter(section, sel, current, selected, this);
+                const filter = this.game.createFilter(section, current, sels, this);
                 for (const item of selected[section]) {
                     if (!filter(item)) {
                         return false;
