@@ -42,7 +42,7 @@ export default {
 
                     chooseRest() {
                         const heros = new Map();
-                        const nheros = Math.min(this.nheros, Math.floor(this.choices.size) / (this.game.players.size - 1));
+                        const nheros = Math.min(this.nheros, Math.floor(this.choices.size / (this.game.players.size - 1)));
                         for (const id of this.game.players.keys()) {
                             if (id !== this.game.zhu.id) {
                                 heros.set(id, {

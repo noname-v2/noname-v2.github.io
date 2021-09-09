@@ -265,7 +265,10 @@ function createPop(T) {
                 this.results.set(pop.owner, pop.result);
                 pop.unlink();
             }
-            console.log(this.results);
+            for (const selected of this.results.values()) {
+                selected.slice(0, 2);
+                // console.log(sec, this.checkSelection(sel, sec));
+            }
         }
         filter(selections, pop) {
             if (typeof selections[0] === 'string') {
@@ -368,22 +371,41 @@ function createChoose(T) {
         /** Get a list of selectable items. */
         getSelectable(sel, all, selected) {
             const selectable = [];
-            const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-            if (n > selected.length) {
-                const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                const filterThis = this.game.createFilter(all, selected);
+            const filter = this.game.createFilter(sel, all, selected, this);
+            try {
                 for (const item of all) {
-                    if (!selected.includes(item)) {
-                        try {
-                            if (func.apply(filterThis, [item, this])) {
-                                selectable.push(item);
-                            }
-                        }
-                        catch { }
+                    if (filter(item)) {
+                        selectable.push(item);
                     }
                 }
             }
+            catch {
+                return [];
+            }
             return selectable;
+        }
+        /** Check if selected items are legal. */
+        checkSelection(sel, selected) {
+            const n = selected.length;
+            if (typeof sel.num === 'number') {
+                if (n !== sel.num) {
+                    return false;
+                }
+            }
+            else if (Array.isArray(sel.num)) {
+                if (n < sel.num[0] || n > sel.num[1]) {
+                    return false;
+                }
+            }
+            const current = [];
+            const filter = this.game.createFilter(sel, selected, current, this);
+            for (const item of selected) {
+                if (!filter(item)) {
+                    return false;
+                }
+                current.push(item);
+            }
+            return true;
         }
     };
 }
@@ -496,14 +518,6 @@ function game(G) {
             const card = this.createInstance('card', this, 'card');
             this.cards.set(card.id, card);
             return card;
-        }
-        /** Create a filter. */
-        createFilter(all, selected) {
-            return {
-                all, selected,
-                getData: this.getData,
-                accessExtension: this.accessExtension
-            };
         }
     };
 }

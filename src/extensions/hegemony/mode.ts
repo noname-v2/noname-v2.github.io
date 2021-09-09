@@ -19,7 +19,7 @@ export const mode = {
                 chooseHero() {
                     const choices = this.game.getHeros();
                     const heros = new Map();
-                    const nheros = Math.min(this.nheros, Math.floor(choices.size) / this.game.players.size);
+                    const nheros = Math.min(this.nheros, Math.floor(choices.size / this.game.players.size));
                     for (const id of this.game.players.keys()) {
                         heros.set(id, {
                             items: Array.from(this.game.utils.rgets(choices, nheros, true)),

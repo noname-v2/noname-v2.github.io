@@ -364,6 +364,22 @@
         const [ext, name] = split(id);
         return accessExtension(ext, type, name);
     }
+    /** Create a filter to check if item is selectable. */
+    function createFilter(sel, all, selected, task) {
+        // check if selected number is OK
+        const num = Array.isArray(sel.num) ? sel.num[1] : sel.num;
+        if (selected.length >= num) {
+            return () => false;
+        }
+        // get function from extension
+        if (!sel.filter) {
+            return () => true;
+        }
+        const func = accessExtension(sel.filter);
+        // wrap function with this and task argument
+        const filterThis = { all, selected, getData, accessExtension };
+        return (item) => func.apply(filterThis, [item, task]);
+    }
 
     /** Game object used by stages. */
     class Game {
@@ -390,6 +406,9 @@
         }
         get getData() {
             return getData;
+        }
+        get createFilter() {
+            return createFilter;
         }
         /** Get a link. */
         get(id) {

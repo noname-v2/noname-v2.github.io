@@ -73,7 +73,7 @@ export class Pop extends Popup {
     selected = new Set<string | number>();
 
     /** Filters and expected number of selected items of galleries. */
-    galleries = new Map<Gallery, [[number, number], string?]>();
+    galleries = new Map<Gallery, Select<string | number>>();
 
     /** Container of clones of selected items. */
     tray!: Tray;
@@ -121,11 +121,7 @@ export class Pop extends Popup {
         gallery.node.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
 
         if (!Array.isArray(select)) {
-            let num = select.num;
-            if (typeof num === 'number') {
-                num = [num, num];
-            }
-            this.galleries.set(gallery, [num, select.filter]);
+            this.galleries.set(gallery, select);
         }
 
         // add hero entries
@@ -293,53 +289,37 @@ export class Pop extends Popup {
             all.get(gallery)!.push(id);
         }
 
+        // filter for a gallery
+        const filters = new Map<Gallery, (item: string | number) => boolean>();
+
         // check if buttons can be selected
         for (const [id, [item, , gallery]] of this.items) {
             if (this.selected.has(id)) {
                 continue;
             }
-            const [num, filter] = this.galleries.get(gallery)!;
-            const selected = selections.get(gallery)!;
-            if (selected.length === num[1]) {
-                item.classList.add('defer');
+
+            if (!filters.has(gallery)) {
+                const sel = this.galleries.get(gallery)!;
+                const filter = this.app.createFilter(sel, all.get(gallery)!, selections.get(gallery)!);
+                filters.set(gallery, filter);
             }
-            else if (filter) {
-                let ask = false;
-                const func = this.app.accessExtension(filter);
-                if (!func || func.length > 1) {
-                    ask = true;
-                }
-                else {
-                    try {
-                        const filterThis: FilterThis<any> = {
-                            selected: selected,
-                            all: all.get(gallery)!,
-                            getData: this.app.getData,
-                            accessExtension: this.app.accessExtension
-                        }
-                        item.classList[func.call(filterThis, id) ? 'remove' : 'add']('defer');
-                    }
-                    catch {
-                        ask = true;
-                    }
-                }
-                if (ask) {
-                    this.#pending = true;
-                    this.yield(Array.from(selections.values()));
-                    this.buttons.get('ok')?.classList.add('disabled');
-                    console.log('asking...');
-                    return;
-                }
+
+            try {
+                item.classList[filters.get(gallery)!(id) ? 'remove' : 'add']('defer');
             }
-            else {
-                item.classList.remove('defer');
+            catch {
+                this.#pending = true;
+                this.yield(Array.from(selections.values()));
+                this.buttons.get('ok')?.classList.add('disabled');
+                console.log('asking...');
             }
         }
         
         // check if ok can be pressed
         let ok = true;
-        for (const [gallery, [num]] of this.galleries) {
+        for (const [gallery, sel] of this.galleries) {
             const n = selections.get(gallery)!.length;
+            const num = Array.isArray(sel.num) ? sel.num : [sel.num, sel.num];
             if (n < num[0] || n > num[1]) {
                 ok = false;
                 break;

@@ -1,5 +1,5 @@
 import type { Game } from '../../../worker/game';
-import type { SGS, Player, Card, Skill, PileEntries, FilterThis } from '../types';
+import type { SGS, Player, Card, Skill, PileEntries } from '../types';
 
 export function game(G: typeof Game) {
     return class Game extends G {
@@ -103,15 +103,6 @@ export function game(G: typeof Game) {
             const card = this.createInstance('card', this, 'card') as Card;
             this.cards.set(card.id, card);
             return card;
-        }
-
-        /** Create a filter. */
-        createFilter<T extends string | number>(all: T[], selected: T[]): FilterThis<T> {
-            return {
-                all, selected,
-                getData: this.getData,
-                accessExtension: this.accessExtension
-            }
         }
     } 
 }

@@ -22,22 +22,45 @@ export function createChoose(T: TaskClass) {
         /** Get a list of selectable items. */
         getSelectable<T extends string | number>(sel: Select<T>, all: T[], selected: T[]): T[] {
             const selectable: T[] = [];
-            const n = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-            if (n > selected.length) {
-                const func = sel.filter ? this.game.accessExtension(sel.filter) : () => true;
-                const filterThis = this.game.createFilter(all, selected);
+            const filter = this.game.createFilter(sel, all, selected, this);
+            try {
                 for (const item of all) {
-                    if (!selected.includes(item)) {
-                        try {
-                            if (func.apply(filterThis, [item, this])) {
-                                selectable.push(item);
-                            }
-                        }
-                        catch {}
+                    if (filter(item)) {
+                        selectable.push(item);
                     }
                 }
             }
+            catch {
+                return [];
+            }
             return selectable;
+        }
+
+        /** Check if selected items are legal. */
+        checkSelection<T extends string | number>(sel: Select<T>, selected: T[]) {
+            const n = selected.length;
+            if (typeof sel.num === 'number') {
+                if (n !== sel.num) {
+                    return false;
+                }
+            }
+            else if (Array.isArray(sel.num)) {
+                if (n < sel.num[0] || n > sel.num[1]) {
+                    return false;
+                }
+            }
+
+            const current: T[] = [];
+            const filter = this.game.createFilter(sel, selected, current, this);
+
+            for (const item of selected) {
+                if (!filter(item)) {
+                    return false;
+                }
+                current.push(item);
+            }
+
+            return true;
         }
     }
 }

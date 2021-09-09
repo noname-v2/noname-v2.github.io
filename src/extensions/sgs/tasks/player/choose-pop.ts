@@ -47,7 +47,12 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                 this.results.set(pop.owner!, pop.result);
                 pop.unlink();
             }
-            console.log(this.results);
+
+            for (const selected of this.results.values()) {
+                const sec = selected.slice(0, 2);
+                // console.log(sec, this.checkSelection(sel, sec));
+                // from here: convert pop to single gallery
+            }
         }
 
         filter<T extends string | number>(selections: T[][], pop: Link) {

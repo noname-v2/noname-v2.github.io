@@ -1,5 +1,5 @@
 import { hub, room } from './globals';
-import { accessExtension, getData } from '../extension';
+import { accessExtension, getData, createFilter } from '../extension';
 import * as utils from '../utils';
 import type { ModeData, Dict } from '../types';
 
@@ -38,6 +38,10 @@ export abstract class Game {
 
     get getData() {
         return getData;
+    }
+
+    get createFilter() {
+        return createFilter;
     }
 
     /** Get a link. */

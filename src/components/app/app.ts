@@ -1,8 +1,8 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
-import { importExtension, accessExtension, getData } from '../../extension';
-import type { ExtensionMeta, HeroData, CardData, Dict } from '../../types';
+import { importExtension, accessExtension, getData, createFilter } from '../../extension';
+import type { ExtensionMeta, Dict } from '../../types';
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -88,6 +88,10 @@ export class App extends Component {
 
     get getData() {
         return getData;
+    }
+
+    get createFilter() {
+        return createFilter;
     }
 
     get connected() {
