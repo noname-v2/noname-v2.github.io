@@ -266,44 +266,31 @@ function createPop(T) {
                 pop.unlink();
             }
             for (const selected of this.results.values()) {
-                selected.slice(0, 2);
+                console.log(selected);
+                // const sec = selected.slice(0, 2);
                 // console.log(sec, this.checkSelection(sel, sec));
+                // from here: convert pop to single gallery
             }
         }
-        filter(selections, pop) {
-            if (typeof selections[0] === 'string') {
+        filter(selected, pop) {
+            if (Array.isArray(selected)) {
                 // custom operations defined by child classes
                 try {
-                    this[selections[0]](pop, ...selections.slice(1));
+                    this[selected[0]](pop, ...selected.slice(1));
                 }
                 catch { }
             }
             else {
-                // map of sections and its selected items
-                const sections = new Map();
                 // get lists of all items and selected items
-                let all = [];
+                const sels = {};
                 for (const section of pop.content) {
                     const sel = section[1];
                     if (Array.isArray(sel.items)) {
-                        all = all.concat(sel.items);
-                        for (const selection of selections) {
-                            if (selection.length && sel.items.includes(selection[0])) {
-                                sections.set(sel, [sel.items, selection]);
-                                break;
-                            }
-                        }
-                        if (!sections.has(sel)) {
-                            sections.set(sel, [sel.items, []]);
-                        }
+                        sels[section[0]] = sel;
                     }
                 }
                 // get selectable items
-                let selectable = [];
-                for (const [sel, [all, selected]] of sections) {
-                    selectable = selectable.concat(this.getSelectable(sel, all, selected));
-                }
-                // update pop
+                const selectable = this.getSelectable(selected, sels);
                 pop.call('setSelectable', selectable);
             }
         }
@@ -369,43 +356,49 @@ function createChoose(T) {
             return this.timeout;
         }
         /** Get a list of selectable items. */
-        getSelectable(sel, all, selected) {
+        getSelectable(selected, sels) {
             const selectable = [];
-            const filter = this.game.createFilter(sel, all, selected, this);
-            try {
-                for (const item of all) {
-                    if (filter(item)) {
-                        selectable.push(item);
+            const items = {};
+            for (const section in sels) {
+                items[section] = sels[section].items;
+            }
+            for (const section in sels) {
+                const filter = this.game.createFilter(section, sels[section], selected, items, this);
+                try {
+                    for (const item of sels[section].items) {
+                        if (filter(item)) {
+                            selectable.push(item);
+                        }
                     }
                 }
-            }
-            catch {
-                return [];
+                catch {
+                    return [];
+                }
             }
             return selectable;
         }
         /** Check if selected items are legal. */
         checkSelection(sel, selected) {
-            const n = selected.length;
-            if (typeof sel.num === 'number') {
-                if (n !== sel.num) {
-                    return false;
-                }
-            }
-            else if (Array.isArray(sel.num)) {
-                if (n < sel.num[0] || n > sel.num[1]) {
-                    return false;
-                }
-            }
-            const current = [];
-            const filter = this.game.createFilter(sel, selected, current, this);
-            for (const item of selected) {
-                if (!filter(item)) {
-                    return false;
-                }
-                current.push(item);
-            }
-            return true;
+            // const n = selected.length;
+            // if (typeof sel.num === 'number') {
+            //     if (n !== sel.num) {
+            //         return false;
+            //     }
+            // }
+            // else if (Array.isArray(sel.num)) {
+            //     if (n < sel.num[0] || n > sel.num[1]) {
+            //         return false;
+            //     }
+            // }
+            // const current: T[] = [];
+            // const filter = this.game.createFilter(sel, selected, current, this);
+            // for (const item of selected) {
+            //     if (!filter(item)) {
+            //         return false;
+            //     }
+            //     current.push(item);
+            // }
+            // return true;
         }
     };
 }
@@ -829,17 +822,16 @@ function pop(T) {
         }
         /** Include picked items. */
         getSelected() {
-            const selected = [];
-            const order = new Map();
-            for (const id of this.selected) {
-                selected.push(id);
-                order.set(id, this.tray.items.get(this.items.get(id)[1]) ?? Infinity);
-            }
-            for (const id of this.picked) {
-                selected.push(id);
-                order.set(id, this.tray.items.get(this.clones.get(id)) ?? Infinity);
-            }
-            selected.sort((a, b) => (order.get(b) - order.get(a)));
+            // original selected items
+            const selected = {};
+            Object.assign(selected, super.getSelected());
+            // add picked items
+            const picked = Array.from(this.picked);
+            picked.sort((a, b) => {
+                const idx = (id) => this.tray.items.get(this.clones.get(id)) ?? -1;
+                return idx(b) - idx(a);
+            });
+            selected.picked = picked;
             return selected;
         }
         /** Enable pick by default. */

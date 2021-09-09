@@ -1,6 +1,6 @@
 import type { PopContent } from '../../../../components/arena/pop';
 import type { createChoose } from './choose';
-import type { Link, Select, FilterThis } from '../../types';
+import type { Link, Select, Selected, Dict } from '../../types';
 
 export function createPop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {
@@ -42,6 +42,7 @@ export function createPop(T: ReturnType<typeof createChoose>) {
                     player.link.timer = null;
                 }
             }
+
             for (const pop of this.pops) {
                 pop.timer = null;
                 this.results.set(pop.owner!, pop.result);
@@ -49,49 +50,33 @@ export function createPop(T: ReturnType<typeof createChoose>) {
             }
 
             for (const selected of this.results.values()) {
-                const sec = selected.slice(0, 2);
+                console.log(selected)
+                // const sec = selected.slice(0, 2);
                 // console.log(sec, this.checkSelection(sel, sec));
                 // from here: convert pop to single gallery
             }
         }
 
-        filter<T extends string | number>(selections: T[][], pop: Link) {
-            if (typeof selections[0] === 'string') {
+        filter(selected: Selected | [string, ...any[]], pop: Link) {
+            if (Array.isArray(selected)) {
                 // custom operations defined by child classes
                 try {
-                    (this as any)[selections[0]](pop, ...selections.slice(1));
+                    (this as any)[selected[0]](pop, ...selected.slice(1));
                 }
                 catch {}
             }
             else {
-                // map of sections and its selected items
-                const sections = new Map<Select<any>, [T[], T[]]>();
-                
-                // get lists of all items and selected items
-                let all: any[] = [];
+                // get selections from pop
+                const sels: Dict<Select> = {};
                 for (const section of pop.content) {
                     const sel = section[1];
                     if (Array.isArray(sel.items)) {
-                        all = all.concat(sel.items);
-                        for (const selection of selections) {
-                            if (selection.length && sel.items.includes(selection[0])) {
-                                sections.set(sel, [sel.items, selection]);
-                                break;
-                            }
-                        }
-                        if (!sections.has(sel)) {
-                            sections.set(sel, [sel.items, []]);
-                        }
+                        sels[section[0]] = sel;
                     }
                 }
 
                 // get selectable items
-                let selectable: T[] = [];
-                for (const [sel, [all, selected]] of sections) {
-                    selectable = selectable.concat(this.getSelectable(sel, all, selected));
-                }
-
-                // update pop
+                const selectable = this.getSelectable(selected, sels);
                 pop.call('setSelectable', selectable);
             }
         }

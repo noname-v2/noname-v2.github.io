@@ -365,20 +365,24 @@
         return accessExtension(ext, type, name);
     }
     /** Create a filter to check if item is selectable. */
-    function createFilter(sel, all, selected, task) {
-        // check if selected number is OK
-        const num = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-        if (selected.length >= num) {
-            return () => false;
-        }
+    function createFilter(section, sel, allSelected, allItems, task) {
+        // check if more items can be selected
+        const selected = allSelected[section];
+        const items = allItems[section];
+        const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
         // get function from extension
         if (!sel.filter) {
-            return () => true;
+            return () => selected.length < max;
         }
         const func = accessExtension(sel.filter);
         // wrap function with this and task argument
-        const filterThis = { all, selected, getData, accessExtension };
-        return (item) => func.apply(filterThis, [item, task]);
+        const filterThis = { selected, items, allSelected, allItems, getData, accessExtension };
+        return (item) => {
+            if (selected.length >= max) {
+                return false;
+            }
+            return func.apply(filterThis, [item, task]);
+        };
     }
 
     /** Game object used by stages. */

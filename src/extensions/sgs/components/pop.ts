@@ -1,4 +1,5 @@
 import type { Pop, Point, Collection } from '../../../components';
+import type { Selected } from '../types';
 
 export function pop(T: typeof Pop) {
     return class Pop extends T {
@@ -32,17 +33,18 @@ export function pop(T: typeof Pop) {
 
         /** Include picked items. */
         getSelected() {
-            const selected: (string | number)[] = [];
-            const order = new Map<string | number, number>();
-            for (const id of this.selected) {
-                selected.push(id);
-                order.set(id, this.tray.items.get(this.items.get(id)![1]) ?? Infinity);
-            }
-            for (const id of this.picked) {
-                selected.push(id);
-                order.set(id, this.tray.items.get(this.clones.get(id)!) ?? Infinity);
-            }
-            selected.sort((a, b) => (order.get(b)! - order.get(a)!));
+            // original selected items
+            const selected: Selected = {};
+            Object.assign(selected, super.getSelected());
+
+            // add picked items
+            const picked = Array.from(this.picked);
+            picked.sort((a, b) => {
+                const idx = (id: string) => this.tray.items.get(this.clones.get(id)!) ?? -1;
+                return idx(b) - idx(a);
+            });
+            selected.picked = picked;
+
             return selected;
         }
 

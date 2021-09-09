@@ -100,14 +100,14 @@ export interface Extension<T extends Task = Task> {
 
 /** Format of extension meta data. */
 export interface ExtensionMeta {
-	mode: string;
-	pack: boolean;
-	tags: string[];
-	images: string[];
+    mode: string;
+    pack: boolean;
+    tags: string[];
+    images: string[];
 }
 
 /** Selectable items. */
-export interface Select<T> {
+export interface Select<T extends string | number = string | number> {
     /** Items to choose from. */
     items: T[];
 
@@ -121,10 +121,15 @@ export interface Select<T> {
     [key: string]: any;
 }
 
+/** Selected items. */
+export type Selected = Dict<(string | number)[]>;
+
 /** <this> of filter functions. */
-export interface FilterThis<T extends string | number> {
+export interface FilterThis<T extends string | number = string | number> {
     getData: typeof getData;
     accessExtension: typeof accessExtension;
     selected: T[];
-    all: T[];
+    items: T[];
+    allSelected: Dict<T[]>;
+    allItems: Dict<T[]>;
 }

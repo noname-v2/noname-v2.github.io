@@ -1,5 +1,5 @@
 import { freeze, access, split } from './utils';
-import type { Extension, HeroData, CardData, SkillData, Select } from './types';
+import type { Extension, HeroData, CardData, SkillData, Select, Selected, FilterThis } from './types';
 
 /** Map of loaded extensions. */
 const extensions = new Map<string, Extension>();
@@ -37,20 +37,29 @@ export function getData<T extends keyof GetData>(type: T, id: string): GetData[T
 }
 
 /** Create a filter to check if item is selectable. */
-export function createFilter<T extends string | number>(sel: Select<T>, all: T[], selected: T[], task?: any): (item: T) => boolean {
-    // check if selected number is OK
-    const num = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-    if (selected.length >= num) {
-        return () => false;
-    }
+export function createFilter(
+    section: string,
+    sel: Select,
+    allSelected: Selected,
+    allItems: Selected,
+    task?: any): (item: unknown) => boolean {
+    // check if more items can be selected
+    const selected = allSelected[section];
+    const items = allItems[section];
+    const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
 
     // get function from extension
     if (!sel.filter) {
-        return () => true;
+        return () => selected.length < max;
     }
     const func = accessExtension(sel.filter);
 
     // wrap function with this and task argument
-    const filterThis =  { all, selected, getData, accessExtension }
-    return (item: T) => func.apply(filterThis, [item, task]);
+    const filterThis: FilterThis =  { selected, items, allSelected, allItems, getData, accessExtension }
+    return (item: unknown) => {
+        if (selected.length >= max) {
+            return false;
+        }
+        return func.apply(filterThis, [item, task]);
+    };
 }

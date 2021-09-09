@@ -1,6 +1,6 @@
 import { AnimationOptions, Gallery, Timer, Player, Tray } from '../../components';
 import { Popup } from '../popup';
-import type { Select, FilterThis } from '../../types';
+import type { Select, Selected, Dict } from '../../types';
 
 /** Possible contents of pop sections. */
 interface PopSectionContent {
@@ -18,9 +18,6 @@ interface PopSectionContent {
 
     /** Card gallery. */
     card: string[] | Select<number>;
-
-    /** Card gallery. */
-    player: string[] | Select<number>;
 
     /** Virtual card gallery. */
     vcard: [string, string, number, ...string[]] | Select<string>;
@@ -47,7 +44,7 @@ export type PopConfirm = ('ok' | 'cancel' | [string, string, string?])[];
 export type PopSection<T extends keyof PopSectionContent = keyof PopSectionContent> = [T, PopSectionContent[T]];
 
 /** Full content of a pop. */
-export type PopContent = PopSection[] | PopSection;
+export type PopContent = PopSection[];
 
 export class Pop extends Popup {
     /** Height based on content height. */
@@ -59,21 +56,27 @@ export class Pop extends Popup {
     /** Timer bar. */
     timer: Timer | null = null;
 
-    /** All items.
-     * [0]: element in gallery
-     * [1]: element in tray
-     * [2]: gallery that contains the item
+    /** Data of all selectable items.
+     * [0]: Section name.
+     * [1]: Element in gallery.
+     * [2]: Element in tray.
      */
-    items = new Map<string | number, [HTMLElement, HTMLElement, Gallery]>();
+    entries = new Map<string | number, [string, HTMLElement, HTMLElement]>();
+
+    /** Selected items in all sections. */
+    selected: Selected = {};
+
+    /** All selectable items. */
+    items: Selected = {};
+
+    /** Section data.
+     * [0]: Gallery of the section.
+     * [1]: Filter function of the section.
+     */
+    galleries: Dict<[Gallery, (item: string | number) => boolean, Select]> = {};
 
     /** Map of button IDs -> button elements. */
     buttons = new Map<string, HTMLElement>();
-
-    /** Selected items. */
-    selected = new Set<string | number>();
-
-    /** Filters and expected number of selected items of galleries. */
-    galleries = new Map<Gallery, Select<string | number>>();
 
     /** Container of clones of selected items. */
     tray!: Tray;
@@ -84,12 +87,13 @@ export class Pop extends Popup {
     /** Click on selectable items. */
     click(id: string | number) {
         if (this.#pending) return;
-        const [item, clone] = this.items.get(id)!;
+        const [section, item, clone] = this.entries.get(id)!;
+        const [gallery] = this.galleries[section];
+        const selected = this.selected[section];
 
-        if (this.selected.has(id)) {
-            this.selected.delete(id);
+        if (selected.includes(id)) {
+            selected.splice(selected.indexOf(id), 1);
             item.classList.remove('selected');
-            const [, , gallery] = this.items.get(id)!;
             if (gallery.currentPage?.contains(item)) {
                 this.tray.delete(clone, item);
             }
@@ -99,7 +103,7 @@ export class Pop extends Popup {
             this.check();
         }
         else if (!item.classList.contains('defer')) {
-            this.selected.add(id);
+            selected.push(id);
             item.classList.add('selected');
             this.tray.add(clone, item, undefined, true);
             this.check();
@@ -111,8 +115,8 @@ export class Pop extends Popup {
         this.height += 50;
     }
 
-    addHero(select: string[] | Select<string>) {
-        const heros = Array.isArray(select) ? select : select.items;
+    addHero(sel: string[] | Select<string>) {
+        const heros = Array.isArray(sel) ? sel : sel.items;
         const [gallery, width, height] = this.pane.addPopGallery(heros.length);
         this.height += height;
         this.width = Math.max(this.width, width);
@@ -120,8 +124,12 @@ export class Pop extends Popup {
         // avoid conflict with move operation
         gallery.node.addEventListener('touchstart', e => e.stopPropagation(), {passive: false});
 
-        if (!Array.isArray(select)) {
-            this.galleries.set(gallery, select);
+        if (!Array.isArray(sel)) {
+            const selected: string[] = [];
+            this.items.hero = sel.items;
+            this.selected.hero = selected;
+            const filter = this.app.createFilter('hero', sel, this.selected, this.items);
+            this.galleries.hero = [gallery, filter, sel];
         }
 
         // add hero entries
@@ -133,36 +141,35 @@ export class Pop extends Popup {
                 // bind context menu
                 this.app.bindHero(player.node, hero);
 
-                // add to this.items
-                if (!Array.isArray(select)) {
+                // add to this.entries
+                if (!Array.isArray(sel)) {
                     const clone = this.ui.createElement('widget.avatar');
                     const onclick = () => this.click(hero);
                     this.ui.setImage(clone, hero);
                     this.ui.bind(clone, onclick);
                     this.ui.bind(player.node, onclick);
                     this.app.bindHero(clone, hero);
-                    this.items.set(hero, [player.node, clone, gallery])
+                    this.entries.set(hero, ['hero', player.node, clone])
                 }
                 return player.node;
             });
         }
 
-        // render all items to fill this.items
+        // render all items to fill this.entries
         gallery.renderAll();
     }
 
-    /** Get selected items with order. */
-    getSelected() {
-        const selected = Array.from(this.selected);
-        selected.sort((a, b) => this.sort(a, b));
-        return selected
+    /** Sort selected items by tray order. */
+    sort() {
+        for (const section in this.selected) {
+            this.selected[section].sort((a, b) => this.#sort(a, b));
+        }
     }
 
-    /** Sort by order in the tray. */
-    sort(a: string | number, b: string | number) {
-        const ai = this.tray.items.get(this.items.get(a)![1]) ?? Infinity;
-        const bi = this.tray.items.get(this.items.get(b)![1]) ?? Infinity;
-        return bi - ai;
+    /** Get selected items with order. */
+    getSelected(): Selected {
+        this.sort();
+        return this.selected;
     }
 
     /** Add buttons in bottom bar. */
@@ -193,6 +200,7 @@ export class Pop extends Popup {
                 });
             }
             else {
+                // custom operation that is processed by worker
                 const button = this.ui.createElement('widget.button', bar);
                 const [id, text, color] = item;
                 this.buttons.set(id, button);
@@ -268,72 +276,43 @@ export class Pop extends Popup {
             return;
         }
 
-        // get selected items
-        const selections = new Map<Gallery, (string | number)[]>();
-        for (const [, [, , gallery]] of this.items) {
-            if (!selections.has(gallery)) {
-                selections.set(gallery, []);
-            }
-        }
-        for (const id of this.selected) {
-            const [, , gallery] = this.items.get(id)!;
-            selections.get(gallery)!.push(id);
-        }
-
-        // get all items of a given section
-        const all = new Map<Gallery, (string | number)[]>();
-        for (const [id, [, , gallery]] of this.items) {
-            if (!all.has(gallery)) {
-                all.set(gallery, []);
-            }
-            all.get(gallery)!.push(id);
-        }
-
-        // filter for a gallery
-        const filters = new Map<Gallery, (item: string | number) => boolean>();
-
         // check if buttons can be selected
-        for (const [id, [item, , gallery]] of this.items) {
-            if (this.selected.has(id)) {
-                continue;
-            }
-
-            if (!filters.has(gallery)) {
-                const sel = this.galleries.get(gallery)!;
-                const filter = this.app.createFilter(sel, all.get(gallery)!, selections.get(gallery)!);
-                filters.set(gallery, filter);
-            }
-
-            try {
-                item.classList[filters.get(gallery)!(id) ? 'remove' : 'add']('defer');
-            }
-            catch {
-                this.#pending = true;
-                this.yield(Array.from(selections.values()));
-                this.buttons.get('ok')?.classList.add('disabled');
-                console.log('asking...');
-            }
-        }
-        
-        // check if ok can be pressed
         let ok = true;
-        for (const [gallery, sel] of this.galleries) {
-            const n = selections.get(gallery)!.length;
+        this.sort();
+        for (const section in this.selected) {
+            const all = this.items[section];
+            const selected = this.selected[section];
+            const [, filter, sel] = this.galleries[section];
+            for (const id of all) {
+                if (!selected.includes(id)) {
+                    const [, item] = this.entries.get(id)!;
+                    try {
+                        item.classList[filter(id) ? 'remove' : 'add']('defer');
+                    }
+                    catch {
+                        this.#pending = true;
+                        this.yield(this.selected);
+                        this.buttons.get('ok')?.classList.add('disabled');
+                        console.log('asking...');
+                        return;
+                    }
+                }
+            }
+
             const num = Array.isArray(sel.num) ? sel.num : [sel.num, sel.num];
-            if (n < num[0] || n > num[1]) {
+            if (selected.length < num[0] || selected.length > num[1]) {
                 ok = false;
-                break;
             }
         }
+
         this.buttons.get('ok')?.classList[ok ? 'remove' : 'add']('disabled');
-        
         return ok;
     }
 
     /** Update selectable items by worker. */
     setSelectable(selectable: (string | number)[]) {
         if (this.#pending) {
-            for (const [id, [item]] of this.items) {
+            for (const [id, [, item]] of this.entries) {
                 if (!item.classList.contains('selected')) {
                     item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
                 }
@@ -356,7 +335,7 @@ export class Pop extends Popup {
             }
 
             // tray of selected items
-            if (this.items.size) {
+            if (this.entries.size) {
                 this.addTray();
             }
 
@@ -366,7 +345,7 @@ export class Pop extends Popup {
             }
 
             // update selectable items
-            if (this.items.size) {
+            if (this.entries.size) {
                 this.check();
             }
 
@@ -402,5 +381,11 @@ export class Pop extends Popup {
         else {
             this.timer?.remove();
         }
+    }
+
+    /** Sort by order in the tray. */
+    #sort(a: string | number, b: string | number) {
+        const idx = (id: string | number) => this.tray.items.get(this.entries.get(id)![1]) ?? -1;
+        return idx(b) - idx(a);
     }
 }

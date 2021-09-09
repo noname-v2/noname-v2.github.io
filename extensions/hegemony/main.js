@@ -41,7 +41,7 @@ const mode = {
             return faction === this.getData('hero', this.selected[0]).faction;
         }
         else {
-            for (const hero of this.all) {
+            for (const hero of this.items) {
                 if (hero !== name && faction === this.getData('hero', hero).faction) {
                     return true;
                 }
