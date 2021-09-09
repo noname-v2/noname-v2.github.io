@@ -363,9 +363,9 @@
         return accessExtension(ext, type, name);
     }
     /** Create a filter to check if item is selectable. */
-    function createFilter(section, selected, sels, task) {
+    function createFilter(section, selected, selects, getData, task) {
         // check if more items can be selected
-        const sel = sels[section];
+        const sel = selects[section];
         const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
         // get function from extension
         if (!sel.filter) {
@@ -374,10 +374,8 @@
         const func = accessExtension(sel.filter);
         // wrap function with this and task argument
         const filterThis = {
-            selected: selected,
-            selects: sels,
-            getInfo,
-            accessExtension
+            selected, selects,
+            getInfo, getData, accessExtension
         };
         for (const key in sel) {
             filterThis[key] = sel[key];
@@ -416,8 +414,12 @@
         get getInfo() {
             return getInfo;
         }
-        get createFilter() {
-            return createFilter;
+        createFilter(section, selected, sels, task) {
+            return createFilter(section, selected, sels, (id) => new Proxy(this.get(id), {
+                get(target, key) {
+                    return target[key];
+                }
+            }), task);
         }
         /** Get a link. */
         get(id) {

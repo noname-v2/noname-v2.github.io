@@ -127,6 +127,7 @@ export type Selected<T extends string | number = string | number> = Dict<T[]>;
 /** <this> of filter functions. */
 export interface FilterThis<T extends string | number = string | number> extends Select<T> {
     getInfo: typeof getInfo;
+    getData: (id: number) => { readonly [key: string]: any };
     accessExtension: typeof accessExtension;
     selected: Selected<T>;
     selects: Dict<Select<T>>;

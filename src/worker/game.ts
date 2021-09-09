@@ -2,7 +2,8 @@ import { hub, room } from './globals';
 import { accessExtension, getInfo, createFilter } from '../extension';
 import * as utils from '../utils';
 import type { Link } from './link';
-import type { ModeData, Dict } from '../types';
+import type { Task } from './task';
+import type { ModeData, Dict, Select, Selected } from '../types';
 
 /** Game object used by stages. */
 export abstract class Game {
@@ -41,8 +42,12 @@ export abstract class Game {
         return getInfo;
     }
 
-    get createFilter() {
-        return createFilter;
+    createFilter(section: string, selected: Selected, sels: Dict<Select>, task: Task) {
+        return createFilter(section, selected, sels, (id: number) => new Proxy(this.get(id)!, {
+            get(target, key: string) {
+                return target[key];
+            }
+        }), task);
     }
 
     /** Get a link. */

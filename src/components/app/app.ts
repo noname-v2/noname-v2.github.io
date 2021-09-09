@@ -2,7 +2,7 @@ import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
 import { importExtension, accessExtension, getInfo, createFilter } from '../../extension';
-import type { ExtensionMeta, Dict } from '../../types';
+import type { ExtensionMeta, Dict, Select, Selected } from '../../types';
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -88,10 +88,6 @@ export class App extends Component {
 
     get getInfo() {
         return getInfo;
-    }
-
-    get createFilter() {
-        return createFilter;
     }
 
     get connected() {
@@ -479,6 +475,15 @@ export class App extends Component {
 			console.log(e, pack);
             return null;
 		}
+    }
+
+    /** Create filter function for choose task. */
+    createFilter(section: string, selected: Selected, sels: Dict<Select>) {
+        return createFilter(section, selected, sels, (id: number) => new Proxy(this.getComponent(id)!, {
+            get(target, key: string) {
+                return target.data[key];
+            }
+        }));
     }
 
     /** Adjust zoom level according to device DPI. */

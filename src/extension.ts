@@ -40,10 +40,11 @@ export function getInfo<T extends keyof GetInfo>(type: T, id: string): GetInfo[T
 export function createFilter(
     section: string,
     selected: Selected,
-    sels: Dict<Select>,
+    selects: Dict<Select>,
+    getData: (id: number) => { readonly [key: string]: any },
     task?: any): (item: unknown) => boolean {
     // check if more items can be selected
-    const sel = sels[section];
+    const sel = selects[section];
     const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
 
     // get function from extension
@@ -54,10 +55,8 @@ export function createFilter(
 
     // wrap function with this and task argument
     const filterThis = {
-        selected: selected,
-        selects: sels,
-        getInfo,
-        accessExtension
+        selected, selects,
+        getInfo, getData, accessExtension
     } as FilterThis;
 
     for (const key in sel) {
