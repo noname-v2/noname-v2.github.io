@@ -1,7 +1,23 @@
 import { splash } from '../../client/globals';
 import { connect } from '../../client/client';
 import { Gallery } from '../gallery';
-import type { ExtensionMeta, Dict } from '../../types';
+import { importExtension } from '../../extension';
+import type { Dict } from '../../types';
+
+/** Format of extension meta data. */
+interface ExtensionMeta {
+    /** Mode name. */
+    mode: string;
+
+    /** Includes heropack or cardpack. */
+    pack: boolean;
+
+    /** Extension tags to determine whether it is enabled in a mode. */
+    tags: string[];
+
+    /** Images in addition to heros and cards. */
+    images: string[];
+}
 
 export class SplashGallery extends Gallery {
     /** Single row. */
@@ -27,7 +43,7 @@ export class SplashGallery extends Gallery {
 		let write = false;
 		await Promise.all(this.extensions.map(async name => {
 			if (!this.index[name]) {
-				const meta = await this.app.getMeta(name);
+				const meta = await this.#getMeta(name);
 				if (meta) {
 					this.index[name] = meta;
 					write = true;
@@ -107,4 +123,29 @@ export class SplashGallery extends Gallery {
 		}
 		return true;
 	}
+
+    /** Get extension meta data. */
+    async #getMeta(pack: string) {
+        try {
+            const meta = {} as ExtensionMeta;
+            const ext = await importExtension(pack);
+			if (ext.heropack || ext.cardpack) {
+				meta.pack = true;
+			}
+			if (ext.mode?.name) {
+				meta.mode = ext.mode.name
+			}
+			if (ext.tags) {
+				meta.tags = ext.tags;
+			}
+			if (ext.hero) {
+				meta.images = Object.keys(ext.hero);
+			}
+			return meta;
+		}
+		catch (e) {
+			console.log(e, pack);
+            return null;
+		}
+    }
 }

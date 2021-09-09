@@ -326,7 +326,16 @@ export class Lobby extends Component {
         this.banned[1].node.style.display = 'none';
 
         const showBanned = () => {
-            const collection = this.#createCollection(true);
+            for (const [id, collection] of this.collections) {
+                if (!collection.hidden) {
+                    if (id.startsWith('ban:')) {
+                        collection.close();
+                        return;
+                    }
+                    break;
+                }
+            }
+            const collection = this.#createCollection('ban');
             const heros = [];
             for (const [id, clone] of this.banned[2]) {
                 if (clone.parentNode === this.banned[1].node) {
@@ -353,7 +362,16 @@ export class Lobby extends Component {
         });
         
         const showPicked = () => {
-            const collection = this.#createCollection(true);
+            for (const [id, collection] of this.collections) {
+                if (!collection.hidden) {
+                    if (id.startsWith('pick:')) {
+                        collection.close();
+                        return;
+                    }
+                    break;
+                }
+            }
+            const collection = this.#createCollection('pick');
             const heros = [];
             for (const [id, clone] of this.picked[2]) {
                 if (clone.parentNode === this.picked[1].node) {
@@ -650,7 +668,7 @@ export class Lobby extends Component {
         }
     }
 
-    #createCollection(tmp: boolean = false) {
+    #createCollection(tmp: string | null = null) {
         const collection = this.ui.create('collection');
         collection.arena = true;
         collection.flex = true;
@@ -658,10 +676,10 @@ export class Lobby extends Component {
             this.ui.bind(collection.pane.node, () => collection.close());
         });
 
+        // ID for temporary collection
         let id = '';
-
         if (tmp) {
-            id = `${++this.#tmpCount}`;
+            id = `${tmp}:${++this.#tmpCount}`;
             this.collections.set(id, collection);
         }
 

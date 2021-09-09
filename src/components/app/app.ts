@@ -1,8 +1,8 @@
 import { trigger } from '../../client/client';
 import { splash, arena, set } from '../../client/globals';
 import { Component, Popup, Zoom, TransitionDuration } from '../../components';
-import { importExtension, accessExtension, getInfo, createFilter } from '../../extension';
-import type { ExtensionMeta, Dict, Select, Selected } from '../../types';
+import { accessExtension, getInfo, createFilter } from '../../extension';
+import type { Dict, Select, Selected } from '../../types';
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -450,31 +450,6 @@ export class App extends Component {
     /** Bind context menu to player intro. */
     bindPlayer() {
 
-    }
-
-    /** Get extension meta data. */
-    async getMeta(pack: string, full: boolean = false) {
-        try {
-            const meta = {} as ExtensionMeta;
-            const ext = await importExtension(pack);
-			if (ext.heropack || ext.cardpack) {
-				meta.pack = true;
-			}
-			if (ext.mode?.name) {
-				meta.mode = ext.mode.name
-			}
-			if (ext.tags) {
-				meta.tags = ext.tags;
-			}
-			if (ext.hero) {
-				meta.images = Object.keys(ext.hero);
-			}
-			return meta;
-		}
-		catch (e) {
-			console.log(e, pack);
-            return null;
-		}
     }
 
     /** Create filter function for choose task. */

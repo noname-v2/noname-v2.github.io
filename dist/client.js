@@ -1676,30 +1676,6 @@
         /** Bind context menu to player intro. */
         bindPlayer() {
         }
-        /** Get extension meta data. */
-        async getMeta(pack, full = false) {
-            try {
-                const meta = {};
-                const ext = await importExtension(pack);
-                if (ext.heropack || ext.cardpack) {
-                    meta.pack = true;
-                }
-                if (ext.mode?.name) {
-                    meta.mode = ext.mode.name;
-                }
-                if (ext.tags) {
-                    meta.tags = ext.tags;
-                }
-                if (ext.hero) {
-                    meta.images = Object.keys(ext.hero);
-                }
-                return meta;
-            }
-            catch (e) {
-                console.log(e, pack);
-                return null;
-            }
-        }
         /** Create filter function for choose task. */
         createFilter(section, selected, sels) {
             return createFilter(section, selected, sels, (id) => new Proxy(this.getComponent(id), {
@@ -2158,7 +2134,7 @@
         /** Card name. */
         $name(name) {
             this.node.classList.add('card-shown');
-            const info = this.app.getCard(name);
+            const info = this.app.getInfo('card', name);
             if (!info) {
                 console.log(name);
             }
@@ -2933,7 +2909,16 @@
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
             const showBanned = () => {
-                const collection = this.#createCollection(true);
+                for (const [id, collection] of this.collections) {
+                    if (!collection.hidden) {
+                        if (id.startsWith('ban:')) {
+                            collection.close();
+                            return;
+                        }
+                        break;
+                    }
+                }
+                const collection = this.#createCollection('ban');
                 const heros = [];
                 for (const [id, clone] of this.banned[2]) {
                     if (clone.parentNode === this.banned[1].node) {
@@ -2958,7 +2943,16 @@
                 }
             });
             const showPicked = () => {
-                const collection = this.#createCollection(true);
+                for (const [id, collection] of this.collections) {
+                    if (!collection.hidden) {
+                        if (id.startsWith('pick:')) {
+                            collection.close();
+                            return;
+                        }
+                        break;
+                    }
+                }
+                const collection = this.#createCollection('pick');
                 const heros = [];
                 for (const [id, clone] of this.picked[2]) {
                     if (clone.parentNode === this.picked[1].node) {
@@ -3230,16 +3224,17 @@
                 this.picked[1].addSilent(clone);
             }
         }
-        #createCollection(tmp = false) {
+        #createCollection(tmp = null) {
             const collection = this.ui.create('collection');
             collection.arena = true;
             collection.flex = true;
             collection.ready.then(() => {
                 this.ui.bind(collection.pane.node, () => collection.close());
             });
+            // ID for temporary collection
             let id = '';
             if (tmp) {
-                id = `${++this.#tmpCount}`;
+                id = `${tmp}:${++this.#tmpCount}`;
                 this.collections.set(id, collection);
             }
             // open and close animations
@@ -4355,7 +4350,7 @@
             let write = false;
             await Promise.all(this.extensions.map(async (name) => {
                 if (!this.index[name]) {
-                    const meta = await this.app.getMeta(name);
+                    const meta = await this.#getMeta(name);
                     if (meta) {
                         this.index[name] = meta;
                         write = true;
@@ -4425,6 +4420,30 @@
                 }
             }
             return true;
+        }
+        /** Get extension meta data. */
+        async #getMeta(pack) {
+            try {
+                const meta = {};
+                const ext = await importExtension(pack);
+                if (ext.heropack || ext.cardpack) {
+                    meta.pack = true;
+                }
+                if (ext.mode?.name) {
+                    meta.mode = ext.mode.name;
+                }
+                if (ext.tags) {
+                    meta.tags = ext.tags;
+                }
+                if (ext.hero) {
+                    meta.images = Object.keys(ext.hero);
+                }
+                return meta;
+            }
+            catch (e) {
+                console.log(e, pack);
+                return null;
+            }
         }
     }
 
