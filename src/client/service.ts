@@ -62,10 +62,13 @@ self.addEventListener('fetch', (e: any) => {
     else {
         // retrieve file from indexedDB
         e.respondWith(db.ready.then(async () => {
-            const data = await db.readFile(url);
-            if (data) {
-                return new Response(data);
+            try {
+                const data = await db.readFile(url);
+                if (data) {
+                    return new Response(data);
+                }
             }
+            catch {}
             
             let fetched = await fetch(e.request);
 
