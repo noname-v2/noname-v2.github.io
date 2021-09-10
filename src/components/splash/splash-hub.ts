@@ -53,7 +53,6 @@ export class SplashHub extends Popup {
 
         // popup open and close
 		this.onopen = () => {
-			splash.node.classList.add('blurred');
 			this.address.input.disabled = true;
 			setTimeout(async () => {
 				if (!client.connection) {
@@ -64,9 +63,10 @@ export class SplashHub extends Popup {
 		};
 
 		this.onclose = () => {
-			splash.node.classList.remove('blurred');
             this.avatarSelector?.close();
 		};
+
+        this.app.wrapPopup(this);
 
 		// enable button click after creation finish
 		splash.bar.buttons.get('hub')!.node.classList.remove('disabled');
@@ -133,10 +133,7 @@ export class SplashHub extends Popup {
     /** Message received from the owner of joined room. */
     msg(msg: string) {
         client.dispatch(JSON.parse(msg));
-        if (!splash.hidden) {
-            splash.hide(true);
-            this.close();
-        }
+        splash.hide(true);
     }
 
     /** Owner of joined room disconnected. */
@@ -275,12 +272,9 @@ export class SplashHub extends Popup {
         const popup = this.avatarSelector = this.ui.create('popup');
         popup.node.classList.add('splash-avatar');
         popup.onopen = () => {
-            this.node.classList.add('blurred');
             gallery.checkPage();
         };
-        popup.onclose = () => {
-            this.node.classList.remove('blurred');
-        };
+        this.app.wrapPopup(popup);
         const images = [];
         for (const name in this.gallery.index) {
             const ext = this.gallery.index[name];

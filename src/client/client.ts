@@ -100,8 +100,10 @@ export function disconnect() {
     else if (connection instanceof WebSocket) {
         connection.close();
     }
-    connection = null;
-    clear();
+    if (connection) {
+        connection = null;
+        clear();
+    }
 }
 
 /**

@@ -2,12 +2,6 @@ noname-splash {
 	@include layer;
 	@include transit;
 
-	// zoom effect when settings is open
-	&.blurred {
-		transform: scale(var(--app-zoom-scale));
-		pointer-events: none;
-	}
-
 	// mode gallery
 	> noname-gallery {
 		height: 270px;
@@ -77,4 +71,10 @@ noname-splash {
 	&.caption-font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
 		opacity: 1;
 	}
+}
+
+noname-app.popped noname-splash {
+	transform: scale(var(--app-zoom-scale));
+	pointer-events: none;
+	opacity: var(--app-blurred-opacity);
 }

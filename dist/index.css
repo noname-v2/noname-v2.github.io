@@ -1530,10 +1530,6 @@ noname-splash {
   transition-property: opacity, transform;
   transition-duration: var(--app-transition);
 }
-noname-splash.blurred {
-  transform: scale(var(--app-zoom-scale));
-  pointer-events: none;
-}
 noname-splash > noname-gallery {
   height: 270px;
   left: 0;
@@ -1590,6 +1586,12 @@ noname-splash > noname-bar.splash-bar > noname-button > noname-content > noname-
 }
 noname-splash.label-font-loaded > noname-bar.splash-bar > noname-button > noname-content > noname-caption, noname-splash.caption-font-loaded > noname-gallery noname-item > noname-widget > noname-caption {
   opacity: 1;
+}
+
+noname-app.popped noname-splash {
+  transform: scale(var(--app-zoom-scale));
+  pointer-events: none;
+  opacity: var(--app-blurred-opacity);
 }
 
 noname-timer {

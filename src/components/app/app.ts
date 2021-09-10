@@ -377,7 +377,9 @@ export class App extends Component {
 
         dialog.onopen = () => {
             // blur arena, splash and other popups
+            this.popups.set(dialogID, dialog);
             this.node.classList.add('popped');
+
             for (const [id, popup] of this.popups) {
                 if (popup !== dialog && !popup.node.classList.contains('blurred')) {
                     popup.node.classList.add('blurred');
@@ -405,8 +407,6 @@ export class App extends Component {
                 onclose();
             }
         };
-
-        this.popups.set(dialogID, dialog);
     }
 
     /** Clear alert and confirm dialogs. */

@@ -930,8 +930,10 @@
         else if (connection instanceof WebSocket) {
             connection.close();
         }
-        connection = null;
-        clear();
+        if (connection) {
+            connection = null;
+            clear();
+        }
     }
     /**
      * Send component return value to worker.
@@ -1612,6 +1614,7 @@
             const blurred = new Set();
             dialog.onopen = () => {
                 // blur arena, splash and other popups
+                this.popups.set(dialogID, dialog);
                 this.node.classList.add('popped');
                 for (const [id, popup] of this.popups) {
                     if (popup !== dialog && !popup.node.classList.contains('blurred')) {
@@ -1637,7 +1640,6 @@
                     onclose();
                 }
             };
-            this.popups.set(dialogID, dialog);
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
@@ -4524,7 +4526,6 @@
             this.pane.node.appendChild(this.caption);
             // popup open and close
             this.onopen = () => {
-                splash.node.classList.add('blurred');
                 this.address.input.disabled = true;
                 setTimeout(async () => {
                     if (!connection) {
@@ -4534,9 +4535,9 @@
                 }, 500);
             };
             this.onclose = () => {
-                splash.node.classList.remove('blurred');
                 this.avatarSelector?.close();
             };
+            this.app.wrapPopup(this);
             // enable button click after creation finish
             splash.bar.buttons.get('hub').node.classList.remove('disabled');
             this.gallery = splash.gallery;
@@ -4598,10 +4599,7 @@
         /** Message received from the owner of joined room. */
         msg(msg) {
             dispatch(JSON.parse(msg));
-            if (!splash.hidden) {
-                splash.hide(true);
-                this.close();
-            }
+            splash.hide(true);
         }
         /** Owner of joined room disconnected. */
         down(msg) {
@@ -4722,12 +4720,9 @@
             const popup = this.avatarSelector = this.ui.create('popup');
             popup.node.classList.add('splash-avatar');
             popup.onopen = () => {
-                this.node.classList.add('blurred');
                 gallery.checkPage();
             };
-            popup.onclose = () => {
-                this.node.classList.remove('blurred');
-            };
+            this.app.wrapPopup(popup);
             const images = [];
             for (const name in this.gallery.index) {
                 const ext = this.gallery.index[name];
@@ -4829,15 +4824,14 @@
                 for (const gallery of this.galleries) {
                     gallery.checkPage();
                 }
-                splash.node.classList.add('blurred');
                 if (this.#rotating) {
                     this.#rotate(this.#rotating);
                 }
             };
             this.onclose = () => {
-                splash.node.classList.remove('blurred');
                 this.#rotatingAnimation?.pause();
             };
+            this.app.wrapPopup(this);
             // add main content
             this.#addGallery('theme', '主题', '⊕ 添加背景', () => this.#addTheme());
             this.#addGallery('bg', '背景', '⊕ 添加背景', () => this.#addBackground());

@@ -27,16 +27,16 @@ export class SplashSettings extends Popup {
             for (const gallery of this.galleries) {
                 gallery.checkPage();
             }
-			splash.node.classList.add('blurred');
 			if (this.#rotating) {
 				this.#rotate(this.#rotating);
 			}
 		};
 
 		this.onclose = () => {
-			splash.node.classList.remove('blurred');
             this.#rotatingAnimation?.pause();
 		};
+
+        this.app.wrapPopup(this);
 
         // add main content
         this.#addGallery('theme', '主题',  '⊕ 添加背景', () => this.#addTheme());
