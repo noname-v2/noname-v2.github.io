@@ -1,5 +1,5 @@
 import { skill } from './skill';
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     heropack: '一将成名',
@@ -505,4 +505,4 @@ export default {
             skills: ['jigong', 'shifei']
         }
     }
-} as SGS;
+} as Extension;

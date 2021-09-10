@@ -1,7 +1,7 @@
 /** Game tasks. */
-import { trigger } from './main/trigger';
-import { setup } from './main/setup';
-import { loop } from './main/loop';
+import { trigger } from './trigger';
+import { setup } from './setup';
+import { loop } from './loop';
 
 /** Player tasks. */
 import { choose } from './player/choose';

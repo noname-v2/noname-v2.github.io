@@ -1,6 +1,6 @@
-import type { TaskClass, Link, Config, Dict } from '../../types';
+import type { Task } from '../../types';
 
-export function trigger(T: TaskClass) {
+export function trigger(T: typeof Task) {
     return class Trigger extends T {
         /** Event name. */
         event!: string;

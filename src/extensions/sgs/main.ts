@@ -1,4 +1,4 @@
-import type { SGS } from './types';
+import type { Extension } from '../types';
 import { tasks } from './tasks/index';
 import { classes } from './classes/index';
 import { components } from './components/index';
@@ -92,4 +92,4 @@ export default {
             'trick.delayed': '延时锦囊'
         }
     }
-} as SGS;
+} as Extension;

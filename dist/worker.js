@@ -779,6 +779,33 @@
         }
     }
 
+    /** Base class for a Link wrapper. */
+    class Linked {
+        /** Game object. */
+        #game;
+        /** Link to player component. */
+        #link;
+        get id() {
+            return this.link.id;
+        }
+        get owner() {
+            return this.link.owner ?? null;
+        }
+        get link() {
+            return this.#link;
+        }
+        get game() {
+            return this.#game;
+        }
+        constructor(game, tag) {
+            this.#game = game;
+            this.#link = game.create(tag);
+        }
+    }
+
+    class Card extends Linked {
+    }
+
     /** Accessor of hub properties. */
     class Hub {
         get peers() {
@@ -799,6 +826,14 @@
         config = {};
         /** Hero packages. */
         packs;
+        /** Created players. */
+        players = new Map();
+        /** Created cards. */
+        cards = new Map();
+        /** Created skills. */
+        skills = new Map();
+        /** Created minions. */
+        minions = new Map();
         /** Hub accessor. */
         #hub = new Hub();
         get owner() {
@@ -881,13 +916,6 @@
             }
             return pile;
         }
-        createFilter(section, selected, sels, task) {
-            return createFilter(section, selected, sels, (id) => new Proxy(this.get(id), {
-                get(target, key) {
-                    return target[key];
-                }
-            }), task);
-        }
         /** Get a link. */
         get(id) {
             return room.links.get(id)[0];
@@ -897,8 +925,37 @@
             return room.create(tag);
         }
         /** Creata a class in game.#gameClasses. */
-        createInstance(name, ...args) {
-            return new (room.getClass(name))(...args);
+        createLinked(type) {
+            const linked = new (room.getClass(type))(this, type);
+            const map = this[type + 's'];
+            if (map instanceof Map) {
+                map.set(linked.id, linked);
+            }
+            return linked;
+        }
+        /** Create a new player. */
+        createPlayer() {
+            return this.createLinked('player');
+        }
+        /** Create a new card. */
+        createCard() {
+            return this.createLinked('card');
+        }
+        /** Create a new skill. */
+        createSkill() {
+            return this.createLinked('skill');
+        }
+        /** Create a new card. */
+        createMinion() {
+            return this.createLinked('minion');
+        }
+        /** Create a filter that determines if an item can be selected. */
+        createFilter(section, selected, sels, task) {
+            return createFilter(section, selected, sels, (id) => new Proxy(this.get(id), {
+                get(target, key) {
+                    return target[key];
+                }
+            }), task);
         }
         /** Mark game as started and disallow changing configuration. */
         start() {
@@ -911,6 +968,15 @@
             room.progress = 2;
             update();
         }
+    }
+
+    class Minion extends Linked {
+    }
+
+    class Player extends Linked {
+    }
+
+    class Skill extends Linked {
     }
 
     class Task {
@@ -1145,7 +1211,12 @@
 
     const gameClasses = new Map();
     const taskClasses = new Map();
+    gameClasses.set('card', Card);
     gameClasses.set('game', Game);
+    gameClasses.set('linked', Linked);
+    gameClasses.set('minion', Minion);
+    gameClasses.set('player', Player);
+    gameClasses.set('skill', Skill);
     gameClasses.set('task', Task);
     taskClasses.set('lobby', Lobby);
 

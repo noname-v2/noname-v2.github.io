@@ -1,5 +1,5 @@
 import { skill } from './skill';
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     cardpack: '军争',
@@ -132,4 +132,4 @@ export default {
         bingliang: { spade: [10], club: [4] },
         muniu: { diamond: [5] }
     }
-} as SGS;
+} as Extension;

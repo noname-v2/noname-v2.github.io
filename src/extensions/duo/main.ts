@@ -1,12 +1,12 @@
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     mode: {
         name: '欢乐',
         np: 4,
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T) {
+                return class Identity extends T {
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
@@ -19,4 +19,4 @@ export default {
         inherit: 'sgs'
     },
     tags: ['swap']
-} as SGS;
+} as Extension;

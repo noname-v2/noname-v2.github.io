@@ -1,17 +1,16 @@
 import { room } from '../worker/globals';
-import type { Game } from './game';
 import type { Stage } from '../worker/stage';
 import type { Dict } from '../types';
 
-export class Task<T extends Game = Game> {
+export class Task {
     /** Do not trigger before / after / skip event. */
     silent: boolean = false;
 
     /** Leave annotation for subclass. */
     [key: string]: any;
 
-    get game(): T {
-        return room.game as T;
+    get game() {
+        return room.game;
     }
 
     get path(): string {

@@ -57,11 +57,14 @@ export function buildComponents() {
         'export const taskClasses = new Map<string, { new(): Task }>();\n'
     ];
 
+    const types = [];
+
     for (const src of walk('src/game', '.ts')) {
         // CamelCase class name
         const tag = src.split('/').pop();
         const cls = tag.split('-').map(capatalize).join('');
         imports.push(`import { ${cls} } from '../src/game/${src}';`);
+        types.push(`export * from '../src/game/${src}';`)
         classes.push(`gameClasses.set('${tag}', ${cls});`);
     }
 
@@ -75,4 +78,5 @@ export function buildComponents() {
 
     // write to file
     fs.writeFileSync('build/tasks.ts', imports.join('\n') + '\n\n' + classes.join('\n'));
+    fs.writeFileSync('build/game.ts', types.join('\n'));
 }

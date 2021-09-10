@@ -1,5 +1,5 @@
 import type { Pop, Point, Collection } from '../../../components';
-import type { Selected } from '../types';
+import type { Selected } from '../../types';
 
 export function pop(T: typeof Pop) {
     return class Pop extends T {

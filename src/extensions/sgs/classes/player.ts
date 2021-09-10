@@ -1,16 +1,9 @@
-import { Base } from './base';
-import type { Link } from '../types';
+import type { Player } from '../../../game/player';
 
-export interface PlayerLink extends Link {
-    seat: number;
-    identity: string;
-    heroName: string;
-    viceName: string;
+export function player(P: typeof Player) {
+    return class Player extends P {
+        test() {
+            // this.createPlayer();
+        }
+    }
 }
-
-class Player extends Base<PlayerLink> {
-    
-}
-
-export type { Player };
-export const player = () => Player;

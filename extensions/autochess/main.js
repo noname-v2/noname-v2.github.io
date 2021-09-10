@@ -3,8 +3,8 @@ var main = {
         name: '战棋',
         np: [2, 4, 6, 8],
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T) {
+                return class Identity extends T {
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');

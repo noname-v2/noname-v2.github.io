@@ -1,5 +1,5 @@
 import { skill } from './skill';
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     cardpack: '标准',
@@ -469,4 +469,4 @@ export default {
 		renwang: { club: [2] },
 		shandian: { spade: [1], heart: [12] }
     }
-} as SGS;
+} as Extension;

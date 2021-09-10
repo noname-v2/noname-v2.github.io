@@ -1,5 +1,5 @@
 import type { Player } from '../../../components';
-import type { PlayerLink } from '../classes/player';
+import type { PlayerLink } from '../../types';
 
 export function player(T: typeof Player) {
     return class Player extends T {

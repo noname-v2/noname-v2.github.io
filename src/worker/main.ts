@@ -3,15 +3,15 @@ import { setRoom, room, init } from './globals';
 import { dispatch } from './hub';
 import { ClientMessage } from './worker';
 import { taskClasses, gameClasses } from './classes';
-import { taskClasses as tasks, gameClasses as games} from './globals';
+import * as globals from './globals';
 
 // setup default task and  classes
 for (const [task, cls] of gameClasses) {
-    games.set(task, cls);
+    globals.gameClasses.set(task, cls);
 }
 
 for (const [task, cls] of taskClasses) {
-    tasks.set(task, cls);
+    globals.taskClasses.set(task, cls);
 }
 
 self.onmessage = ({data}: {data: ClientMessage}) => {

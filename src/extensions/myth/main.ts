@@ -1,4 +1,4 @@
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 import { skill } from './skill';
 
 export default {
@@ -438,4 +438,4 @@ export default {
             'skills': ['xiongluan', 'congjian']
         }
     }
-} as SGS;
+} as Extension;

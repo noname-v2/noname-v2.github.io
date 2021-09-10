@@ -1,10 +1,10 @@
-import type { TaskClass, FilterThis } from '../sgs/types';
+import type { Task, FilterThis } from '../types';
 
 export const mode = {
     name: '国战',
     np: [2, 3, 4, 5, 6, 7, 8],
     tasks: {
-        main(T: TaskClass) {
+        main(T: typeof Task) {
             return class Identity extends T {
                 /** Number of hero choices. */
                 nheros = 10;

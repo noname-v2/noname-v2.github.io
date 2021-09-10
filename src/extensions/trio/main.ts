@@ -1,4 +1,4 @@
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     mode: {
@@ -6,8 +6,8 @@ export default {
         name: '智斗',
         np: 3,
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T) {
+                return class Identity extends T {
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');
@@ -20,4 +20,4 @@ export default {
         inherit: 'sgs',
         tags: ['double-hero', 'trio']
     }
-} as SGS;
+} as Extension;

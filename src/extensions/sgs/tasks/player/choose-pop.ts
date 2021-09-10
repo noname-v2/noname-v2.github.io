@@ -1,6 +1,7 @@
 import type { PopContent } from '../../../../components/arena/pop';
 import type { createChoose } from './choose';
-import type { Link, Select, Selected, Dict } from '../../types';
+import type { Link, Select, Selected, Dict } from '../../../types';
+export type { PopContent, PopConfirm, PopSection } from '../../../../components/arena/pop';
 
 export function createChoosePop(T: ReturnType<typeof createChoose>) {
     return class ChoosePop extends T {

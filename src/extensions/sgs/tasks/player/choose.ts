@@ -1,9 +1,9 @@
 import { createChoosePop } from './choose-pop';
 import { createHero } from './choose-hero';
 import { createChoosePlayer } from './choose-player';
-import type { TaskClass, Select, Selected, Dict } from '../../types';
+import type { Task, Select, Selected, Dict } from '../../../types';
 
-export function createChoose(T: TaskClass) {
+export function createChoose(T: typeof Task) {
     return class Choose extends T {
         /** Has time limit. */
         timeout: number | null = null;
@@ -81,7 +81,7 @@ export function createChoose(T: TaskClass) {
     }
 }
 
-export function choose(T: TaskClass) {
+export function choose(T: typeof Task) {
     // abstract base class
     const choose = createChoose(T);
 

@@ -1,6 +1,6 @@
-import type { TaskClass } from '../../types';
+import type { Task } from '../../types';
 
-export function setup(T: TaskClass) {
+export function setup(T: typeof Task) {
     return class Setup extends T {
         main() {
             this.add('createPlayers');

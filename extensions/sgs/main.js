@@ -297,70 +297,37 @@ const tasks = {
 
 function game(G) {
     return class Game extends G {
-        /** Map of all players, cards and skills. */
-        players = new Map();
-        cards = new Map();
-        skills = new Map();
         /** Backup game progress. */
         backup() {
         }
         /** Restore game progress. */
         restore() {
         }
-        /** Create a new player. */
-        createPlayer() {
-            const player = this.createInstance('player', this, 'player');
-            this.players.set(player.id, player);
-            return player;
-        }
-        /** Create a new card. */
-        createCard() {
-            const card = this.createInstance('card', this, 'card');
-            this.cards.set(card.id, card);
-            return card;
-        }
     };
 }
 
-function task(T) {
-    return class Task extends T {
+function player$1(P) {
+    return class Player extends P {
         test() {
-            console.log('test1');
+            // this.createPlayer();
         }
     };
 }
 
-class Base {
-    /** Game object. */
-    game;
-    /** Link to player component. */
-    link;
-    get id() {
-        return this.link.id;
-    }
-    get owner() {
-        return this.link.owner ?? null;
-    }
-    constructor(game, tag) {
-        this.game = game;
-        this.link = game.create(tag);
-    }
+function card(C) {
+    return class Player extends C {
+        test2() {
+            // this.createPlayer();
+        }
+    };
 }
-
-class Player extends Base {
-}
-const player$1 = () => Player;
-
-class Card extends Base {
-}
-const card = () => Card;
 
 class Skill {
 }
 const skill = () => Skill;
 
 const classes = {
-    game, task, player: player$1, card, skill
+    game, player: player$1, card, skill
 };
 
 function arena(T) {

@@ -4,8 +4,8 @@ var main = {
         name: '智斗',
         np: 3,
         tasks: {
-            main(Task) {
-                return class Identity extends Task {
+            main(T) {
+                return class Identity extends T {
                     main() {
                         this.addTask('lobby');
                         this.addTask('setup');

@@ -1,6 +1,6 @@
 import { mode } from './mode';
 import { skill } from './skill';
-import type { SGS, TaskClass, FilterThis, Task } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     mode,
@@ -608,4 +608,4 @@ export default {
         'standard:guohe': { heart: [12], spade: [3, 4] },
         'maneuver:tiesuo': { spade: [12], club: [12, 13] }
     }
-} as SGS;
+} as Extension;

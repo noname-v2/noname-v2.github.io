@@ -4,6 +4,11 @@ import * as utils from '../utils';
 import { accessExtension, getInfo, createFilter } from '../extension';
 import type { Link } from '../worker/link';
 import type { Task } from './task';
+import type { Player } from './player';
+import type { Card } from './card';
+import type { Skill } from './skill';
+import type { Minion } from './minion';
+import type { Linked } from './linked';
 import type { ModeData, Dict, Select, Selected, PileEntries, Extension } from '../types';
 
 /** Accessor of hub properties. */
@@ -31,6 +36,18 @@ export abstract class Game {
 
     /** Hero packages. */
     packs!: Set<string>;
+
+    /** Created players. */
+    players = new Map<number, Player>();
+
+    /** Created cards. */
+    cards = new Map<number, Card>();
+
+    /** Created skills. */
+    skills = new Map<number, Skill>();
+
+    /** Created minions. */
+    minions = new Map<number, Minion>();
 
     /** Hub accessor. */
     #hub = new Hub();
@@ -138,14 +155,6 @@ export abstract class Game {
         return pile;
     }
 
-    createFilter(section: string, selected: Selected, sels: Dict<Select>, task: Task) {
-        return createFilter(section, selected, sels, (id: number) => new Proxy(this.get(id)!, {
-            get(target, key: string) {
-                return target[key];
-            }
-        }), task);
-    }
-
     /** Get a link. */
     get(id: number): Link {
         return room.links.get(id)![0];
@@ -157,8 +166,42 @@ export abstract class Game {
     }
 
     /** Creata a class in game.#gameClasses. */
-    createInstance(name: string, ...args: any[]) {
-        return new (room.getClass(name))(...args);
+    createLinked<T extends Linked = Linked>(type: string): T {
+        const linked = new (room.getClass(type))(this, type);
+        const map = (this as any)[type + 's'];
+        if (map instanceof Map) {
+            map.set(linked.id, linked);
+        }
+        return linked;
+    }
+
+    /** Create a new player. */
+    createPlayer() {
+        return this.createLinked<Player>('player');
+    }
+
+    /** Create a new card. */
+    createCard() {
+        return this.createLinked<Card>('card');
+    }
+
+    /** Create a new skill. */
+    createSkill() {
+        return this.createLinked<Skill>('skill');
+    }
+
+    /** Create a new card. */
+    createMinion() {
+        return this.createLinked<Minion>('minion');
+    }
+
+    /** Create a filter that determines if an item can be selected. */
+    createFilter(section: string, selected: Selected, sels: Dict<Select>, task: Task) {
+        return createFilter(section, selected, sels, (id: number) => new Proxy(this.get(id)!, {
+            get(target, key: string) {
+                return target[key];
+            }
+        }), task);
     }
 
     /** Mark game as started and disallow changing configuration. */

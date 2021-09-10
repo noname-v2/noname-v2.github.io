@@ -1,13 +1,9 @@
-import { Base } from './base';
-import type { Link } from '../types';
+import type { Card } from '../../../game/card';
 
-interface CardLink extends Link {
-    seat: number;
+export function card(C: typeof Card) {
+    return class Player extends C {
+        test2() {
+            // this.createPlayer();
+        }
+    }
 }
-
-class Card extends Base<CardLink> {
-    
-}
-
-export type { Card };
-export const card = () => Card;

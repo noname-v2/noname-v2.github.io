@@ -1,5 +1,5 @@
-import type { createChoosePop } from './choose-pop';
-import type { PopConfirm, Select, Link } from '../../types';
+import type { createChoosePop, PopConfirm } from './choose-pop';
+import type { Select, Link } from '../../../types';
 import type { Point } from '../../../../components';
 
 export function createHero(T: ReturnType<typeof createChoosePop>) {

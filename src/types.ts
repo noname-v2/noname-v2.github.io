@@ -106,7 +106,7 @@ export interface CardData {
 };
 
 /** SGS skill definition. */
-export interface SkillData<T extends Task = Task> {
+export interface SkillData {
     /** Skill name. */
     name: string;
 
@@ -117,7 +117,7 @@ export interface SkillData<T extends Task = Task> {
     type?: string;
     
     /** Task when skill is used or triggered. */
-    task?: Class<T>;
+    task?: Class<Task>;
 
     /** Inherit from a parent skill. */
     inherit?: string;
@@ -129,7 +129,7 @@ export interface SkillData<T extends Task = Task> {
 };
 
 /** Mode information. */
-export interface ModeData<T extends Task = Task> {
+export interface ModeData {
     /** Mode name. */
     name?: string;
 
@@ -140,7 +140,7 @@ export interface ModeData<T extends Task = Task> {
     extension?: string;
 
     /** Mode-specific task classes. */
-    tasks?: Dict<Class<T>>;
+    tasks?: Dict<Class<Task>>;
 
     /** Mode-specific component classes. */
     components?: Dict<(cls: any) => typeof Component>;
@@ -174,9 +174,9 @@ export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
 export type PileEntries = [string, string, number, ...string[]][];
 
 /** Basic extension structure. */
-export interface Extension<T extends Task = Task> {
+export interface Extension {
     /** Mode configuration. */
-    mode?: ModeData<T>;
+    mode?: ModeData;
 
     /** Hero data. */
     hero?: Dict<HeroData>;
@@ -185,7 +185,7 @@ export interface Extension<T extends Task = Task> {
     card?: Dict<CardData>;
 
     /** Skill data. */
-    skill?: Dict<SkillData<T>>;
+    skill?: Dict<SkillData>;
 
     /** Card pile. */
     pile?: Pile;

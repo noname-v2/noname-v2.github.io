@@ -1,11 +1,11 @@
-import type { SGS, Select, TaskClass } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     mode: {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
         tasks: {
-            main(T: TaskClass) {
+            main(T) {
                 return class Identity extends T {
                     /** Number of hero choices. */
                     nheros = 10;
@@ -77,4 +77,4 @@ export default {
         inherit: 'sgs'
     },
     tags: ['guess-side', 'leader']
-} as SGS;
+} as Extension;

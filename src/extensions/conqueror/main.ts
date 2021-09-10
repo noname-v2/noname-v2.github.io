@@ -1,5 +1,5 @@
 import { skill } from './skill';
-import type { SGS } from '../sgs/types';
+import type { Extension } from '../types';
 
 export default {
     cardpack: '君临天下',
@@ -342,4 +342,4 @@ export default {
         xietian: { spade: [[1, 'hezong']], diamond: [[1, 'hezong'], [4, 'hezong']]},
         huoshao: { spade: [[3, 'hezong']], club: [[11, 'hezong']], heart: [[12, 'hezong']]}
     }
-} as SGS;
+} as Extension;
