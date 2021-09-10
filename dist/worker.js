@@ -1049,6 +1049,187 @@
         }
     }
 
+    class Choose extends Task {
+        /** Has time limit. */
+        timeout = null;
+        /** Allow not choosing. */
+        forced = false;
+        /** Time limit for choosing. */
+        getTimeout() {
+            return this.timeout ?? (this.game.connected ? this.game.config.timeout ?? null : null);
+        }
+        /** Get a list of selectable items. */
+        getSelectable(selected, sels) {
+            const selectable = [];
+            for (const section in sels) {
+                const filter = this.game.createFilter(section, selected, sels, this);
+                try {
+                    for (const item of sels[section].items) {
+                        if (filter(item)) {
+                            selectable.push(item);
+                        }
+                    }
+                }
+                catch {
+                    return [];
+                }
+            }
+            return selectable;
+        }
+        /** Check if selected items are legal. */
+        checkSelection(selected, sels) {
+            // fake selected items
+            const current = {};
+            for (const section in sels) {
+                current[section] = [];
+            }
+            // get section order
+            const order = Object.keys(sels);
+            order.sort((a, b) => (sels[a].order - sels[b].order));
+            for (const section of order) {
+                // check number of selected items
+                const n = selected[section].length;
+                const sel = sels[section];
+                if (typeof sel.num === 'number') {
+                    if (n !== sel.num) {
+                        return false;
+                    }
+                }
+                else if (Array.isArray(sel.num)) {
+                    if (n < sel.num[0] || n > sel.num[1]) {
+                        return false;
+                    }
+                }
+                // check if selected items satisfy filter
+                const filter = this.game.createFilter(section, current, sels, this);
+                for (const item of selected[section]) {
+                    if (!filter(item)) {
+                        return false;
+                    }
+                    current[section].push(item);
+                }
+            }
+            return true;
+        }
+    }
+
+    class ChoosePop extends Choose {
+        /** Player IDs and their pop contents. */
+        content;
+        /** Player IDs and created popups. */
+        pops = new Map();
+        /** Select configurations of players. */
+        selects = new Map();
+        main() {
+            this.add('openDialog');
+            this.add('getResults');
+        }
+        openDialog() {
+            const timer = [this.getTimeout(), Date.now()];
+            for (const [id, content] of this.content) {
+                const player = this.game.players.get(id);
+                if (player?.owner) {
+                    const pop = this.game.create('pop');
+                    let order = 0;
+                    pop.owner = player.owner;
+                    pop.content = content;
+                    pop.await(timer[0]);
+                    pop.monitor('filter');
+                    this.pops.set(pop, player.id);
+                    if (timer[0]) {
+                        pop.timer = timer;
+                        player.link.timer = timer;
+                    }
+                    // get selection configurations from content
+                    const sels = {};
+                    for (const section of content) {
+                        const sel = section[1];
+                        if (sel && Array.isArray(sel.items)) {
+                            sel.order = order++;
+                            sels[section[0]] = sel;
+                        }
+                    }
+                    this.selects.set(id, sels);
+                }
+            }
+        }
+        /** Process client return values. */
+        getResults() {
+            for (const [pop, id] of this.pops) {
+                // remove timers and close pop
+                pop.timer = null;
+                const player = this.game.players.get(id);
+                if (player?.link.timer) {
+                    player.link.timer = null;
+                }
+                pop.unlink();
+            }
+        }
+        /** Get selectable items and send to client. */
+        filter(selected, pop) {
+            if (Array.isArray(selected)) {
+                // custom operations defined by child classes
+                try {
+                    this[selected[0]](pop, ...selected.slice(1));
+                }
+                catch { }
+            }
+            else {
+                // get selectable items
+                const selectable = this.getSelectable(selected, this.selects.get(this.pops.get(pop)));
+                pop.call('setSelectable', selectable);
+            }
+        }
+    }
+
+    class ChooseHero extends ChoosePop {
+        /** Heros to choose from. */
+        heros;
+        /** Allow picking heros. */
+        pick = false;
+        main() {
+            this.content = new Map();
+            for (const [id, heros] of this.heros) {
+                const confirm = ['ok'];
+                if (!this.forced) {
+                    confirm.push('cancel');
+                }
+                if (this.pick) {
+                    confirm.push(['callPick', '点将']);
+                }
+                this.content.set(id, [
+                    ['caption', '选择武将'],
+                    ['hero', heros],
+                    ['confirm', confirm]
+                ]);
+            }
+            super.main();
+            this.add('dispatchPick');
+        }
+        /** Dispatch user-picked heros. */
+        dispatchPick() {
+            for (const [pop, id] of this.pops) {
+                // check selection
+                const sels = this.selects.get(id);
+                console.log(pop.result);
+                console.log(this.checkSelection(pop.result, sels));
+                console.log(this.checkSelection({ hero: pop.result.picked.slice(0, 2) }, sels));
+            }
+        }
+        /** Callback when user clicks pick button. */
+        callPick(pop, e) {
+            if (this.game.connected) {
+                pop.call('togglePick');
+            }
+            else {
+                pop.call('pick', [e, this.game.heropacks]);
+            }
+        }
+    }
+
+    class ChoosePlayer extends Choose {
+    }
+
     class Lobby extends Task {
         lobby;
         main() {
@@ -1218,6 +1399,10 @@
     gameClasses.set('player', Player);
     gameClasses.set('skill', Skill);
     gameClasses.set('task', Task);
+    taskClasses.set('chooseHero', ChooseHero);
+    taskClasses.set('choosePlayer', ChoosePlayer);
+    taskClasses.set('choosePop', ChoosePop);
+    taskClasses.set('choose', Choose);
     taskClasses.set('lobby', Lobby);
 
     // setup default task and  classes

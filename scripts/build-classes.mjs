@@ -63,9 +63,9 @@ export function buildComponents() {
         // CamelCase class name
         const tag = src.split('/').pop();
         const cls = tag.split('-').map(capatalize).join('');
-        imports.push(`import { ${cls} } from '../src/game/${src}';`);
         types.push(`export * from '../src/game/${src}';`)
-        classes.push(`gameClasses.set('${tag}', ${cls});`);
+        imports.push(`import { ${cls} } from '../src/game/${src}';`);
+        classes.push(`gameClasses.set('${cls[0].toLowerCase() + cls.slice(1)}', ${cls});`);
     }
 
     for (const src of walk('src/tasks', '.ts')) {
@@ -73,7 +73,7 @@ export function buildComponents() {
         const tag = src.split('/').pop();
         const cls = tag.split('-').map(capatalize).join('');
         imports.push(`import { ${cls} } from '../src/tasks/${src}';`)
-        classes.push(`taskClasses.set('${tag}', ${cls});`);
+        classes.push(`taskClasses.set('${cls[0].toLowerCase() + cls.slice(1)}', ${cls});`);
     }
 
     // write to file
