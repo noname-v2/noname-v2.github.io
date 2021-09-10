@@ -2,7 +2,6 @@
 import { trigger } from './main/trigger';
 import { setup } from './main/setup';
 import { loop } from './main/loop';
-import { lobby } from './main/lobby';
 
 /** Player tasks. */
 import { choose } from './player/choose';
@@ -11,7 +10,7 @@ import { choose } from './player/choose';
 import { moveTo } from './card/move-to';
 
 export const tasks = {
-    trigger, setup, loop, lobby,
+    trigger, setup, loop,
     choose,
     moveTo
 };

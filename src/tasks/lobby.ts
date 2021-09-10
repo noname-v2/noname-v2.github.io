@@ -1,4 +1,4 @@
-import { Task } from '../tasks';
+import { Task } from '../worker/task';
 import type { Config, Dict, Link } from '../types';
 
 export class Lobby extends Task {

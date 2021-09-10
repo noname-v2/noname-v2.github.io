@@ -1,7 +1,9 @@
 import { debug } from '../meta';
 import type { Room } from './room';
 import type { Hub } from './hub';
+import type { Task } from './task';
 
+export const taskClasses = new Map<string, { new(): Task }>();
 export let room: Room;
 export let hub: Hub;
 export let connection: WebSocket | null = null;

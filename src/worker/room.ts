@@ -3,6 +3,7 @@ import { copy, apply, freeze } from '../utils';
 import { Task } from './task';
 import { Game } from './game';
 import { Link, createLink } from './link';
+import { taskClasses } from './globals';
 import { importExtension, accessExtension } from '../extension';
 import type { UITick } from './worker';
 import type { ModeData, Dict } from '../types';
@@ -47,10 +48,10 @@ export class Room {
     #ruleset: string[] = [];
 
     /** Map of task classes. */
-    #taskClasses = new Map<string, typeof Task>();
+    #taskClasses = new Map<string, { new(): Task }>();
 
     /** Base game classes. */
-    #gameClasses = new Map<string, any>([['game', Game], ['task', Task]]);
+    #gameClasses = new Map<string, any>();
 
     /** Number of links created. */
     #linkCount = 0;
@@ -64,6 +65,9 @@ export class Room {
     async init(uid: string, [name, packs, info]:  [string, string[], [string, string]]) {
         this.uid = uid;
         this.info = info;
+
+        // initialize classes
+        this.restore();
 
         // load extensions
         await Promise.all(packs.map(pack => importExtension(pack)));
@@ -101,7 +105,7 @@ export class Room {
     }
 
     /** Get or create task constructor. */
-    getTask(path: string): typeof Task {
+    getTask(path: string): { new(): Task } {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
             const section = accessExtension(path);
@@ -125,6 +129,18 @@ export class Room {
             props[uid] = obj;
         }
         return [this.currentStage.id, tags, props, {}];
+    }
+
+    /** Restore original task clases. */
+    restore() {
+        this.#taskClasses.clear();
+        for (const [task, cls] of taskClasses) {
+            this.#taskClasses.set(task, cls);
+        }
+
+        this.#gameClasses.clear();
+        this.#gameClasses.set('game', Game);
+        this.#gameClasses.set('task', Task);
     }
 
     /** Execute stages. */
