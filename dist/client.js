@@ -68,21 +68,20 @@
         /** Card number */
         number: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
     };
-    /** Set the value of main components. */
-    function set$1(target, val) {
-        switch (target) {
-            case 'app':
-                app = val;
-                break;
-            case 'splash':
-                splash = val;
-                break;
-            case 'arena':
-                arena = val;
-                break;
-        }
+    /** Set App and Splash. */
+    function init(a, s) {
+        app = a;
+        splash = s;
         if (debug) {
-            window[target] = val;
+            window.app = a;
+            window.splash = s;
+        }
+    }
+    /** Set the arena component. */
+    function setArena(a) {
+        arena = a;
+        if (debug) {
+            window.arena = a;
         }
     }
 
@@ -1367,6 +1366,9 @@
         get getInfo() {
             return getInfo;
         }
+        get mode() {
+            return this.arena?.data.mode ?? null;
+        }
         get connected() {
             return this.arena?.data.peers ? true : false;
         }
@@ -1386,7 +1388,7 @@
             // load styles and fonts
             this.#initAudio();
             await this.loadTheme();
-            set$1('splash', this.ui.create('splash'));
+            init(this, this.ui.create('splash'));
             await splash.gallery.ready;
             const initAssets = this.#initAssets();
             // load splash menus
@@ -1971,6 +1973,16 @@
             }
             return peers;
         }
+        /** Peer component representing current client. */
+        get peer() {
+            for (const id of this.data.peers ?? []) {
+                const cmp = this.getComponent(id);
+                if (cmp?.mine) {
+                    return cmp;
+                }
+            }
+            return null;
+        }
         /** Currently active zoom element. */
         get currentZoom() {
             if (!this.app.popups.size &&
@@ -1980,17 +1992,8 @@
                 return this.arenaZoom;
             }
         }
-        /** Peer component representing current client. */
-        get peer() {
-            for (const peer of this.peers || []) {
-                if (peer.mine) {
-                    return peer;
-                }
-            }
-            return null;
-        }
         init() {
-            set$1('arena', this);
+            setArena(this);
             this.main.appendChild(this.arenaZoom.node);
             this.main.appendChild(this.appZoom.node);
             this.app.node.insertBefore(this.node, this.app.zoomNode);
@@ -2010,7 +2013,7 @@
                 return;
             }
             if (this.app.arena === this) {
-                set$1('arena', null);
+                setArena(null);
                 if (this.platform.android && history.state === 'arena') {
                     history.back();
                 }
@@ -2665,12 +2668,11 @@
         /** Number of temporary collections. */
         #tmpCount = 0;
         get #config() {
-            const arena = this.app.arena;
-            return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
+            return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
         }
         /** ID in db for picked heros. */
         get #pick() {
-            return this.app.arena.data.mode + ':online_picked';
+            return this.app.mode + ':online_picked';
         }
         init() {
             const arena = this.app.arena;
@@ -5389,7 +5391,7 @@
     restore();
     // create app component
     ready$1.then(() => {
-        set$1('app', create('app'));
+        create('app');
     });
 
 }());

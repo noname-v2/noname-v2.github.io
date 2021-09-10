@@ -1,9 +1,25 @@
-import { hub, room } from './globals';
-import { accessExtension, getInfo, createFilter } from '../extension';
+import { room } from './globals';
+import * as hub from './hub';
 import * as utils from '../utils';
+import { accessExtension, getInfo, createFilter } from '../extension';
 import type { Link } from './link';
 import type { Task } from './task';
 import type { ModeData, Dict, Select, Selected, PileEntries, Extension } from '../types';
+
+/** Accessor of hub properties. */
+class Hub {
+    get peers() {
+        return hub.getPeers();
+    }
+
+    get players() {
+        return hub.getPeers({playing: true});
+    }
+
+    get spectators() {
+        return hub.getPeers({playing: false});
+    }
+}
 
 /** Game object used by stages. */
 export abstract class Game {
@@ -16,6 +32,9 @@ export abstract class Game {
     /** Hero packages. */
     packs!: Set<string>;
 
+    /** Hub accessor. */
+    #hub = new Hub();
+
     [key: string]: any;
 
     get owner() {
@@ -27,7 +46,11 @@ export abstract class Game {
     }
 
     get hub() {
-        return hub;
+        return this.#hub;
+    }
+
+    get connected() {
+        return hub.peers ? true : false;
     }
 
     get utils() {

@@ -180,7 +180,7 @@ function createHero(T) {
         }
         /** Callback when user clicks pick button. */
         callPick(pop, e) {
-            if (this.game.hub.connected) {
+            if (this.game.connected) {
                 pop.call('togglePick');
             }
             else {
@@ -208,7 +208,7 @@ function createChoose(T) {
         forced = false;
         /** Time limit for choosing. */
         getTimeout() {
-            if (this.timeout === null && this.game.hub.connected) {
+            if (this.timeout === null && this.game.connected) {
                 return this.game.config.timeout ?? null;
             }
             return this.timeout;

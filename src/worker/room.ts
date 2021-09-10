@@ -67,7 +67,7 @@ export class Room {
         this.info = info;
 
         // initialize classes
-        this.restore();
+        this.#initClasses();
 
         // load extensions
         await Promise.all(packs.map(pack => importExtension(pack)));
@@ -131,18 +131,6 @@ export class Room {
         return [this.currentStage.id, tags, props, {}];
     }
 
-    /** Restore original task clases. */
-    restore() {
-        this.#taskClasses.clear();
-        for (const [task, cls] of taskClasses) {
-            this.#taskClasses.set(task, cls);
-        }
-
-        this.#gameClasses.clear();
-        this.#gameClasses.set('game', Game);
-        this.#gameClasses.set('task', Task);
-    }
-
     /** Execute stages. */
     async loop() {
         if (this.#paused) {
@@ -203,5 +191,15 @@ export class Room {
         mode.extension = this.#ruleset[this.#ruleset.length - 1];
 
         return freeze(mode);
+    }
+
+    /** Initialize classes. */
+    #initClasses() {
+        for (const [task, cls] of taskClasses) {
+            this.#taskClasses.set(task, cls);
+        }
+
+        this.#gameClasses.set('game', Game);
+        this.#gameClasses.set('task', Task);
     }
 }

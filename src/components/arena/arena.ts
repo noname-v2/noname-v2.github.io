@@ -1,5 +1,5 @@
 import * as client from '../../client/client';
-import { set } from '../../client/globals';
+import { setArena } from '../../client/globals';
 import { Component, Peer, Popup } from '../../components';
 
 export class Arena extends Component {
@@ -50,6 +50,17 @@ export class Arena extends Component {
         return peers;
     }
 
+    /** Peer component representing current client. */
+    get peer(): Peer | null {
+        for (const id of this.data.peers ?? []) {
+            const cmp = this.getComponent(id);
+            if (cmp?.mine) {
+                return cmp as Peer;
+            }
+        }
+        return null;
+    }
+
     /** Currently active zoom element. */
     get currentZoom() {
         if (!this.app.popups.size &&
@@ -60,18 +71,8 @@ export class Arena extends Component {
         }
     }
 
-    /** Peer component representing current client. */
-    get peer(): Peer | null {
-        for (const peer of this.peers || []) {
-            if (peer.mine) {
-                return peer;
-            }
-        }
-        return null;
-    }
-
     init() {
-        set('arena', this);
+        setArena(this);
         this.main.appendChild(this.arenaZoom.node);
         this.main.appendChild(this.appZoom.node);
         this.app.node.insertBefore(this.node, this.app.zoomNode);
@@ -94,7 +95,7 @@ export class Arena extends Component {
         }
         
         if (this.app.arena === this) {
-            set('arena', null);
+            setArena(null);
             if (this.platform.android && history.state === 'arena') {
                 history.back();
             }

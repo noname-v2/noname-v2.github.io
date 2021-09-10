@@ -58,13 +58,12 @@ export class Lobby extends Component {
     #tmpCount = 0;
 
     get #config() {
-        const arena = this.app.arena!;
-        return arena.data.mode + ':' + (arena.data.peers ? 'online_' : '') + 'config';
+        return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
     }
 
     /** ID in db for picked heros. */
     get #pick() {
-        return this.app.arena!.data.mode + ':online_picked';
+        return this.app.mode + ':online_picked';
     }
 
     init() {

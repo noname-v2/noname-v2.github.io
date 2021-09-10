@@ -53,15 +53,22 @@ export const lib = {
 	number: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 };
 
-/** Set the value of main components. */
-export function set(target: 'app' | 'splash' | 'arena', val: any) {
-    switch (target) {
-        case 'app': app = val; break;
-        case 'splash': splash = val; break;
-        case 'arena': arena = val; break;
-    }
+/** Set App and Splash. */
+export function init(a: App, s: Splash) {
+    app = a;
+    splash = s;
 
     if (debug) {
-        (window as any)[target] = val;
+        (window as any).app = a;
+        (window as any).splash = s;
+    }
+}
+
+/** Set the arena component. */
+export function setArena(a: Arena | null) {
+    arena = a;
+
+    if (debug) {
+        (window as any).arena = a;
     }
 }

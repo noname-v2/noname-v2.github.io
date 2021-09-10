@@ -24,7 +24,7 @@ const mode = {
                         });
                     }
                     this.addTask('chooseHero', {
-                        heros, forced: true, pick: this.game.config.pick || !this.game.hub.connected
+                        heros, forced: true, pick: this.game.config.pick || !this.game.connected
                     });
                     this.addTask('loop');
                 }

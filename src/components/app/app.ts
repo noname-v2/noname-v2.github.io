@@ -1,6 +1,6 @@
 import { trigger } from '../../client/client';
-import { splash, arena, set } from '../../client/globals';
-import { Component, Popup, Zoom, TransitionDuration } from '../../components';
+import { splash, arena, init } from '../../client/globals';
+import { Component, Popup, Peer, Zoom, TransitionDuration } from '../../components';
 import { accessExtension, getInfo, createFilter } from '../../extension';
 import type { Dict, Select, Selected } from '../../types';
 
@@ -90,6 +90,10 @@ export class App extends Component {
         return getInfo;
     }
 
+    get mode(): string | null {
+        return this.arena?.data.mode ?? null;
+    }
+
     get connected() {
         return this.arena?.data.peers ? true : false;
     }
@@ -114,7 +118,7 @@ export class App extends Component {
         // load styles and fonts
         this.#initAudio();
         await this.loadTheme();
-        set('splash', this.ui.create('splash'));
+        init(this, this.ui.create('splash'));
         await splash.gallery.ready;
         const initAssets = this.#initAssets();
 

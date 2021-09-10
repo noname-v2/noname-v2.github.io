@@ -1,5 +1,5 @@
 import { ready, create } from './ui';
-import { backups, restore, set } from './globals';
+import { backups, restore } from './globals';
 import { componentClasses } from './classes';
 
 // initialize component classes
@@ -10,5 +10,5 @@ restore();
 
 // create app component
 ready.then(() => {
-    set('app', create('app'));
+    create('app');
 });

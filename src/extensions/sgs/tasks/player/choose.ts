@@ -13,7 +13,7 @@ export function createChoose(T: TaskClass) {
 
         /** Time limit for choosing. */
         getTimeout(): number | null {
-            if (this.timeout === null && this.game.hub.connected) {
+            if (this.timeout === null && this.game.connected) {
                 return this.game.config.timeout ?? null;
             }
             return this.timeout;

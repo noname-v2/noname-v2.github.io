@@ -1,4 +1,5 @@
 import { Task } from '../worker/task';
+import * as hub from '../worker/hub';
 import type { Config, Dict, Link } from '../types';
 
 export class Lobby extends Task {
@@ -91,10 +92,10 @@ export class Lobby extends Task {
             if (key === 'online') {
                 // enable or disable multiplayer mode
                 if (val) {
-                    this.game.hub.connect(val);
+                    hub.connect(val);
                 }
                 else {
-                    this.game.hub.disconnect();
+                    hub.disconnect();
                 }
             }
             else {
@@ -118,7 +119,7 @@ export class Lobby extends Task {
                             players[i].playing = false;
                         }
                     }
-                    this.game.hub.update();
+                    hub.update();
                 }
             }
         }
@@ -148,11 +149,11 @@ export class Lobby extends Task {
     updatePeer(val: string, peer: Link) {
         if (val === 'spectate' && peer.playing) {
             peer.playing = false;
-            this.game.hub.update();
+            hub.update();
         }
         else if (val === 'play' && !peer.playing && this.game.hub.players!.length < this.game.config.np) {
             peer.playing = true;
-            this.game.hub.update();
+            hub.update();
         }
         else if (val === 'prepare') {
             if (peer.owner === this.game.owner) {

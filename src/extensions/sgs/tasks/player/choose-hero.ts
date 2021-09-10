@@ -40,7 +40,7 @@ export function createHero(T: ReturnType<typeof createChoosePop>) {
 
         /** Callback when user clicks pick button. */
         callPick(pop: Link, e: Point) {
-            if (this.game.hub.connected) {
+            if (this.game.connected) {
                 pop.call('togglePick');
             }
             else {
