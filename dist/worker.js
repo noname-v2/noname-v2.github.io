@@ -327,135 +327,10 @@
         }
     }
 
-    /** Entries to be ticked. */
-    const ticks = [];
-    /** Send a message to a client. */
-    function send(to, tick) {
-        if (to === room.uid) {
-            self.postMessage(tick);
-        }
-        else if (peers) {
-            // send tick to a remote client
-            connection.send('to:' + JSON.stringify([
-                to, JSON.stringify(tick)
-            ]));
-        }
-    }
-    /** Send a message to all clients. */
-    function broadcast(tick) {
-        if (peers) {
-            connection.send('bcast:' + JSON.stringify(tick));
-        }
-        self.postMessage(tick);
-    }
-    /** Add component update (called by Link). */
-    function tick(id, item) {
-        if (ticks.length === 0) {
-            // schedule a UITick if no pending UITick exists
-            setTimeout(() => commit());
-        }
-        ticks.push([room.currentStage.id, id, item]);
-    }
-    /** Generate UITick(s) from this.#ticks. */
-    function commit() {
-        // split UITick by stage change
-        const stages = [];
-        for (const entry of ticks) {
-            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
-                stages.push([entry[0], []]);
-            }
-            stages[stages.length - 1][1].push(entry);
-        }
-        // generate UITick(s)
-        for (const [stageID, entries] of stages) {
-            const tagChanges = {};
-            const propChanges = {};
-            const calls = {};
-            // merge updates from different ticks
-            for (const [, id, item] of entries) {
-                if (Array.isArray(item)) {
-                    calls[id] ??= [];
-                    calls[id].push(item);
-                }
-                else if (item && typeof item === 'object') {
-                    propChanges[id] ??= {};
-                    Object.assign(propChanges[id], item);
-                }
-                else {
-                    tagChanges[id] = item;
-                }
-            }
-            // sync and save UITick
-            const tick = [stageID, tagChanges, propChanges, calls];
-            broadcast(tick);
-        }
-        ticks.length = 0;
-    }
-    /** Dispatch message from client. */
-    async function dispatch(data) {
-        try {
-            const [uid, sid, id, result, done] = data;
-            const stage = room.currentStage;
-            const link = room.links.get(id);
-            if (id === -1) {
-                // reload UI upon error
-                send(uid, room.pack());
-            }
-            else if (id === -2) {
-                // disconnect from remote hub
-                disconnect();
-            }
-            else if (sid === stage.id && link && link[1].owner === uid) {
-                // send result to listener
-                if (done && stage.awaits.has(id)) {
-                    // results: component.respond() -> link.await()
-                    if (result === null || result === undefined) {
-                        stage.results.delete(id);
-                    }
-                    else {
-                        stage.results.set(id, result);
-                    }
-                    stage.awaits.delete(id);
-                    if (!stage.awaits.size) {
-                        room.loop();
-                    }
-                }
-                else if (!done && stage.monitors.has(id)) {
-                    // results: component.yield() -> link.monitor()
-                    const method = stage.monitors.get(id);
-                    stage.task[method](result, link[0]);
-                }
-            }
-        }
-        catch (e) {
-            console.log(e);
-        }
-    }
-
     /** WebSocket connection. */
     let connection = null;
     /** IDs and links of connected clients. */
     let peers = null;
-    /** Get peers that match certain condition. */
-    function getPeers(filter) {
-        if (!peers) {
-            return null;
-        }
-        const links = [];
-        for (const peer of peers.values()) {
-            let skip = false;
-            for (const key in filter) {
-                if (peer[key] !== filter[key]) {
-                    skip = true;
-                    continue;
-                }
-            }
-            if (!skip) {
-                links.push(peer);
-            }
-        }
-        return links;
-    }
     /** Handler of messages received. */
     const messages = {
         /** The room is ready for clients to join. */
@@ -544,6 +419,18 @@
             }, 1000);
         }
     }
+    /** Send a message to a client. */
+    function send(to, tick) {
+        if (to === room.uid) {
+            self.postMessage(tick);
+        }
+        else if (peers) {
+            // send tick to a remote client
+            connection.send('to:' + JSON.stringify([
+                to, JSON.stringify(tick)
+            ]));
+        }
+    }
     /** Update room info for idle clients. */
     function update(push = true) {
         const state = JSON.stringify([
@@ -563,6 +450,46 @@
         }
         return state;
     }
+    /** Dispatch message from client. */
+    async function dispatch(data) {
+        try {
+            const [uid, sid, id, result, done] = data;
+            const stage = room.currentStage;
+            const link = room.links.get(id);
+            if (id === -1) {
+                // reload UI upon error
+                send(uid, room.pack());
+            }
+            else if (id === -2) {
+                // disconnect from remote hub
+                disconnect();
+            }
+            else if (sid === stage.id && link && link[1].owner === uid) {
+                // send result to listener
+                if (done && stage.awaits.has(id)) {
+                    // results: component.respond() -> link.await()
+                    if (result === null || result === undefined) {
+                        stage.results.delete(id);
+                    }
+                    else {
+                        stage.results.set(id, result);
+                    }
+                    stage.awaits.delete(id);
+                    if (!stage.awaits.size) {
+                        room.loop();
+                    }
+                }
+                else if (!done && stage.monitors.has(id)) {
+                    // results: component.yield() -> link.monitor()
+                    const method = stage.monitors.get(id);
+                    stage.task[method](result, link[0]);
+                }
+            }
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
     /** Create a peer component. */
     function createPeer(uid, info) {
         const peer = room.create('peer');
@@ -574,6 +501,26 @@
         });
         peers.set(uid, peer);
         sync();
+    }
+    /** Get peers that match certain condition. */
+    function getPeers(filter) {
+        if (!peers) {
+            return null;
+        }
+        const links = [];
+        for (const peer of peers.values()) {
+            let skip = false;
+            for (const key in filter) {
+                if (peer[key] !== filter[key]) {
+                    skip = true;
+                    continue;
+                }
+            }
+            if (!skip) {
+                links.push(peer);
+            }
+        }
+        return links;
     }
 
     /** Map of loaded extensions. */
@@ -762,6 +709,59 @@
             room.progress = 2;
             update();
         }
+    }
+
+    /** Entries to be ticked. */
+    const ticks = [];
+    /** Send a message to all clients. */
+    function broadcast(tick) {
+        if (peers) {
+            connection.send('bcast:' + JSON.stringify(tick));
+        }
+        self.postMessage(tick);
+    }
+    /** Add component update (called by Link). */
+    function tick(id, item) {
+        if (ticks.length === 0) {
+            // schedule a UITick if no pending UITick exists
+            setTimeout(() => commit());
+        }
+        ticks.push([room.currentStage.id, id, item]);
+    }
+    /** Generate UITick(s) from this.#ticks. */
+    function commit() {
+        // split UITick by stage change
+        const stages = [];
+        for (const entry of ticks) {
+            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
+                stages.push([entry[0], []]);
+            }
+            stages[stages.length - 1][1].push(entry);
+        }
+        // generate UITick(s)
+        for (const [stageID, entries] of stages) {
+            const tagChanges = {};
+            const propChanges = {};
+            const calls = {};
+            // merge updates from different ticks
+            for (const [, id, item] of entries) {
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    Object.assign(propChanges[id], item);
+                }
+                else {
+                    tagChanges[id] = item;
+                }
+            }
+            // sync and save UITick
+            const tick = [stageID, tagChanges, propChanges, calls];
+            broadcast(tick);
+        }
+        ticks.length = 0;
     }
 
     function createLink(id, tag) {

@@ -35,19 +35,6 @@ const history: [number, UITick][] = [];
 /** Entries to be ticked. */
 const ticks: TickEntry[] = [];
 
-/** Send a message to a client. */
-export function send(to: string, tick: UITick) {
-    if (to === room.uid) {
-        (self as any).postMessage(tick);
-    }
-    else if (hub.peers) {
-        // send tick to a remote client
-        hub.connection!.send('to:' + JSON.stringify([
-            to, JSON.stringify(tick)
-        ]))
-    }
-}
-
 /** Send a message to all clients. */
 function broadcast(tick: UITick) {
     if (hub.peers) {
@@ -105,45 +92,4 @@ function commit() {
     }
 
     ticks.length = 0;
-}
-
-/** Dispatch message from client. */
-export async function dispatch(data: ClientMessage) {
-    try {
-        const [uid, sid, id, result, done] = data;
-        const stage = room.currentStage;
-        const link = room.links.get(id);
-        if (id === -1) {
-            // reload UI upon error
-            send(uid, room.pack());
-        }
-        else if (id === -2) {
-            // disconnect from remote hub
-            hub.disconnect();
-        }
-        else if (sid === stage.id && link && link[1].owner === uid) {
-            // send result to listener
-            if (done && stage.awaits.has(id)) {
-                // results: component.respond() -> link.await()
-                if (result === null || result === undefined) {
-                    stage.results.delete(id);
-                }
-                else {
-                    stage.results.set(id, result);
-                }
-                stage.awaits.delete(id);
-                if (!stage.awaits.size) {
-                    room.loop();
-                }
-            }
-            else if (!done && stage.monitors.has(id)) {
-                // results: component.yield() -> link.monitor()
-                const method = stage.monitors.get(id)!;
-                (stage.task as any)[method](result, link[0]);
-            }
-        }
-    }
-    catch (e) {
-        console.log(e);
-    }
 }

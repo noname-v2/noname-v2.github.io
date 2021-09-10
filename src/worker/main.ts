@@ -1,6 +1,7 @@
 import { Room } from './room'
 import { set, room } from './globals';
-import { ClientMessage, dispatch } from './worker';
+import { dispatch } from './hub';
+import { ClientMessage } from './worker';
 import { taskClasses } from './classes';
 import { taskClasses as tasks} from './globals';
 

@@ -1,7 +1,7 @@
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
-import { dispatch, send } from './worker';
-import { room, set } from './globals';
+import { room } from './globals';
+import type { UITick, ClientMessage } from './worker';
 import type { Link } from './link';
 
 interface Peer extends Link {
@@ -17,27 +17,6 @@ export let connection: WebSocket | null = null;
 
 /** IDs and links of connected clients. */
 export let peers: Map<string, Peer> | null = null;
-
-/** Get peers that match certain condition. */
-export function getPeers(filter?: Partial<Peer>) {
-    if (!peers) {
-        return null;
-    }
-    const links = [];
-    for (const peer of peers.values()) {
-        let skip = false;
-        for (const key in filter) {
-            if (peer[key] !== filter[key]) {
-                skip = true;
-                continue;
-            }
-        }
-        if (!skip) {
-            links.push(peer);
-        }
-    }
-    return links;
-}
 
 /** Handler of messages received. */
 const messages = {
@@ -137,6 +116,19 @@ export function disconnect() {
     }
 }
 
+/** Send a message to a client. */
+export function send(to: string, tick: UITick) {
+    if (to === room.uid) {
+        (self as any).postMessage(tick);
+    }
+    else if (peers) {
+        // send tick to a remote client
+        connection!.send('to:' + JSON.stringify([
+            to, JSON.stringify(tick)
+        ]))
+    }
+}
+
 /** Update room info for idle clients. */
 export function update(push=true) {
     const state = JSON.stringify([
@@ -157,6 +149,47 @@ export function update(push=true) {
     return state;
 }
 
+/** Dispatch message from client. */
+export async function dispatch(data: ClientMessage) {
+    try {
+        const [uid, sid, id, result, done] = data;
+        const stage = room.currentStage;
+        const link = room.links.get(id);
+        if (id === -1) {
+            // reload UI upon error
+            send(uid, room.pack());
+        }
+        else if (id === -2) {
+            // disconnect from remote hub
+            disconnect();
+        }
+        else if (sid === stage.id && link && link[1].owner === uid) {
+            // send result to listener
+            if (done && stage.awaits.has(id)) {
+                // results: component.respond() -> link.await()
+                if (result === null || result === undefined) {
+                    stage.results.delete(id);
+                }
+                else {
+                    stage.results.set(id, result);
+                }
+                stage.awaits.delete(id);
+                if (!stage.awaits.size) {
+                    room.loop();
+                }
+            }
+            else if (!done && stage.monitors.has(id)) {
+                // results: component.yield() -> link.monitor()
+                const method = stage.monitors.get(id)!;
+                (stage.task as any)[method](result, link[0]);
+            }
+        }
+    }
+    catch (e) {
+        console.log(e);
+    }
+}
+
 /** Create a peer component. */
 function createPeer(uid: string, info: [string, string]) {
     const peer = room.create('peer') as Peer;
@@ -168,4 +201,25 @@ function createPeer(uid: string, info: [string, string]) {
     });
     peers!.set(uid, peer);
     sync();
+}
+
+/** Get peers that match certain condition. */
+export function getPeers(filter?: Partial<Peer>) {
+    if (!peers) {
+        return null;
+    }
+    const links = [];
+    for (const peer of peers.values()) {
+        let skip = false;
+        for (const key in filter) {
+            if (peer[key] !== filter[key]) {
+                skip = true;
+                continue;
+            }
+        }
+        if (!skip) {
+            links.push(peer);
+        }
+    }
+    return links;
 }
