@@ -37,7 +37,7 @@ export class Toggle extends Component {
                     menu.open(e);
                 }
             };
-            this.ui.bind(this.span, { oncontext: onclick, onclick });
+            this.ui.bindClick(this.span, onclick);
         }
         else {
             this.ui.format(this.span, caption);

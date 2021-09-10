@@ -437,6 +437,10 @@
             Object.assign(binding, config);
         }
     }
+    /** Bind both onclick and oncontext. */
+    function bindClick(node, onclick) {
+        bind(node, { onclick, oncontext: onclick });
+    }
     /** Fire click event. */
     function dispatchClick(node) {
         const binding = bindings.get(node);
@@ -686,6 +690,7 @@
         setBackground: setBackground,
         setImage: setImage,
         bind: bind,
+        bindClick: bindClick,
         dispatchClick: dispatchClick,
         moveTo: moveTo,
         getX: getX,
@@ -1599,7 +1604,9 @@
         }
         /** Display a popup. */
         async popup(dialog, id) {
-            this.wrapPopup(dialog, id);
+            const dialogID = id ?? ++this.#dialogCount;
+            this.popups.set(dialogID, dialog);
+            this.wrapPopup(dialog, dialogID);
             await dialog.ready;
             dialog.open();
         }
@@ -2854,7 +2861,10 @@
         }
         $pane(configs) {
             // mode options
-            this.sidebar.pane.addSection('选项');
+            const settingsSection = this.sidebar.pane.addSection('选项');
+            this.ui.bind(settingsSection, () => {
+                splash.settings.open();
+            });
             for (const name in configs.configs) {
                 const config = configs.configs[name];
                 const caption = config.intro ? [config.name, config.intro] : config.name;
@@ -2892,10 +2902,7 @@
                 });
                 this.heroToggles.set(pack, toggle);
             }
-            this.ui.bind(heroSection, {
-                onclick: () => this.#openCollection(heropacks, 'hero'),
-                oncontext: () => this.#openCollection(heropacks, 'hero')
-            });
+            this.ui.bindClick(heroSection, () => this.#openCollection(heropacks, 'hero'));
             // cardpacks
             const cardSection = this.sidebar.pane.addSection('卡牌');
             const cardpacks = [];
@@ -2910,10 +2917,7 @@
                 });
                 this.cardToggles.set(pack, toggle);
             }
-            this.ui.bind(cardSection, {
-                onclick: () => this.#openCollection(cardpacks, 'card+pile'),
-                oncontext: () => this.#openCollection(cardpacks, 'card+pile')
-            });
+            this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'));
             // banned heros
             this.banned = [
                 this.sidebar.pane.addSection('禁将'),
@@ -2922,10 +2926,7 @@
             ];
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
-            this.ui.bind(this.banned[0], {
-                onclick: () => this.#showBanned(),
-                oncontext: () => this.#showBanned()
-            });
+            this.ui.bindClick(this.banned[0], () => this.#showBanned());
             this.ui.bind(this.banned[1].node, () => this.#showBanned());
             // picked heros
             this.picked = [
@@ -2943,10 +2944,7 @@
                     this.#showPicked();
                 }
             });
-            this.ui.bind(this.picked[0], {
-                onclick: () => this.#showPicked(),
-                oncontext: () => this.#showPicked()
-            });
+            this.ui.bindClick(this.picked[0], () => this.#showPicked());
             const picked = this.db.get(this.#pick);
             if (picked) {
                 for (const id of picked) {
@@ -5118,7 +5116,7 @@
                         menu.open(e);
                     }
                 };
-                this.ui.bind(this.span, { oncontext: onclick, onclick });
+                this.ui.bindClick(this.span, onclick);
             }
             else {
                 this.ui.format(this.span, caption);

@@ -1,4 +1,5 @@
 import { hub } from '../../client/client';
+import { splash } from '../../client/globals';
 import { Component, Toggle, Player, Tray, Collection, Dialog } from '../../components';
 import type { Config, Dict } from '../../types';
 
@@ -252,7 +253,10 @@ export class Lobby extends Component {
 
     $pane(configs: {heropacks: string[], cardpacks: string[], configs: Dict<Config>}) {
         // mode options
-        this.sidebar.pane.addSection('选项');
+        const settingsSection = this.sidebar.pane.addSection('选项');
+        this.ui.bind(settingsSection, () => {
+            splash.settings.open();
+        });
         for (const name in configs.configs) {
             const config = configs.configs[name];
             const caption = config.intro ? [config.name, config.intro] : config.name;
@@ -291,10 +295,7 @@ export class Lobby extends Component {
             });
             this.heroToggles.set(pack, toggle);
         }
-        this.ui.bind(heroSection, {
-            onclick: () => this.#openCollection(heropacks, 'hero'),
-            oncontext: () => this.#openCollection(heropacks, 'hero')
-        })
+        this.ui.bindClick(heroSection, () => this.#openCollection(heropacks, 'hero'))
         
         // cardpacks
         const cardSection = this.sidebar.pane.addSection('卡牌');
@@ -310,10 +311,7 @@ export class Lobby extends Component {
             });
             this.cardToggles.set(pack, toggle);
         }
-        this.ui.bind(cardSection, {
-            onclick: () => this.#openCollection(cardpacks, 'card+pile'),
-            oncontext: () => this.#openCollection(cardpacks, 'card+pile')
-        })
+        this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'))
 
         // banned heros
         this.banned = [
@@ -323,10 +321,7 @@ export class Lobby extends Component {
         ];
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
-        this.ui.bind(this.banned[0], {
-            onclick: () => this.#showBanned(),
-            oncontext: () => this.#showBanned()
-        });
+        this.ui.bindClick(this.banned[0], () => this.#showBanned());
         this.ui.bind(this.banned[1].node, () => this.#showBanned());
 
         // picked heros
@@ -335,6 +330,7 @@ export class Lobby extends Component {
             this.sidebar.pane.addTray('round'),
             new Map(), false
         ];
+
         this.picked[0].style.display = 'none';
         this.picked[1].node.style.display = 'none';
         this.ui.bind(this.picked[1].node, () => {
@@ -346,10 +342,7 @@ export class Lobby extends Component {
             }
         });
         
-        this.ui.bind(this.picked[0], {
-            onclick: () => this.#showPicked(),
-            oncontext: () => this.#showPicked()
-        });
+        this.ui.bindClick(this.picked[0], () => this.#showPicked());
 
         const picked = this.db.get(this.#pick);
         if (picked) {

@@ -309,6 +309,11 @@ export function bind(node: HTMLElement, config: Binding | ((e: Point) => void)) 
     }
 }
 
+/** Bind both onclick and oncontext. */
+export function bindClick(node: HTMLElement, onclick: (e: Point) => void) {
+    bind(node, { onclick, oncontext: onclick });
+}
+
 /** Fire click event. */
 export function dispatchClick(node: HTMLElement) {
     const binding = bindings.get(node);

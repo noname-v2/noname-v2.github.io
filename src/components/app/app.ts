@@ -358,13 +358,15 @@ export class App extends Component {
 
     /** Display a popup. */
     async popup(dialog: Popup, id?: string) {
-        this.wrapPopup(dialog, id);
+        const dialogID = id ?? ++this.#dialogCount;
+        this.popups.set(dialogID, dialog);
+        this.wrapPopup(dialog, dialogID);
         await dialog.ready;
         dialog.open();
     }
 
     /** Wrap a popup as this.popup(). */
-    wrapPopup(dialog: Popup, id?: string) {
+    wrapPopup(dialog: Popup, id?: string | number) {
         const dialogID = id ?? ++this.#dialogCount;
         this.popups.get(dialogID)?.close();
 
