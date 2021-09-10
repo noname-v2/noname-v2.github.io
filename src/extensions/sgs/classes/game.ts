@@ -1,5 +1,5 @@
-import type { Game } from '../../../worker/game';
-import type { SGS, Player, Card, Skill, PileEntries } from '../types';
+import type { Game } from '../../../game/game';
+import type { Player, Card, Skill } from '../types';
 
 export function game(G: typeof Game) {
     return class Game extends G {

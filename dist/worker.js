@@ -127,6 +127,7 @@
     const debug = globalThis.location.protocol === 'http:';
 
     const taskClasses$1 = new Map();
+    const gameClasses$1 = new Map();
     let room;
     /** Initial configurations from client. */
     let uid;
@@ -257,76 +258,6 @@
             const stage = room.createStage('trigger', { event }, this);
             stage.task.silent = true;
             this.steps.push(stage);
-        }
-    }
-
-    class Task {
-        /** Do not trigger before / after / skip event. */
-        silent = false;
-        get game() {
-            return room.game;
-        }
-        get path() {
-            return this.#stage.path;
-        }
-        get parent() {
-            return this.#stage.parent?.task ?? null;
-        }
-        get #stage() {
-            return room.taskMap.get(this);
-        }
-        /** Main function. */
-        main() { }
-        /** Add a step in current stage. */
-        add(step, ...args) {
-            this.#stage.steps.push([step, false, args]);
-        }
-        /** Add a child stage in current stage. */
-        addTask(path, data) {
-            const stage = room.createStage(path, data, this.#stage);
-            this.#stage.steps.push(stage);
-            return stage.task;
-        }
-        /** Add a sibline stage next to current stage. */
-        addSiblingTask(path, data) {
-            const stage = room.createStage(path, data, this.#stage.parent);
-            const idx = this.#stage.steps.indexOf(this.#stage.parent);
-            if (idx !== -1) {
-                this.#stage.steps.splice(idx + 1, 0, stage);
-                return stage.task;
-            }
-            throw ('failed to add sibling to ' + path);
-        }
-        /** Skip stage (may trigger skip event). */
-        skip() {
-            if (this.#stage.progress < 2) {
-                this.#stage.skipped = true;
-                this.#stage.awaits.clear();
-                this.#stage.monitors.clear();
-                return true;
-            }
-            return false;
-        }
-        /** Force stage to finish (without triggering skip event). */
-        cancel() {
-            this.#stage.progress = -1;
-            this.#stage.awaits.clear();
-            this.#stage.monitors.clear();
-        }
-        /** Trigger an event. Reserved names:
-         * before: triggered before executing task.main()
-         * after: triggered after executing task.main()
-         * skip: triggered after skipping task.main()
-         */
-        trigger(name) {
-            if (name === 'before' || name === 'after' || name === 'skip') {
-                throw ('reserved event name: ' + name);
-            }
-            this.#stage.trigger(name);
-        }
-        /** Delay for a given time. */
-        async sleep(duration = 1) {
-            await this.game.utils.sleep(duration * (this.game.config.speed ?? 0.3));
         }
     }
 
@@ -524,6 +455,129 @@
         return links;
     }
 
+    /** Entries to be ticked. */
+    const ticks = [];
+    /** Send a message to all clients. */
+    function broadcast(tick) {
+        if (peers) {
+            connection.send('bcast:' + JSON.stringify(tick));
+        }
+        self.postMessage(tick);
+    }
+    /** Add component update (called by Link). */
+    function tick(id, item) {
+        if (ticks.length === 0) {
+            // schedule a UITick if no pending UITick exists
+            setTimeout(() => commit());
+        }
+        ticks.push([room.currentStage.id, id, item]);
+    }
+    /** Generate UITick(s) from this.#ticks. */
+    function commit() {
+        // split UITick by stage change
+        const stages = [];
+        for (const entry of ticks) {
+            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
+                stages.push([entry[0], []]);
+            }
+            stages[stages.length - 1][1].push(entry);
+        }
+        // generate UITick(s)
+        for (const [stageID, entries] of stages) {
+            const tagChanges = {};
+            const propChanges = {};
+            const calls = {};
+            // merge updates from different ticks
+            for (const [, id, item] of entries) {
+                if (Array.isArray(item)) {
+                    calls[id] ??= [];
+                    calls[id].push(item);
+                }
+                else if (item && typeof item === 'object') {
+                    propChanges[id] ??= {};
+                    Object.assign(propChanges[id], item);
+                }
+                else {
+                    tagChanges[id] = item;
+                }
+            }
+            // sync and save UITick
+            const tick = [stageID, tagChanges, propChanges, calls];
+            broadcast(tick);
+        }
+        ticks.length = 0;
+    }
+
+    function createLink(id, tag) {
+        const obj = {};
+        // reserved link keys
+        const reserved = {
+            id, tag,
+            call(method, arg) {
+                tick(id, [method, arg]);
+            },
+            unlink() {
+                tick(id, null);
+                room.links.delete(id);
+            },
+            update(items) {
+                for (const key in items) {
+                    const val = items[key] ?? null;
+                    val === null ? delete obj[key] : obj[key] = val;
+                }
+                tick(id, items);
+            },
+            monitor(callback) {
+                room.currentStage.monitors.set(link.id, callback);
+            },
+            await(timeout) {
+                const stage = room.currentStage;
+                stage.awaits.set(link.id, timeout || null);
+                if (timeout) {
+                    setTimeout(() => {
+                        if (stage === room.currentStage && stage.awaits.has(id)) {
+                            stage.results.delete(id);
+                            stage.awaits.delete(id);
+                            if (!stage.awaits.size) {
+                                room.loop();
+                            }
+                        }
+                    }, timeout * 1000);
+                }
+            },
+            result() {
+                return room.currentStage.results.get(link.id) ?? null;
+            }
+        };
+        const link = new Proxy(obj, {
+            get(_, key) {
+                if (key in reserved) {
+                    if (key === 'result') {
+                        return reserved[key]() ?? null;
+                    }
+                    else {
+                        return reserved[key];
+                    }
+                }
+                else {
+                    return obj[key];
+                }
+            },
+            set(_, key, val) {
+                if (key in reserved) {
+                    return false;
+                }
+                else {
+                    reserved.update({ [key]: val });
+                    return true;
+                }
+            }
+        });
+        tick(id, tag);
+        room.links.set(id, [link, obj]);
+        return link;
+    }
+
     /** Map of loaded extensions. */
     const extensions = new Map();
     /** Load extension. */
@@ -576,6 +630,153 @@
             }
             return func.apply(filterThis, [item, task]);
         };
+    }
+
+    /** Room that controls game flow and classes. */
+    class Room {
+        /** Root game stage. */
+        rootStage;
+        /** Current game stage. */
+        currentStage;
+        /** Link to Arena. */
+        arena;
+        /** Game object. */
+        game;
+        /** Game progress.
+         * 0: waiting
+         * 1: gaming
+         * 2: over
+        */
+        progress = 0;
+        /** Links to components. */
+        links = new Map();
+        /** Map from a task to the stage containing the task. */
+        taskMap = new Map();
+        /** All created stages. */
+        #stages = new Map();
+        /** Array of packages that define mode tasks (priority: high -> low). */
+        #ruleset = [];
+        /** Map of task classes. */
+        #taskClasses;
+        /** Base game classes. */
+        #gameClasses;
+        /** Number of links created. */
+        #linkCount = 0;
+        /** Number of stages created. */
+        #stageCount = 0;
+        /** Currently paused by stage.awaits. */
+        #paused = true;
+        async init(name, packs) {
+            // initialize classes
+            this.#gameClasses = new Map(gameClasses$1);
+            this.#taskClasses = new Map(taskClasses$1);
+            // load extensions
+            await Promise.all(packs.map(pack => importExtension(pack)));
+            // Get list of packages that define game classes
+            await this.#getRuleset(name);
+            // merge mode objects and game classes from extensions
+            const mode = await this.#loadRuleset();
+            // start game
+            this.game = new (this.getClass('game'))();
+            this.game.mode = mode;
+            this.game.packs = new Set(packs);
+            this.rootStage = this.currentStage = this.createStage('main');
+            this.arena = this.game.create('arena');
+            this.arena.ruleset = this.#ruleset;
+            this.arena.packs = packs;
+            this.arena.mode = mode.extension;
+            this.loop();
+        }
+        /** Create a link. */
+        create(tag) {
+            const id = ++this.#linkCount;
+            return createLink(id, tag);
+        }
+        /** Create a stage. */
+        createStage(path, data, parent) {
+            const id = ++this.#stageCount;
+            const stage = new Stage(id, path, data ?? {}, parent ?? null);
+            this.#stages.set(id, stage);
+            return stage;
+        }
+        /** Get or create task constructor. */
+        getTask(path) {
+            if (!this.#taskClasses.has(path)) {
+                // get task from extension sections
+                const section = accessExtension(path);
+                const cls = section.inherit ? this.getTask(section.inherit) : this.#gameClasses.get('task');
+                this.#taskClasses.set(path, section.task(cls));
+            }
+            return this.#taskClasses.get(path);
+        }
+        /** Get a game class. */
+        getClass(path) {
+            return this.#gameClasses.get(path);
+        }
+        /** Get a UITick of all links. */
+        pack() {
+            const tags = {};
+            const props = {};
+            for (const [uid, [link, obj]] of this.links) {
+                tags[uid] = link.tag;
+                props[uid] = obj;
+            }
+            return [this.currentStage.id, tags, props, {}];
+        }
+        /** Execute stages. */
+        async loop() {
+            if (this.#paused) {
+                this.#paused = false;
+                while (this.progress !== 2 && await this.rootStage.next())
+                    ;
+                this.#paused = true;
+            }
+        }
+        /** Get and load all extensions relevant to current mode. */
+        async #getRuleset(mode) {
+            while (mode) {
+                if (this.#ruleset.includes(mode)) {
+                    break;
+                }
+                this.#ruleset.unshift(mode);
+                mode = (await importExtension(mode)).mode?.inherit;
+            }
+        }
+        /** Update extension-defined classes and game mode. */
+        async #loadRuleset() {
+            const mode = {};
+            const modeTasks = [];
+            const exclude = ['tasks', 'components', 'classes'];
+            for (const pack of this.#ruleset) {
+                const extMode = copy(accessExtension(pack)?.mode ?? {});
+                // update game classes (including base Task class)
+                for (const name in extMode.classes) {
+                    const cls = this.#gameClasses.get(name);
+                    this.#gameClasses.set(name, extMode.classes[name](cls));
+                }
+                // update task classes after Task class is finalized
+                modeTasks.push(extMode.tasks);
+                apply(mode, extMode, exclude);
+            }
+            // update task classes
+            for (const tasks of modeTasks) {
+                for (const task in tasks) {
+                    const cls = this.#taskClasses.get(task) ?? this.getClass('task');
+                    const constructor = tasks[task](cls);
+                    if (typeof constructor === 'function') {
+                        this.#taskClasses.set(task, constructor);
+                    }
+                    else {
+                        for (const name in constructor) {
+                            this.#taskClasses.set(name, constructor[name]);
+                        }
+                    }
+                }
+            }
+            // save mode extension name
+            mode.extension = this.#ruleset[this.#ruleset.length - 1];
+            return freeze(mode);
+        }
     }
 
     /** Accessor of hub properties. */
@@ -712,280 +913,73 @@
         }
     }
 
-    /** Entries to be ticked. */
-    const ticks = [];
-    /** Send a message to all clients. */
-    function broadcast(tick) {
-        if (peers) {
-            connection.send('bcast:' + JSON.stringify(tick));
+    class Task {
+        /** Do not trigger before / after / skip event. */
+        silent = false;
+        get game() {
+            return room.game;
         }
-        self.postMessage(tick);
-    }
-    /** Add component update (called by Link). */
-    function tick(id, item) {
-        if (ticks.length === 0) {
-            // schedule a UITick if no pending UITick exists
-            setTimeout(() => commit());
+        get path() {
+            return this.#stage.path;
         }
-        ticks.push([room.currentStage.id, id, item]);
-    }
-    /** Generate UITick(s) from this.#ticks. */
-    function commit() {
-        // split UITick by stage change
-        const stages = [];
-        for (const entry of ticks) {
-            if (stages.length === 0 || stages[stages.length - 1][0] !== entry[0]) {
-                stages.push([entry[0], []]);
+        get parent() {
+            return this.#stage.parent?.task ?? null;
+        }
+        get #stage() {
+            return room.taskMap.get(this);
+        }
+        /** Main function. */
+        main() { }
+        /** Add a step in current stage. */
+        add(step, ...args) {
+            this.#stage.steps.push([step, false, args]);
+        }
+        /** Add a child stage in current stage. */
+        addTask(path, data) {
+            const stage = room.createStage(path, data, this.#stage);
+            this.#stage.steps.push(stage);
+            return stage.task;
+        }
+        /** Add a sibline stage next to current stage. */
+        addSiblingTask(path, data) {
+            const stage = room.createStage(path, data, this.#stage.parent);
+            const idx = this.#stage.steps.indexOf(this.#stage.parent);
+            if (idx !== -1) {
+                this.#stage.steps.splice(idx + 1, 0, stage);
+                return stage.task;
             }
-            stages[stages.length - 1][1].push(entry);
+            throw ('failed to add sibling to ' + path);
         }
-        // generate UITick(s)
-        for (const [stageID, entries] of stages) {
-            const tagChanges = {};
-            const propChanges = {};
-            const calls = {};
-            // merge updates from different ticks
-            for (const [, id, item] of entries) {
-                if (Array.isArray(item)) {
-                    calls[id] ??= [];
-                    calls[id].push(item);
-                }
-                else if (item && typeof item === 'object') {
-                    propChanges[id] ??= {};
-                    Object.assign(propChanges[id], item);
-                }
-                else {
-                    tagChanges[id] = item;
-                }
+        /** Skip stage (may trigger skip event). */
+        skip() {
+            if (this.#stage.progress < 2) {
+                this.#stage.skipped = true;
+                this.#stage.awaits.clear();
+                this.#stage.monitors.clear();
+                return true;
             }
-            // sync and save UITick
-            const tick = [stageID, tagChanges, propChanges, calls];
-            broadcast(tick);
+            return false;
         }
-        ticks.length = 0;
-    }
-
-    function createLink(id, tag) {
-        const obj = {};
-        // reserved link keys
-        const reserved = {
-            id, tag,
-            call(method, arg) {
-                tick(id, [method, arg]);
-            },
-            unlink() {
-                tick(id, null);
-                room.links.delete(id);
-            },
-            update(items) {
-                for (const key in items) {
-                    const val = items[key] ?? null;
-                    val === null ? delete obj[key] : obj[key] = val;
-                }
-                tick(id, items);
-            },
-            monitor(callback) {
-                room.currentStage.monitors.set(link.id, callback);
-            },
-            await(timeout) {
-                const stage = room.currentStage;
-                stage.awaits.set(link.id, timeout || null);
-                if (timeout) {
-                    setTimeout(() => {
-                        if (stage === room.currentStage && stage.awaits.has(id)) {
-                            stage.results.delete(id);
-                            stage.awaits.delete(id);
-                            if (!stage.awaits.size) {
-                                room.loop();
-                            }
-                        }
-                    }, timeout * 1000);
-                }
-            },
-            result() {
-                return room.currentStage.results.get(link.id) ?? null;
+        /** Force stage to finish (without triggering skip event). */
+        cancel() {
+            this.#stage.progress = -1;
+            this.#stage.awaits.clear();
+            this.#stage.monitors.clear();
+        }
+        /** Trigger an event. Reserved names:
+         * before: triggered before executing task.main()
+         * after: triggered after executing task.main()
+         * skip: triggered after skipping task.main()
+         */
+        trigger(name) {
+            if (name === 'before' || name === 'after' || name === 'skip') {
+                throw ('reserved event name: ' + name);
             }
-        };
-        const link = new Proxy(obj, {
-            get(_, key) {
-                if (key in reserved) {
-                    if (key === 'result') {
-                        return reserved[key]() ?? null;
-                    }
-                    else {
-                        return reserved[key];
-                    }
-                }
-                else {
-                    return obj[key];
-                }
-            },
-            set(_, key, val) {
-                if (key in reserved) {
-                    return false;
-                }
-                else {
-                    reserved.update({ [key]: val });
-                    return true;
-                }
-            }
-        });
-        tick(id, tag);
-        room.links.set(id, [link, obj]);
-        return link;
-    }
-
-    /** Room that controls game flow and classes. */
-    class Room {
-        /** Root game stage. */
-        rootStage;
-        /** Current game stage. */
-        currentStage;
-        /** Link to Arena. */
-        arena;
-        /** Game object. */
-        game;
-        /** Game progress.
-         * 0: waiting
-         * 1: gaming
-         * 2: over
-        */
-        progress = 0;
-        /** Links to components. */
-        links = new Map();
-        /** Map from a task to the stage containing the task. */
-        taskMap = new Map();
-        /** All created stages. */
-        #stages = new Map();
-        /** Array of packages that define mode tasks (priority: high -> low). */
-        #ruleset = [];
-        /** Map of task classes. */
-        #taskClasses = new Map();
-        /** Base game classes. */
-        #gameClasses = new Map();
-        /** Number of links created. */
-        #linkCount = 0;
-        /** Number of stages created. */
-        #stageCount = 0;
-        /** Currently paused by stage.awaits. */
-        #paused = true;
-        async init(name, packs) {
-            // initialize classes
-            this.#initClasses();
-            // load extensions
-            await Promise.all(packs.map(pack => importExtension(pack)));
-            // Get list of packages that define game classes
-            await this.#getRuleset(name);
-            // merge mode objects and game classes from extensions
-            const mode = await this.#loadRuleset();
-            // start game
-            this.game = new (this.getClass('game'))();
-            this.game.mode = mode;
-            this.game.packs = new Set(packs);
-            this.rootStage = this.currentStage = this.createStage('main');
-            this.arena = this.game.create('arena');
-            this.arena.ruleset = this.#ruleset;
-            this.arena.packs = packs;
-            this.arena.mode = mode.extension;
-            this.loop();
+            this.#stage.trigger(name);
         }
-        /** Create a link. */
-        create(tag) {
-            const id = ++this.#linkCount;
-            return createLink(id, tag);
-        }
-        /** Create a stage. */
-        createStage(path, data, parent) {
-            const id = ++this.#stageCount;
-            const stage = new Stage(id, path, data ?? {}, parent ?? null);
-            this.#stages.set(id, stage);
-            return stage;
-        }
-        /** Get or create task constructor. */
-        getTask(path) {
-            if (!this.#taskClasses.has(path)) {
-                // get task from extension sections
-                const section = accessExtension(path);
-                const cls = section.inherit ? this.getTask(section.inherit) : Task;
-                this.#taskClasses.set(path, section.task(cls));
-            }
-            return this.#taskClasses.get(path);
-        }
-        /** Get a game class. */
-        getClass(path) {
-            return this.#gameClasses.get(path);
-        }
-        /** Get a UITick of all links. */
-        pack() {
-            const tags = {};
-            const props = {};
-            for (const [uid, [link, obj]] of this.links) {
-                tags[uid] = link.tag;
-                props[uid] = obj;
-            }
-            return [this.currentStage.id, tags, props, {}];
-        }
-        /** Execute stages. */
-        async loop() {
-            if (this.#paused) {
-                this.#paused = false;
-                while (this.progress !== 2 && await this.rootStage.next())
-                    ;
-                this.#paused = true;
-            }
-        }
-        /** Get and load all extensions relevant to current mode. */
-        async #getRuleset(mode) {
-            while (mode) {
-                if (this.#ruleset.includes(mode)) {
-                    break;
-                }
-                this.#ruleset.unshift(mode);
-                mode = (await importExtension(mode)).mode?.inherit;
-            }
-        }
-        /** Update extension-defined classes and game mode. */
-        async #loadRuleset() {
-            const mode = {};
-            const modeTasks = [];
-            const exclude = ['tasks', 'components', 'classes'];
-            for (const pack of this.#ruleset) {
-                const extMode = copy(accessExtension(pack)?.mode ?? {});
-                // update game classes (including base Task class)
-                for (const name in extMode.classes) {
-                    const cls = this.#gameClasses.get(name);
-                    this.#gameClasses.set(name, extMode.classes[name](cls));
-                }
-                // update task classes after Task class is finalized
-                modeTasks.push(extMode.tasks);
-                apply(mode, extMode, exclude);
-            }
-            // update task classes
-            for (const tasks of modeTasks) {
-                for (const task in tasks) {
-                    const cls = this.#taskClasses.get(task) ?? this.getClass('task');
-                    const constructor = tasks[task](cls);
-                    if (typeof constructor === 'function') {
-                        this.#taskClasses.set(task, constructor);
-                    }
-                    else {
-                        for (const name in constructor) {
-                            this.#taskClasses.set(name, constructor[name]);
-                        }
-                    }
-                }
-            }
-            // save mode extension name
-            mode.extension = this.#ruleset[this.#ruleset.length - 1];
-            return freeze(mode);
-        }
-        /** Initialize classes. */
-        #initClasses() {
-            for (const [task, cls] of taskClasses$1) {
-                this.#taskClasses.set(task, cls);
-            }
-            this.#gameClasses.set('game', Game);
-            this.#gameClasses.set('task', Task);
+        /** Delay for a given time. */
+        async sleep(duration = 1) {
+            await this.game.utils.sleep(duration * (this.game.config.speed ?? 0.3));
         }
     }
 
@@ -1149,10 +1143,16 @@
         }
     }
 
+    const gameClasses = new Map();
     const taskClasses = new Map();
+    gameClasses.set('game', Game);
+    gameClasses.set('task', Task);
     taskClasses.set('lobby', Lobby);
 
-    // setup default task classes
+    // setup default task and  classes
+    for (const [task, cls] of gameClasses) {
+        gameClasses$1.set(task, cls);
+    }
     for (const [task, cls] of taskClasses) {
         taskClasses$1.set(task, cls);
     }

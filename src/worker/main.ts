@@ -2,10 +2,14 @@ import { Room } from './room'
 import { setRoom, room, init } from './globals';
 import { dispatch } from './hub';
 import { ClientMessage } from './worker';
-import { taskClasses } from './classes';
-import { taskClasses as tasks} from './globals';
+import { taskClasses, gameClasses } from './classes';
+import { taskClasses as tasks, gameClasses as games} from './globals';
 
-// setup default task classes
+// setup default task and  classes
+for (const [task, cls] of gameClasses) {
+    games.set(task, cls);
+}
+
 for (const [task, cls] of taskClasses) {
     tasks.set(task, cls);
 }

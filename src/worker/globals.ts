@@ -1,8 +1,9 @@
 import { debug } from '../meta';
 import type { Room } from './room';
-import type { Task } from './task';
+import type { Task } from '../game/task';
 
 export const taskClasses = new Map<string, { new(): Task }>();
+export const gameClasses = new Map<string, any>();
 export let room: Room;
 
 /** Initial configurations from client. */

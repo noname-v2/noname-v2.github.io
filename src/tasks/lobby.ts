@@ -1,4 +1,4 @@
-import { Task } from '../worker/task';
+import { Task } from '../game/task';
 import * as hub from '../worker/hub';
 import type { Config, Dict, Link } from '../types';
 

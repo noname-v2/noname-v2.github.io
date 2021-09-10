@@ -1,4 +1,4 @@
-import type { Task } from './worker/task';
+import type { Task } from './game/task';
 import type { Component, Color } from './components';
 import type { accessExtension, getInfo} from './extension';
 import type { lib } from './client/globals';

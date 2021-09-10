@@ -50,13 +50,20 @@ export function buildComponents() {
  * Create an index of task classes.
  */
  export function buildTasks() {
-    const imports = [
-        `import type { Task } from '../src/worker/task';`
-    ];
+    const imports = [];
 
     const classes = [
-        'export const taskClasses = new Map<string, { new(): Task }>();',
+        'export const gameClasses = new Map<string, any>();',
+        'export const taskClasses = new Map<string, { new(): Task }>();\n'
     ];
+
+    for (const src of walk('src/game', '.ts')) {
+        // CamelCase class name
+        const tag = src.split('/').pop();
+        const cls = tag.split('-').map(capatalize).join('');
+        imports.push(`import { ${cls} } from '../src/game/${src}';`);
+        classes.push(`gameClasses.set('${tag}', ${cls});`);
+    }
 
     for (const src of walk('src/tasks', '.ts')) {
         // CamelCase class name

@@ -1,2 +1,2 @@
 /** Map of all task classes. */
-export { taskClasses } from '../../build/tasks';
+export { taskClasses, gameClasses } from '../../build/tasks';

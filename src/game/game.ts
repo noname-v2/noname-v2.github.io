@@ -1,8 +1,8 @@
-import { room, uid } from './globals';
-import * as hub from './hub';
+import { room, uid } from '../worker/globals';
+import * as hub from '../worker/hub';
 import * as utils from '../utils';
 import { accessExtension, getInfo, createFilter } from '../extension';
-import type { Link } from './link';
+import type { Link } from '../worker/link';
 import type { Task } from './task';
 import type { ModeData, Dict, Select, Selected, PileEntries, Extension } from '../types';
 

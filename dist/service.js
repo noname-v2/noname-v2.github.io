@@ -123,10 +123,13 @@
         else {
             // retrieve file from indexedDB
             e.respondWith(ready.then(async () => {
-                const data = await readFile(url);
-                if (data) {
-                    return new Response(data);
+                try {
+                    const data = await readFile(url);
+                    if (data) {
+                        return new Response(data);
+                    }
                 }
+                catch { }
                 let fetched = await fetch(e.request);
                 // attempt to fetch from extension URL if local file is not found
                 if (!fetched.ok && url.startsWith('extension/')) {

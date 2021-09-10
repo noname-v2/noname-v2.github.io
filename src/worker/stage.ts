@@ -1,6 +1,6 @@
 import { apply } from '../utils';
 import { room } from './globals';
-import type { Task } from './task';
+import type { Task } from '../game/task';
 import type { Dict } from '../types';
 
 export class Stage {

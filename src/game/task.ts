@@ -1,7 +1,6 @@
-import { room } from './globals';
-import type { Stage } from './stage';
+import { room } from '../worker/globals';
 import type { Game } from './game';
-import type { Link } from './link';
+import type { Stage } from '../worker/stage';
 import type { Dict } from '../types';
 
 export class Task<T extends Game = Game> {

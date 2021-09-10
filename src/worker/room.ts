@@ -1,10 +1,10 @@
 import { Stage } from './stage';
 import { copy, apply, freeze } from '../utils';
-import { Task } from './task';
-import { Game } from './game';
 import { Link, createLink } from './link';
-import { taskClasses } from './globals';
+import { taskClasses, gameClasses } from './globals';
 import { importExtension, accessExtension } from '../extension';
+import type { Task } from '../game/task';
+import type { Game } from '../game/game';
 import type { UITick } from './worker';
 import type { ModeData, Dict } from '../types';
 
@@ -42,10 +42,10 @@ export class Room {
     #ruleset: string[] = [];
 
     /** Map of task classes. */
-    #taskClasses = new Map<string, { new(): Task }>();
+    #taskClasses!: Map<string, { new(): Task }>;
 
     /** Base game classes. */
-    #gameClasses = new Map<string, any>();
+    #gameClasses!: Map<string, any>;
 
     /** Number of links created. */
     #linkCount = 0;
@@ -58,7 +58,8 @@ export class Room {
 
     async init(name: string, packs: string[]) {
         // initialize classes
-        this.#initClasses();
+        this.#gameClasses = new Map(gameClasses);
+        this.#taskClasses = new Map(taskClasses);
 
         // load extensions
         await Promise.all(packs.map(pack => importExtension(pack)));
@@ -100,7 +101,7 @@ export class Room {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
             const section = accessExtension(path);
-            const cls = section.inherit ? this.getTask(section.inherit) : Task;
+            const cls = section.inherit ? this.getTask(section.inherit) : this.#gameClasses.get('task');
             this.#taskClasses.set(path, section.task!(cls));
         }
         return this.#taskClasses.get(path)!;
@@ -182,15 +183,5 @@ export class Room {
         mode.extension = this.#ruleset[this.#ruleset.length - 1];
 
         return freeze(mode);
-    }
-
-    /** Initialize classes. */
-    #initClasses() {
-        for (const [task, cls] of taskClasses) {
-            this.#taskClasses.set(task, cls);
-        }
-
-        this.#gameClasses.set('game', Game);
-        this.#gameClasses.set('task', Task);
     }
 }

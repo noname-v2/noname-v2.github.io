@@ -1,4 +1,4 @@
-import type { Task } from '../../../worker/task';
+import type { Task } from '../../../game/task';
 import type { Game, TaskClass } from '../types';
 import { Card } from './card';
 import { Player } from './player';
