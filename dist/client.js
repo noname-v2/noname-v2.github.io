@@ -1376,6 +1376,8 @@
             return this.arena?.currentZoom ?? this.#zoom;
         }
         async init() {
+            const splash = this.ui.create('splash');
+            init(this, splash);
             document.head.appendChild(this.#themeNode);
             // wait for indexedDB
             await this.db.ready;
@@ -1388,14 +1390,14 @@
             // load styles and fonts
             this.#initAudio();
             await this.loadTheme();
-            init(this, this.ui.create('splash'));
-            await splash.gallery.ready;
+            await splash.createGallery();
             const initAssets = this.#initAssets();
             // load splash menus
-            Promise.all([initAssets, splash.show(), document.fonts.ready]).then(() => {
-                splash.hub.create();
-                splash.settings.create();
-            });
+            Promise.all([
+                initAssets,
+                splash.show(),
+                document.fonts.ready
+            ]).then(() => splash.createBar());
             // add handler for android back button
             if (this.platform.android) {
                 window.addEventListener('popstate', e => {
@@ -4504,7 +4506,7 @@
         /** Popup for avatar selection. */
         avatarSelector = null;
         /** Called by app after UI loaded. */
-        create() {
+        init() {
             // nickname, avatar and this address
             this.#addInfo();
             // room list in this menu
@@ -4814,7 +4816,7 @@
         /** Animation of this.rotating. */
         #rotatingAnimation = null;
         /** Called by app after UI loaded. */
-        create() {
+        init() {
             // blur or unblur splash
             this.onopen = () => {
                 for (const gallery of this.galleries) {
@@ -5045,15 +5047,23 @@
 
     class Splash extends Component {
         // gallery of modes
-        gallery = this.ui.create('splash-gallery');
+        gallery;
         // bottom toolbar
         bar = this.ui.create('splash-bar');
         // settings menu
-        settings = this.ui.create('splash-settings');
+        settings;
         // hub menu
-        hub = this.ui.create('splash-hub');
+        hub;
         // currently hidden
         hidden = true;
+        createGallery() {
+            this.gallery = this.ui.create('splash-gallery');
+            return this.gallery.ready;
+        }
+        createBar() {
+            this.settings = this.ui.create('splash-settings');
+            this.hub = this.ui.create('splash-hub');
+        }
         hide(faded = false) {
             if (this.hidden) {
                 return;

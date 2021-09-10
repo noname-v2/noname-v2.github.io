@@ -1,20 +1,30 @@
-import { Component } from '../../components';
+import { Component, SplashGallery, SplashSettings, SplashHub } from '../../components';
 
 export class Splash extends Component {
     // gallery of modes
-	gallery = this.ui.create('splash-gallery');
+	gallery!: SplashGallery;
 
 	// bottom toolbar
 	bar = this.ui.create('splash-bar');
 
 	// settings menu
-	settings = this.ui.create('splash-settings');
+	settings!: SplashSettings;
 
 	// hub menu
-	hub = this.ui.create('splash-hub');
+	hub!: SplashHub;
 
 	// currently hidden
 	hidden = true;
+
+	createGallery() {
+		this.gallery = this.ui.create('splash-gallery');
+		return this.gallery.ready;
+	}
+
+	createBar() {
+		this.settings = this.ui.create('splash-settings');
+		this.hub = this.ui.create('splash-hub');
+	}
 
 	hide(faded: boolean = false) {
 		if (this.hidden) {

@@ -103,6 +103,8 @@ export class App extends Component {
     }
 
     async init() {
+        const splash = this.ui.create('splash');
+        init(this, splash);
         document.head.appendChild(this.#themeNode);
         
         // wait for indexedDB
@@ -118,15 +120,15 @@ export class App extends Component {
         // load styles and fonts
         this.#initAudio();
         await this.loadTheme();
-        init(this, this.ui.create('splash'));
-        await splash.gallery.ready;
+        await splash.createGallery();
         const initAssets = this.#initAssets();
 
         // load splash menus
-        Promise.all([initAssets, splash.show(), (document as any).fonts.ready]).then(() => {
-            splash.hub.create();
-            splash.settings.create();
-        });
+        Promise.all([
+            initAssets,
+            splash.show(),
+            (document as any).fonts.ready
+        ]).then(() => splash.createBar());
 
         // add handler for android back button
         if (this.platform.android) {

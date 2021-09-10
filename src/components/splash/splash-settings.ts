@@ -19,7 +19,7 @@ export class SplashSettings extends Popup {
     #rotatingAnimation: Animation | null = null;
 
     /** Called by app after UI loaded. */
-    create() {
+    init() {
         // blur or unblur splash
         this.onopen = () => {
             for (const gallery of this.galleries) {
