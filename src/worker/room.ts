@@ -10,12 +10,6 @@ import type { ModeData, Dict } from '../types';
 
 /** Room that controls game flow and classes. */
 export class Room {
-    /** Owner ID. */
-    uid!: string;
-
-    /** Owner nickname and avatar. */
-    info!: [string, string];
-
     /** Root game stage. */
     rootStage!: Stage;
 
@@ -62,10 +56,7 @@ export class Room {
     /** Currently paused by stage.awaits. */
     #paused = true;
 
-    async init(uid: string, [name, packs, info]:  [string, string[], [string, string]]) {
-        this.uid = uid;
-        this.info = info;
-
+    async init(name: string, packs: string[]) {
         // initialize classes
         this.#initClasses();
 

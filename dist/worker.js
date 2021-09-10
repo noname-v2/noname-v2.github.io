@@ -128,15 +128,18 @@
 
     const taskClasses$1 = new Map();
     let room;
-    function set(target, val) {
-        switch (target) {
-            case 'room':
-                room = val;
-                break;
-        }
+    /** Initial configurations from client. */
+    let uid;
+    let info;
+    function setRoom(r) {
+        room = r;
         if (debug) {
-            self[target] = val;
+            self.room = r;
         }
+    }
+    function init(u, i) {
+        uid = u;
+        info = i;
     }
 
     class Stage {
@@ -336,7 +339,7 @@
         /** The room is ready for clients to join. */
         ready() {
             peers = new Map();
-            createPeer(room.uid, room.info);
+            createPeer(uid, info);
         },
         /** A remote client joins the room. */
         join(msg) {
@@ -381,9 +384,7 @@
         };
         // send room info to hub
         ws.onopen = () => {
-            ws.send('init:' + JSON.stringify([
-                room.uid, room.info, update(false)
-            ]));
+            ws.send('init:' + JSON.stringify([uid, info, update(false)]));
         };
         // handle messages
         ws.onmessage = ({ data }) => {
@@ -421,7 +422,7 @@
     }
     /** Send a message to a client. */
     function send(to, tick) {
-        if (to === room.uid) {
+        if (to === uid) {
             self.postMessage(tick);
         }
         else if (peers) {
@@ -441,7 +442,7 @@
             // number of players in a game
             room.game.config.np,
             // nickname and avatar of owner
-            room.info,
+            info,
             // game state
             room.progress
         ]);
@@ -600,7 +601,7 @@
         /** Hub accessor. */
         #hub = new Hub();
         get owner() {
-            return room.uid;
+            return uid;
         }
         get arena() {
             return room.arena;
@@ -836,10 +837,6 @@
 
     /** Room that controls game flow and classes. */
     class Room {
-        /** Owner ID. */
-        uid;
-        /** Owner nickname and avatar. */
-        info;
         /** Root game stage. */
         rootStage;
         /** Current game stage. */
@@ -872,9 +869,7 @@
         #stageCount = 0;
         /** Currently paused by stage.awaits. */
         #paused = true;
-        async init(uid, [name, packs, info]) {
-            this.uid = uid;
-            this.info = info;
+        async init(name, packs) {
             // initialize classes
             this.#initClasses();
             // load extensions
@@ -1164,8 +1159,9 @@
     self.onmessage = ({ data }) => {
         if (data[1] === 0) {
             self.onmessage = ({ data }) => dispatch(data);
-            set('room', new Room());
-            room.init(data[0], data[3]);
+            init(data[0], data[3][2]);
+            setRoom(new Room());
+            room.init(data[3][0], data[3][1]);
         }
     };
     self.postMessage('ready');

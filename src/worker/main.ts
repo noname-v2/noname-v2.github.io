@@ -1,5 +1,5 @@
 import { Room } from './room'
-import { set, room } from './globals';
+import { setRoom, room, init } from './globals';
 import { dispatch } from './hub';
 import { ClientMessage } from './worker';
 import { taskClasses } from './classes';
@@ -13,8 +13,9 @@ for (const [task, cls] of taskClasses) {
 self.onmessage = ({data}: {data: ClientMessage}) => {
     if (data[1] === 0) {
         self.onmessage = ({data}: {data: ClientMessage}) => dispatch(data);
-        set('room', new Room());
-        room.init(data[0], data[3]);
+        init(data[0], data[3][2]);
+        setRoom(new Room());
+        room.init(data[3][0], data[3][1]);
     }
 }
 

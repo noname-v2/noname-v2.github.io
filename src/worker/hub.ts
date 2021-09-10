@@ -1,6 +1,6 @@
 import { hub2owner } from '../hub/types';
 import { split } from '../utils';
-import { room } from './globals';
+import { room, uid, info } from './globals';
 import type { UITick, ClientMessage } from './worker';
 import type { Link } from './link';
 
@@ -23,7 +23,7 @@ const messages = {
     /** The room is ready for clients to join. */
     ready() {
         peers = new Map();
-        createPeer(room.uid, room.info);
+        createPeer(uid, info);
     },
 
     /** A remote client joins the room. */
@@ -74,9 +74,7 @@ export function connect(url: string) {
 
     // send room info to hub
     ws.onopen = () => {
-        ws.send('init:' + JSON.stringify([
-            room.uid, room.info, update(false)
-        ]));
+        ws.send('init:' + JSON.stringify([ uid, info, update(false) ]));
     };
 
     // handle messages
@@ -118,7 +116,7 @@ export function disconnect() {
 
 /** Send a message to a client. */
 export function send(to: string, tick: UITick) {
-    if (to === room.uid) {
+    if (to === uid) {
         (self as any).postMessage(tick);
     }
     else if (peers) {
@@ -139,7 +137,7 @@ export function update(push=true) {
         // number of players in a game
         room.game.config.np,
         // nickname and avatar of owner
-        room.info,
+        info,
         // game state
         room.progress
     ]);

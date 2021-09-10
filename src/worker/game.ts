@@ -1,4 +1,4 @@
-import { room } from './globals';
+import { room, uid } from './globals';
 import * as hub from './hub';
 import * as utils from '../utils';
 import { accessExtension, getInfo, createFilter } from '../extension';
@@ -38,7 +38,7 @@ export abstract class Game {
     [key: string]: any;
 
     get owner() {
-        return room.uid;
+        return uid;
     }
 
     get arena() {
