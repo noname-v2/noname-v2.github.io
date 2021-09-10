@@ -37,6 +37,8 @@ export class SplashHub extends Popup {
 
     /** Called by app after UI loaded. */
     init() {
+        super.init();
+
         // nickname, avatar and this address
         this.#addInfo();
 

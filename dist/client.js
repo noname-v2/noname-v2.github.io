@@ -1597,8 +1597,15 @@
         }
         /** Display a popup. */
         async popup(dialog, id) {
+            this.wrapPopup(dialog, id);
+            await dialog.ready;
+            dialog.open();
+        }
+        /** Wrap a popup as this.popup(). */
+        wrapPopup(dialog, id) {
             const dialogID = id ?? ++this.#dialogCount;
             this.popups.get(dialogID)?.close();
+            // save original triggers
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
             // other popups that are blurred by dialog.open()
@@ -1631,8 +1638,6 @@
                 }
             };
             this.popups.set(dialogID, dialog);
-            await dialog.ready;
-            dialog.open();
         }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
@@ -4507,6 +4512,7 @@
         avatarSelector = null;
         /** Called by app after UI loaded. */
         init() {
+            super.init();
             // nickname, avatar and this address
             this.#addInfo();
             // room list in this menu
@@ -4817,6 +4823,7 @@
         #rotatingAnimation = null;
         /** Called by app after UI loaded. */
         init() {
+            super.init();
             // blur or unblur splash
             this.onopen = () => {
                 for (const gallery of this.galleries) {

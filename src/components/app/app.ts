@@ -358,8 +358,17 @@ export class App extends Component {
 
     /** Display a popup. */
     async popup(dialog: Popup, id?: string) {
+        this.wrapPopup(dialog, id);
+        await dialog.ready;
+        dialog.open();
+    }
+
+    /** Wrap a popup as this.popup(). */
+    wrapPopup(dialog: Popup, id?: string) {
         const dialogID = id ?? ++this.#dialogCount;
         this.popups.get(dialogID)?.close();
+
+        // save original triggers
         const onopen = dialog.onopen;
         const onclose = dialog.onclose;
 
@@ -398,8 +407,6 @@ export class App extends Component {
         };
 
         this.popups.set(dialogID, dialog);
-        await dialog.ready;
-        dialog.open();
     }
 
     /** Clear alert and confirm dialogs. */

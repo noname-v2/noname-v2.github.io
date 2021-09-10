@@ -20,6 +20,8 @@ export class SplashSettings extends Popup {
 
     /** Called by app after UI loaded. */
     init() {
+        super.init();
+        
         // blur or unblur splash
         this.onopen = () => {
             for (const gallery of this.galleries) {
