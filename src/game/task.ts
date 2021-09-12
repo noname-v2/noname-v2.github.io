@@ -3,11 +3,18 @@ import type { Stage } from '../worker/stage';
 import type { Dict } from '../types';
 
 export class Task {
+    /** Stage ID. */
+    #id: number;
+
     /** Do not trigger before / after / skip event. */
     silent: boolean = false;
 
     /** Leave annotation for subclass. */
     [key: string]: any;
+
+    get id() {
+        return this.#id;
+    }
 
     get game() {
         return room.game;
@@ -22,7 +29,11 @@ export class Task {
     }
 
     get #stage(): Stage {
-        return room.taskMap.get(this)!;
+        return room.stages.get(this.id)!;
+    }
+
+    constructor(id: number) {
+        this.#id = id;
     }
 
     /** Main function. */

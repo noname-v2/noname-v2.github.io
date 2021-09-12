@@ -208,14 +208,23 @@ export interface Extension {
 
 /** Selection configurations. */
 export interface Select<T extends string | number = string | number> {
+    /** Components during selection. */
+    create?: [string, ...any[]];
+
+    /** Section to put selected items. */
+    tag: string;
+
     /** Items to choose from. */
     items: T[];
 
-    /** Name of the function that checks if item can be selected. */
-    filter?: string;
+    /** Selectable items created by this.filter(). */
+    selectable?: T[];
 
-    /** Order of the select (in multiple selecs). */
-    order: number;
+    /** Task ID and function name of the filter. */
+    filter?: [number, string];
+
+    /** Progress to a new Select when finished selection. */
+    next?: [number, string, string];
 
     /** Required number of selected items. */
     num: number | [number, number];
@@ -229,6 +238,9 @@ export type Selected<T extends string | number = string | number> = Dict<T[]>;
 
 /** <this> of filter functions. */
 export interface FilterThis<T extends string | number = string | number> extends Select<T> {
+    /** Player ID. */
+    player?: number;
+
     /** Get hero / card / skill data. */
     getInfo: typeof getInfo;
 

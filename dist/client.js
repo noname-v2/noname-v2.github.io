@@ -1289,6 +1289,10 @@
         listen(event) {
             listeners[event].add(this);
         }
+        /** Add component event listener. */
+        ignore(event) {
+            listeners[event].delete(this);
+        }
         /** Delay for a time period. */
         sleep(dur) {
             return this.utils.sleep(this.app.getTransition(dur) / 1000);
@@ -4058,6 +4062,8 @@
         marker = this.ui.createElement('caption.marker', this.content);
         /** Timer bar. */
         timer = null;
+        /** Additional selections created by this.data.select. */
+        selects = [];
         initHero(name) {
             const info = this.app.getInfo('hero', name);
             this.data.heroImage = name;
@@ -4065,6 +4071,10 @@
             this.data.faction = info.faction;
             this.data.hpMax = info.hp;
             this.data.hp = info.hp;
+        }
+        /** Clear all selections. */
+        stage() {
+            this.ignore('stage');
         }
         $heroImage(name) {
             if (name) {
@@ -4138,6 +4148,14 @@
             }
             else {
                 this.node.classList.remove('mine');
+            }
+        }
+        $select(sels) {
+            if (sels) {
+                this.listen('stage');
+            }
+            else {
+                this.stage();
             }
         }
     }

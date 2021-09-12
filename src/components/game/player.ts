@@ -1,4 +1,5 @@
 import { Component, Timer } from '../../components';
+import type { Select, Dict } from '../../types';
 
 export class Player extends Component {
     /** Player background. */
@@ -34,6 +35,9 @@ export class Player extends Component {
     /** Timer bar. */
     timer: Timer | null = null;
 
+    /** Additional selections created by this.data.select. */
+    selects: Dict<Select> = {};
+
     initHero(name: string) {
         const info = this.app.getInfo('hero', name);
         this.data.heroImage = name;
@@ -41,6 +45,12 @@ export class Player extends Component {
         this.data.faction = info.faction;
         this.data.hpMax = info.hp;
         this.data.hp = info.hp;
+    }
+
+    /** Clear all selections. */
+    stage() {
+        this.ignore('stage');
+
     }
 
     $heroImage(name?: string) {
@@ -123,6 +133,15 @@ export class Player extends Component {
         }
         else {
             this.node.classList.remove('mine');
+        }
+    }
+
+    $select(sels: Dict<Select> | null) {
+        if (sels) {
+            this.listen('stage');
+        }
+        else {
+            this.stage();
         }
     }
 }

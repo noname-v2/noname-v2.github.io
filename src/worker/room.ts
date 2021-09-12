@@ -32,17 +32,14 @@ export class Room {
     /** Links to components. */
     links = new Map<number, [Link, Dict]>();
 
-    /** Map from a task to the stage containing the task. */
-    taskMap = new Map<Task, Stage>();
-
     /** All created stages. */
-    #stages = new Map<number, Stage>();
+    stages = new Map<number, Stage>();
 
     /** Array of packages that define mode tasks (priority: high -> low). */
     #ruleset: string[] = [];
 
     /** Map of task classes. */
-    #taskClasses!: Map<string, { new(): Task }>;
+    #taskClasses!: Map<string, { new(id: number): Task }>;
 
     /** Base game classes. */
     #gameClasses!: Map<string, any>;
@@ -92,12 +89,12 @@ export class Room {
     createStage(path: string, data?: Dict, parent?: Stage) {
         const id = ++this.#stageCount;
         const stage = new Stage(id, path, data ?? {}, parent ?? null);
-        this.#stages.set(id, stage);
+        this.stages.set(id, stage);
         return stage;
     }
 
     /** Get or create task constructor. */
-    getTask(path: string): { new(): Task } {
+    getTask(path: string): { new(id: number): Task } {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
             const section = accessExtension(path);

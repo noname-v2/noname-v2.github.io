@@ -51,8 +51,7 @@ export class Stage {
         this.id = id;
         this.path = path;
         this.parent = parent;
-        this.task = apply(new (room.getTask(path))(), data);
-        room.taskMap.set(this.task, this);
+        this.task = apply(new (room.getTask(path))(id), data);
     }
 
     /** Execute the next step.

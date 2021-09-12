@@ -155,9 +155,14 @@ export abstract class Game {
         return pile;
     }
 
-    /** Get a link. */
+    /** Get a link by ID. */
     get(id: number): Link {
         return room.links.get(id)![0];
+    }
+
+    /** Get a task by ID. */
+    getTask(id: number) {
+        return room.stages.get(id)!.task!;
     }
 
     /** Create a link. */

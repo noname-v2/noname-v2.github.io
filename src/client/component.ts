@@ -151,6 +151,11 @@ export class Component {
         client.listeners[event].add(this);
     }
 
+    /** Add component event listener. */
+    ignore<T extends keyof client.Listeners>(this: client.Listeners[T], event: T) {
+        client.listeners[event].delete(this);
+    }
+
     /** Delay for a time period. */
     sleep(dur: TransitionDuration) {
         return this.utils.sleep(this.app.getTransition(dur) / 1000)

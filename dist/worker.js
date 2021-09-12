@@ -181,8 +181,7 @@
             this.id = id;
             this.path = path;
             this.parent = parent;
-            this.task = apply(new (room.getTask(path))(), data);
-            room.taskMap.set(this.task, this);
+            this.task = apply(new (room.getTask(path))(id), data);
         }
         /** Execute the next step.
          * @returns {boolean | null}
@@ -650,10 +649,8 @@
         progress = 0;
         /** Links to components. */
         links = new Map();
-        /** Map from a task to the stage containing the task. */
-        taskMap = new Map();
         /** All created stages. */
-        #stages = new Map();
+        stages = new Map();
         /** Array of packages that define mode tasks (priority: high -> low). */
         #ruleset = [];
         /** Map of task classes. */
@@ -696,7 +693,7 @@
         createStage(path, data, parent) {
             const id = ++this.#stageCount;
             const stage = new Stage(id, path, data ?? {}, parent ?? null);
-            this.#stages.set(id, stage);
+            this.stages.set(id, stage);
             return stage;
         }
         /** Get or create task constructor. */
@@ -916,9 +913,13 @@
             }
             return pile;
         }
-        /** Get a link. */
+        /** Get a link by ID. */
         get(id) {
             return room.links.get(id)[0];
+        }
+        /** Get a task by ID. */
+        getTask(id) {
+            return room.stages.get(id).task;
         }
         /** Create a link. */
         create(tag) {
@@ -980,8 +981,13 @@
     }
 
     class Task {
+        /** Stage ID. */
+        #id;
         /** Do not trigger before / after / skip event. */
         silent = false;
+        get id() {
+            return this.#id;
+        }
         get game() {
             return room.game;
         }
@@ -992,7 +998,10 @@
             return this.#stage.parent?.task ?? null;
         }
         get #stage() {
-            return room.taskMap.get(this);
+            return room.stages.get(this.id);
+        }
+        constructor(id) {
+            this.#id = id;
         }
         /** Main function. */
         main() { }
@@ -1054,6 +1063,8 @@
         timeout = null;
         /** Allow not choosing. */
         forced = false;
+        /** Select configurations of players. */
+        selects;
         /** Time limit for choosing. */
         getTimeout() {
             return this.timeout ?? (this.game.connected ? this.game.config.timeout ?? null : null);

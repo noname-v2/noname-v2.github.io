@@ -54,7 +54,7 @@ export function buildComponents() {
 
     const classes = [
         'export const gameClasses = new Map<string, any>();',
-        'export const taskClasses = new Map<string, { new(): Task }>();\n'
+        'export const taskClasses = new Map<string, { new(id: number): Task }>();\n'
     ];
 
     const types = [];

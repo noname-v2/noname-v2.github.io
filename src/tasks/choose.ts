@@ -8,6 +8,9 @@ export class Choose extends Task {
     /** Allow not choosing. */
     forced: boolean = false;
 
+    /** Select configurations of players. */
+    selects!: Map<number, Dict<Select>>;
+
     /** Time limit for choosing. */
     getTimeout(): number | null {
         return this.timeout ?? (this.game.connected ? this.game.config.timeout ?? null : null);
