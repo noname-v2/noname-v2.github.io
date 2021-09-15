@@ -1,5 +1,5 @@
 import { Task } from '../game/task';
-import type { Select, Selected, Dict } from '../types';
+import type { Select, Dict } from '../types';
 
 export class Choose extends Task {
     /** Has time limit. */
@@ -9,70 +9,107 @@ export class Choose extends Task {
     forced: boolean = false;
 
     /** Select configurations of players. */
-    selects!: Map<number, Dict<Select>>;
+    selects!: Map<number, Select>;
 
-    /** Time limit for choosing. */
-    getTimeout(): number | null {
-        return this.timeout ?? (this.game.connected ? this.game.config.timeout ?? null : null);
+    main() {
+
     }
 
-    /** Get a list of selectable items. */
-    getSelectable(selected: Selected, sels: Dict<Select>): (string | number)[] {
-        const selectable: (string | number)[] = [];
+    /** Fill selects with timer and selectable items. */
+    fill() {
+        const timeout =  this.timeout ?? (this.game.connected ? this.game.config.timeout as number : null);
+        const timer = timeout ? [timeout, Date.now()] as [number, number] : null;
 
-        for (const section in sels) {
-            const filter = this.game.createFilter(section, selected, sels, this);
-            try {
-                for (const item of sels[section].items) {
-                    if (filter(item)) {
-                        selectable.push(item);
-                    }
-                }
+        for (const sel of this.selects.values()) {
+            if (timer) {
+                sel.timer = timer;
             }
-            catch {
-                return [];
-            }
+            sel.selected ??= [];
+            this.filter(sel);
         }
-        return selectable;
     }
 
-    /** Check if selected items are legal. */
-    checkSelection(selected: Selected, sels: Dict<Select>) {
-        // fake selected items
-        const current: Selected = {};
-        for (const section in sels) {
-            current[section] = [];
+    /** Get disabled items. */
+    filter(sel: Select) {
+        if (!sel.filter) {
+            return false;
         }
 
-        // get section order
-        const order = Object.keys(sels);
-        order.sort((a, b) => (sels[a].order - sels[b].order));
+        let changed = false;
+        const disabled = new Set(sel.disabled);
+        const task = this.game.getTask(sel.filter[0]);
+        sel.disabled = [];
 
-        for (const section of order) {
-            // check number of selected items
-            const n = selected[section].length;
-            const sel = sels[section];
-            if (typeof sel.num === 'number') {
-                if (n !== sel.num) {
-                    return false;
-                }
-            }
-            else if (Array.isArray(sel.num)) {
-                if (n < sel.num[0] || n > sel.num[1]) {
-                    return false;
-                }
-            }
+        for (const id of sel.items) {
+            if (!task[sel.filter[1]](id, sel)) {
+                sel.disabled.push(id);
 
-            // check if selected items satisfy filter
-            const filter = this.game.createFilter(section, current, sels, this);
-            for (const item of selected[section]) {
-                if (!filter(item)) {
-                    return false;
+                if (!disabled.has(id)) {
+                    changed = true;
                 }
-                current[section].push(item);
             }
         }
+
+        return changed || disabled.size !== sel.disabled.length;
+    }
+
+    // /** Get a list of selectable items. */
+    // getSelectable(selected: Selected, sels: Dict<Select>): (string | number)[] {
+    //     const selectable: (string | number)[] = [];
+
+    //     for (const section in sels) {
+    //         const filter = this.game.createFilter(section, selected, sels, this);
+    //         try {
+    //             for (const item of sels[section].items) {
+    //                 if (filter(item)) {
+    //                     selectable.push(item);
+    //                 }
+    //             }
+    //         }
+    //         catch {
+    //             return [];
+    //         }
+    //     }
+    //     return selectable;
+    // }
+
+    // /** Check if selected items are legal. */
+    // checkSelection(selected: Selected, sels: Dict<Select>) {
+    //     // fake selected items
+    //     const current: Selected = {};
+    //     for (const section in sels) {
+    //         current[section] = [];
+    //     }
+
+    //     // get section order
+    //     const order = Object.keys(sels);
+    //     order.sort((a, b) => (sels[a].order - sels[b].order));
+
+    //     for (const section of order) {
+    //         // check number of selected items
+    //         const n = selected[section].length;
+    //         const sel = sels[section];
+    //         if (typeof sel.num === 'number') {
+    //             if (n !== sel.num) {
+    //                 return false;
+    //             }
+    //         }
+    //         else if (Array.isArray(sel.num)) {
+    //             if (n < sel.num[0] || n > sel.num[1]) {
+    //                 return false;
+    //             }
+    //         }
+
+    //         // check if selected items satisfy filter
+    //         const filter = this.game.createFilter(section, current, sels, this);
+    //         for (const item of selected[section]) {
+    //             if (!filter(item)) {
+    //                 return false;
+    //             }
+    //             current[section].push(item);
+    //         }
+    //     }
         
-        return true;
-    }
+    //     return true;
+    // }
 }

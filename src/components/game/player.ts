@@ -1,5 +1,5 @@
-import { Component, Timer } from '../../components';
-import type { Select, Dict } from '../../types';
+import { Component, Timer, Pop } from '../../components';
+import type { Select } from '../../types';
 
 export class Player extends Component {
     /** Player background. */
@@ -35,8 +35,8 @@ export class Player extends Component {
     /** Timer bar. */
     timer: Timer | null = null;
 
-    /** Additional selections created by this.data.select. */
-    selects: Dict<Select> = {};
+    /** Pops created by this.data.select. */
+    pops = new Map<number, Pop>();
 
     initHero(name: string) {
         const info = this.app.getInfo('hero', name);
@@ -47,10 +47,12 @@ export class Player extends Component {
         this.data.hp = info.hp;
     }
 
-    /** Clear all selections. */
+    /** Clear all pops. */
     stage() {
         this.ignore('stage');
-
+        for (const pop of this.pops.values()) {
+            pop.remove();
+        }
     }
 
     $heroImage(name?: string) {
@@ -136,9 +138,11 @@ export class Player extends Component {
         }
     }
 
-    $select(sels: Dict<Select> | null) {
-        if (sels) {
+    $select(sel: Select | null) {
+        if (sel) {
             this.listen('stage');
+
+            console.log(sel);
         }
         else {
             this.stage();

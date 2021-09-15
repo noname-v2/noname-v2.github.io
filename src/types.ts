@@ -1,6 +1,5 @@
 import type { Task } from './game/task';
-import type { Component, Color } from './components';
-import type { accessExtension, getInfo} from './extension';
+import type { Component, Color, Pop } from './components';
 import type { lib } from './client/globals';
 
 /** Plain dictionary object. */
@@ -35,14 +34,20 @@ export interface Config {
     confirm?: [string | number | boolean, [string | null, string?]][]
 }
 
-/** SGS hero definition. */
-export interface HeroData {
-    /** Hero name. */
+/** General definition. */
+interface Data {
+    /** Display name. */
     name: string;
 
-    /** Hero intro. */
+    /** Intro shown in context menu. */
     intro: string;
 
+    /** Custom properties. */
+    [key: string]: any;
+}
+
+/** Hero definition. */
+export interface HeroData extends Data {
     /** Hero gender. */
     gender: string;
 
@@ -57,18 +62,10 @@ export interface HeroData {
 
     /** Section of the extension that contains the hero. */
     subpack?: string;
-
-    [key: string]: any;
 };
 
-/** SGS card definition. */
-export interface CardData {
-    /** Card name. */
-    name: string;
-
-    /** Card intro. */
-    intro: string;
-
+/** Card definition. */
+export interface CardData extends Data {
     /** Card type. */
     type: string;
 
@@ -101,18 +98,16 @@ export interface CardData {
 
     /** Distance changes when equipped. */
     distance?: number | [number, number];
-
-    [key: string]: any;
 };
 
-/** SGS skill definition. */
-export interface SkillData {
-    /** Skill name. */
-    name: string;
+/** Minion definition. */
+export interface MinionData extends Data {
+    /** Range that the minion can reach. */
+    range?: number;
+}
 
-    /** Skill intro. */
-    intro: string;
-
+/** Skill definition. */
+export interface SkillData extends Data {
     /** Skill type. */
     type?: string;
     
@@ -187,6 +182,9 @@ export interface Extension {
     /** Skill data. */
     skill?: Dict<SkillData>;
 
+    /** Minion data. */
+    minion?: Dict<MinionData>;
+
     /** Card pile. */
     pile?: Pile;
 
@@ -208,51 +206,36 @@ export interface Extension {
 
 /** Selection configurations. */
 export interface Select<T extends string | number = string | number> {
-    /** Components during selection. */
-    create?: [string, ...any[]];
+    /** Create a Pop component during selection. */
+    create?: [string, Pick<Pop, 'caption' | 'tray' | 'bar'>];
 
-    /** Section to put selected items. */
-    tag: string;
+    /** Include a timer [duration, starttime]. */
+    timer?: [number, number];
 
-    /** Items to choose from. */
+    /** Items that are selectable. */
     items: T[];
 
-    /** Selectable items created by this.filter(). */
-    selectable?: T[];
+    /** Selected items. */
+    selected: T[];
+
+    /** Items that are disabled because of this.filter. */
+    disabled?: T[];
 
     /** Task ID and function name of the filter. */
     filter?: [number, string];
 
-    /** Progress to a new Select when finished selection. */
-    next?: [number, string, string];
+    /** Dynamically create this.next based on current selection. */
+    progress?: [number, string];
+
+    /** New selection to deal with after finishing current one. */
+    next?: Select;
+
+    /** Parent selection (this.previous.next === this). */
+    previous?: Select;
 
     /** Required number of selected items. */
-    num: number | [number, number];
+    num?: number | [number, number];
 
     /** Additional data (e.g. mapping string to [name, suit, number] for vcard.) */
     [key: string]: any;
-}
-
-/** Selected items. */
-export type Selected<T extends string | number = string | number> = Dict<T[]>;
-
-/** <this> of filter functions. */
-export interface FilterThis<T extends string | number = string | number> extends Select<T> {
-    /** Player ID. */
-    player?: number;
-
-    /** Get hero / card / skill data. */
-    getInfo: typeof getInfo;
-
-    /** Get component properties. */
-    getData: (id: number) => { readonly [key: string]: any };
-
-    /** Get extension data. */
-    accessExtension: typeof accessExtension;
-
-    /** Selected items. */
-    selected: Selected<T>;
-
-    /** Selection configurations. */
-    selects: Dict<Select<T>>;
 }

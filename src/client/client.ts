@@ -6,6 +6,7 @@ import * as db from './db';
 import * as meta from '../meta';
 import type { Component, Color } from '../components';
 import type { UITick, ClientMessage } from '../worker/worker';
+import type { Dict } from '../types';
 
 /** Hub configuration. */
 export const hub = new Proxy(meta.hub, {
@@ -57,6 +58,9 @@ export const components = new Map<number, Component>();
 
 /** Map from a component to its ID. */
 export const componentIDs = new Map<Component, number>();
+
+/** Temporarily mark worker-managed components as editable. */
+export let updating = false;
 
 /** ID of current stage. */
 let stageID = 0;
@@ -164,7 +168,7 @@ export function trigger(event: keyof Listeners, arg?: any) {
     for (const cmp of listeners[event]) {
         (cmp as any)[event](arg);
     }
-} 
+}
 
 /** Load arena. */
 async function loadArena(ruleset: string[], packs: string[]) {
@@ -277,11 +281,13 @@ async function render() {
 
         // update component properties
         let hooks: any[] = [];
+        updating = true;
         for (const key in props) {
-            hooks = hooks.concat(components.get(parseInt(key))!.update(props[key], false));
+            hooks = hooks.concat(components.get(parseInt(key))!.update(props[key]));
         }
-        for (const [hook, cmp, newVal, oldVal] of hooks) {
-            hook.apply(cmp, [newVal, oldVal]);
+        updating = false;
+        for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
+            hook.apply(cmp, [newVal, oldVal, partial]);
         }
 
         // call component methods

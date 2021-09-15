@@ -1,8 +1,17 @@
-import { trigger } from '../../client/client';
+import { trigger, components } from '../../client/client';
 import { splash, arena, init } from '../../client/globals';
-import { Component, Popup, Peer, Zoom, TransitionDuration } from '../../components';
-import { accessExtension, getInfo, createFilter } from '../../extension';
-import type { Dict, Select, Selected } from '../../types';
+import { Component, Popup, Zoom, TransitionDuration } from '../../components';
+import { accessExtension } from '../../extension';
+import type { Dict, HeroData, CardData, MinionData, SkillData } from '../../types';
+
+/** Get hero info. */
+interface GetInfo {
+    hero: HeroData;
+    card: CardData;
+    skill: SkillData;
+    minion: MinionData;
+    [key: string]: any;
+}
 
 /** Options used by ui.choose(). */
 interface DialogOptions {
@@ -84,10 +93,6 @@ export class App extends Component {
 
     get accessExtension() {
         return accessExtension;
-    }
-
-    get getInfo() {
-        return getInfo;
     }
 
     get mode(): string | null {
@@ -434,15 +439,11 @@ export class App extends Component {
             menu.location = e;
             
             for (let skill of info.skills ?? []) {
-                let pack;
-                if (skill.includes(':')) {
-                    [pack, skill] = this.utils.split(skill);
-                }
-                else {
-                    pack = this.utils.split(id)[0];
+                if (!skill.includes(':')) {
+                    skill = this.utils.split(id)[0] + ':' + skill;
                 }
                 
-                const info = this.accessExtension(pack, 'skill', skill);
+                const info = this.getInfo('skill', skill);
                 if (info) {
                     menu.pane.addSection(info.name ?? skill);
                     if (info.intro) {
@@ -467,13 +468,15 @@ export class App extends Component {
 
     }
 
-    /** Create filter function for choose task. */
-    createFilter(section: string, selected: Selected, sels: Dict<Select>) {
-        return createFilter(section, selected, sels, (id: number) => new Proxy(this.getComponent(id)!, {
-            get(target, key: string) {
-                return target.data[key];
-            }
-        }));
+    /** Get compnent by ID. */
+    getComponent(id: number) {
+        return components.get(id) ?? null;
+    }
+
+    /** Get info from extension. */
+    getInfo<T extends keyof GetInfo>(type: T, id: string): GetInfo[T] {
+        const [ext, name] = this.utils.split(id);
+        return accessExtension(ext, type as string, name);
     }
 
     /** Adjust zoom level according to device DPI. */

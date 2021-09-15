@@ -1,8 +1,8 @@
 import type { Dict } from './types';
 
 /** Deep copy plain object. */
-export function copy(from: Dict) {
-    const to: Dict = {};
+export function copy<T extends Dict = Dict>(from: T): T {
+    const to = {} as T;
     for (const key in from) {
         if (from[key]?.constructor === Object) {
             to[key] = copy(from[key])
@@ -15,16 +15,16 @@ export function copy(from: Dict) {
 }
 
 /** Merge two objects. */
-export function apply<T extends Dict = Dict>(to: T, from: Dict, exclude?: string[]): T {
+export function apply<T extends Dict = Dict>(to: T, from: Partial<T>, exclude?: (keyof T)[]): T {
     for (const key in from) {
         if (exclude?.includes(key)) {
             continue;
         }
         else if (to[key]?.constructor === Object && from[key]?.constructor === Object) {
-            apply(to[key], from[key])
+            apply(to[key], from[key]!);
         }
         else if (from[key] !== null && from[key] !== undefined) {
-            (to as Dict)[key] = from[key];
+            to[key] = from[key]!;
         }
     }
     return to;

@@ -22,6 +22,9 @@ export interface Link {
     /** Update multiple properties. */
     readonly update: (items: Dict) => void;
 
+    /** Update partial property. */
+    readonly apply: (key: string, diff: Dict) => void;
+
     /** Remove reference to a component. */
     readonly unlink: () => void;
 
@@ -50,9 +53,19 @@ export function createLink(id: number, tag: string) {
         update(items: Dict) {
             for (const key in items) {
                 const val = items[key] ?? null;
-                val === null ? delete obj[key] : obj[key] = val;
+                if (val === null) {
+                    delete obj[key];
+                }
+                else {
+                    obj[key] = val;
+                }
             }
             tick(id, items);
+        },
+        apply(key: string, diff: Dict) {
+            obj[key] ??= {};
+            room.game.utils.apply(obj[key], diff);
+            tick(id, { ['^' + key]: diff });
         },
         monitor(callback: string) {
             room.currentStage.monitors.set(link.id, callback);
@@ -81,7 +94,7 @@ export function createLink(id: number, tag: string) {
         get(_, key: string) {
             if (key in reserved) {
                 if (key === 'result') {
-                    return reserved[key]() ?? null;
+                    return reserved.result() ?? null;
                 }
                 else {
                     return reserved[key];

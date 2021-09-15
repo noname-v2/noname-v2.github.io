@@ -101,29 +101,45 @@ export class Component {
     /** Optional initialization method. */
     init() {};
 
-    /** Get compnent by ID. */
-    getComponent(id: number) {
-        return client.components.get(id) ?? null;
-    }
-
     /** Update properties. Reserved key:
      * owner: uid of client that controls the component
+     * ^<key>: update partial property
     */
-    update(items: Dict, hook: boolean = true) {
+    update(items: Dict) {
+        if (client.componentIDs.has(this) && !client.updating) {
+            throw('Cannot update the property of worker-created component.');
+        }
+
         const hooks = [];
-        for (const key in items) {
-            const oldVal = this.#props.get(key) ?? null;
+
+        for (let key in items) {
+            const partial = key.startsWith('^');
+            if (partial) {
+                key = key.slice(1);
+            }
+
+            const oldVal = this.#props.get(key) ?? (partial ? {} : null);
             const newVal = items[key] ?? null;
-            newVal === null ? this.#props.delete(key) : this.#props.set(key, newVal);
+
+            if (partial) {
+                this.utils.apply(oldVal, newVal);
+            }
+            else if (newVal === null) {
+                this.#props.delete(key);
+            }
+            else {
+                this.#props.set(key, newVal);
+            }
+
             const hook = this['$' + key as keyof Component];
             if (typeof hook === 'function') {
-                hooks.push([hook, this, newVal, oldVal]);
+                hooks.push([hook, this, newVal, oldVal, partial]);
             }
         }
 
-        if (hook) {
-            for (const [hook, cmp, newVal, oldVal] of hooks) {
-                this.ready.then(() => hook.apply(cmp, [newVal, oldVal]));
+        if (!client.componentIDs.has(this)) {
+            for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
+                this.ready.then(() => hook.apply(cmp, [newVal, oldVal, partial]));
             }
         }
 
