@@ -1,6 +1,6 @@
 import { hub } from '../../client/client';
 import { splash } from '../../client/globals';
-import { Component, Toggle, Player, Tray, Collection, Dialog } from '../../components';
+import { Component, Toggle, Player, Tray, Collection, Dialog } from '../../components/component';
 import type { Config, Dict } from '../../types';
 
 export class Lobby extends Component {
@@ -58,13 +58,16 @@ export class Lobby extends Component {
     /** Number of temporary collections. */
     #tmpCount = 0;
 
+    /** Whether pick tray contains online of offline heros. */
+    #pickMode!: boolean;
+
     get #config() {
         return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
     }
 
     /** ID in db for picked heros. */
     get #pick() {
-        return this.app.mode + ':online_picked';
+        return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'picked';
     }
 
     init() {
@@ -166,6 +169,9 @@ export class Lobby extends Component {
             this.respond();
             this.app.popups.get('lobbyReady')?.close();
         }
+
+        // update picked heros
+        this.#updatePicks();
     }
 
     /** Disable all toggles until command received from worker. */
@@ -313,17 +319,6 @@ export class Lobby extends Component {
         }
         this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'))
 
-        // banned heros
-        this.banned = [
-            this.sidebar.pane.addSection('禁将'),
-            this.sidebar.pane.addTray('round'),
-            new Map()
-        ];
-        this.banned[0].style.display = 'none';
-        this.banned[1].node.style.display = 'none';
-        this.ui.bindClick(this.banned[0], () => this.#showBanned());
-        this.ui.bind(this.banned[1].node, () => this.#showBanned());
-
         // picked heros
         this.picked = [
             this.sidebar.pane.addSection('点将'),
@@ -333,23 +328,19 @@ export class Lobby extends Component {
 
         this.picked[0].style.display = 'none';
         this.picked[1].node.style.display = 'none';
-        this.ui.bind(this.picked[1].node, () => {
-            if (!this.picked[1].items.size) {
-                this.app.alert('点将', {content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。'})
-            }
-            else {
-                this.#showPicked();
-            }
-        });
-        
+        this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
         this.ui.bindClick(this.picked[0], () => this.#showPicked());
 
-        const picked = this.db.get(this.#pick);
-        if (picked) {
-            for (const id of picked) {
-                this.#togglePick(id, true, false);
-            }
-        }
+        // banned heros
+        this.banned = [
+            this.sidebar.pane.addSection('禁将'),
+            this.sidebar.pane.addTray('round'),
+            new Map()
+        ];
+        this.banned[0].style.display = 'none';
+        this.banned[1].node.style.display = 'none';
+        this.ui.bind(this.banned[1].node, () => this.mine ? this.#openCollection(heropacks, 'hero') : null);
+        this.ui.bindClick(this.banned[0], () => this.#showBanned());
     }
 
     $owner() {
@@ -374,36 +365,34 @@ export class Lobby extends Component {
         this.sidebar.showFooter();
     }
 
-    $config(config: Dict, oldConfig: Dict) {
+    $config(config: Dict, _: Dict, partial: boolean) {
         this.unfreeze();
 
         // update toggles
         for (const [key, toggle] of this.configToggles) {
             if (key in config) {
                 toggle.assign(config[key]);
-                const requires = this.configDynamicToggles.get(key);
+
+                // hide a toggle if its dependency is not present
+                let requires = this.configDynamicToggles.get(key);
                 if (requires) {
-                    if (requires[0] === '!') {
-                        toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                    const not = requires[0] === '!';
+                    if (not) {
+                        requires = requires.slice(1);
                     }
-                    else {
-                        toggle.node.style.display = config[requires] ? '' : 'none';
+                    if (!partial || requires in config) {
+                        const hide = not ? config[requires] : !config[requires];
+                        toggle.node.style.display = hide ? 'none' : '';
                     }
                 }
             }
-            else {
+            else if (!partial) {
                 toggle.node.style.display = 'none';
             }
         }
 
-        // save configuration
-        if (this.mine) {
-            delete config.online;
-            this.db.set(this.#config, config);
-        }
-
         // update spectators
-        if (config.np) {
+        if ('np' in config) {
             // make sure npmax is set
             setTimeout(() => {
                 for (let i = 0; i < this.data.npmax; i++) {
@@ -414,35 +403,40 @@ export class Lobby extends Component {
         }
 
         // update banned packs
-        for (const [name, toggle] of this.heroToggles) {
-            toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
+        if (!partial || config.banned?.heropack) {
+            for (const [name, toggle] of this.heroToggles) {
+                toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
+            }
+            if (config.banned?.heropack?.length === 0) {
+                delete config.banned.heropack;
+            }
         }
-        for (const [name, toggle] of this.cardToggles) {
-            toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
-        }
-
-        // update banned hero
-        let changed = false;
-        const oldBanned = new Set<string>(oldConfig?.banned?.hero);
-        const newBanned = new Set<string>(config.banned?.hero);
-        if (oldBanned.size !== newBanned.size) {
-            changed = true;
-        }
-        else {
-            for (const id of oldBanned) {
-                if (!newBanned.has(id)) {
-                    changed = true;
-                    break;
-                }
+        
+        if (!partial || config.banned?.cardpack) {
+            for (const [name, toggle] of this.cardToggles) {
+                toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
+            }
+            if (config.banned?.cardpack?.length === 0) {
+                delete config.banned.cardpack;
             }
         }
 
-        if (changed) {
+        // update banned hero
+        if (!partial || config.banned?.hero) {
+            const oldBanned = new Set<string>();
+            const newBanned = new Set<string>(config.banned?.hero);
             const tray = this.banned[1];
 
             if (newBanned.size) {
                 this.banned[0].style.display = '';
                 tray.node.style.display = '';
+
+                // get existing tray items
+                for (const [id, clone] of this.banned[2]) {
+                    if (tray.items.has(clone)) {
+                        oldBanned.add(id);
+                    }
+                }
                 
                 // add new banned
                 for (const id of newBanned) {
@@ -477,27 +471,40 @@ export class Lobby extends Component {
                 this.banned[1].node.style.display = 'none';
                 tray.items.clear();
                 tray.node.innerHTML = '';
+                delete config.banned.hero;
             }
         }
 
         // update picked hero
-        if (config.pick && this.app.arena!.peers) {
-            this.picked[0].style.display = '';
-            this.picked[1].node.style.display = '';
-            if (!this.picked[3]) {
-                this.picked[3] = true;
-                this.picked[1].align();
+        if (!partial || 'pick' in config) {
+            if (this.data.config.pick || !this.app.arena!.peers) {
+                this.picked[0].style.display = '';
+                this.picked[1].node.style.display = '';
+                if (!this.picked[3]) {
+                    this.picked[3] = true;
+                    this.picked[1].align();
+                }
+                for (const collection of this.collections.values()) {
+                    collection.node.classList.remove('no-select');
+                }
             }
-            for (const collection of this.collections.values()) {
-                collection.node.classList.remove('no-select');
+            else {
+                this.picked[0].style.display = 'none';
+                this.picked[1].node.style.display = 'none';
+                for (const collection of this.collections.values()) {
+                    collection.node.classList.add('no-select');
+                }
+            }
+            if (!partial) {
+                this.#updatePicks();
             }
         }
-        else {
-            this.picked[0].style.display = 'none';
-            this.picked[1].node.style.display = 'none';
-            for (const collection of this.collections.values()) {
-                collection.node.classList.add('no-select');
-            }
+
+        // save configuration
+        if (this.mine) {
+            const config = this.data.config;
+            delete config.online;
+            this.db.set(this.#config, config);
         }
     }
 
@@ -619,7 +626,7 @@ export class Lobby extends Component {
             this.picked[1][on ? 'add' : 'delete'](clone);
         }
         else {
-            this.picked[1].addSilent(clone);
+            this.picked[1][on ? 'addSilent' : 'deleteSilent'](clone);
         }
     }
 
@@ -687,7 +694,7 @@ export class Lobby extends Component {
             }
         };
 
-        if (!this.data.config.pick || !this.app.arena!.peers) {
+        if (!this.data.config.pick && this.app.arena!.peers) {
             collection.node.classList.add('no-select');
         }
 
@@ -711,7 +718,7 @@ export class Lobby extends Component {
                 if (type === 'hero') {
                     this.ui.bind(node, () => {
                         if (this.mine) {
-                            if (this.data.config.pick && this.app.arena!.peers) {
+                            if (this.data.config.pick || !this.app.arena!.peers) {
                                 const picked = node.classList.contains('selected');
                                 const banned = node.classList.contains('defer');
                                 this.app.choose(this.app.getInfo('hero', id).name, {
@@ -809,5 +816,35 @@ export class Lobby extends Component {
             });
         });
         collection.open();
+    }
+
+    #updatePicks() {
+        // check if pick mode changed
+        if (this.app.connected === this.#pickMode) {
+            return;
+        }
+        this.#pickMode = this.app.connected;
+
+        // get changed picks
+        const newPicked = new Set<string>(this.db.get(this.#pick));
+        const oldPicked = new Set();
+        const tray = this.picked[1];
+
+        for (const [id, clone] of this.picked[2]) {
+            if (tray.items.has(clone)) {
+                oldPicked.add(id);
+                if (!newPicked.has(id)) {
+                    this.#togglePick(id, false, false);
+                }
+            }
+        }
+
+        for (const id of newPicked) {
+            if (!oldPicked.has(id)) {
+                this.#togglePick(id, true, false);
+            }
+        }
+
+        tray.align();
     }
 }

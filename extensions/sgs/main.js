@@ -1,9 +1,7 @@
-function trigger(T) {
-    return class Trigger extends T {
-        /** Event name. */
-        event;
+function loop(T) {
+    return class Loop extends T {
         main() {
-            // console.log('>', this.event, this.parent?.path)
+            console.log('loop');
         }
     };
 }
@@ -18,23 +16,23 @@ function setup(T) {
         }
         /** Create all players and add to arena. */
         createPlayers() {
-            for (let i = 0; i < this.game.config.np; i++) {
-                this.game.createPlayer().link.seat = i;
+            for (let i = 0; i < this.arena.config.np; i++) {
+                this.arena.create('player').data.seat = i;
             }
         }
         /** Assign clients to players. */
         assignSeat() {
-            const players = this.game.utils.rgets(this.game.players.values(), this.game.hub.players?.length || 1);
-            const peers = this.game.hub.players;
+            const players = this.arena.utils.rgets(this.arena.players.values(), this.arena.hub.players?.length || 1);
+            const peers = this.arena.hub.players;
             for (const player of players) {
                 if (peers?.length) {
                     const peer = peers.pop();
-                    player.link.owner = peer.owner;
-                    player.link.nickname = peer.nickname;
+                    player.data.owner = peer.owner;
+                    player.data.nickname = peer.data.nickname;
                 }
                 else {
                     if (!peers) {
-                        player.link.owner = this.game.owner;
+                        player.data.owner = this.arena.owner;
                     }
                     break;
                 }
@@ -43,11 +41,14 @@ function setup(T) {
         /** Update locations of players in arena. */
         takeSeat() {
             const ids = [];
-            for (const player of this.game.players.values()) {
+            for (const player of this.arena.players.values()) {
                 ids.push(player.id);
             }
-            this.game.arena.players = ids;
-            this.game.arena.np = this.game.config.np;
+            // use arena.update() instead of arena.data to skip type checking
+            this.arena.update({
+                players: ids,
+                np: this.arena.config.np
+            });
         }
         /** Create card pile. */
         createCards() {
@@ -55,29 +56,17 @@ function setup(T) {
     };
 }
 
-function loop(T) {
-    return class Loop extends T {
+function trigger(T) {
+    return class Trigger extends T {
+        /** Event name. */
+        event;
         main() {
-            console.log('loop');
+            // console.log('>', this.event, this.parent?.path)
         }
     };
 }
 
-/** Game tasks. */
-const tasks = {
-    trigger, setup, loop
-};
-
-function game(G) {
-    return class Game extends G {
-        /** Backup game progress. */
-        backup() {
-        }
-        /** Restore game progress. */
-        restore() {
-        }
-    };
-}
+const tasks = { loop, setup, trigger };
 
 function player$1(P) {
     return class Player extends P {
@@ -88,19 +77,23 @@ function player$1(P) {
 }
 
 function card(C) {
-    return class Player extends C {
+    return class Card extends C {
         test2() {
             // this.createPlayer();
         }
     };
 }
 
-class Skill {
+function skill(S) {
+    return class Skill extends S {
+        test() {
+            // this.createPlayer();
+        }
+    };
 }
-const skill = () => Skill;
 
-const classes = {
-    game, player: player$1, card, skill
+const links = {
+    player: player$1, card, skill
 };
 
 function arena(T) {
@@ -144,7 +137,8 @@ function arena(T) {
                 // update player locations
                 setTimeout(() => {
                     for (const id of this.data.players) {
-                        this.getComponent(id).$seat();
+                        // @ts-ignore
+                        this.app.getComponent(id).$seat();
                     }
                 });
             }
@@ -300,7 +294,7 @@ function arena(T) {
             const nodes = new Set();
             // append players
             for (const id of ids) {
-                const player = this.getComponent(id);
+                const player = this.app.getComponent(id);
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);
@@ -334,6 +328,7 @@ function player(T) {
         }
         $seat(seat) {
             seat ??= this.data.seat;
+            // @ts-ignore
             [this.x, this.y] = this.app.arena.locatePlayer(seat);
             this.locate();
             if (!this.data.heroName) {
@@ -343,196 +338,14 @@ function player(T) {
     };
 }
 
-function pop(T) {
-    return class Pop extends T {
-        /** Selected by this.pick(). */
-        picked = new Set();
-        /** Item clones created by this.pick(). */
-        clones = new Map();
-        /** Cache of created collections. */
-        collections = new Map();
-        /** Restored picked heros from db. */
-        #restored = false;
-        /** ID in db for saving. */
-        get #id() {
-            const arena = this.app.arena;
-            return arena.data.mode + ':' + (arena.data.peers ? 'online_picked' : 'picked');
-        }
-        /** Include picked items. */
-        ok() {
-            if (this.picked.size) {
-                this.respond([this.selected, this.picked]);
-            }
-            else {
-                super.ok();
-            }
-        }
-        /** Include picked items. */
-        getSelected() {
-            // original selected items
-            const selected = {};
-            Object.assign(selected, super.getSelected());
-            // add picked items
-            const picked = Array.from(this.picked);
-            picked.sort((a, b) => {
-                const idx = (id) => this.tray.items.get(this.clones.get(id)) ?? -1;
-                return idx(b) - idx(a);
-            });
-            selected.picked = picked;
-            return selected;
-        }
-        /** Enable pick by default. */
-        addConfirm(confirm) {
-            super.addConfirm(confirm);
-            if (this.app.connected && this.buttons.get('callPick')) {
-                this.tray.ready.then(() => this.#restore());
-            }
-        }
-        /** Enable or disable pick. */
-        togglePick() {
-            if (this.mine) {
-                const button = this.buttons.get('callPick');
-                if (button.dataset.fill) {
-                    this.#clear();
-                }
-                else {
-                    this.#restore();
-                }
-            }
-        }
-        /** Open a popup to pick heros. */
-        pick([e, packs]) {
-            if (!this.mine || this.#restore()) {
-                return;
-            }
-            const menu = this.ui.create('popup');
-            for (const pack of packs) {
-                // separate by packs to improve performance
-                const name = this.app.accessExtension(pack, 'heropack');
-                menu.pane.addOption(name ?? pack, () => {
-                    // open hero gallery
-                    menu.close();
-                    if (!this.collections.has(pack)) {
-                        this.#createCollection(pack);
-                    }
-                    this.collections.get(pack).pop();
-                });
-            }
-            // cancel this.#restore
-            if (this.picked.size) {
-                menu.pane.addOption('取消', () => {
-                    this.#clear();
-                    menu.close();
-                });
-            }
-            menu.open(e);
-        }
-        /** Save picked heros. */
-        #save() {
-            this.db.set(this.#id, Array.from(this.picked));
-            this.buttons.get('callPick').dataset.fill = this.picked.size ? 'blue' : '';
-        }
-        /** Clear picked items. */
-        #clear() {
-            for (const id of this.picked) {
-                this.tray.deleteSilent(this.clones.get(id));
-            }
-            this.tray.align();
-            this.picked.clear();
-            this.buttons.get('callPick').dataset.fill = '';
-            this.#restored = false;
-        }
-        /** Restore from saved heros. */
-        #restore() {
-            if (this.#restored) {
-                return false;
-            }
-            this.#restored = true;
-            const picked = this.db.get(this.#id) ?? [];
-            if (picked.length) {
-                for (const id of picked) {
-                    this.#pick(id);
-                    const clone = this.clones.get(id);
-                    this.tray.addSilent(clone);
-                }
-                this.tray.align();
-                this.buttons.get('callPick').dataset.fill = 'blue';
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
-        /** Pick an item. */
-        #pick(id) {
-            if (!this.clones.has(id)) {
-                const clone = this.ui.createElement('widget.avatar');
-                clone.dataset.shadow = 'blue';
-                this.app.bindHero(clone, id);
-                this.ui.setImage(clone, id);
-                let clicked = false;
-                this.ui.bind(clone, () => {
-                    if (clicked || this.app.connected) {
-                        return;
-                    }
-                    clicked = true;
-                    setTimeout(() => clicked = false, 500);
-                    this.#unpick(id);
-                });
-                this.clones.set(id, clone);
-            }
-            // select hero
-            this.picked.add(id);
-        }
-        /** Unpick an item. */
-        #unpick(id) {
-            this.picked.delete(id);
-            this.tray.delete(this.clones.get(id));
-            this.#save();
-        }
-        /** Create a hero collection of an extension. */
-        #createCollection(pack) {
-            const collection = this.ui.create('collection');
-            collection.nrows = 3;
-            collection.ncols = 7;
-            collection.setup([pack], 'hero', (id, node) => {
-                if (this.picked.has(id)) {
-                    node.classList.add('selected');
-                }
-                this.ui.bind(node, () => {
-                    if (this.picked.has(id)) {
-                        // unselect hero
-                        this.#unpick(id);
-                        node.classList.remove('selected');
-                    }
-                    else if (!node.classList.contains('selected')) {
-                        // create clone of hero
-                        this.#pick(id);
-                        this.tray.add(this.clones.get(id));
-                        this.#save();
-                        node.classList.add('selected');
-                    }
-                });
-            });
-            this.collections.set(pack, collection);
-            // check if hero is picked
-            collection.onopen = () => {
-                for (const [id, node] of collection.items) {
-                    node.classList[this.picked.has(id) ? 'add' : 'remove']('selected');
-                }
-            };
-        }
-    };
-}
-
-const components = {
-    arena, player, pop
-};
+const components = { arena, player };
 
 var main = {
     requires: ['standard', 'maneuver'],
     mode: {
-        tasks, classes, components,
+        tasks,
+        components,
+        links,
         minHeroCount: 50,
         minPileCount: 100,
         autoKeywords: {

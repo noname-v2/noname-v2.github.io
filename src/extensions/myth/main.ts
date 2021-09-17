@@ -1,4 +1,4 @@
-import type { Extension } from '../types';
+import type { Extension } from '../../types';
 import { skill } from './skill';
 
 export default {

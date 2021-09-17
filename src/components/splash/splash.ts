@@ -1,11 +1,11 @@
-import { Component, SplashGallery, SplashSettings, SplashHub } from '../../components';
+import { Component, SplashGallery, SplashSettings, SplashHub } from '../../components/component';
 
 export class Splash extends Component {
     // gallery of modes
 	gallery!: SplashGallery;
 
 	// bottom toolbar
-	bar = this.ui.create('splash-bar');
+	bar = this.ui.create('splashBar');
 
 	// settings menu
 	settings!: SplashSettings;
@@ -17,13 +17,13 @@ export class Splash extends Component {
 	hidden = true;
 
 	createGallery() {
-		this.gallery = this.ui.create('splash-gallery');
+		this.gallery = this.ui.create('splashGallery');
 		return this.gallery.ready;
 	}
 
 	createBar() {
-		this.settings = this.ui.create('splash-settings');
-		this.hub = this.ui.create('splash-hub');
+		this.settings = this.ui.create('splashSettings');
+		this.hub = this.ui.create('splashHub');
 	}
 
 	hide(faded: boolean = false) {

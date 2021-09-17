@@ -1,6 +1,6 @@
 import { debug } from '../../meta';
 import { Popup } from '../popup';
-import type { Point, Gallery } from '../../components';
+import type { Point, Gallery } from '../../components/component';
 import type { Pile, Dict } from '../../types';
 
 /** A collection of all heros or cards in an extension. */

@@ -121,7 +121,7 @@ var main = {
     cardpack: '君临天下',
     heropack: '君临天下',
     tags: ['hero-hidden!', 'double-hero!'],
-    requires: ['meteor', 'contest'],
+    // requires: ['meteor', 'contest'],
     skill,
     lib: {
         keyword: {

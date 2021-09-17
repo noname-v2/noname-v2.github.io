@@ -384,7 +384,7 @@
         const cmp = new cls(tag);
         // add className for a Component subclass with a static tag
         if (cls.tag && cmp.node) {
-            cmp.node.classList.add(tag);
+            cmp.node.classList.add(tag.split('').map(c => c !== c.toLowerCase() ? '-' + c.toLowerCase() : c).join(''));
         }
         if (parent) {
             parent.appendChild(cmp.node);
@@ -703,6 +703,31 @@
         setColor: setColor
     });
 
+    /** Map of loaded extensions. */
+    const extensions = new Map();
+    /** Load extension. */
+    async function importExtension(extname) {
+        if (!extensions.has(extname)) {
+            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
+            extensions.set(extname, ext);
+        }
+        return extensions.get(extname);
+    }
+    /** Access extension content. */
+    function accessExtension(path, ...paths) {
+        if (paths.length) {
+            if (!path.includes(':')) {
+                path += ':';
+            }
+            else {
+                path += '.';
+            }
+            path += paths.join('.');
+        }
+        const [ext, keys] = path.split(':');
+        return access(extensions.get(ext), keys) ?? null;
+    }
+
     /** Opened indexedDB object. */
     let db;
     /** Cache of settings. */
@@ -816,60 +841,6 @@
         readdir: readdir
     });
 
-    /** Map of loaded extensions. */
-    const extensions = new Map();
-    /** Load extension. */
-    async function importExtension(extname) {
-        if (!extensions.has(extname)) {
-            const ext = freeze((await import(`../extensions/${extname}/main.js`)).default);
-            extensions.set(extname, ext);
-        }
-        return extensions.get(extname);
-    }
-    /** Access extension content. */
-    function accessExtension(path, ...paths) {
-        if (paths.length) {
-            if (!path.includes(':')) {
-                path += ':';
-            }
-            else {
-                path += '.';
-            }
-            path += paths.join('.');
-        }
-        const [ext, keys] = path.split(':');
-        return access(extensions.get(ext), keys) ?? null;
-    }
-    function getInfo(type, id) {
-        const [ext, name] = split(id);
-        return accessExtension(ext, type, name);
-    }
-    /** Create a filter to check if item is selectable. */
-    function createFilter(section, selected, selects, getData, task) {
-        // check if more items can be selected
-        const sel = selects[section];
-        const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-        // get function from extension
-        if (!sel.filter) {
-            return () => selected[section].length < max;
-        }
-        const func = accessExtension(sel.filter);
-        // wrap function with this and task argument
-        const filterThis = {
-            selected, selects,
-            getInfo, getData, accessExtension
-        };
-        for (const key in sel) {
-            filterThis[key] = sel[key];
-        }
-        return (item) => {
-            if (selected[section].length >= max) {
-                return false;
-            }
-            return func.apply(filterThis, [item, task]);
-        };
-    }
-
     /** Hub configuration. */
     const hub = new Proxy(hub$1, {
         get(target, key) {
@@ -899,6 +870,8 @@
     const components = new Map();
     /** Map from a component to its ID. */
     const componentIDs = new Map();
+    /** Temporarily mark worker-managed components as editable. */
+    let updating = false;
     /** ID of current stage. */
     let stageID = 0;
     /**  UITicks waiting for dispatch. */
@@ -1013,7 +986,7 @@
             allPacks.add(pack);
             const ext = await importExtension(pack);
             for (const tag in ext.mode?.components) {
-                const cls = componentClasses$1.get(tag) ?? backups.get('component');
+                const cls = componentClasses$1.get(tag) ?? componentClasses$1.get('component');
                 componentClasses$1.set(tag, ext.mode.components[tag](cls));
             }
             if (ext.requires) {
@@ -1094,17 +1067,19 @@
             await Promise.all(newComponents);
             // update component properties
             let hooks = [];
+            updating = true;
             for (const key in props) {
-                hooks = hooks.concat(components.get(parseInt(key)).update(props[key], false));
+                hooks = hooks.concat(components.get(parseInt(key)).update(props[key]));
             }
-            for (const [hook, cmp, newVal, oldVal] of hooks) {
-                hook.apply(cmp, [newVal, oldVal]);
+            updating = false;
+            for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
+                hook.apply(cmp, [newVal, oldVal, partial]);
             }
             // call component methods
             for (const key in calls) {
                 const id = parseInt(key);
-                for (const [method, arg] of calls[key]) {
-                    components.get(id)[method](arg);
+                for (const [method, args] of calls[key]) {
+                    components.get(id)[method](...args);
                 }
             }
             // delete components
@@ -1168,6 +1143,7 @@
         get uid () { return uid; },
         components: components,
         componentIDs: componentIDs,
+        get updating () { return updating; },
         connect: connect,
         disconnect: disconnect,
         send: send,
@@ -1178,9 +1154,9 @@
 
     class Component {
         /** HTMLElement tag  name */
-        static tag = null;
+        static tag;
         /** Component without DOM element. */
-        static virtual = false;
+        static virtual;
         /** Root element. */
         #node;
         /** Resolved after executing this.init(). */
@@ -1190,7 +1166,7 @@
         /** Properties synced with worker. */
         #props = new Map();
         /** Property accessor. */
-        data;
+        #data;
         get node() {
             return this.#node;
         }
@@ -1199,6 +1175,9 @@
         }
         get app() {
             return app;
+        }
+        get data() {
+            return this.#data;
         }
         get platform() {
             return platform;
@@ -1228,7 +1207,7 @@
         constructor(tag) {
             this.#ready = Promise.resolve().then(() => this.init());
             // property accessor
-            this.data = new Proxy({}, {
+            this.#data = new Proxy({}, {
                 get: (_, key) => {
                     return this.#props.get(key) ?? null;
                 },
@@ -1246,27 +1225,39 @@
         /** Optional initialization method. */
         init() { }
         ;
-        /** Get compnent by ID. */
-        getComponent(id) {
-            return components.get(id) ?? null;
-        }
         /** Update properties. Reserved key:
          * owner: uid of client that controls the component
+         * ^<key>: update partial property
         */
-        update(items, hook = true) {
+        update(items) {
+            if (componentIDs.has(this) && !updating) {
+                throw ('Cannot update the property of worker-created component.');
+            }
             const hooks = [];
-            for (const key in items) {
-                const oldVal = this.#props.get(key) ?? null;
+            for (let key in items) {
                 const newVal = items[key] ?? null;
-                newVal === null ? this.#props.delete(key) : this.#props.set(key, newVal);
+                const partial = key.startsWith('^');
+                if (partial) {
+                    key = key.slice(1);
+                }
+                const oldVal = this.#props.get(key) ?? (partial ? {} : null);
+                if (partial) {
+                    this.utils.apply(oldVal, newVal);
+                }
+                else if (newVal === null) {
+                    this.#props.delete(key);
+                }
+                else {
+                    this.#props.set(key, newVal);
+                }
                 const hook = this['$' + key];
                 if (typeof hook === 'function') {
-                    hooks.push([hook, this, newVal, oldVal]);
+                    hooks.push([hook, this, newVal, oldVal, partial]);
                 }
             }
-            if (hook) {
-                for (const [hook, cmp, newVal, oldVal] of hooks) {
-                    this.ready.then(() => hook.apply(cmp, [newVal, oldVal]));
+            if (!componentIDs.has(this)) {
+                for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
+                    this.ready.then(() => hook.apply(cmp, [newVal, oldVal, partial]));
                 }
             }
             return hooks;
@@ -1373,9 +1364,6 @@
         }
         get accessExtension() {
             return accessExtension;
-        }
-        get getInfo() {
-            return getInfo;
         }
         get mode() {
             return this.arena?.data.mode ?? null;
@@ -1672,14 +1660,10 @@
                     menu.pane.width = 180;
                     menu.location = e;
                     for (let skill of info.skills ?? []) {
-                        let pack;
-                        if (skill.includes(':')) {
-                            [pack, skill] = this.utils.split(skill);
+                        if (!skill.includes(':')) {
+                            skill = this.utils.split(id)[0] + ':' + skill;
                         }
-                        else {
-                            pack = this.utils.split(id)[0];
-                        }
-                        const info = this.accessExtension(pack, 'skill', skill);
+                        const info = this.getInfo('skill', skill);
                         if (info) {
                             menu.pane.addSection(info.name ?? skill);
                             if (info.intro) {
@@ -1698,13 +1682,14 @@
         /** Bind context menu to player intro. */
         bindPlayer() {
         }
-        /** Create filter function for choose task. */
-        createFilter(section, selected, sels) {
-            return createFilter(section, selected, sels, (id) => new Proxy(this.getComponent(id), {
-                get(target, key) {
-                    return target.data[key];
-                }
-            }));
+        /** Get compnent by ID. */
+        getComponent(id) {
+            return components.get(id) ?? null;
+        }
+        /** Get info from extension. */
+        getInfo(type, id) {
+            const [ext, name] = this.utils.split(id);
+            return accessExtension(ext, type, name);
         }
         /** Adjust zoom level according to device DPI. */
         resize() {
@@ -1986,7 +1971,7 @@
             }
             const peers = [];
             for (const id of ids) {
-                const cmp = this.getComponent(id);
+                const cmp = this.app.getComponent(id);
                 if (cmp) {
                     peers.push(cmp);
                 }
@@ -1996,7 +1981,7 @@
         /** Peer component representing current client. */
         get peer() {
             for (const id of this.data.peers ?? []) {
-                const cmp = this.getComponent(id);
+                const cmp = this.app.getComponent(id);
                 if (cmp?.mine) {
                     return cmp;
                 }
@@ -2540,12 +2525,14 @@
         #starting = 0;
         /** Number of temporary collections. */
         #tmpCount = 0;
+        /** Whether pick tray contains online of offline heros. */
+        #pickMode;
         get #config() {
             return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
         }
         /** ID in db for picked heros. */
         get #pick() {
-            return this.app.mode + ':online_picked';
+            return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'picked';
         }
         init() {
             const arena = this.app.arena;
@@ -2638,6 +2625,8 @@
                 this.respond();
                 this.app.popups.get('lobbyReady')?.close();
             }
+            // update picked heros
+            this.#updatePicks();
         }
         /** Disable all toggles until command received from worker. */
         freeze() {
@@ -2775,16 +2764,6 @@
                 this.cardToggles.set(pack, toggle);
             }
             this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'));
-            // banned heros
-            this.banned = [
-                this.sidebar.pane.addSection('禁将'),
-                this.sidebar.pane.addTray('round'),
-                new Map()
-            ];
-            this.banned[0].style.display = 'none';
-            this.banned[1].node.style.display = 'none';
-            this.ui.bindClick(this.banned[0], () => this.#showBanned());
-            this.ui.bind(this.banned[1].node, () => this.#showBanned());
             // picked heros
             this.picked = [
                 this.sidebar.pane.addSection('点将'),
@@ -2793,21 +2772,18 @@
             ];
             this.picked[0].style.display = 'none';
             this.picked[1].node.style.display = 'none';
-            this.ui.bind(this.picked[1].node, () => {
-                if (!this.picked[1].items.size) {
-                    this.app.alert('点将', { content: '点击左侧武将包名称进行点将。可多选，优选择最左边的武将，若有多名玩家点同一武将导致点将失败，则会选择向右一名的武将，直到点将成功。' });
-                }
-                else {
-                    this.#showPicked();
-                }
-            });
+            this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
             this.ui.bindClick(this.picked[0], () => this.#showPicked());
-            const picked = this.db.get(this.#pick);
-            if (picked) {
-                for (const id of picked) {
-                    this.#togglePick(id, true, false);
-                }
-            }
+            // banned heros
+            this.banned = [
+                this.sidebar.pane.addSection('禁将'),
+                this.sidebar.pane.addTray('round'),
+                new Map()
+            ];
+            this.banned[0].style.display = 'none';
+            this.banned[1].node.style.display = 'none';
+            this.ui.bind(this.banned[1].node, () => this.mine ? this.#openCollection(heropacks, 'hero') : null);
+            this.ui.bindClick(this.banned[0], () => this.#showBanned());
         }
         $owner() {
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
@@ -2830,33 +2806,31 @@
             }
             this.sidebar.showFooter();
         }
-        $config(config, oldConfig) {
+        $config(config, _, partial) {
             this.unfreeze();
             // update toggles
             for (const [key, toggle] of this.configToggles) {
                 if (key in config) {
                     toggle.assign(config[key]);
-                    const requires = this.configDynamicToggles.get(key);
+                    // hide a toggle if its dependency is not present
+                    let requires = this.configDynamicToggles.get(key);
                     if (requires) {
-                        if (requires[0] === '!') {
-                            toggle.node.style.display = !config[requires.slice(1)] ? '' : 'none';
+                        const not = requires[0] === '!';
+                        if (not) {
+                            requires = requires.slice(1);
                         }
-                        else {
-                            toggle.node.style.display = config[requires] ? '' : 'none';
+                        if (!partial || requires in config) {
+                            const hide = not ? config[requires] : !config[requires];
+                            toggle.node.style.display = hide ? 'none' : '';
                         }
                     }
                 }
-                else {
+                else if (!partial) {
                     toggle.node.style.display = 'none';
                 }
             }
-            // save configuration
-            if (this.mine) {
-                delete config.online;
-                this.db.set(this.#config, config);
-            }
             // update spectators
-            if (config.np) {
+            if ('np' in config) {
                 // make sure npmax is set
                 setTimeout(() => {
                     for (let i = 0; i < this.data.npmax; i++) {
@@ -2866,32 +2840,36 @@
                 });
             }
             // update banned packs
-            for (const [name, toggle] of this.heroToggles) {
-                toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
-            }
-            for (const [name, toggle] of this.cardToggles) {
-                toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
-            }
-            // update banned hero
-            let changed = false;
-            const oldBanned = new Set(oldConfig?.banned?.hero);
-            const newBanned = new Set(config.banned?.hero);
-            if (oldBanned.size !== newBanned.size) {
-                changed = true;
-            }
-            else {
-                for (const id of oldBanned) {
-                    if (!newBanned.has(id)) {
-                        changed = true;
-                        break;
-                    }
+            if (!partial || config.banned?.heropack) {
+                for (const [name, toggle] of this.heroToggles) {
+                    toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
+                }
+                if (config.banned?.heropack?.length === 0) {
+                    delete config.banned.heropack;
                 }
             }
-            if (changed) {
+            if (!partial || config.banned?.cardpack) {
+                for (const [name, toggle] of this.cardToggles) {
+                    toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
+                }
+                if (config.banned?.cardpack?.length === 0) {
+                    delete config.banned.cardpack;
+                }
+            }
+            // update banned hero
+            if (!partial || config.banned?.hero) {
+                const oldBanned = new Set();
+                const newBanned = new Set(config.banned?.hero);
                 const tray = this.banned[1];
                 if (newBanned.size) {
                     this.banned[0].style.display = '';
                     tray.node.style.display = '';
+                    // get existing tray items
+                    for (const [id, clone] of this.banned[2]) {
+                        if (tray.items.has(clone)) {
+                            oldBanned.add(id);
+                        }
+                    }
                     // add new banned
                     for (const id of newBanned) {
                         if (!oldBanned.has(id)) {
@@ -2922,26 +2900,38 @@
                     this.banned[1].node.style.display = 'none';
                     tray.items.clear();
                     tray.node.innerHTML = '';
+                    delete config.banned.hero;
                 }
             }
             // update picked hero
-            if (config.pick && this.app.arena.peers) {
-                this.picked[0].style.display = '';
-                this.picked[1].node.style.display = '';
-                if (!this.picked[3]) {
-                    this.picked[3] = true;
-                    this.picked[1].align();
+            if (!partial || 'pick' in config) {
+                if (this.data.config.pick || !this.app.arena.peers) {
+                    this.picked[0].style.display = '';
+                    this.picked[1].node.style.display = '';
+                    if (!this.picked[3]) {
+                        this.picked[3] = true;
+                        this.picked[1].align();
+                    }
+                    for (const collection of this.collections.values()) {
+                        collection.node.classList.remove('no-select');
+                    }
                 }
-                for (const collection of this.collections.values()) {
-                    collection.node.classList.remove('no-select');
+                else {
+                    this.picked[0].style.display = 'none';
+                    this.picked[1].node.style.display = 'none';
+                    for (const collection of this.collections.values()) {
+                        collection.node.classList.add('no-select');
+                    }
+                }
+                if (!partial) {
+                    this.#updatePicks();
                 }
             }
-            else {
-                this.picked[0].style.display = 'none';
-                this.picked[1].node.style.display = 'none';
-                for (const collection of this.collections.values()) {
-                    collection.node.classList.add('no-select');
-                }
+            // save configuration
+            if (this.mine) {
+                const config = this.data.config;
+                delete config.online;
+                this.db.set(this.#config, config);
             }
         }
         $npmax(npmax) {
@@ -3054,7 +3044,7 @@
                 this.picked[1][on ? 'add' : 'delete'](clone);
             }
             else {
-                this.picked[1].addSilent(clone);
+                this.picked[1][on ? 'addSilent' : 'deleteSilent'](clone);
             }
         }
         #createCollection(tmp = null) {
@@ -3116,7 +3106,7 @@
                     this.collections.delete(id);
                 }
             };
-            if (!this.data.config.pick || !this.app.arena.peers) {
+            if (!this.data.config.pick && this.app.arena.peers) {
                 collection.node.classList.add('no-select');
             }
             return collection;
@@ -3138,7 +3128,7 @@
                     if (type === 'hero') {
                         this.ui.bind(node, () => {
                             if (this.mine) {
-                                if (this.data.config.pick && this.app.arena.peers) {
+                                if (this.data.config.pick || !this.app.arena.peers) {
                                     const picked = node.classList.contains('selected');
                                     const banned = node.classList.contains('defer');
                                     this.app.choose(this.app.getInfo('hero', id).name, {
@@ -3233,6 +3223,31 @@
             });
             collection.open();
         }
+        #updatePicks() {
+            // check if pick mode changed
+            if (this.app.connected === this.#pickMode) {
+                return;
+            }
+            this.#pickMode = this.app.connected;
+            // get changed picks
+            const newPicked = new Set(this.db.get(this.#pick));
+            const oldPicked = new Set();
+            const tray = this.picked[1];
+            for (const [id, clone] of this.picked[2]) {
+                if (tray.items.has(clone)) {
+                    oldPicked.add(id);
+                    if (!newPicked.has(id)) {
+                        this.#togglePick(id, false, false);
+                    }
+                }
+            }
+            for (const id of newPicked) {
+                if (!oldPicked.has(id)) {
+                    this.#togglePick(id, true, false);
+                }
+            }
+            tray.align();
+        }
     }
 
     class Peer extends Component {
@@ -3245,307 +3260,6 @@
             if (this.app.arena?.peers) {
                 trigger('sync');
             }
-        }
-    }
-
-    class Pop extends Popup {
-        /** Height based on content height. */
-        height = 24;
-        /** Width based on content width. */
-        width = 0;
-        /** Timer bar. */
-        timer = null;
-        /** Data of all selectable items.
-         * [0]: Section name.
-         * [1]: Element in gallery.
-         * [2]: Element in tray.
-         */
-        entries = new Map();
-        /** Selected items in all sections. */
-        selected = {};
-        /** All select configurations. */
-        selects = {};
-        /** Section data.
-         * [0]: Gallery of the section.
-         * [1]: Filter function of the section.
-         */
-        galleries = {};
-        /** Map of button IDs -> button elements. */
-        buttons = new Map();
-        /** Container of clones of selected items. */
-        tray;
-        /** Awaiting filter results from worker. */
-        #pending = false;
-        /** Click on selectable items. */
-        click(id) {
-            if (this.#pending)
-                return;
-            const [section, item, clone] = this.entries.get(id);
-            const [gallery] = this.galleries[section];
-            const selected = this.selected[section];
-            if (selected.includes(id)) {
-                selected.splice(selected.indexOf(id), 1);
-                item.classList.remove('selected');
-                if (gallery.currentPage?.contains(item)) {
-                    this.tray.delete(clone, item);
-                }
-                else {
-                    this.tray.delete(clone);
-                }
-                this.check();
-            }
-            else if (!item.classList.contains('defer')) {
-                selected.push(id);
-                item.classList.add('selected');
-                this.tray.add(clone, item, undefined, true);
-                this.check();
-            }
-        }
-        addCaption(caption) {
-            this.pane.addCaption(caption);
-            this.height += 50;
-        }
-        addHero(sel) {
-            const heros = Array.isArray(sel) ? sel : sel.items;
-            const [gallery, width, height] = this.pane.addPopGallery(heros.length);
-            this.height += height;
-            this.width = Math.max(this.width, width);
-            // avoid conflict with move operation
-            gallery.node.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
-            if (!Array.isArray(sel)) {
-                const selected = [];
-                this.selects.hero = sel;
-                this.selected.hero = selected;
-                const filter = this.app.createFilter('hero', this.selected, this.selects);
-                this.galleries.hero = [gallery, filter, sel];
-            }
-            // add hero entries
-            for (const hero of heros) {
-                gallery.add(() => {
-                    const player = this.ui.create('player');
-                    player.initHero(hero);
-                    // bind context menu
-                    this.app.bindHero(player.node, hero);
-                    // add to this.entries
-                    if (!Array.isArray(sel)) {
-                        const clone = this.ui.createElement('widget.avatar');
-                        const onclick = () => this.click(hero);
-                        this.ui.setImage(clone, hero);
-                        this.ui.bind(clone, onclick);
-                        this.ui.bind(player.node, onclick);
-                        this.app.bindHero(clone, hero);
-                        this.entries.set(hero, ['hero', player.node, clone]);
-                    }
-                    return player.node;
-                });
-            }
-            // render all items to fill this.entries
-            gallery.renderAll();
-        }
-        /** Sort selected items by tray order. */
-        sort() {
-            for (const section in this.selected) {
-                this.selected[section].sort((a, b) => this.#sort(a, b));
-            }
-        }
-        /** Get selected items with order. */
-        getSelected() {
-            this.sort();
-            return this.selected;
-        }
-        /** Add buttons in bottom bar. */
-        addConfirm(content) {
-            this.height += 50;
-            this.width = Math.max(this.width, 230);
-            const bar = this.pane.add('bar');
-            for (const item of content) {
-                if (item === 'ok') {
-                    const ok = this.ui.createElement('widget.button', bar);
-                    this.buttons.set('ok', ok);
-                    ok.dataset.fill = 'red';
-                    ok.innerHTML = '确定';
-                    this.ui.bind(ok, () => {
-                        this.respond(this.getSelected());
-                        this.remove();
-                    });
-                }
-                else if (item === 'cancel') {
-                    const cancel = this.ui.createElement('widget.button', bar);
-                    this.buttons.set('cancel', cancel);
-                    cancel.innerHTML = '取消';
-                    this.ui.bind(cancel, () => {
-                        this.respond(false);
-                        this.remove();
-                    });
-                }
-                else {
-                    // custom operation that is processed by worker
-                    const button = this.ui.createElement('widget.button', bar);
-                    const [id, text, color] = item;
-                    this.buttons.set(id, button);
-                    button.innerHTML = text;
-                    if (color) {
-                        button.dataset.fill = color;
-                    }
-                    this.ui.bind(button, e => {
-                        this.yield([id, { x: e.x, y: e.y }]);
-                    });
-                }
-            }
-        }
-        /** Add tray of selected items. */
-        addTray() {
-            const height = parseInt(this.app.css.pop['tray-height']);
-            this.tray = this.pane.addTray('round');
-            this.height += height + 26;
-        }
-        /** Remove with fade out animation. */
-        remove() {
-            if (this.removing) {
-                return;
-            }
-            if (this.mine) {
-                const config = {
-                    scale: [1, 'var(--app-zoom-scale)'],
-                    opacity: [1, 0]
-                };
-                const x = this.ui.getX(this.node);
-                const y = this.ui.getY(this.node);
-                if (x) {
-                    config.x = [x, x];
-                }
-                if (y) {
-                    config.y = [y, y];
-                }
-                super.remove(this.ui.animate(this.node, config));
-                this.onclose();
-                // remove all timers of the same player with the same start time
-                if (this.timer) {
-                    for (const id of this.app.arena.data.players) {
-                        const player = this.getComponent(id);
-                        if (player?.mine && player.timer?.starttime === this.timer.starttime) {
-                            player.timer.node.remove();
-                        }
-                    }
-                }
-            }
-            else {
-                super.remove();
-            }
-        }
-        /** Update move range. */
-        resize() {
-            const dx = (this.app.width - this.width) / 2;
-            const dy = (this.app.height - this.height) / 2;
-            this.ui.bind(this.node, {
-                movable: { x: [-dx, dx], y: [-dy, dy] }
-            });
-        }
-        /** Filter selectable items. */
-        check() {
-            if (this.#pending) {
-                return;
-            }
-            // check if buttons can be selected
-            let ok = true;
-            this.sort();
-            for (const section in this.selected) {
-                const all = this.selects[section].items;
-                const selected = this.selected[section];
-                const [, filter, sel] = this.galleries[section];
-                for (const id of all) {
-                    if (!selected.includes(id)) {
-                        const [, item] = this.entries.get(id);
-                        try {
-                            item.classList[filter(id) ? 'remove' : 'add']('defer');
-                        }
-                        catch {
-                            this.#pending = true;
-                            this.yield(this.selected);
-                            this.buttons.get('ok')?.classList.add('disabled');
-                            console.log('asking...');
-                            return;
-                        }
-                    }
-                }
-                const num = Array.isArray(sel.num) ? sel.num : [sel.num, sel.num];
-                if (selected.length < num[0] || selected.length > num[1]) {
-                    ok = false;
-                }
-            }
-            this.buttons.get('ok')?.classList[ok ? 'remove' : 'add']('disabled');
-            return ok;
-        }
-        /** Update selectable items by worker. */
-        setSelectable(selectable) {
-            if (this.#pending) {
-                for (const [id, [, item]] of this.entries) {
-                    if (!item.classList.contains('selected')) {
-                        item.classList[selectable.includes(id) ? 'remove' : 'add']('defer');
-                    }
-                }
-                this.#pending = false;
-            }
-        }
-        $content(content) {
-            if (this.mine) {
-                // add items
-                let confirm = null;
-                for (const [type, arg] of content) {
-                    if (type === 'confirm') {
-                        confirm = arg;
-                    }
-                    else {
-                        this['add' + type[0].toUpperCase() + type.slice(1)](arg);
-                    }
-                }
-                // tray of selected items
-                if (this.entries.size) {
-                    this.addTray();
-                }
-                // confirm buttons
-                if (confirm) {
-                    this.addConfirm(confirm);
-                }
-                // update selectable items
-                if (this.entries.size) {
-                    this.check();
-                }
-                // update final size
-                this.node.style.width = `${this.width}px`;
-                this.node.style.height = `${this.height}px`;
-                this.node.style.left = `calc(50% - ${this.width / 2}px)`;
-                this.node.style.top = `calc(50% - ${this.height / 2}px)`;
-                this.ui.bind(this.pane.node, { oncontext: () => {
-                        this.ui.moveTo(this.node, { x: 0, y: 0 });
-                    } });
-                this.app.arena.appZoom.node.appendChild(this.node);
-                // animate fade in
-                this.app.arena.popup(this);
-                setTimeout(() => this.resize(), 500);
-                this.listen('resize');
-            }
-            else if (!this.app.arena.popups.size) {
-                this.app.arena.arenaZoom.node.classList.remove('blurred');
-            }
-        }
-        $timer(config) {
-            if (config) {
-                setTimeout(() => {
-                    const timer = this.ui.create('timer', this.pane.node);
-                    timer.width = this.width;
-                    timer.start(config, this, false);
-                    this.app.arena.node.classList.add('pop-timer');
-                });
-            }
-            else {
-                this.timer?.remove();
-            }
-        }
-        /** Sort by order in the tray. */
-        #sort(a, b) {
-            const idx = (id) => this.tray.items.get(this.entries.get(id)[1]) ?? -1;
-            return idx(b) - idx(a);
         }
     }
 
@@ -4062,8 +3776,8 @@
         marker = this.ui.createElement('caption.marker', this.content);
         /** Timer bar. */
         timer = null;
-        /** Additional selections created by this.data.select. */
-        selects = [];
+        /** Pops created by this.data.select. */
+        pops = new Map();
         initHero(name) {
             const info = this.app.getInfo('hero', name);
             this.data.heroImage = name;
@@ -4072,9 +3786,12 @@
             this.data.hpMax = info.hp;
             this.data.hp = info.hp;
         }
-        /** Clear all selections. */
+        /** Clear all pops. */
         stage() {
             this.ignore('stage');
+            for (const pop of this.pops.values()) {
+                pop.remove();
+            }
         }
         $heroImage(name) {
             if (name) {
@@ -4150,9 +3867,10 @@
                 this.node.classList.remove('mine');
             }
         }
-        $select(sels) {
-            if (sels) {
+        $select(sel) {
+            if (sel) {
                 this.listen('stage');
+                console.log(sel);
             }
             else {
                 this.stage();
@@ -4326,6 +4044,128 @@
                 const dx = (this.width - span.offsetWidth) / 2;
                 span.parentNode.style.transform = `translateX(${dx}px)`;
             }
+        }
+    }
+
+    class Pop extends Popup {
+        /** Pop caption. */
+        caption;
+        /** Configuration for selecting items. */
+        select;
+        /** Include a tray to put selected items. */
+        tray;
+        /** Additional buttons in confirm bar. */
+        bar;
+        /** Items in gallery */
+        items = new Map();
+        /** Items in tray. */
+        clones = new Map();
+        /** Buttons in this.bar. */
+        buttons = new Map();
+        /** Height based on content height. */
+        height = 24;
+        /** Width based on content width. */
+        width = 0;
+        init() {
+            this.addCaption();
+            this.addItems();
+            this.addBar();
+            this.addTray();
+        }
+        addItems() { }
+        ;
+        /** Callback when clicking this.items or this.clones. */
+        click(id) {
+        }
+        /** Add Pop caption. */
+        addCaption() {
+            if (!this.caption) {
+                return;
+            }
+            this.pane.addCaption(this.caption);
+            this.height += 50;
+        }
+        /** Add buttons in bottom bar. */
+        addBar() {
+            if (!this.bar) {
+                return;
+            }
+            this.height += 50;
+            this.width = Math.max(this.width, 230);
+            const bar = this.pane.add('bar');
+            for (const item of this.bar) {
+                if (item === 'ok') {
+                    const ok = this.ui.createElement('widget.button', bar);
+                    this.buttons.set('ok', ok);
+                    ok.dataset.fill = 'red';
+                    ok.innerHTML = '确定';
+                    this.ui.bind(ok, () => {
+                        // this.respond(this.getSelected());
+                        this.remove();
+                    });
+                }
+                else if (item === 'cancel') {
+                    const cancel = this.ui.createElement('widget.button', bar);
+                    this.buttons.set('cancel', cancel);
+                    cancel.innerHTML = '取消';
+                    this.ui.bind(cancel, () => {
+                        // this.respond(false);
+                        this.remove();
+                    });
+                }
+                else {
+                    // custom operation that is processed by worker
+                    const button = this.ui.createElement('widget.button', bar);
+                    const [id, text, color] = item;
+                    this.buttons.set(id, button);
+                    this.ui.format(button, text);
+                    if (color) {
+                        button.dataset.fill = color;
+                    }
+                    this.ui.bind(button, e => {
+                        this.yield([id, { x: e.x, y: e.y }]);
+                    });
+                }
+            }
+        }
+        /** Add a tray that contains item clones. */
+        addTray() {
+            const height = parseInt(this.app.css.pop['tray-height']);
+            this.pane.addTray('round');
+            this.height += height + 26;
+        }
+    }
+
+    class PopHero extends Pop {
+        addItems() {
+            const heros = this.select.items;
+            const [gallery, width, height] = this.pane.addPopGallery(heros.length);
+            this.height += height;
+            this.width = Math.max(this.width, width);
+            // avoid conflict with move operation
+            gallery.node.addEventListener('touchstart', e => e.stopPropagation(), { passive: false });
+            // add hero entries
+            for (const hero of heros) {
+                gallery.add(() => {
+                    // item in gallery
+                    const player = this.ui.create('player');
+                    player.initHero(hero);
+                    // item in tray
+                    const clone = this.ui.createElement('widget.avatar');
+                    this.ui.setImage(clone, hero);
+                    // add bindings
+                    this.ui.bind(clone, () => this.click(hero));
+                    this.ui.bind(player.node, () => this.click(hero));
+                    this.app.bindHero(player.node, hero);
+                    this.app.bindHero(clone, hero);
+                    // register nodes
+                    this.items.set(hero, player.node);
+                    this.clones.set(hero, clone);
+                    return player.node;
+                });
+            }
+            // render all items to fill this.entries
+            gallery.renderAll();
         }
     }
 
@@ -5066,7 +4906,7 @@
         // gallery of modes
         gallery;
         // bottom toolbar
-        bar = this.ui.create('splash-bar');
+        bar = this.ui.create('splashBar');
         // settings menu
         settings;
         // hub menu
@@ -5074,12 +4914,12 @@
         // currently hidden
         hidden = true;
         createGallery() {
-            this.gallery = this.ui.create('splash-gallery');
+            this.gallery = this.ui.create('splashGallery');
             return this.gallery.ready;
         }
         createBar() {
-            this.settings = this.ui.create('splash-settings');
-            this.hub = this.ui.create('splash-hub');
+            this.settings = this.ui.create('splashSettings');
+            this.hub = this.ui.create('splashHub');
         }
         hide(faded = false) {
             if (this.hidden) {
@@ -5384,7 +5224,6 @@
     }
 
     const componentClasses = new Map();
-    componentClasses.set('component', Component);
     componentClasses.set('app', App);
     componentClasses.set('dialog', Dialog);
     componentClasses.set('sidebar', Sidebar);
@@ -5393,19 +5232,21 @@
     componentClasses.set('control', Control);
     componentClasses.set('lobby', Lobby);
     componentClasses.set('peer', Peer);
-    componentClasses.set('pop', Pop);
     componentClasses.set('timer', Timer);
     componentClasses.set('button', Button);
+    componentClasses.set('component', Component);
     componentClasses.set('gallery', Gallery);
     componentClasses.set('card', Card);
     componentClasses.set('player', Player);
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
+    componentClasses.set('popHero', PopHero);
+    componentClasses.set('pop', Pop);
     componentClasses.set('popup', Popup);
-    componentClasses.set('splash-bar', SplashBar);
-    componentClasses.set('splash-gallery', SplashGallery);
-    componentClasses.set('splash-hub', SplashHub);
-    componentClasses.set('splash-settings', SplashSettings);
+    componentClasses.set('splashBar', SplashBar);
+    componentClasses.set('splashGallery', SplashGallery);
+    componentClasses.set('splashHub', SplashHub);
+    componentClasses.set('splashSettings', SplashSettings);
     componentClasses.set('splash', Splash);
     componentClasses.set('toggle', Toggle);
     componentClasses.set('tray', Tray);

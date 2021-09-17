@@ -1,5 +1,5 @@
-import { Task } from '../game/task';
-import type { Select, Dict } from '../types';
+import { Task } from './task';
+import type { Select } from '../types';
 
 export class Choose extends Task {
     /** Has time limit. */
@@ -15,9 +15,9 @@ export class Choose extends Task {
 
     }
 
-    /** Fill selects with timer and selectable items. */
-    fill() {
-        const timeout =  this.timeout ?? (this.game.connected ? this.game.config.timeout as number : null);
+    /** Update player data. */
+    diapatch() {
+        const timeout =  this.timeout ?? (this.arena.connected ? this.arena.config.timeout as number : null);
         const timer = timeout ? [timeout, Date.now()] as [number, number] : null;
 
         for (const sel of this.selects.values()) {
@@ -37,7 +37,7 @@ export class Choose extends Task {
 
         let changed = false;
         const disabled = new Set(sel.disabled);
-        const task = this.game.getTask(sel.filter[0]);
+        const task = this.arena.getTask(sel.filter[0]) as any;
         sel.disabled = [];
 
         for (const id of sel.items) {

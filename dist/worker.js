@@ -127,20 +127,22 @@
     const debug = globalThis.location.protocol === 'http:';
 
     const taskClasses$1 = new Map();
-    const gameClasses$1 = new Map();
+    const linkClasses$1 = new Map();
     let room;
     /** Initial configurations from client. */
     let uid;
     let info;
+    /** Initialize uid, nickname and avatar. */
+    function init(u, i) {
+        uid = u;
+        info = i;
+    }
+    /** Set current room. */
     function setRoom(r) {
         room = r;
         if (debug) {
             self.room = r;
         }
-    }
-    function init(u, i) {
-        uid = u;
-        info = i;
     }
 
     class Stage {
@@ -336,7 +338,7 @@
                 ids.push(peer.id);
             }
         }
-        room.arena.peers = ids;
+        room.arena.data.peers = ids;
     }
     /** Disconnect from remote hub. */
     function disconnect() {
@@ -366,11 +368,11 @@
     function update(push = true) {
         const state = JSON.stringify([
             // mode name
-            room.game.mode.name,
+            room.arena.mode.name,
             // joined players
             getPeers({ playing: true })?.length ?? 1,
             // number of players in a game
-            room.game.config.np,
+            room.arena.config.np,
             // nickname and avatar of owner
             info,
             // game state
@@ -395,7 +397,7 @@
                 // disconnect from remote hub
                 disconnect();
             }
-            else if (sid === stage.id && link && link[1].owner === uid) {
+            else if (sid === stage.id && link && link.owner === uid) {
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
                     // results: component.respond() -> link.await()
@@ -413,7 +415,7 @@
                 else if (!done && stage.monitors.has(id)) {
                     // results: component.yield() -> link.monitor()
                     const method = stage.monitors.get(id);
-                    stage.task[method](result, link[0]);
+                    stage.task[method](result, link);
                 }
             }
         }
@@ -428,7 +430,7 @@
             owner: uid,
             nickname: info[0],
             avatar: info[1],
-            playing: getPeers({ playing: true }).length < room.game.config.np
+            playing: getPeers({ playing: true }).length < room.arena.config.np
         });
         peers.set(uid, peer);
         sync();
@@ -441,8 +443,9 @@
         const links = [];
         for (const peer of peers.values()) {
             let skip = false;
-            for (const key in filter) {
-                if (peer[key] !== filter[key]) {
+            let key;
+            for (key in filter) {
+                if (peer.data[key] !== filter[key]) {
                     skip = true;
                     continue;
                 }
@@ -469,7 +472,7 @@
             // schedule a UITick if no pending UITick exists
             setTimeout(() => commit());
         }
-        ticks.push([room.currentStage.id, id, item]);
+        ticks.push([room.currentStage?.id ?? 0, id, item]);
     }
     /** Generate UITick(s) from this.#ticks. */
     function commit() {
@@ -494,7 +497,27 @@
                 }
                 else if (item && typeof item === 'object') {
                     propChanges[id] ??= {};
-                    Object.assign(propChanges[id], item);
+                    const props = propChanges[id];
+                    for (const key in item) {
+                        if (key.startsWith('^')) {
+                            const key2 = key.slice(1);
+                            if (props[key2]?.constructor === Object) {
+                                // merge patch with existing full update
+                                apply(props[key2], item[key]);
+                            }
+                            else {
+                                // merge patch with existing patch
+                                delete props[key2];
+                                props[key] ??= {};
+                                apply(props[key], item[key]);
+                            }
+                        }
+                        else {
+                            // replace patch with full update
+                            delete props['^' + key];
+                            props[key] = item[key];
+                        }
+                    }
                 }
                 else {
                     tagChanges[id] = item;
@@ -507,74 +530,95 @@
         ticks.length = 0;
     }
 
-    function createLink(id, tag) {
-        const obj = {};
-        // reserved link keys
-        const reserved = {
-            id, tag,
-            call(method, arg) {
-                tick(id, [method, arg]);
-            },
-            unlink() {
-                tick(id, null);
-                room.links.delete(id);
-            },
-            update(items) {
-                for (const key in items) {
-                    const val = items[key] ?? null;
-                    val === null ? delete obj[key] : obj[key] = val;
-                }
-                tick(id, items);
-            },
-            monitor(callback) {
-                room.currentStage.monitors.set(link.id, callback);
-            },
-            await(timeout) {
-                const stage = room.currentStage;
-                stage.awaits.set(link.id, timeout || null);
-                if (timeout) {
-                    setTimeout(() => {
-                        if (stage === room.currentStage && stage.awaits.has(id)) {
-                            stage.results.delete(id);
-                            stage.awaits.delete(id);
-                            if (!stage.awaits.size) {
-                                room.loop();
-                            }
-                        }
-                    }, timeout * 1000);
-                }
-            },
-            result() {
-                return room.currentStage.results.get(link.id) ?? null;
-            }
-        };
-        const link = new Proxy(obj, {
-            get(_, key) {
-                if (key in reserved) {
-                    if (key === 'result') {
-                        return reserved[key]() ?? null;
-                    }
-                    else {
-                        return reserved[key];
-                    }
-                }
-                else {
-                    return obj[key];
-                }
-            },
-            set(_, key, val) {
-                if (key in reserved) {
-                    return false;
-                }
-                else {
-                    reserved.update({ [key]: val });
+    /** Worker-side component controller. */
+    class Link {
+        /** Component ID. */
+        #id;
+        /** Component tag. */
+        #tag;
+        /** Component data proxy. */
+        #data;
+        /** Map containing component data. */
+        #props = new Map();
+        get id() {
+            return this.#id;
+        }
+        get tag() {
+            return this.#tag;
+        }
+        get data() {
+            return this.#data;
+        }
+        /** Component owner. */
+        get owner() {
+            return this.#props.get('owner');
+        }
+        /** Return value from component.respond(). */
+        get result() {
+            return room.currentStage.results.get(this.id) ?? null;
+        }
+        constructor(id, tag) {
+            this.#id = id;
+            this.#tag = tag;
+            this.#data = new Proxy({}, {
+                get: (_, key) => {
+                    return this.#props.get(key);
+                },
+                set: (_, key, val) => {
+                    this.update({ [key]: val });
                     return true;
                 }
+            });
+            tick(id, tag);
+            room.links.set(id, this);
+        }
+        update(items) {
+            for (const key in items) {
+                const val = items[key] ?? null;
+                if (val === null) {
+                    this.#props.delete(key);
+                }
+                else {
+                    this.#props.set(key, val);
+                }
             }
-        });
-        tick(id, tag);
-        room.links.set(id, [link, obj]);
-        return link;
+            tick(this.id, items);
+        }
+        unlink() {
+            tick(this.id, null);
+            room.links.delete(this.id);
+        }
+        patch(key, diff) {
+            if (!this.#props.has(key)) {
+                this.#props.set(key, {});
+            }
+            room.arena.utils.apply(this.#props.get(key), diff);
+            tick(this.id, { ['^' + key]: diff });
+        }
+        call(method, ...args) {
+            tick(this.id, [method, args]);
+        }
+        monitor(callback) {
+            room.currentStage.monitors.set(this.id, callback);
+        }
+        await(timeout) {
+            const stage = room.currentStage;
+            stage.awaits.set(this.id, timeout || null);
+            if (timeout) {
+                setTimeout(() => {
+                    if (stage === room.currentStage && stage.awaits.has(this.id)) {
+                        stage.results.delete(this.id);
+                        stage.awaits.delete(this.id);
+                        if (!stage.awaits.size) {
+                            room.loop();
+                        }
+                    }
+                }, timeout * 1000);
+            }
+        }
+        pack() {
+            return Object.fromEntries(this.#props);
+        }
     }
 
     /** Map of loaded extensions. */
@@ -601,35 +645,6 @@
         const [ext, keys] = path.split(':');
         return access(extensions.get(ext), keys) ?? null;
     }
-    function getInfo(type, id) {
-        const [ext, name] = split(id);
-        return accessExtension(ext, type, name);
-    }
-    /** Create a filter to check if item is selectable. */
-    function createFilter(section, selected, selects, getData, task) {
-        // check if more items can be selected
-        const sel = selects[section];
-        const max = Array.isArray(sel.num) ? sel.num[1] : sel.num;
-        // get function from extension
-        if (!sel.filter) {
-            return () => selected[section].length < max;
-        }
-        const func = accessExtension(sel.filter);
-        // wrap function with this and task argument
-        const filterThis = {
-            selected, selects,
-            getInfo, getData, accessExtension
-        };
-        for (const key in sel) {
-            filterThis[key] = sel[key];
-        }
-        return (item) => {
-            if (selected[section].length >= max) {
-                return false;
-            }
-            return func.apply(filterThis, [item, task]);
-        };
-    }
 
     /** Room that controls game flow and classes. */
     class Room {
@@ -639,8 +654,6 @@
         currentStage;
         /** Link to Arena. */
         arena;
-        /** Game object. */
-        game;
         /** Game progress.
          * 0: waiting
          * 1: gaming
@@ -656,7 +669,7 @@
         /** Map of task classes. */
         #taskClasses;
         /** Base game classes. */
-        #gameClasses;
+        #linkClasses;
         /** Number of links created. */
         #linkCount = 0;
         /** Number of stages created. */
@@ -665,7 +678,7 @@
         #paused = true;
         async init(name, packs) {
             // initialize classes
-            this.#gameClasses = new Map(gameClasses$1);
+            this.#linkClasses = new Map(linkClasses$1);
             this.#taskClasses = new Map(taskClasses$1);
             // load extensions
             await Promise.all(packs.map(pack => importExtension(pack)));
@@ -674,20 +687,17 @@
             // merge mode objects and game classes from extensions
             const mode = await this.#loadRuleset();
             // start game
-            this.game = new (this.getClass('game'))();
-            this.game.mode = mode;
-            this.game.packs = new Set(packs);
+            this.arena = this.create('arena');
+            this.arena.mode = mode;
+            this.arena.update({ packs, ruleset: this.#ruleset, mode: mode.extension });
             this.rootStage = this.currentStage = this.createStage('main');
-            this.arena = this.game.create('arena');
-            this.arena.ruleset = this.#ruleset;
-            this.arena.packs = packs;
-            this.arena.mode = mode.extension;
             this.loop();
         }
         /** Create a link. */
         create(tag) {
             const id = ++this.#linkCount;
-            return createLink(id, tag);
+            const cls = this.#linkClasses.get(tag) ?? Link;
+            return new cls(id, tag);
         }
         /** Create a stage. */
         createStage(path, data, parent) {
@@ -701,22 +711,18 @@
             if (!this.#taskClasses.has(path)) {
                 // get task from extension sections
                 const section = accessExtension(path);
-                const cls = section.inherit ? this.getTask(section.inherit) : this.#gameClasses.get('task');
+                const cls = section.inherit ? this.getTask(section.inherit) : this.#linkClasses.get('task');
                 this.#taskClasses.set(path, section.task(cls));
             }
             return this.#taskClasses.get(path);
-        }
-        /** Get a game class. */
-        getClass(path) {
-            return this.#gameClasses.get(path);
         }
         /** Get a UITick of all links. */
         pack() {
             const tags = {};
             const props = {};
-            for (const [uid, [link, obj]] of this.links) {
+            for (const [uid, link] of this.links) {
                 tags[uid] = link.tag;
-                props[uid] = obj;
+                props[uid] = link.pack();
             }
             return [this.currentStage.id, tags, props, {}];
         }
@@ -748,8 +754,8 @@
                 const extMode = copy(accessExtension(pack)?.mode ?? {});
                 // update game classes (including base Task class)
                 for (const name in extMode.classes) {
-                    const cls = this.#gameClasses.get(name);
-                    this.#gameClasses.set(name, extMode.classes[name](cls));
+                    const cls = this.#linkClasses.get(name);
+                    this.#linkClasses.set(name, extMode.classes[name](cls));
                 }
                 // update task classes after Task class is finalized
                 modeTasks.push(extMode.tasks);
@@ -758,16 +764,8 @@
             // update task classes
             for (const tasks of modeTasks) {
                 for (const task in tasks) {
-                    const cls = this.#taskClasses.get(task) ?? this.getClass('task');
-                    const constructor = tasks[task](cls);
-                    if (typeof constructor === 'function') {
-                        this.#taskClasses.set(task, constructor);
-                    }
-                    else {
-                        for (const name in constructor) {
-                            this.#taskClasses.set(name, constructor[name]);
-                        }
-                    }
+                    const cls = this.#taskClasses.get(task) ?? this.#taskClasses.get('task');
+                    this.#taskClasses.set(task, tasks[task](cls));
                 }
             }
             // save mode extension name
@@ -776,210 +774,7 @@
         }
     }
 
-    /** Base class for a Link wrapper. */
-    class Linked {
-        /** Game object. */
-        #game;
-        /** Link to player component. */
-        #link;
-        get id() {
-            return this.link.id;
-        }
-        get owner() {
-            return this.link.owner ?? null;
-        }
-        get link() {
-            return this.#link;
-        }
-        get game() {
-            return this.#game;
-        }
-        constructor(game, tag) {
-            this.#game = game;
-            this.#link = game.create(tag);
-        }
-    }
-
-    class Card extends Linked {
-    }
-
-    /** Accessor of hub properties. */
-    class Hub {
-        get peers() {
-            return getPeers();
-        }
-        get players() {
-            return getPeers({ playing: true });
-        }
-        get spectators() {
-            return getPeers({ playing: false });
-        }
-    }
-    /** Game object used by stages. */
-    class Game {
-        /** Game mode. */
-        mode;
-        /** Game configuration. */
-        config = {};
-        /** Hero packages. */
-        packs;
-        /** Created players. */
-        players = new Map();
-        /** Created cards. */
-        cards = new Map();
-        /** Created skills. */
-        skills = new Map();
-        /** Created minions. */
-        minions = new Map();
-        /** Hub accessor. */
-        #hub = new Hub();
-        get owner() {
-            return uid;
-        }
-        get arena() {
-            return room.arena;
-        }
-        get hub() {
-            return this.#hub;
-        }
-        get connected() {
-            return peers ? true : false;
-        }
-        get utils() {
-            return utils;
-        }
-        get accessExtension() {
-            return accessExtension;
-        }
-        get getInfo() {
-            return getInfo;
-        }
-        /** Available hero packs. */
-        get heropacks() {
-            const packs = [];
-            for (const pack of this.packs) {
-                if (this.config.banned.heropack?.includes(pack)) {
-                    continue;
-                }
-                if (this.accessExtension(pack, 'heropack')) {
-                    packs.push(pack);
-                }
-            }
-            return packs;
-        }
-        /** Available card packs. */
-        get cardpacks() {
-            const packs = [];
-            for (const pack of this.packs) {
-                if (this.config.banned.cardpack?.includes(pack)) {
-                    continue;
-                }
-                if (this.accessExtension(pack, 'cardpack')) {
-                    packs.push(pack);
-                }
-            }
-            return packs;
-        }
-        /** Get a list of all heros. */
-        get heros() {
-            const heros = new Set();
-            for (const pack of this.heropacks) {
-                const ext = this.accessExtension(pack);
-                for (const name in ext?.hero) {
-                    const id = pack + ':' + name;
-                    if (this.config.banned?.hero?.includes(id)) {
-                        continue;
-                    }
-                    heros.add(id);
-                }
-            }
-            return heros;
-        }
-        /** Get card pile entries. */
-        get pile() {
-            const pile = [];
-            for (const pack of this.cardpacks) {
-                const ext = this.accessExtension(pack);
-                for (const name in ext?.pile) {
-                    for (const suit in ext?.pile[name]) {
-                        for (let entry of ext?.pile[name][suit]) {
-                            if (typeof entry === 'number') {
-                                entry = [entry];
-                            }
-                            pile.push([name, suit, ...entry]);
-                        }
-                    }
-                }
-            }
-            return pile;
-        }
-        /** Get a link by ID. */
-        get(id) {
-            return room.links.get(id)[0];
-        }
-        /** Get a task by ID. */
-        getTask(id) {
-            return room.stages.get(id).task;
-        }
-        /** Create a link. */
-        create(tag) {
-            return room.create(tag);
-        }
-        /** Creata a class in game.#gameClasses. */
-        createLinked(type) {
-            const linked = new (room.getClass(type))(this, type);
-            const map = this[type + 's'];
-            if (map instanceof Map) {
-                map.set(linked.id, linked);
-            }
-            return linked;
-        }
-        /** Create a new player. */
-        createPlayer() {
-            return this.createLinked('player');
-        }
-        /** Create a new card. */
-        createCard() {
-            return this.createLinked('card');
-        }
-        /** Create a new skill. */
-        createSkill() {
-            return this.createLinked('skill');
-        }
-        /** Create a new card. */
-        createMinion() {
-            return this.createLinked('minion');
-        }
-        /** Create a filter that determines if an item can be selected. */
-        createFilter(section, selected, sels, task) {
-            return createFilter(section, selected, sels, (id) => new Proxy(this.get(id), {
-                get(target, key) {
-                    return target[key];
-                }
-            }), task);
-        }
-        /** Mark game as started and disallow changing configuration. */
-        start() {
-            freeze(this.config);
-            room.progress = 1;
-            update();
-        }
-        /** Mark game as over. */
-        over() {
-            room.progress = 2;
-            update();
-        }
-    }
-
-    class Minion extends Linked {
-    }
-
-    class Player extends Linked {
-    }
-
-    class Skill extends Linked {
-    }
-
+    /** Base game execution step. */
     class Task {
         /** Stage ID. */
         #id;
@@ -988,8 +783,11 @@
         get id() {
             return this.#id;
         }
-        get game() {
-            return room.game;
+        get arena() {
+            return room.arena;
+        }
+        get mode() {
+            return room.arena.mode;
         }
         get path() {
             return this.#stage.path;
@@ -1054,7 +852,7 @@
         }
         /** Delay for a given time. */
         async sleep(duration = 1) {
-            await this.game.utils.sleep(duration * (this.game.config.speed ?? 0.3));
+            await this.arena.utils.sleep(duration * (this.arena.config.speed ?? 0.3));
         }
     }
 
@@ -1065,194 +863,53 @@
         forced = false;
         /** Select configurations of players. */
         selects;
-        /** Time limit for choosing. */
-        getTimeout() {
-            return this.timeout ?? (this.game.connected ? this.game.config.timeout ?? null : null);
-        }
-        /** Get a list of selectable items. */
-        getSelectable(selected, sels) {
-            const selectable = [];
-            for (const section in sels) {
-                const filter = this.game.createFilter(section, selected, sels, this);
-                try {
-                    for (const item of sels[section].items) {
-                        if (filter(item)) {
-                            selectable.push(item);
-                        }
-                    }
-                }
-                catch {
-                    return [];
-                }
-            }
-            return selectable;
-        }
-        /** Check if selected items are legal. */
-        checkSelection(selected, sels) {
-            // fake selected items
-            const current = {};
-            for (const section in sels) {
-                current[section] = [];
-            }
-            // get section order
-            const order = Object.keys(sels);
-            order.sort((a, b) => (sels[a].order - sels[b].order));
-            for (const section of order) {
-                // check number of selected items
-                const n = selected[section].length;
-                const sel = sels[section];
-                if (typeof sel.num === 'number') {
-                    if (n !== sel.num) {
-                        return false;
-                    }
-                }
-                else if (Array.isArray(sel.num)) {
-                    if (n < sel.num[0] || n > sel.num[1]) {
-                        return false;
-                    }
-                }
-                // check if selected items satisfy filter
-                const filter = this.game.createFilter(section, current, sels, this);
-                for (const item of selected[section]) {
-                    if (!filter(item)) {
-                        return false;
-                    }
-                    current[section].push(item);
-                }
-            }
-            return true;
-        }
-    }
-
-    class ChoosePop extends Choose {
-        /** Player IDs and their pop contents. */
-        content;
-        /** Player IDs and created popups. */
-        pops = new Map();
-        /** Select configurations of players. */
-        selects = new Map();
         main() {
-            this.add('openDialog');
-            this.add('getResults');
         }
-        openDialog() {
-            const timer = [this.getTimeout(), Date.now()];
-            for (const [id, content] of this.content) {
-                const player = this.game.players.get(id);
-                if (player?.owner) {
-                    const pop = this.game.create('pop');
-                    let order = 0;
-                    pop.owner = player.owner;
-                    pop.content = content;
-                    pop.await(timer[0]);
-                    pop.monitor('filter');
-                    this.pops.set(pop, player.id);
-                    if (timer[0]) {
-                        pop.timer = timer;
-                        player.link.timer = timer;
+        /** Update player data. */
+        diapatch() {
+            const timeout = this.timeout ?? (this.arena.connected ? this.arena.config.timeout : null);
+            const timer = timeout ? [timeout, Date.now()] : null;
+            for (const sel of this.selects.values()) {
+                if (timer) {
+                    sel.timer = timer;
+                }
+                sel.selected ??= [];
+                this.filter(sel);
+            }
+        }
+        /** Get disabled items. */
+        filter(sel) {
+            if (!sel.filter) {
+                return false;
+            }
+            let changed = false;
+            const disabled = new Set(sel.disabled);
+            const task = this.arena.getTask(sel.filter[0]);
+            sel.disabled = [];
+            for (const id of sel.items) {
+                if (!task[sel.filter[1]](id, sel)) {
+                    sel.disabled.push(id);
+                    if (!disabled.has(id)) {
+                        changed = true;
                     }
-                    // get selection configurations from content
-                    const sels = {};
-                    for (const section of content) {
-                        const sel = section[1];
-                        if (sel && Array.isArray(sel.items)) {
-                            sel.order = order++;
-                            sels[section[0]] = sel;
-                        }
-                    }
-                    this.selects.set(id, sels);
                 }
             }
-        }
-        /** Process client return values. */
-        getResults() {
-            for (const [pop, id] of this.pops) {
-                // remove timers and close pop
-                pop.timer = null;
-                const player = this.game.players.get(id);
-                if (player?.link.timer) {
-                    player.link.timer = null;
-                }
-                pop.unlink();
-            }
-        }
-        /** Get selectable items and send to client. */
-        filter(selected, pop) {
-            if (Array.isArray(selected)) {
-                // custom operations defined by child classes
-                try {
-                    this[selected[0]](pop, ...selected.slice(1));
-                }
-                catch { }
-            }
-            else {
-                // get selectable items
-                const selectable = this.getSelectable(selected, this.selects.get(this.pops.get(pop)));
-                pop.call('setSelectable', selectable);
-            }
+            return changed || disabled.size !== sel.disabled.length;
         }
     }
 
-    class ChooseHero extends ChoosePop {
-        /** Heros to choose from. */
-        heros;
-        /** Allow picking heros. */
-        pick = false;
-        main() {
-            this.content = new Map();
-            for (const [id, heros] of this.heros) {
-                const confirm = ['ok'];
-                if (!this.forced) {
-                    confirm.push('cancel');
-                }
-                if (this.pick) {
-                    confirm.push(['callPick', '点将']);
-                }
-                this.content.set(id, [
-                    ['caption', '选择武将'],
-                    ['hero', heros],
-                    ['confirm', confirm]
-                ]);
-            }
-            super.main();
-            this.add('dispatchPick');
-        }
-        /** Dispatch user-picked heros. */
-        dispatchPick() {
-            for (const [pop, id] of this.pops) {
-                // check selection
-                const sels = this.selects.get(id);
-                console.log(pop.result);
-                console.log(this.checkSelection(pop.result, sels));
-                console.log(this.checkSelection({ hero: pop.result.picked.slice(0, 2) }, sels));
-            }
-        }
-        /** Callback when user clicks pick button. */
-        callPick(pop, e) {
-            if (this.game.connected) {
-                pop.call('togglePick');
-            }
-            else {
-                pop.call('pick', [e, this.game.heropacks]);
-            }
-        }
-    }
-
-    class ChoosePlayer extends Choose {
-    }
-
-    class Lobby extends Task {
+    class Lobby$1 extends Task {
         lobby;
         main() {
-            const lobby = this.lobby = this.game.create('lobby');
+            const lobby = this.lobby = this.arena.create('lobby');
             // get names of hero packs and card packs
             const heropacks = [];
             const cardpacks = [];
             const configs = {};
-            Object.assign(configs, this.game.mode.config);
-            for (const name of this.game.packs) {
-                const heropack = this.game.accessExtension(name, 'heropack');
-                const cardpack = this.game.accessExtension(name, 'cardpack');
+            Object.assign(configs, this.arena.mode.config);
+            for (const name of this.arena.packs) {
+                const heropack = this.arena.accessExtension(name, 'heropack');
+                const cardpack = this.arena.accessExtension(name, 'cardpack');
                 if (heropack) {
                     heropacks.push(name);
                 }
@@ -1261,10 +918,10 @@
                 }
             }
             // configuration for player number
-            const np = this.game.mode.np;
+            const np = this.arena.mode.np;
             let npmax;
             if (typeof np === 'number') {
-                this.game.config.np = np;
+                this.arena.config.np = np;
                 npmax = np;
             }
             else {
@@ -1277,18 +934,18 @@
                 for (const n of np) {
                     configs.np.options.push([n, `<span class="mono">${n}</span>人`]);
                 }
-                this.game.config.np = npmax;
+                this.arena.config.np = npmax;
             }
             // create lobby
-            lobby.npmax = npmax;
-            lobby.pane = { heropacks, cardpacks, configs };
+            lobby.data.npmax = npmax;
+            lobby.data.pane = { heropacks, cardpacks, configs };
             this.add('awaitStart');
             this.add('cleanUp');
         }
         /** Await initial configuration. */
         awaitStart() {
             const lobby = this.lobby;
-            lobby.owner = this.game.owner;
+            lobby.data.owner = this.arena.owner;
             lobby.monitor('updateLobby');
             lobby.await();
         }
@@ -1296,22 +953,22 @@
         updateLobby([type, key, val]) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
-                this.game.config.online = val[0];
-                this.game.config.banned = {};
-                this.game.utils.apply(this.game.config, val[1]);
-                for (const key in this.game.mode.config) {
-                    const entry = this.game.mode.config[key];
+                this.arena.config.online = val[0];
+                this.arena.config.banned = {};
+                this.arena.utils.apply(this.arena.config, val[1]);
+                for (const key in this.arena.mode.config) {
+                    const entry = this.arena.mode.config[key];
                     const requires = entry.requires;
                     if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
-                        delete this.game.config[key];
+                        delete this.arena.config[key];
                     }
                     else {
-                        this.game.config[key] ??= entry.init;
+                        this.arena.config[key] ??= entry.init;
                     }
                 }
-                this.lobby.config = this.game.config;
+                this.lobby.data.config = this.arena.config;
                 // add callback for client operations
-                const peers = this.game.hub.peers;
+                const peers = this.arena.hub.peers;
                 if (peers) {
                     for (const peer of peers) {
                         peer.monitor('updatePeer');
@@ -1331,20 +988,20 @@
                 else {
                     // make sure np in range
                     if (key === 'np') {
-                        const np = this.game.mode.np;
+                        const np = this.arena.mode.np;
                         if (!Array.isArray(np) || val < np[0] || val > np[np.length - 1]) {
                             return;
                         }
                     }
                     // game configuration change
-                    this.game.config[key] = val;
-                    this.lobby.config = this.game.config;
+                    this.arena.config[key] = val;
+                    this.lobby.patch('config', { [key]: val });
                     // update seats in the lobby
                     if (key === 'np') {
-                        const players = this.game.hub.players;
+                        const players = this.arena.hub.players;
                         if (players && players.length > val) {
                             for (let i = val; i < players.length; i++) {
-                                players[i].playing = false;
+                                players[i].data.playing = false;
                             }
                         }
                         update();
@@ -1352,73 +1009,223 @@
                 }
             }
             else if (type === 'banned') {
-                const [section, name] = this.game.utils.split(key, '/');
-                const set = new Set(this.game.config.banned[section]);
+                const [section, name] = this.arena.utils.split(key, '/');
+                const set = new Set(this.arena.config.banned[section]);
                 set[val ? 'delete' : 'add'](name);
-                if (set.size) {
-                    this.game.config.banned[section] = Array.from(set);
-                }
-                else {
-                    delete this.game.config.banned[section];
-                }
-                this.lobby.config = this.game.config;
+                const banned = Array.from(set);
+                this.lobby.patch('config', { banned: { [section]: banned } });
+                this.arena.config.banned[section] = banned;
             }
             else if (type === 'start') {
                 this.lobby.call('checkStart', [
-                    this.game.mode.minHeroCount,
-                    this.game.heros.size,
-                    this.game.mode.minPileCount,
-                    this.game.pile.length
+                    this.arena.mode.minHeroCount,
+                    this.arena.heros.size,
+                    this.arena.mode.minPileCount,
+                    this.arena.pile.length
                 ]);
             }
         }
         /** Update info about joined players. */
         updatePeer(val, peer) {
-            if (val === 'spectate' && peer.playing) {
-                peer.playing = false;
+            if (val === 'spectate' && peer.data.playing) {
+                peer.data.playing = false;
                 update();
             }
-            else if (val === 'play' && !peer.playing && this.game.hub.players.length < this.game.config.np) {
-                peer.playing = true;
+            else if (val === 'play' && !peer.data.playing && this.arena.hub.players.length < this.arena.config.np) {
+                peer.data.playing = true;
                 update();
             }
             else if (val === 'prepare') {
-                if (peer.owner === this.game.owner) {
-                    peer.ready = [14, Date.now()];
+                if (peer.owner === this.arena.owner) {
+                    peer.data.ready = [14, Date.now()];
                 }
                 else {
-                    peer.ready = true;
+                    peer.data.ready = true;
                 }
             }
             else if (val === 'unprepare') {
-                peer.ready = false;
+                peer.data.ready = false;
             }
         }
         /** Remove lobby and start game. */
         cleanUp() {
             this.lobby.unlink();
-            this.game.start();
+            this.arena.start();
         }
     }
 
-    const gameClasses = new Map();
     const taskClasses = new Map();
-    gameClasses.set('card', Card);
-    gameClasses.set('game', Game);
-    gameClasses.set('linked', Linked);
-    gameClasses.set('minion', Minion);
-    gameClasses.set('player', Player);
-    gameClasses.set('skill', Skill);
-    gameClasses.set('task', Task);
-    taskClasses.set('chooseHero', ChooseHero);
-    taskClasses.set('choosePlayer', ChoosePlayer);
-    taskClasses.set('choosePop', ChoosePop);
     taskClasses.set('choose', Choose);
-    taskClasses.set('lobby', Lobby);
+    taskClasses.set('lobby', Lobby$1);
+    taskClasses.set('task', Task);
+
+    /** Accessor of hub properties. */
+    class Hub {
+        get peers() {
+            return getPeers();
+        }
+        get players() {
+            return getPeers({ playing: true });
+        }
+        get spectators() {
+            return getPeers({ playing: false });
+        }
+    }
+    /** Game object used by stages. */
+    class Arena extends Link {
+        /** Game mode. */
+        mode;
+        /** Game configuration. */
+        config = {};
+        /** Created players. */
+        players = new Map();
+        /** Created cards. */
+        cards = new Map();
+        /** Created skills. */
+        skills = new Map();
+        /** Created minions. */
+        minions = new Map();
+        /** Hub accessor. */
+        #hub = new Hub();
+        get owner() {
+            return uid;
+        }
+        get hub() {
+            return this.#hub;
+        }
+        get connected() {
+            return peers ? true : false;
+        }
+        get utils() {
+            return utils;
+        }
+        get accessExtension() {
+            return accessExtension;
+        }
+        get packs() {
+            return this.data.packs;
+        }
+        /** Available hero packs. */
+        get heropacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.heropack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'heropack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
+        /** Available card packs. */
+        get cardpacks() {
+            const packs = [];
+            for (const pack of this.packs) {
+                if (this.config.banned.cardpack?.includes(pack)) {
+                    continue;
+                }
+                if (this.accessExtension(pack, 'cardpack')) {
+                    packs.push(pack);
+                }
+            }
+            return packs;
+        }
+        /** Get a list of all heros. */
+        get heros() {
+            const heros = new Set();
+            for (const pack of this.heropacks) {
+                const ext = this.accessExtension(pack);
+                for (const name in ext?.hero) {
+                    const id = pack + ':' + name;
+                    if (this.config.banned?.hero?.includes(id)) {
+                        continue;
+                    }
+                    heros.add(id);
+                }
+            }
+            return heros;
+        }
+        /** Get card pile entries. */
+        get pile() {
+            const pile = [];
+            for (const pack of this.cardpacks) {
+                const ext = this.accessExtension(pack);
+                for (const name in ext?.pile) {
+                    for (const suit in ext?.pile[name]) {
+                        for (let entry of ext?.pile[name][suit]) {
+                            if (typeof entry === 'number') {
+                                entry = [entry];
+                            }
+                            pile.push([name, suit, ...entry]);
+                        }
+                    }
+                }
+            }
+            return pile;
+        }
+        /** Get a link by ID. */
+        get(id) {
+            return room.links.get(id);
+        }
+        /** Get a task by ID. */
+        getTask(id) {
+            return room.stages.get(id).task;
+        }
+        /** Create a link. */
+        create(tag) {
+            return room.create(tag);
+        }
+        /** Mark game as started and disallow changing configuration. */
+        start() {
+            freeze(this.config);
+            room.progress = 1;
+            update();
+        }
+        /** Mark game as over. */
+        over() {
+            room.progress = 2;
+            update();
+        }
+        /** Backup game state. */
+        backup() { }
+        ;
+        /** Restore game state. */
+        restore() { }
+        ;
+    }
+
+    class Card extends Link {
+    }
+
+    class Lobby extends Link {
+    }
+
+    class Minion extends Link {
+    }
+
+    class Peer extends Link {
+    }
+
+    class Player extends Link {
+    }
+
+    class Skill extends Link {
+    }
+
+    const linkClasses = new Map();
+    linkClasses.set('arena', Arena);
+    linkClasses.set('card', Card);
+    linkClasses.set('link', Link);
+    linkClasses.set('lobby', Lobby);
+    linkClasses.set('minion', Minion);
+    linkClasses.set('peer', Peer);
+    linkClasses.set('player', Player);
+    linkClasses.set('skill', Skill);
 
     // setup default task and  classes
-    for (const [task, cls] of gameClasses) {
-        gameClasses$1.set(task, cls);
+    for (const [task, cls] of linkClasses) {
+        linkClasses$1.set(task, cls);
     }
     for (const [task, cls] of taskClasses) {
         taskClasses$1.set(task, cls);

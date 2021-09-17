@@ -1,4 +1,4 @@
-import type { Arena } from '../../../components';
+import type { Arena } from '../../../components/component';
 
 export function arena(T: typeof Arena) {
     return class Arena extends T {
@@ -50,7 +50,8 @@ export function arena(T: typeof Arena) {
                 // update player locations
                 setTimeout(() => {
                     for (const id of this.data.players) {
-                        this.getComponent(id)!.$seat();
+                        // @ts-ignore
+                        this.app.getComponent(id)!.$seat();
                     }
                 });
             }
@@ -212,7 +213,7 @@ export function arena(T: typeof Arena) {
 
             // append players
             for (const id of ids) {
-                const player = this.getComponent(id)!;
+                const player = this.app.getComponent(id)!;
                 nodes.add(player.node);
                 if (player.node.parentNode !== this.players) {
                     this.players.appendChild(player.node);

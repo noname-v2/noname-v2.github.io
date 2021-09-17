@@ -1,11 +1,11 @@
-import type { Extension } from '../types';
+import type { Extension, Task } from '../../types';
 
 export default {
     mode: {
         name: '身份',
         np: [2, 3, 4, 5, 6, 7, 8],
         tasks: {
-            main(T) {
+            main(T: typeof Task) {
                 return class Identity extends T {
                     /** Number of hero choices. */
                     nheros = 10;
@@ -22,18 +22,18 @@ export default {
                     }
 
                     chooseZhu() {
-                        this.choices = this.game.heros;
+                        this.choices = this.arena.heros;
                         const heros = new Map();
-                        for (const [id, player] of this.game.players) {
-                            if (player.link.seat === 0) {
-                                this.game.zhu = player;
-                                player.link.identity = 'zhu';
+                        for (const [id, player] of this.arena.players) {
+                            if (player.data.seat === 0) {
+                                this.mode.zhu = player;
+                                player.data.identity = 'zhu';
                                 heros.set(id, {
-                                    items: Array.from(this.game.utils.rgets(this.choices, this.nheros, true)),
+                                    items: Array.from(this.arena.utils.rgets(this.choices, this.nheros, true)),
                                     num: 1
                                 });
                                 this.addTask('chooseHero', {
-                                    heros, forced: true, pick: this.game.config.pick || !this.game.connected
+                                    heros, forced: true, pick: this.arena.config.pick || !this.arena.connected
                                 });
                                 break;
                             }
@@ -42,17 +42,17 @@ export default {
 
                     chooseRest() {
                         const heros = new Map();
-                        const nheros = Math.min(this.nheros, Math.floor(this.choices.size / (this.game.players.size - 1)));
-                        for (const id of this.game.players.keys()) {
-                            if (id !== this.game.zhu.id) {
+                        const nheros = Math.min(this.nheros, Math.floor(this.choices.size / (this.arena.players.size - 1)));
+                        for (const id of this.arena.players.keys()) {
+                            if (id !== this.mode.zhu.id) {
                                 heros.set(id, {
-                                    items: Array.from(this.game.utils.rgets(this.choices, nheros, true)),
+                                    items: Array.from(this.arena.utils.rgets(this.choices, nheros, true)),
                                     num: 1
                                 });
                             }
                         }
                         this.addTask('chooseHero', {
-                            heros, forced: true, pick: this.game.config.pick || !this.game.connected
+                            heros, forced: true, pick: this.arena.config.pick || !this.arena.connected
                         });
                         this.addTask('loop');
                     }

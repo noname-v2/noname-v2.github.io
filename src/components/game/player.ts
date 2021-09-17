@@ -1,4 +1,4 @@
-import { Component, Timer, Pop } from '../../components';
+import { Component, Timer, Pop } from '../../components/component';
 import type { Select } from '../../types';
 
 export class Player extends Component {

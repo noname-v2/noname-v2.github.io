@@ -1,10 +1,7 @@
-import type { Player } from '../../../components';
-import type { PlayerLink } from '../../types';
+import { Player } from '../../../components/component';
 
 export function player(T: typeof Player) {
     return class Player extends T {
-        declare data: PlayerLink;
-        
         x!: number;
         y!: number;
 
@@ -14,10 +11,11 @@ export function player(T: typeof Player) {
 
         $seat(seat?: number) {
             seat ??= this.data.seat;
+            // @ts-ignore
             [this.x, this.y] = this.app.arena!.locatePlayer(seat);
             this.locate();
             if (!this.data.heroName) {
-                this.$heroName(`@(${seat+1})号位`);
+                this.$heroName(`@(${seat!+1})号位`);
             }
         }
     }

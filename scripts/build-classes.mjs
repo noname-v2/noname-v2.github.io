@@ -10,73 +10,39 @@ import walk from './walk.mjs';
 }
 
 /**
- * Create an index of component classes.
+ * Create an index of a set classes.
  */
-export function buildComponents() {
-    const imports = [
-        `import { Component } from '../src/client/component';`
-    ];
-
+export function buildClasses(name) {
+    const clsName = capatalize(name);
+    const imports = [];
     const types = [];
+    const tags = [ `export type ${clsName}TagMap = {` ];
+    const classes = [ `export const ${name}Classes = new Map<string, typeof ${clsName}>();` ];
 
-    const classes = [
-        'export const componentClasses = new Map<string, typeof Component>();',
-        `componentClasses.set('component', Component);`
-    ];
-
-    const tags = [
-        'export type ComponentTagMap = {'
-    ];
-
-    for (const src of walk('src/components', '.ts')) {
-        // CamelCase class name
-        const tag = src.split('/').pop();
-        const cls = tag.split('-').map(capatalize).join('');
-        imports.push(`import { ${cls} } from '../src/components/${src}';`)
-        types.push(`export type { ${cls} } from '../src/components/${src}';`)
-        classes.push(`componentClasses.set('${tag}', ${cls});`);
+    // index files
+    for (const src of walk(`src/${name}s`, '.ts')) {
+        const cls = src.split('/').pop().split('-').map(capatalize).join('');
+        const tag = cls[0].toLowerCase() + cls.slice(1);
+        const type = cls + (name === 'link' ? ', ' + cls + 'Data' : '');
+        const astype = name === 'link' ? ' as typeof Link' : '';
+        imports.push(`import { ${cls} } from '../src/${name}s/${src}';`);
+        types.push(`export type { ${type} } from '../src/${name}s/${src}';`);
+        classes.push(`${name}Classes.set('${tag}', ${cls}${astype});`);
         tags.push(`    '${tag}': ${cls};`);
     }
 
-    // write to file
-    fs.writeFileSync('build/classes.ts',
+    // write class map
+    fs.writeFileSync(`build/${name}-classes.ts`,
         imports.join('\n') + '\n\n' +
         classes.join('\n') + '\n\n' +
-        tags.join('\n') + '\n    [key: string]: Component;\n};\n');
-    fs.writeFileSync('build/components.ts', types.join('\n'));
+        tags.join('\n') + `\n    [key: string]: ${clsName};\n};\n`);
+    
+    // write tag map
+    fs.writeFileSync(`build/${name}-types.ts`, types.join('\n'));
 }
 
-/**
- * Create an index of task classes.
- */
- export function buildTasks() {
-    const imports = [];
-
-    const classes = [
-        'export const gameClasses = new Map<string, any>();',
-        'export const taskClasses = new Map<string, { new(id: number): Task }>();\n'
-    ];
-
-    const types = [];
-
-    for (const src of walk('src/game', '.ts')) {
-        // CamelCase class name
-        const tag = src.split('/').pop();
-        const cls = tag.split('-').map(capatalize).join('');
-        types.push(`export * from '../src/game/${src}';`)
-        imports.push(`import { ${cls} } from '../src/game/${src}';`);
-        classes.push(`gameClasses.set('${cls[0].toLowerCase() + cls.slice(1)}', ${cls});`);
-    }
-
-    for (const src of walk('src/tasks', '.ts')) {
-        // CamelCase class name
-        const tag = src.split('/').pop();
-        const cls = tag.split('-').map(capatalize).join('');
-        imports.push(`import { ${cls} } from '../src/tasks/${src}';`)
-        classes.push(`taskClasses.set('${cls[0].toLowerCase() + cls.slice(1)}', ${cls});`);
-    }
-
-    // write to file
-    fs.writeFileSync('build/tasks.ts', imports.join('\n') + '\n\n' + classes.join('\n'));
-    fs.writeFileSync('build/game.ts', types.join('\n'));
+export function build() {
+    buildClasses('component');
+    buildClasses('task');
+    buildClasses('link');
 }

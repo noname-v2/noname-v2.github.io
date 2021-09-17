@@ -1,15 +1,15 @@
 import { Popup } from '../popup';
 import type { Select } from '../../types';
 
-export abstract class Pop extends Popup {
+export class Pop extends Popup {
     /** Pop caption. */
     caption?: string;
 
     /** Configuration for selecting items. */
-    select: Select;
+    select!: Select;
 
     /** Include a tray to put selected items. */
-    tray: boolean;
+    tray!: boolean;
 
     /** Additional buttons in confirm bar. */
     bar?: ('ok' | 'cancel' | [string, string, string?])[];
@@ -36,11 +36,11 @@ export abstract class Pop extends Popup {
         this.addTray();
     }
 
-    abstract addItems(): void;
+    addItems() {};
 
     /** Callback when clicking this.items or this.clones. */
     click(id: string | number) {
-        
+
     }
 
     /** Add Pop caption. */
@@ -71,7 +71,7 @@ export abstract class Pop extends Popup {
                 ok.dataset.fill = 'red';
                 ok.innerHTML = '确定';
                 this.ui.bind(ok, () => {
-                    this.respond(this.getSelected());
+                    // this.respond(this.getSelected());
                     this.remove();
                 });
             }
@@ -80,7 +80,7 @@ export abstract class Pop extends Popup {
                 this.buttons.set('cancel', cancel);
                 cancel.innerHTML = '取消';
                 this.ui.bind(cancel, () => {
-                    this.respond(false);
+                    // this.respond(false);
                     this.remove();
                 });
             }

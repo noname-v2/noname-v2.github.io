@@ -2,7 +2,7 @@ import * as client from '../../client/client';
 import { splash } from '../../client/globals';
 import { Popup } from '../popup';
 import { hub2member } from '../../hub/types';
-import type { Dialog, SplashGallery } from '../../components';
+import type { Dialog, SplashGallery } from '../../components/component';
 
 export class SplashHub extends Popup {
     /** Portrait sized popup. */

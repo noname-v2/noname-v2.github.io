@@ -1,4 +1,4 @@
-import type { Task } from '../../types';
+import type { Task } from '../../../types';
 
 export function trigger(T: typeof Task) {
     return class Trigger extends T {

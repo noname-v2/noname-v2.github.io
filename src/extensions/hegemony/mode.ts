@@ -1,11 +1,11 @@
-import type { Task, FilterThis } from '../types';
+import type { ModeInfo, Task } from '../../types';
 
 export const mode = {
     name: '国战',
     np: [2, 3, 4, 5, 6, 7, 8],
     tasks: {
         main(T: typeof Task) {
-            return class Identity extends T {
+            return class Hegemony extends T {
                 /** Number of hero choices. */
                 nheros = 10;
 
@@ -17,18 +17,18 @@ export const mode = {
                 }
                 
                 chooseHero() {
-                    const choices = this.game.heros;
+                    const choices = this.arena.heros;
                     const heros = new Map();
-                    const nheros = Math.min(this.nheros, Math.floor(choices.size / this.game.players.size));
-                    for (const id of this.game.players.keys()) {
+                    const nheros = Math.min(this.nheros, Math.floor(choices.size / this.arena.players.size));
+                    for (const id of this.arena.players.keys()) {
                         heros.set(id, {
-                            items: Array.from(this.game.utils.rgets(choices, nheros, true)),
+                            items: Array.from(this.arena.utils.rgets(choices, nheros, true)),
                             filter: 'hegemony:mode.choose',
                             num: 2
                         });
                     }
                     this.addTask('chooseHero', {
-                        heros, forced: true, pick: this.game.config.pick || !this.game.connected
+                        heros, forced: true, pick: this.arena.config.pick || !this.arena.connected
                     });
                     this.addTask('loop');
                 }
@@ -40,19 +40,19 @@ export const mode = {
             }
         }
     },
-    choose(this: FilterThis<string>, name: string) {
-        const faction = this.getInfo('hero', name).faction;
-        if (this.selected.hero.length) {
-            return faction === this.getInfo('hero', this.selected.hero[0]).faction;
-        }
-        else {
-            for (const hero of this.items) {
-                if (hero !== name && faction === this.getInfo('hero', hero).faction) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    },
+    // choose(this: FilterThis<string>, name: string) {
+    //     const faction = this.getInfo('hero', name).faction;
+    //     if (this.selected.hero.length) {
+    //         return faction === this.getInfo('hero', this.selected.hero[0]).faction;
+    //     }
+    //     else {
+    //         for (const hero of this.items) {
+    //             if (hero !== name && faction === this.getInfo('hero', hero).faction) {
+    //                 return true;
+    //             }
+    //         }
+    //         return false;
+    //     }
+    // },
     inherit: 'sgs'
-};
+} as ModeInfo;

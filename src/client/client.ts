@@ -1,12 +1,11 @@
 import { importExtension, accessExtension } from '../extension';
 import { rng } from '../utils';
 import { create } from './ui';
-import { backups, componentClasses, restore, app, splash, lib } from './globals';
+import { componentClasses, restore, app, splash, lib } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
-import type { Component, Color } from '../components';
+import type { Component, Color } from '../components/component';
 import type { UITick, ClientMessage } from '../worker/worker';
-import type { Dict } from '../types';
 
 /** Hub configuration. */
 export const hub = new Proxy(meta.hub, {
@@ -193,8 +192,8 @@ async function loadArena(ruleset: string[], packs: string[]) {
         allPacks.add(pack);
         const ext = await importExtension(pack);
         for (const tag in ext.mode?.components) {
-            const cls = componentClasses.get(tag) ?? backups.get('component');
-            componentClasses.set(tag, ext.mode!.components[tag](cls));
+            const cls = componentClasses.get(tag) ?? componentClasses.get('component')!;
+            componentClasses.set(tag, ext.mode!.components[tag](cls) as any);
         }
         if (ext.requires) {
             for (const pack of ext.requires) {
@@ -293,8 +292,8 @@ async function render() {
         // call component methods
         for (const key in calls) {
             const id = parseInt(key);
-            for (const [method, arg] of calls[key]) {
-                components.get(id)![method as keyof Component](arg);
+            for (const [method, args] of calls[key]) {
+                (components.get(id) as any)[method](...args);
             }
         }
 

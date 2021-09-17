@@ -1,4 +1,4 @@
-import { Component, ButtonColor } from '../components';
+import { Component, ButtonColor } from '../components/component';
 
 export class Button extends Component {
 	/** Background circle image. */

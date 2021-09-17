@@ -1,6 +1,6 @@
 import { splash } from '../../client/globals';
 import { version, debug } from '../../meta';
-import { Component, Button, ButtonColor } from '../../components';
+import { Component, Button, ButtonColor } from '../../components/component';
 
 export class SplashBar extends Component {
     /** Use tag <noname-bar>. */

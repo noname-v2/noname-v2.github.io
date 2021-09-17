@@ -2,12 +2,13 @@ import { Room } from './room'
 import { setRoom, room, init } from './globals';
 import { dispatch } from './hub';
 import { ClientMessage } from './worker';
-import { taskClasses, gameClasses } from './classes';
+import { taskClasses } from '../../build/task-classes';
+import { linkClasses } from '../../build/link-classes';
 import * as globals from './globals';
 
 // setup default task and  classes
-for (const [task, cls] of gameClasses) {
-    globals.gameClasses.set(task, cls);
+for (const [task, cls] of linkClasses) {
+    globals.linkClasses.set(task, cls);
 }
 
 for (const [task, cls] of taskClasses) {

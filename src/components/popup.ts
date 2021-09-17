@@ -1,4 +1,4 @@
-import { Component, TransitionDuration, Point } from '../components';
+import { Component, TransitionDuration, Point } from '../components/component';
 
 export class Popup extends Component {
     /** Child classes use tag <noname-popup> by default. */

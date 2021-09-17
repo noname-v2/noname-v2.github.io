@@ -1,17 +1,15 @@
-import type { Task } from './game/task';
-import type { Component, Color, Pop } from './components';
+import type { Task } from './tasks/task';
+import type { Link } from './links/link';
+import type { Component, Color, Pop } from './components/component';
 import type { lib } from './client/globals';
 
 /** Plain dictionary object. */
 export type Dict<T=any> = {[key: string]: T};
 
-/** Creator of a subclass. */
-export interface Class<T=any> {
-    (cls: {new(...args: any[]): T}): {new(...args: any[]): T} | Dict<{new(...args: any[]): T}>;
-};
-
-/** Link class reference. */
-export type { Link } from './worker/link';
+/** Export default types. */
+export type { Task }
+export type { Link }
+export type { Component }
 
 /** Mode configuration entry. */
 export interface Config {
@@ -35,7 +33,7 @@ export interface Config {
 }
 
 /** General definition. */
-interface Data {
+interface Info {
     /** Display name. */
     name: string;
 
@@ -46,8 +44,11 @@ interface Data {
     [key: string]: any;
 }
 
+/** Overwriting classes. */
+export type Class<T> = (arg: { new(...args: any[]): T } ) => { new(...args: any[]): T};
+
 /** Hero definition. */
-export interface HeroData extends Data {
+export interface HeroInfo extends Info {
     /** Hero gender. */
     gender: string;
 
@@ -65,7 +66,7 @@ export interface HeroData extends Data {
 };
 
 /** Card definition. */
-export interface CardData extends Data {
+export interface CardInfo extends Info {
     /** Card type. */
     type: string;
 
@@ -101,18 +102,18 @@ export interface CardData extends Data {
 };
 
 /** Minion definition. */
-export interface MinionData extends Data {
+export interface MinionInfo extends Info {
     /** Range that the minion can reach. */
     range?: number;
 }
 
 /** Skill definition. */
-export interface SkillData extends Data {
+export interface SkillInfo extends Info {
     /** Skill type. */
     type?: string;
     
     /** Task when skill is used or triggered. */
-    task?: Class<Task>;
+    task?: (cls: unknown) => unknown;
 
     /** Inherit from a parent skill. */
     inherit?: string;
@@ -124,7 +125,7 @@ export interface SkillData extends Data {
 };
 
 /** Mode information. */
-export interface ModeData {
+export interface ModeInfo {
     /** Mode name. */
     name?: string;
 
@@ -135,13 +136,13 @@ export interface ModeData {
     extension?: string;
 
     /** Mode-specific task classes. */
-    tasks?: Dict<Class<Task>>;
-
-    /** Mode-specific component classes. */
-    components?: Dict<(cls: any) => typeof Component>;
+    tasks?: Dict<(cls: unknown) => unknown>;
 
     /** Mode-specific general classes. */
-    classes?: Dict<Class>;
+    links?: Dict<(cls: unknown) => unknown>;
+
+    /** Mode-specific component classes. */
+    components?: Dict<(cls: unknown) => unknown>;
 
     /** Configuration entries that are displayed in the lobby. */
     config?: Dict<Config>;
@@ -171,19 +172,19 @@ export type PileEntries = [string, string, number, ...string[]][];
 /** Basic extension structure. */
 export interface Extension {
     /** Mode configuration. */
-    mode?: ModeData;
+    mode?: ModeInfo;
 
     /** Hero data. */
-    hero?: Dict<HeroData>;
+    hero?: Dict<HeroInfo>;
 
     /** Card data. */
-    card?: Dict<CardData>;
+    card?: Dict<CardInfo>;
 
     /** Skill data. */
-    skill?: Dict<SkillData>;
+    skill?: Dict<SkillInfo>;
 
     /** Minion data. */
-    minion?: Dict<MinionData>;
+    minion?: Dict<MinionInfo>;
 
     /** Card pile. */
     pile?: Pile;

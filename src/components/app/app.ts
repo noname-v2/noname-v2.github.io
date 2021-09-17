@@ -1,15 +1,15 @@
 import { trigger, components } from '../../client/client';
 import { splash, arena, init } from '../../client/globals';
-import { Component, Popup, Zoom, TransitionDuration } from '../../components';
+import { Component, Popup, Zoom, TransitionDuration } from '../../components/component';
 import { accessExtension } from '../../extension';
-import type { Dict, HeroData, CardData, MinionData, SkillData } from '../../types';
+import type { Dict, HeroInfo, CardInfo, MinionInfo, SkillInfo } from '../../types';
 
 /** Get hero info. */
 interface GetInfo {
-    hero: HeroData;
-    card: CardData;
-    skill: SkillData;
-    minion: MinionData;
+    hero: HeroInfo;
+    card: CardInfo;
+    skill: SkillInfo;
+    minion: MinionInfo;
     [key: string]: any;
 }
 

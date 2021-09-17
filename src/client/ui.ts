@@ -1,8 +1,8 @@
 import { android, ios } from '../platform';
 import { app, lib, componentClasses } from './globals';
 import { split } from '../utils';
-import type { ComponentTagMap } from './classes';
-import type { Point, Region } from '../components';
+import type { ComponentTagMap } from '../../build/component-classes';
+import type { Point, Region } from '../components/component';
 
 /** Type for point location from an event. */
 type EventPoint = {clientX: number, clientY: number, button?: number}
@@ -247,7 +247,9 @@ export function create<T extends keyof ComponentTagMap>(tag: T, parent?: HTMLEle
 
     // add className for a Component subclass with a static tag
     if (cls.tag && cmp.node) {
-        cmp.node.classList.add(tag as string);
+        cmp.node.classList.add((tag as string).split('').map(
+            c => c !== c.toLowerCase() ? '-' + c.toLowerCase() : c
+        ).join(''));
     }
     
     if (parent) {

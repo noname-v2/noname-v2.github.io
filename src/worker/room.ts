@@ -1,12 +1,13 @@
 import { Stage } from './stage';
 import { copy, apply, freeze } from '../utils';
-import { Link, createLink } from './link';
-import { taskClasses, gameClasses } from './globals';
+import { Link } from '../links/link';
+import { taskClasses, linkClasses } from './globals';
 import { importExtension, accessExtension } from '../extension';
-import type { Task } from '../game/task';
-import type { Game } from '../game/game';
+import type { Arena } from '../links/arena';
+import type { Task } from '../tasks/task';
 import type { UITick } from './worker';
-import type { ModeData, Dict } from '../types';
+import type { ModeInfo, Dict } from '../types';
+import type { LinkTagMap } from '../../build/link-classes';
 
 /** Room that controls game flow and classes. */
 export class Room {
@@ -17,10 +18,7 @@ export class Room {
     currentStage!: Stage;
 
     /** Link to Arena. */
-    arena!: Link;
-
-    /** Game object. */
-    game!: Game;
+    arena!: Arena;
 
     /** Game progress.
      * 0: waiting
@@ -30,7 +28,7 @@ export class Room {
     progress = 0;
 
     /** Links to components. */
-    links = new Map<number, [Link, Dict]>();
+    links = new Map<number, Link>();
 
     /** All created stages. */
     stages = new Map<number, Stage>();
@@ -39,10 +37,10 @@ export class Room {
     #ruleset: string[] = [];
 
     /** Map of task classes. */
-    #taskClasses!: Map<string, { new(id: number): Task }>;
+    #taskClasses!: Map<string, typeof Task>;
 
     /** Base game classes. */
-    #gameClasses!: Map<string, any>;
+    #linkClasses!: Map<string, any>;
 
     /** Number of links created. */
     #linkCount = 0;
@@ -55,7 +53,7 @@ export class Room {
 
     async init(name: string, packs: string[]) {
         // initialize classes
-        this.#gameClasses = new Map(gameClasses);
+        this.#linkClasses = new Map(linkClasses);
         this.#taskClasses = new Map(taskClasses);
 
         // load extensions
@@ -68,21 +66,18 @@ export class Room {
         const mode = await this.#loadRuleset();
         
         // start game
-        this.game = new (this.getClass('game'))();
-        this.game.mode = mode;
-        this.game.packs = new Set(packs);
+        this.arena = this.create('arena');
+        this.arena.mode = mode;
+        this.arena.update({ packs, ruleset: this.#ruleset, mode: mode.extension });
         this.rootStage = this.currentStage = this.createStage('main');
-        this.arena = this.game.create('arena');
-        this.arena.ruleset = this.#ruleset;
-        this.arena.packs = packs;
-        this.arena.mode = mode.extension;
         this.loop();
     }
 
     /** Create a link. */
-    create(tag: string) {
+    create<T extends keyof LinkTagMap>(tag: T): LinkTagMap[T] {
         const id = ++this.#linkCount;
-        return createLink(id, tag);
+        const cls = this.#linkClasses.get(tag as string) ?? Link;
+        return new cls(id, tag);
     }
 
     /** Create a stage. */
@@ -94,28 +89,23 @@ export class Room {
     }
 
     /** Get or create task constructor. */
-    getTask(path: string): { new(id: number): Task } {
+    getTask(path: string): typeof Task {
         if (!this.#taskClasses.has(path)) {
             // get task from extension sections
             const section = accessExtension(path);
-            const cls = section.inherit ? this.getTask(section.inherit) : this.#gameClasses.get('task');
+            const cls = section.inherit ? this.getTask(section.inherit) : this.#linkClasses.get('task');
             this.#taskClasses.set(path, section.task!(cls));
         }
         return this.#taskClasses.get(path)!;
-    }
-
-    /** Get a game class. */
-    getClass(path: string) {
-        return this.#gameClasses.get(path);
     }
 
     /** Get a UITick of all links. */
     pack(): UITick {
         const tags: Dict<string> = {};
         const props: Dict<Dict> = {};
-        for (const [uid, [link, obj]] of this.links) {
+        for (const [uid, link] of this.links) {
             tags[uid] = link.tag;
-            props[uid] = obj;
+            props[uid] = link.pack();
         }
         return [this.currentStage.id, tags, props, {}];
     }
@@ -142,17 +132,17 @@ export class Room {
 
     /** Update extension-defined classes and game mode. */
     async #loadRuleset() {
-        const mode: ModeData = {};
+        const mode: ModeInfo = {};
         const modeTasks = [];
         const exclude = ['tasks', 'components', 'classes'];
 
         for (const pack of this.#ruleset) {
-            const extMode: ModeData = copy(accessExtension(pack)?.mode ?? {});
+            const extMode: ModeInfo = copy(accessExtension(pack)?.mode ?? {});
 
             // update game classes (including base Task class)
             for (const name in extMode.classes) {
-                const cls = this.#gameClasses.get(name);
-                this.#gameClasses.set(name, extMode.classes[name](cls));
+                const cls = this.#linkClasses.get(name);
+                this.#linkClasses.set(name, extMode.classes[name](cls));
             }
 
             // update task classes after Task class is finalized
@@ -163,16 +153,8 @@ export class Room {
         // update task classes
         for (const tasks of modeTasks) {
             for (const task in tasks) {
-                const cls = this.#taskClasses.get(task) ?? this.getClass('task');
-                const constructor = (tasks[task] as any)(cls);
-                if (typeof constructor === 'function') {
-                    this.#taskClasses.set(task, constructor);
-                }
-                else {
-                    for (const name in constructor) {
-                        this.#taskClasses.set(name, constructor[name]);
-                    }
-                }
+                const cls = this.#taskClasses.get(task) ?? this.#taskClasses.get('task');
+                this.#taskClasses.set(task, (tasks[task] as any)(cls));
             }
         }
 

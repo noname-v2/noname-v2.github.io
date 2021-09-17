@@ -1,4 +1,4 @@
-import { Component } from '../../components';
+import { Component } from '../../components/component';
 
 export class Card extends Component {
     /** Player background. */

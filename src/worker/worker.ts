@@ -1,17 +1,21 @@
 import { room } from './globals';
+import { apply } from '../utils';
 import * as hub from './hub';
 import type { Dict } from '../types';
 
 /** An update to client side. */
 export type UITick = [
-    // stage ID
+    /** Stage ID. */
     number,
-    // add or delete components
+
+    /** Add or delete components. */
     Dict<string | null>,
-    // component property updates
+
+    /** Component property updates. */
     Dict<Dict>,
-    // component function calls
-    Dict<[string, any][]>
+
+    /** Component function calls. */
+    Dict<[string, any[]][]>
 ];
 
 /** One section of a UITick. */
@@ -49,7 +53,7 @@ export function tick(id: number, item: TickItem) {
         // schedule a UITick if no pending UITick exists
         setTimeout(() => commit());
     }
-    ticks.push([room.currentStage.id, id, item]);
+    ticks.push([room.currentStage?.id ?? 0, id, item]);
 }
 
 /** Generate UITick(s) from this.#ticks. */
@@ -68,7 +72,7 @@ function commit() {
     for (const [stageID, entries] of stages) {
         const tagChanges: Dict<string | null> = {};
         const propChanges: Dict<Dict> = {};
-        const calls: Dict<[string, any][]> = {};
+        const calls: Dict<[string, any[]][]> = {};
 
         // merge updates from different ticks
         for (const [, id, item] of entries) {
@@ -78,7 +82,29 @@ function commit() {
             }
             else if (item && typeof item === 'object') {
                 propChanges[id] ??= {};
-                Object.assign(propChanges[id], item);
+                const props = propChanges[id];
+
+                for (const key in item) {
+                    if (key.startsWith('^')) {
+                        const key2 = key.slice(1);
+
+                        if (props[key2]?.constructor === Object) {
+                            // merge patch with existing full update
+                            apply(props[key2], item[key]);
+                        }
+                        else {
+                            // merge patch with existing patch
+                            delete props[key2];
+                            props[key] ??= {};
+                            apply(props[key], item[key]);
+                        }
+                    }
+                    else {
+                        // replace patch with full update
+                        delete props['^' + key];
+                        props[key] = item[key];
+                    }
+                }
             }
             else {
                 tagChanges[id] = item;

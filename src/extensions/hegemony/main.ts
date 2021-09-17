@@ -1,6 +1,6 @@
 import { mode } from './mode';
 import { skill } from './skill';
-import type { Extension } from '../types';
+import type { Extension } from '../../types';
 
 export default {
     mode,

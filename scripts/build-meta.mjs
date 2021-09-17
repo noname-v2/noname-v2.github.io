@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { buildComponents, buildTasks } from './build-classes.mjs';
+import { build } from './build-classes.mjs';
 import { buildSheets } from './build-sheets.mjs';
 
 // get info from package.json
@@ -29,6 +29,5 @@ fs.writeFileSync('build/literals.ts', literals);
 fs.copyFileSync('node_modules/eruda/eruda.js', 'lib/eruda.js');
 
 // index components and stylesheets for src
-buildComponents();
-buildTasks();
+build();
 buildSheets();

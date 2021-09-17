@@ -1,4 +1,4 @@
-import { Component } from '../../components';
+import { Component } from '../../components/component';
 
 export class Sidebar extends Component {
     /** Header text. */

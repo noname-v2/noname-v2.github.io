@@ -1,4 +1,4 @@
-import type { Component, App, Arena, Splash, Color } from '../components';
+import type { Component, App, Arena, Splash, Color } from '../components/component';
 import type { Dict } from '../types';
 import { debug } from '../meta';
 

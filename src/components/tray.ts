@@ -1,4 +1,4 @@
-import { Component, Region } from '../components';
+import { Component, Region } from '../components/component';
 
 export class Tray extends Component {
 	/** Item width. */

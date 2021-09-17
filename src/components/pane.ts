@@ -1,4 +1,4 @@
-import { Component, Gallery, Point } from '../components';
+import { Component, Gallery, Point } from '../components/component';
 import type { ToggleOptions } from './toggle';
 
 export class Pane extends Component {

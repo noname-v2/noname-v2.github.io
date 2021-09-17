@@ -1,22 +1,24 @@
-import { Task } from '../game/task';
+import { Task } from './task';
 import * as hub from '../worker/hub';
-import type { Config, Dict, Link } from '../types';
+import type { Peer, Lobby as LobbyLink } from '../links/link';
+import type { Config, Dict } from '../types';
+import type { ArenaBanned } from '../links/arena';
 
 export class Lobby extends Task {
-    lobby!: Link;
+    lobby!: LobbyLink;
 
     main() {
-        const lobby = this.lobby = this.game.create('lobby');
+        const lobby = this.lobby = this.arena.create('lobby');
 
         // get names of hero packs and card packs
         const heropacks: string[] = [];
         const cardpacks: string[] = [];
         const configs: Dict<Config> = {};
-        Object.assign(configs, this.game.mode.config);
+        Object.assign(configs, this.arena.mode.config);
 
-        for (const name of this.game.packs) {
-            const heropack = this.game.accessExtension(name, 'heropack');
-            const cardpack = this.game.accessExtension(name, 'cardpack');
+        for (const name of this.arena.packs) {
+            const heropack = this.arena.accessExtension(name, 'heropack');
+            const cardpack = this.arena.accessExtension(name, 'cardpack');
             if (heropack) {
                 heropacks.push(name);
             }
@@ -26,10 +28,10 @@ export class Lobby extends Task {
         }
 
         // configuration for player number
-        const np = this.game.mode.np!;
+        const np = this.arena.mode.np!;
         let npmax: number;
         if (typeof np === 'number') {
-            this.game.config.np = np;
+            this.arena.config.np = np;
             npmax = np;
         }
         else {
@@ -42,12 +44,12 @@ export class Lobby extends Task {
             for (const n of np) {
                 configs.np.options!.push([n, `<span class="mono">${n}</span>人`]);
             }
-            this.game.config.np = npmax;
+            this.arena.config.np = npmax;
         }
 
         // create lobby
-        lobby.npmax = npmax;
-        lobby.pane = {heropacks, cardpacks, configs};
+        lobby.data.npmax = npmax;
+        lobby.data.pane = {heropacks, cardpacks, configs};
         this.add('awaitStart');
         this.add('cleanUp');
     }
@@ -55,7 +57,7 @@ export class Lobby extends Task {
     /** Await initial configuration. */
     awaitStart() {
         const lobby = this.lobby;
-        lobby.owner = this.game.owner;
+        lobby.data.owner = this.arena.owner;
         lobby.monitor('updateLobby');
         lobby.await();
     }
@@ -64,24 +66,24 @@ export class Lobby extends Task {
     updateLobby([type, key, val]: [string, string, any]) {
         if (type === 'sync') {
             // game connected to or disconnected from hub
-            this.game.config.online = val[0];
-            this.game.config.banned = {};
-            this.game.utils.apply(this.game.config, val[1]);
+            this.arena.config.online = val[0];
+            this.arena.config.banned = {};
+            this.arena.utils.apply(this.arena.config, val[1]);
 
-            for (const key in this.game.mode.config) {
-                const entry = this.game.mode.config[key];
+            for (const key in this.arena.mode.config) {
+                const entry = this.arena.mode.config[key];
                 const requires = entry.requires;
                 if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
-                    delete this.game.config[key];
+                    delete this.arena.config[key];
                 }
                 else {
-                    this.game.config[key] ??= entry.init;
+                    this.arena.config[key] ??= entry.init;
                 }
             }
-            this.lobby.config = this.game.config;
+            this.lobby.data.config = this.arena.config;
 
             // add callback for client operations
-            const peers = this.game.hub.peers;
+            const peers = this.arena.hub.peers;
             if (peers) {
                 for (const peer of peers) {
                     peer.monitor('updatePeer');
@@ -101,22 +103,22 @@ export class Lobby extends Task {
             else {
                 // make sure np in range
                 if (key === 'np') {
-                    const np = this.game.mode.np;
+                    const np = this.arena.mode.np;
                     if (!Array.isArray(np) || val < np[0] || val > np[np.length - 1]) {
                         return;
                     }
                 }
 
                 // game configuration change
-                this.game.config[key] = val;
-                this.lobby.config = this.game.config;
+                this.arena.config[key] = val;
+                this.lobby.patch('config', { [key]: val });
 
                 // update seats in the lobby
                 if (key === 'np' ) {
-                    const players = this.game.hub.players;
+                    const players = this.arena.hub.players;
                     if (players && players.length > val) {
                         for (let i = val; i < players.length; i++) {
-                            players[i].playing = false;
+                            players[i].data.playing = false;
                         }
                     }
                     hub.update();
@@ -124,53 +126,49 @@ export class Lobby extends Task {
             }
         }
         else if (type === 'banned') {
-            const [section, name] = this.game.utils.split(key, '/');
-            const set = new Set(this.game.config.banned[section]);
+            const [section, name] = this.arena.utils.split(key, '/') as [keyof ArenaBanned, string];
+            const set = new Set(this.arena.config.banned[section]);
             set[val ? 'delete' : 'add'](name);
-            if (set.size) {
-                this.game.config.banned[section] = Array.from(set);
-            }
-            else {
-                delete this.game.config.banned[section];
-            }
-            this.lobby.config = this.game.config;
+            const banned = Array.from(set);
+            this.lobby.patch('config', { banned: { [section]: banned } })
+            this.arena.config.banned[section] = banned;
         }
         else if (type === 'start') {
             this.lobby.call('checkStart', [
-                this.game.mode.minHeroCount,
-                this.game.heros.size,
-                this.game.mode.minPileCount,
-                this.game.pile.length
+                this.arena.mode.minHeroCount,
+                this.arena.heros.size,
+                this.arena.mode.minPileCount,
+                this.arena.pile.length
             ])
         }
     }
 
     /** Update info about joined players. */
-    updatePeer(val: string, peer: Link) {
-        if (val === 'spectate' && peer.playing) {
-            peer.playing = false;
+    updatePeer(val: string, peer: Peer) {
+        if (val === 'spectate' && peer.data.playing) {
+            peer.data.playing = false;
             hub.update();
         }
-        else if (val === 'play' && !peer.playing && this.game.hub.players!.length < this.game.config.np) {
-            peer.playing = true;
+        else if (val === 'play' && !peer.data.playing && this.arena.hub.players!.length < this.arena.config.np) {
+            peer.data.playing = true;
             hub.update();
         }
         else if (val === 'prepare') {
-            if (peer.owner === this.game.owner) {
-                peer.ready = [14, Date.now()];
+            if (peer.owner === this.arena.owner) {
+                peer.data.ready = [14, Date.now()];
             }
             else {
-                peer.ready = true;
+                peer.data.ready = true;
             }
         }
         else if (val === 'unprepare') {
-            peer.ready = false;
+            peer.data.ready = false;
         }
     }
 
     /** Remove lobby and start game. */
     cleanUp() {
         this.lobby.unlink();
-        this.game.start();
+        this.arena.start();
     }
 }

@@ -2,15 +2,7 @@ import { hub2owner } from '../hub/types';
 import { split } from '../utils';
 import { room, uid, info } from './globals';
 import type { UITick, ClientMessage } from './worker';
-import type { Link } from './link';
-
-interface Peer extends Link {
-    owner: string;
-    nickname: string;
-    avatar: string;
-    playing: boolean;
-    [key: string]: any;
-}
+import type { Link, Peer, PeerData } from '../links/link';
 
 /** WebSocket connection. */
 export let connection: WebSocket | null = null;
@@ -98,7 +90,7 @@ function sync() {
             ids.push(peer.id);
         }
     }
-    room.arena.peers = ids;
+    room.arena.data.peers = ids;
 }
 
 /** Disconnect from remote hub. */
@@ -131,11 +123,11 @@ export function send(to: string, tick: UITick) {
 export function update(push=true) {
     const state = JSON.stringify([
         // mode name
-        room.game.mode.name,
+        room.arena.mode.name,
         // joined players
         getPeers({playing: true})?.length ?? 1,
         // number of players in a game
-        room.game.config.np,
+        room.arena.config.np,
         // nickname and avatar of owner
         info,
         // game state
@@ -161,7 +153,7 @@ export async function dispatch(data: ClientMessage) {
             // disconnect from remote hub
             disconnect();
         }
-        else if (sid === stage.id && link && link[1].owner === uid) {
+        else if (sid === stage.id && link && link.owner === uid) {
             // send result to listener
             if (done && stage.awaits.has(id)) {
                 // results: component.respond() -> link.await()
@@ -179,7 +171,7 @@ export async function dispatch(data: ClientMessage) {
             else if (!done && stage.monitors.has(id)) {
                 // results: component.yield() -> link.monitor()
                 const method = stage.monitors.get(id)!;
-                (stage.task as any)[method](result, link[0]);
+                (stage.task as any)[method](result, link);
             }
         }
     }
@@ -190,27 +182,28 @@ export async function dispatch(data: ClientMessage) {
 
 /** Create a peer component. */
 function createPeer(uid: string, info: [string, string]) {
-    const peer = room.create('peer') as Peer;
+    const peer = room.create('peer');
     peer.update({
         owner: uid,
         nickname: info[0],
         avatar: info[1],
-        playing: getPeers({playing: true})!.length < room.game.config.np
+        playing: getPeers({playing: true})!.length < room.arena.config.np
     });
     peers!.set(uid, peer);
     sync();
 }
 
 /** Get peers that match certain condition. */
-export function getPeers(filter?: Partial<Peer>) {
+export function getPeers(filter?: Partial<PeerData>) {
     if (!peers) {
         return null;
     }
     const links = [];
     for (const peer of peers.values()) {
         let skip = false;
-        for (const key in filter) {
-            if (peer[key] !== filter[key]) {
+        let key: keyof PeerData;
+        for (key in filter) {
+            if (peer.data[key] !== (filter as PeerData)[key]) {
                 skip = true;
                 continue;
             }

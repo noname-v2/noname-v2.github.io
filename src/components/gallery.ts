@@ -1,4 +1,4 @@
-import { Component } from '../components';
+import { Component } from '../components/component';
 
 type GalleryItem = HTMLElement | ((item: HTMLElement) => HTMLElement | null | void) | null | 'pager';
 

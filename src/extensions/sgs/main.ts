@@ -1,12 +1,14 @@
-import type { Extension } from '../types';
+import type { Extension } from '../../types';
 import { tasks } from './tasks/index';
-import { classes } from './classes/index';
+import { links } from './links/index';
 import { components } from './components/index';
 
 export default {
     requires: ['standard', 'maneuver'],
     mode: { 
-        tasks, classes, components,
+        tasks,
+        components,
+        links,
         minHeroCount: 50,
         minPileCount: 100,
         autoKeywords: {

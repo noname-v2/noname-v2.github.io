@@ -1,8 +1,5 @@
-/** Game tasks. */
-import { trigger } from './trigger';
-import { setup } from './setup';
 import { loop } from './loop';
+import { setup } from './setup';
+import { trigger } from './trigger';
 
-export const tasks = {
-    trigger, setup, loop
-};
+export const tasks = { loop, setup, trigger };

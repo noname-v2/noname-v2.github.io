@@ -1,6 +1,6 @@
 import * as client from '../../client/client';
 import { setArena } from '../../client/globals';
-import { Component, Peer, Popup } from '../../components';
+import { Component, Peer, Popup } from '../../components/component';
 
 export class Arena extends Component {
     /** A dialog has been popped before this.remove() is called. */
@@ -42,7 +42,7 @@ export class Arena extends Component {
 
         const peers = [];
         for (const id of ids) {
-            const cmp = this.getComponent(id);
+            const cmp = this.app.getComponent(id);
             if (cmp) {
                 peers.push(cmp as Peer);
             }
@@ -53,7 +53,7 @@ export class Arena extends Component {
     /** Peer component representing current client. */
     get peer(): Peer | null {
         for (const id of this.data.peers ?? []) {
-            const cmp = this.getComponent(id);
+            const cmp = this.app.getComponent(id);
             if (cmp?.mine) {
                 return cmp as Peer;
             }
