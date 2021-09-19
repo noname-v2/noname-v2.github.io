@@ -419,7 +419,9 @@ export class App extends Component {
     /** Clear alert and confirm dialogs. */
     clearPopups() {
         for (const popup of this.popups.values()) {
-            popup.close();
+            if (!popup.fixed) {
+                popup.close();
+            }
         }
         this.popups.clear();
     }

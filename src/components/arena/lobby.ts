@@ -61,6 +61,7 @@ export class Lobby extends Component {
     /** Whether pick tray contains online of offline heros. */
     #pickMode!: boolean;
 
+    /** ID in db for configuration. */
     get #config() {
         return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
     }

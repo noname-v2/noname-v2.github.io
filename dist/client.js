@@ -1643,7 +1643,9 @@
         /** Clear alert and confirm dialogs. */
         clearPopups() {
             for (const popup of this.popups.values()) {
-                popup.close();
+                if (!popup.fixed) {
+                    popup.close();
+                }
             }
             this.popups.clear();
         }
@@ -1778,6 +1780,8 @@
         arena = false;
         /** Locate dialog to [center, left] instead of [top, left]. */
         verticalCenter = false;
+        /** Avoid being closed by arena.clearPopups(). */
+        fixed = false;
         init() {
             this.node.classList.add('noname-popup');
             // block DOM events behind the pane
@@ -2527,6 +2531,7 @@
         #tmpCount = 0;
         /** Whether pick tray contains online of offline heros. */
         #pickMode;
+        /** ID in db for configuration. */
         get #config() {
             return this.app.mode + ':' + (this.app.connected ? 'online_' : '') + 'config';
         }
@@ -4492,7 +4497,9 @@
                 this.#setCaption('正在连接');
                 return new Promise(resolve => {
                     ws.onclose = () => {
+                        this.fixed = true;
                         this.#disconnect(connection === ws);
+                        this.fixed = false;
                         setTimeout(resolve, 100);
                     };
                     ws.onopen = () => {

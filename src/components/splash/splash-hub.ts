@@ -174,7 +174,9 @@ export class SplashHub extends Popup {
 
             return new Promise<void>(resolve => {
                 ws.onclose = () => {
+                    this.fixed = true;
                     this.#disconnect(client.connection === ws);
+                    this.fixed = false;
                     setTimeout(resolve, 100);
                 };
 

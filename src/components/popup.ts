@@ -34,6 +34,9 @@ export class Popup extends Component {
 	/** Locate dialog to [center, left] instead of [top, left]. */
 	verticalCenter = false;
 
+	/** Avoid being closed by arena.clearPopups(). */
+	fixed = false;
+
     init() {
 		this.node.classList.add('noname-popup');
 		
