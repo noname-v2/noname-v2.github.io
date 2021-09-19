@@ -1,6 +1,6 @@
 import { trigger, components } from '../../client/client';
 import { splash, arena, init } from '../../client/globals';
-import { Component, Popup, Zoom, TransitionDuration } from '../../components/component';
+import { Component, Popup, Zoom, Point, TransitionDuration } from '../../components/component';
 import { accessExtension } from '../../extension';
 import type { Dict, HeroInfo, CardInfo, MinionInfo, SkillInfo } from '../../types';
 
@@ -56,6 +56,9 @@ export class App extends Component {
     /** Popup components cleared when arena close. */
     #popups = new Map<string | number, Popup>();
 
+    /** Popups that can be closed by clicking on blank area. */
+    #tempPopups = new Set<Popup>();
+
     /** Count dialog for dialog ID */
     #dialogCount = 0;
 
@@ -86,6 +89,10 @@ export class App extends Component {
 	get popups() {
 		return this.#popups;
 	}
+
+    get tempPopups() {
+        return this.#tempPopups;
+    }
 
     get zoomNode() {
         return this.#zoom.node;
@@ -344,6 +351,9 @@ export class App extends Component {
         if (config.temp) {
             dialog.temp = true;
         }
+        dialog.top = true;
+
+        // update dialog content
         dialog.update({caption, content: config.content ?? '', buttons: config.buttons});
         const promise = new Promise<string | null>(resolve => {
             dialog.onclose = () => {
@@ -351,6 +361,8 @@ export class App extends Component {
             };
             this.popup(dialog, config.id);
         });
+
+        // set dialog timeout
         if (config.timeout) {
             return Promise.race([promise, new Promise<null>(resolve => {
                 setTimeout(() => resolve(null), config.timeout! * 1000);
@@ -416,6 +428,15 @@ export class App extends Component {
         };
     }
 
+    /** Show intro popup. */
+    intro(e: Point, intro: string) {
+        const menu = this.ui.create('popup');
+        menu.pane.width = 160;
+        menu.pane.node.classList.add('intro');
+        menu.pane.addText(intro);
+        menu.open(e);
+    }
+
     /** Clear alert and confirm dialogs. */
     clearPopups() {
         for (const popup of this.popups.values()) {
@@ -423,7 +444,15 @@ export class App extends Component {
                 popup.close();
             }
         }
+
+        for (const popup of this.tempPopups) {
+            if (!popup.fixed) {
+                popup.close();
+            }
+        }
+
         this.popups.clear();
+        this.tempPopups.clear();
     }
 
     /** Bind context menu to hero intro. */
@@ -454,8 +483,6 @@ export class App extends Component {
                 }
             }
 
-            // open in arena
-            menu.arena = true;
             menu.open();
         }});
     }

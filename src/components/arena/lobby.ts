@@ -38,7 +38,7 @@ export class Lobby extends Component {
     banned!: [HTMLElement, Tray, Map<string, HTMLElement>];
 
     /** Sections containing banned heros. */
-    picked!: [HTMLElement, Tray, Map<string, HTMLElement>, boolean];
+    picked!: [HTMLElement, Tray, Map<string, HTMLElement>];
 
     /** Map of hero buttons in collection. */
     heroButtons = new Map<string, HTMLElement>();
@@ -264,6 +264,7 @@ export class Lobby extends Component {
         for (const popup of this.collections.values()) {
             popup.close();
         }
+        this.app.clearPopups();
     }
 
     /** Initialize sidebar content. */
@@ -333,12 +334,14 @@ export class Lobby extends Component {
         this.picked = [
             this.sidebar.pane.addSection('点将'),
             this.sidebar.pane.addTray('round'),
-            new Map(), false
+            new Map()
         ];
-
         this.picked[0].style.display = 'none';
         this.picked[1].node.style.display = 'none';
-        this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
+        this.ui.bind(this.picked[1].node, {
+            onclick: () => this.#openCollection(heropacks, 'hero'),
+            oncontext: e => this.app.intro(e, this.configToggles.get('pick')!.intro!)
+        });
         this.ui.bind(this.picked[0], () => this.#showPicked());
 
         // banned heros
@@ -414,17 +417,11 @@ export class Lobby extends Component {
             for (const [name, toggle] of this.heroToggles) {
                 toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
             }
-            if (config.banned?.heropack?.length === 0) {
-                delete config.banned.heropack;
-            }
         }
         
         if (!partial || config.banned?.cardpack) {
             for (const [name, toggle] of this.cardToggles) {
                 toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
-            }
-            if (config.banned?.cardpack?.length === 0) {
-                delete config.banned.cardpack;
             }
         }
 
@@ -442,6 +439,13 @@ export class Lobby extends Component {
                 for (const [id, clone] of this.banned[2]) {
                     if (tray.items.has(clone)) {
                         oldBanned.add(id);
+
+                        // remove old banned
+                        if (!newBanned.has(id)) {
+                            this.heroButtons.get(id)?.classList.remove('defer');
+                            this.megaHeroButtons.get(id)?.classList.remove('defer');
+                            tray.deleteSilent(this.banned[2].get(id)!);
+                        }
                     }
                 }
                 
@@ -449,6 +453,7 @@ export class Lobby extends Component {
                 for (const id of newBanned) {
                     if (!oldBanned.has(id)) {
                         if (!this.banned[2].has(id)) {
+                            // create new clone
                             const clone = this.ui.createElement('widget.avatar');
                             this.ui.setImage(clone, id);
                             this.ui.bind(clone, () => this.#showBanned());
@@ -462,15 +467,6 @@ export class Lobby extends Component {
                     }
                 }
                 
-                // remove old banned
-                for (const id of oldBanned) {
-                    if (!newBanned.has(id)) {
-                        this.heroButtons.get(id)?.classList.remove('defer');
-                        this.megaHeroButtons.get(id)?.classList.remove('defer');
-                        tray.deleteSilent(this.banned[2].get(id)!);
-                    }
-                }
-
                 tray.align();
             }
             else {
@@ -478,7 +474,6 @@ export class Lobby extends Component {
                 this.banned[1].node.style.display = 'none';
                 tray.items.clear();
                 tray.node.innerHTML = '';
-                delete config.banned.hero;
             }
         }
 
@@ -487,10 +482,6 @@ export class Lobby extends Component {
             if (this.data.config.pick || !this.app.arena!.peers) {
                 this.picked[0].style.display = '';
                 this.picked[1].node.style.display = '';
-                if (!this.picked[3]) {
-                    this.picked[3] = true;
-                    this.picked[1].align();
-                }
                 for (const collection of this.collections.values()) {
                     collection.node.classList.remove('no-select');
                 }
@@ -501,6 +492,7 @@ export class Lobby extends Component {
                 for (const collection of this.collections.values()) {
                     collection.node.classList.add('no-select');
                 }
+                this.#hidePicked();
             }
             if (!partial) {
                 this.#updatePicks();
@@ -511,6 +503,11 @@ export class Lobby extends Component {
         if (this.mine) {
             const config = this.data.config;
             delete config.online;
+            for (const key in config.banned) {
+                if (config.banned[key].length === 0) {
+                    delete config.banned[key];
+                }
+            }
             this.db.set(this.#config, config);
         }
     }
@@ -639,7 +636,6 @@ export class Lobby extends Component {
 
     #createCollection(tmp: string | null = null) {
         const collection = this.ui.create('collection');
-        collection.arena = true;
         collection.flex = true;
         collection.ready.then(() => {
             this.ui.bind(collection.pane.node, () => collection.close());
@@ -774,15 +770,10 @@ export class Lobby extends Component {
     }
 
     #showBanned() {
-        for (const [id, collection] of this.collections) {
-            if (!collection.hidden) {
-                if (id.startsWith('ban:')) {
-                    collection.close();
-                    return;
-                }
-                break;
-            }
+        if (this.#hideBanned()) {
+            return;
         }
+
         const collection = this.#createCollection('ban');
         const heros = [];
         for (const [id, clone] of this.banned[2]) {
@@ -800,16 +791,24 @@ export class Lobby extends Component {
         collection.open();
     }
 
-    #showPicked() {
+    #hideBanned() {
         for (const [id, collection] of this.collections) {
             if (!collection.hidden) {
-                if (id.startsWith('pick:')) {
+                if (id.startsWith('ban:')) {
                     collection.close();
-                    return;
+                    return true;
                 }
                 break;
             }
         }
+        return false;
+    }
+
+    #showPicked() {
+        if (this.#hidePicked()) {
+            return;
+        }
+
         const collection = this.#createCollection('pick');
         const heros = [];
         for (const [id, clone] of this.picked[2]) {
@@ -825,12 +824,29 @@ export class Lobby extends Component {
         collection.open();
     }
 
+    #hidePicked() {
+        for (const [id, collection] of this.collections) {
+            if (!collection.hidden) {
+                if (id.startsWith('pick:')) {
+                    collection.close();
+                    return true;
+                }
+                break;
+            }
+        }
+        return false;
+    }
+
     #updatePicks() {
         // check if pick mode changed
         if (this.app.connected === this.#pickMode) {
             return;
         }
         this.#pickMode = this.app.connected;
+
+        // close outdated galleries
+        this.#hideBanned();
+        this.#hidePicked();
 
         // get changed picks
         const newPicked = new Set<string>(this.db.get(this.#pick));
@@ -840,12 +856,15 @@ export class Lobby extends Component {
         for (const [id, clone] of this.picked[2]) {
             if (tray.items.has(clone)) {
                 oldPicked.add(id);
+
+                // remove old picked
                 if (!newPicked.has(id)) {
                     this.#togglePick(id, false, false);
                 }
             }
         }
 
+        // add new picked
         for (const id of newPicked) {
             if (!oldPicked.has(id)) {
                 this.#togglePick(id, true, false);

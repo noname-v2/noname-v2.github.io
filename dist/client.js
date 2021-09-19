@@ -646,14 +646,7 @@
                 spans[i].innerHTML = info[2];
             }
             if (info[0]) {
-                const onclick = (e) => {
-                    const menu = create('popup');
-                    menu.pane.width = 160;
-                    menu.pane.node.classList.add('intro');
-                    menu.pane.addText(info[0]);
-                    menu.open(e);
-                };
-                bind(spans[i], { onclick, oncontext: onclick });
+                bindClick(spans[i], e => app.intro(e, info[0]));
             }
         }
     }
@@ -1336,6 +1329,8 @@
         #audio = new (window.AudioContext || window.webkitAudioContext)();
         /** Popup components cleared when arena close. */
         #popups = new Map();
+        /** Popups that can be closed by clicking on blank area. */
+        #tempPopups = new Set();
         /** Count dialog for dialog ID */
         #dialogCount = 0;
         get arena() {
@@ -1358,6 +1353,9 @@
         }
         get popups() {
             return this.#popups;
+        }
+        get tempPopups() {
+            return this.#tempPopups;
         }
         get zoomNode() {
             return this.#zoom.node;
@@ -1578,6 +1576,8 @@
             if (config.temp) {
                 dialog.temp = true;
             }
+            dialog.top = true;
+            // update dialog content
             dialog.update({ caption, content: config.content ?? '', buttons: config.buttons });
             const promise = new Promise(resolve => {
                 dialog.onclose = () => {
@@ -1585,6 +1585,7 @@
                 };
                 this.popup(dialog, config.id);
             });
+            // set dialog timeout
             if (config.timeout) {
                 return Promise.race([promise, new Promise(resolve => {
                         setTimeout(() => resolve(null), config.timeout * 1000);
@@ -1640,6 +1641,14 @@
                 }
             };
         }
+        /** Show intro popup. */
+        intro(e, intro) {
+            const menu = this.ui.create('popup');
+            menu.pane.width = 160;
+            menu.pane.node.classList.add('intro');
+            menu.pane.addText(intro);
+            menu.open(e);
+        }
         /** Clear alert and confirm dialogs. */
         clearPopups() {
             for (const popup of this.popups.values()) {
@@ -1647,7 +1656,13 @@
                     popup.close();
                 }
             }
+            for (const popup of this.tempPopups) {
+                if (!popup.fixed) {
+                    popup.close();
+                }
+            }
             this.popups.clear();
+            this.tempPopups.clear();
         }
         /** Bind context menu to hero intro. */
         bindHero(node, id) {
@@ -1673,8 +1688,6 @@
                             }
                         }
                     }
-                    // open in arena
-                    menu.arena = true;
                     menu.open();
                 } });
         }
@@ -1776,12 +1789,10 @@
         hidden = true;
         /** Location when opened. */
         location;
-        /** Append to app.arena instead of app. */
-        arena = false;
-        /** Locate dialog to [center, left] instead of [top, left]. */
-        verticalCenter = false;
         /** Avoid being closed by arena.clearPopups(). */
         fixed = false;
+        /** Force popup to open in app. */
+        top = false;
         init() {
             this.node.classList.add('noname-popup');
             // block DOM events behind the pane
@@ -1822,12 +1833,8 @@
                 this.node.classList.add(this.size);
             }
             this.node.classList.add('hidden');
-            if (this.arena) {
-                this.app.arena.appZoom.node.appendChild(this.node);
-            }
-            else {
-                this.app.zoomNode.appendChild(this.node);
-            }
+            const parent = this.top ? this.app.zoomNode : (this.app.arena?.appZoom.node || this.app.zoomNode);
+            parent.appendChild(this.node);
             if (location) {
                 // determine position of the menu
                 if (this.transition === null) {
@@ -1837,9 +1844,6 @@
                 const rect1 = this.pane.node.getBoundingClientRect();
                 const rect2 = this.app.zoomNode.getBoundingClientRect();
                 const zoom = this.app.zoom;
-                if (this.verticalCenter) {
-                    y -= rect1.height / 2;
-                }
                 x += 2;
                 y -= 2;
                 if (x < 10) {
@@ -1859,6 +1863,9 @@
             }
             if (this.onopen) {
                 this.onopen();
+            }
+            if (this.temp) {
+                this.app.tempPopups.add(this);
             }
             this.pane.alignText();
             this.node.classList.remove('hidden');
@@ -2035,7 +2042,6 @@
         async popup(dialog) {
             const onopen = dialog.onopen;
             const onclose = dialog.onclose;
-            dialog.arena = true;
             // other popups that are blurred by dialog.open()
             const blurred = new Set();
             dialog.onopen = () => {
@@ -2713,6 +2719,7 @@
             for (const popup of this.collections.values()) {
                 popup.close();
             }
+            this.app.clearPopups();
         }
         /** Initialize sidebar content. */
         $pane(configs) {
@@ -2778,11 +2785,14 @@
             this.picked = [
                 this.sidebar.pane.addSection('点将'),
                 this.sidebar.pane.addTray('round'),
-                new Map(), false
+                new Map()
             ];
             this.picked[0].style.display = 'none';
             this.picked[1].node.style.display = 'none';
-            this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
+            this.ui.bind(this.picked[1].node, {
+                onclick: () => this.#openCollection(heropacks, 'hero'),
+                oncontext: e => this.app.intro(e, this.configToggles.get('pick').intro)
+            });
             this.ui.bind(this.picked[0], () => this.#showPicked());
             // banned heros
             this.banned = [
@@ -2851,16 +2861,10 @@
                 for (const [name, toggle] of this.heroToggles) {
                     toggle.assign(config.banned?.heropack?.includes(name) ? false : true);
                 }
-                if (config.banned?.heropack?.length === 0) {
-                    delete config.banned.heropack;
-                }
             }
             if (!partial || config.banned?.cardpack) {
                 for (const [name, toggle] of this.cardToggles) {
                     toggle.assign(config.banned?.cardpack?.includes(name) ? false : true);
-                }
-                if (config.banned?.cardpack?.length === 0) {
-                    delete config.banned.cardpack;
                 }
             }
             // update banned hero
@@ -2875,12 +2879,19 @@
                     for (const [id, clone] of this.banned[2]) {
                         if (tray.items.has(clone)) {
                             oldBanned.add(id);
+                            // remove old banned
+                            if (!newBanned.has(id)) {
+                                this.heroButtons.get(id)?.classList.remove('defer');
+                                this.megaHeroButtons.get(id)?.classList.remove('defer');
+                                tray.deleteSilent(this.banned[2].get(id));
+                            }
                         }
                     }
                     // add new banned
                     for (const id of newBanned) {
                         if (!oldBanned.has(id)) {
                             if (!this.banned[2].has(id)) {
+                                // create new clone
                                 const clone = this.ui.createElement('widget.avatar');
                                 this.ui.setImage(clone, id);
                                 this.ui.bind(clone, () => this.#showBanned());
@@ -2892,14 +2903,6 @@
                             tray.addSilent(this.banned[2].get(id));
                         }
                     }
-                    // remove old banned
-                    for (const id of oldBanned) {
-                        if (!newBanned.has(id)) {
-                            this.heroButtons.get(id)?.classList.remove('defer');
-                            this.megaHeroButtons.get(id)?.classList.remove('defer');
-                            tray.deleteSilent(this.banned[2].get(id));
-                        }
-                    }
                     tray.align();
                 }
                 else {
@@ -2907,7 +2910,6 @@
                     this.banned[1].node.style.display = 'none';
                     tray.items.clear();
                     tray.node.innerHTML = '';
-                    delete config.banned.hero;
                 }
             }
             // update picked hero
@@ -2915,10 +2917,6 @@
                 if (this.data.config.pick || !this.app.arena.peers) {
                     this.picked[0].style.display = '';
                     this.picked[1].node.style.display = '';
-                    if (!this.picked[3]) {
-                        this.picked[3] = true;
-                        this.picked[1].align();
-                    }
                     for (const collection of this.collections.values()) {
                         collection.node.classList.remove('no-select');
                     }
@@ -2929,6 +2927,7 @@
                     for (const collection of this.collections.values()) {
                         collection.node.classList.add('no-select');
                     }
+                    this.#hidePicked();
                 }
                 if (!partial) {
                     this.#updatePicks();
@@ -2938,6 +2937,11 @@
             if (this.mine) {
                 const config = this.data.config;
                 delete config.online;
+                for (const key in config.banned) {
+                    if (config.banned[key].length === 0) {
+                        delete config.banned[key];
+                    }
+                }
                 this.db.set(this.#config, config);
             }
         }
@@ -3056,7 +3060,6 @@
         }
         #createCollection(tmp = null) {
             const collection = this.ui.create('collection');
-            collection.arena = true;
             collection.flex = true;
             collection.ready.then(() => {
                 this.ui.bind(collection.pane.node, () => collection.close());
@@ -3181,14 +3184,8 @@
             collection[collection.hidden ? 'open' : 'close']();
         }
         #showBanned() {
-            for (const [id, collection] of this.collections) {
-                if (!collection.hidden) {
-                    if (id.startsWith('ban:')) {
-                        collection.close();
-                        return;
-                    }
-                    break;
-                }
+            if (this.#hideBanned()) {
+                return;
             }
             const collection = this.#createCollection('ban');
             const heros = [];
@@ -3206,15 +3203,21 @@
             });
             collection.open();
         }
-        #showPicked() {
+        #hideBanned() {
             for (const [id, collection] of this.collections) {
                 if (!collection.hidden) {
-                    if (id.startsWith('pick:')) {
+                    if (id.startsWith('ban:')) {
                         collection.close();
-                        return;
+                        return true;
                     }
                     break;
                 }
+            }
+            return false;
+        }
+        #showPicked() {
+            if (this.#hidePicked()) {
+                return;
             }
             const collection = this.#createCollection('pick');
             const heros = [];
@@ -3230,12 +3233,27 @@
             });
             collection.open();
         }
+        #hidePicked() {
+            for (const [id, collection] of this.collections) {
+                if (!collection.hidden) {
+                    if (id.startsWith('pick:')) {
+                        collection.close();
+                        return true;
+                    }
+                    break;
+                }
+            }
+            return false;
+        }
         #updatePicks() {
             // check if pick mode changed
             if (this.app.connected === this.#pickMode) {
                 return;
             }
             this.#pickMode = this.app.connected;
+            // close outdated galleries
+            this.#hideBanned();
+            this.#hidePicked();
             // get changed picks
             const newPicked = new Set(this.db.get(this.#pick));
             const oldPicked = new Set();
@@ -3243,11 +3261,13 @@
             for (const [id, clone] of this.picked[2]) {
                 if (tray.items.has(clone)) {
                     oldPicked.add(id);
+                    // remove old picked
                     if (!newPicked.has(id)) {
                         this.#togglePick(id, false, false);
                     }
                 }
             }
+            // add new picked
             for (const id of newPicked) {
                 if (!oldPicked.has(id)) {
                     this.#togglePick(id, true, false);
@@ -4968,6 +4988,8 @@
         disabledChoices = new Set();
         /** Requires confirmation when toggling to a value. */
         confirm = new Map();
+        /** Toggle intro. */
+        intro;
         setup(...[caption, onclick, choices]) {
             if (Array.isArray(caption)) {
                 this.ui.format(this.span, caption[0]);
@@ -4976,14 +4998,14 @@
                         caption[1](e);
                     }
                     else {
-                        const menu = this.ui.create('popup');
-                        menu.pane.width = 160;
-                        menu.pane.node.classList.add('intro');
-                        menu.pane.addText(caption[1]);
-                        menu.open(e);
+                        this.app.intro(e, caption[1]);
                     }
                 };
                 this.ui.bindClick(this.span, onclick);
+                // save intro for reference
+                if (typeof caption[1] === 'string') {
+                    this.intro = caption[1];
+                }
             }
             else {
                 this.ui.format(this.span, caption);

@@ -22,6 +22,9 @@ export class Toggle extends Component {
     /** Requires confirmation when toggling to a value. */
     confirm = new Map<string | number | boolean, [string | null, string?]>();
 
+    /** Toggle intro. */
+    intro?: string;
+
     setup(...[caption, onclick, choices]: ToggleOptions) {
         if (Array.isArray(caption)) {
             this.ui.format(this.span, caption[0]);
@@ -30,14 +33,15 @@ export class Toggle extends Component {
                     caption[1](e);
                 }
                 else {
-                    const menu = this.ui.create('popup');
-                    menu.pane.width = 160;
-                    menu.pane.node.classList.add('intro');
-                    menu.pane.addText(caption[1]);
-                    menu.open(e);
+                    this.app.intro(e, caption[1]);
                 }
             };
             this.ui.bindClick(this.span, onclick);
+
+            // save intro for reference
+            if (typeof caption[1] === 'string') {
+                this.intro = caption[1];
+            }
         }
         else {
             this.ui.format(this.span, caption);

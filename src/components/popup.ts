@@ -28,14 +28,11 @@ export class Popup extends Component {
 	/** Location when opened. */
 	location?: Point;
 
-	/** Append to app.arena instead of app. */
-	arena: boolean = false;
-
-	/** Locate dialog to [center, left] instead of [top, left]. */
-	verticalCenter = false;
-
 	/** Avoid being closed by arena.clearPopups(). */
 	fixed = false;
+
+	/** Force popup to open in app. */
+	top = false;
 
     init() {
 		this.node.classList.add('noname-popup');
@@ -84,13 +81,8 @@ export class Popup extends Component {
 		}
 
 		this.node.classList.add('hidden');
-
-		if (this.arena) {
-			this.app.arena!.appZoom.node.appendChild(this.node);
-		}
-        else {
-			this.app.zoomNode.appendChild(this.node);
-		}
+		const parent = this.top ? this.app.zoomNode : (this.app.arena?.appZoom.node || this.app.zoomNode);
+		parent.appendChild(this.node);
 
 		if (location) {
 			// determine position of the menu
@@ -102,10 +94,6 @@ export class Popup extends Component {
 			const rect1 = this.pane.node.getBoundingClientRect();
 			const rect2 = this.app.zoomNode.getBoundingClientRect();
 			const zoom = this.app.zoom;
-
-			if (this.verticalCenter) {
-				y -= rect1.height / 2;
-			}
 
 			x += 2;
 			y -= 2;
@@ -131,6 +119,10 @@ export class Popup extends Component {
 
 		if (this.onopen) {
 			this.onopen();
+		}
+
+		if (this.temp) {
+			this.app.tempPopups.add(this);
 		}
 
 		this.pane.alignText();

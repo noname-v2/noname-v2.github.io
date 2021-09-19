@@ -109,7 +109,6 @@ export class Arena extends Component {
     async popup(dialog: Popup) {
         const onopen = dialog.onopen;
         const onclose = dialog.onclose;
-        dialog.arena = true;
 
         // other popups that are blurred by dialog.open()
         const blurred = new Set<HTMLElement>();

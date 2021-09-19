@@ -554,14 +554,7 @@ export function format(node: HTMLElement, content: string) {
             spans[i].innerHTML = info[2];
         }
         if (info[0]) {
-            const onclick = (e: Point) => {
-                const menu = create('popup');
-                menu.pane.width = 160;
-                menu.pane.node.classList.add('intro');
-                menu.pane.addText(info[0]);
-                menu.open(e);
-            };
-            bind(spans[i], { onclick, oncontext: onclick });
+            bindClick(spans[i], e => app.intro(e, info[0]));
         }
     }
 }
