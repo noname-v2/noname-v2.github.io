@@ -921,7 +921,6 @@
             const np = this.arena.mode.np;
             let npmax;
             if (typeof np === 'number') {
-                this.arena.config.np = np;
                 npmax = np;
             }
             else {
@@ -934,7 +933,6 @@
                 for (const n of np) {
                     configs.np.options.push([n, `<span class="mono">${n}</span>人`]);
                 }
-                this.arena.config.np = npmax;
             }
             // create lobby
             lobby.data.npmax = npmax;
@@ -953,20 +951,32 @@
         updateLobby([type, key, val]) {
             if (type === 'sync') {
                 // game connected to or disconnected from hub
-                this.arena.config.online = val[0];
-                this.arena.config.banned = {};
-                this.arena.utils.apply(this.arena.config, val[1]);
-                for (const key in this.arena.mode.config) {
-                    const entry = this.arena.mode.config[key];
-                    const requires = entry.requires;
-                    if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
-                        delete this.arena.config[key];
+                if (val[1]) {
+                    const config = this.arena.config = { online: val[0], banned: {} };
+                    this.arena.utils.apply(config, val[1]);
+                    // fill default entries
+                    for (const key in this.arena.mode.config) {
+                        const entry = this.arena.mode.config[key];
+                        const requires = entry.requires;
+                        if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
+                            delete this.arena.config[key];
+                        }
+                        else {
+                            this.arena.config[key] ??= entry.init;
+                        }
                     }
-                    else {
-                        this.arena.config[key] ??= entry.init;
+                    // fill player number
+                    const np = this.arena.mode.np;
+                    if (Array.isArray(np)) {
+                        if (!('np' in config)) {
+                            config.np = np[np.length - 1];
+                        }
                     }
+                    else if (typeof np === 'number') {
+                        config.np = np;
+                    }
+                    this.lobby.data.config = config;
                 }
-                this.lobby.data.config = this.arena.config;
                 // add callback for client operations
                 const peers = this.arena.hub.peers;
                 if (peers) {

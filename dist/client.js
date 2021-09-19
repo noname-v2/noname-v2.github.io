@@ -2507,8 +2507,6 @@
         heroToggles = new Map();
         /** Toggles for card packs. */
         cardToggles = new Map();
-        /** Trying to connect to server. */
-        connecting = false;
         /** Players in this seats. */
         players = [];
         /** Button to toggle spectating. */
@@ -2525,6 +2523,10 @@
         megaHeroButtons = new Map();
         /** Cache of collections. */
         collections = new Map();
+        /** Trying to connect to server. */
+        #connecting = false;
+        /** Current connection state. */
+        #connected = false;
         /** Start game button is clicked and awaiting start. */
         #starting = 0;
         /** Number of temporary collections. */
@@ -2555,11 +2557,16 @@
             const peers = this.app.arena.peers;
             // callback for online mode toggle
             if (this.mine) {
-                this.yield(['sync', null, [peers ? true : false, this.db.get(this.#config) || {}]]);
-                if (this.connecting && !peers) {
+                // update configurations
+                const config = this.#connected !== this.app.connected ? this.db.get(this.#config) ?? {} : null;
+                this.yield(['sync', null, [peers ? true : false, config]]);
+                // update lobby state
+                if (this.#connecting && !peers) {
                     this.app.alert('连接失败');
                 }
-                this.connecting = false;
+                this.#connecting = false;
+                this.#connected = this.app.connected;
+                // update alert for online mode toggle
                 const toggle = this.configToggles.get('online');
                 if (toggle) {
                     if (peers && peers.length > 1) {
@@ -2603,28 +2610,22 @@
                 }
             }
             // update spectate button
-            const peer = this.app.arena.peer;
-            if (peer) {
+            if (this.app.connected) {
                 this.seats.classList.remove('offline');
-                this.spectateButton.dataset.fill = peer.data.playing ? '' : 'red';
+                this.spectateButton.dataset.fill = this.app.arena.peer.data.playing ? '' : 'red';
                 this.#alignAvatars(spectators.map(peer => peer.data.avatar));
                 this.#checkSpectate();
             }
             else {
                 this.seats.classList.add('offline');
             }
-            // update footer
             if (!this.mine) {
-                const peer = this.app.arena.peer;
-                if (peer.data.ready) {
-                    this.sidebar.footer.firstChild.innerHTML = '取消准备';
-                }
-                else {
-                    this.sidebar.footer.firstChild.innerHTML = '准备';
-                }
+                // update footer
+                const prep = this.app.arena.peer.data.ready ? '取消准备' : '准备';
+                this.sidebar.footer.firstChild.innerHTML = prep;
             }
-            // check if all players are ready
-            if (this.#starting && this.#checkPrepare()) {
+            else if (this.#starting && this.#checkPrepare()) {
+                // check if all players are ready
                 clearInterval(this.#starting);
                 this.#starting = 0;
                 this.respond();
@@ -2651,9 +2652,11 @@
                     this.app.alert('无法开始', { content: `牌堆数量不足（<span class="mono">${c2}/${c1}</span>）。` });
                 }
                 else if (this.#checkPrepare()) {
+                    // start game if all players have prepared
                     this.respond();
                 }
                 else {
+                    // wait 15s for unprepared players
                     if (this.#starting)
                         return;
                     this.app.alert('开始', { ok: '取消', id: 'lobbyReady' }).then(() => {
@@ -2662,6 +2665,7 @@
                         this.app.arena.peer.yield('unprepare');
                     });
                     this.app.arena.peer.yield('prepare');
+                    // open count down dialog
                     const dialog = this.app.popups.get('lobbyReady');
                     let n = 15;
                     const update = () => {
@@ -2710,6 +2714,7 @@
                 popup.close();
             }
         }
+        /** Initialize sidebar content. */
         $pane(configs) {
             // mode options
             const settingsSection = this.sidebar.pane.addSection('选项');
@@ -2718,11 +2723,11 @@
             });
             for (const name in configs.configs) {
                 const config = configs.configs[name];
-                const caption = config.intro ? [config.name, config.intro] : config.name;
+                const caption = [config.name, config.intro ?? config.name];
                 const toggle = this.sidebar.pane.addToggle(caption, result => {
                     this.freeze();
                     if (name === 'online' && result) {
-                        this.connecting = true;
+                        this.#connecting = true;
                         this.yield(['config', name, hub.url]);
                     }
                     else {
@@ -2753,7 +2758,7 @@
                 });
                 this.heroToggles.set(pack, toggle);
             }
-            this.ui.bindClick(heroSection, () => this.#openCollection(heropacks, 'hero'));
+            this.ui.bind(heroSection, () => this.#openCollection(heropacks, 'hero'));
             // cardpacks
             const cardSection = this.sidebar.pane.addSection('卡牌');
             const cardpacks = [];
@@ -2768,7 +2773,7 @@
                 });
                 this.cardToggles.set(pack, toggle);
             }
-            this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'));
+            this.ui.bind(cardSection, () => this.#openCollection(cardpacks, 'card+pile'));
             // picked heros
             this.picked = [
                 this.sidebar.pane.addSection('点将'),
@@ -2778,7 +2783,7 @@
             this.picked[0].style.display = 'none';
             this.picked[1].node.style.display = 'none';
             this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
-            this.ui.bindClick(this.picked[0], () => this.#showPicked());
+            this.ui.bind(this.picked[0], () => this.#showPicked());
             // banned heros
             this.banned = [
                 this.sidebar.pane.addSection('禁将'),
@@ -2788,14 +2793,14 @@
             this.banned[0].style.display = 'none';
             this.banned[1].node.style.display = 'none';
             this.ui.bind(this.banned[1].node, () => this.mine ? this.#openCollection(heropacks, 'hero') : null);
-            this.ui.bindClick(this.banned[0], () => this.#showBanned());
+            this.ui.bind(this.banned[0], () => this.#showBanned());
         }
         $owner() {
             this.sidebar.pane.node.classList[this.mine ? 'remove' : 'add']('fixed');
             this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
             if (this.mine) {
                 this.sidebar.ready.then(() => this.sidebar.setFooter('开始游戏', () => this.yield(['start'])));
-                this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
+                this.yield(['sync', null, [false, this.db.get(this.#config) ?? {}]]);
             }
             else {
                 this.sidebar.footer.classList.add('alter');
@@ -2836,13 +2841,10 @@
             }
             // update spectators
             if ('np' in config) {
-                // make sure npmax is set
-                setTimeout(() => {
-                    for (let i = 0; i < this.data.npmax; i++) {
-                        this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
-                    }
-                    this.#checkSpectate();
-                });
+                for (let i = 0; i < this.data.npmax; i++) {
+                    this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
+                }
+                this.#checkSpectate();
             }
             // update banned packs
             if (!partial || config.banned?.heropack) {

@@ -25,9 +25,6 @@ export class Lobby extends Component {
     /** Toggles for card packs. */
     cardToggles = new Map<string, Toggle>();
 
-    /** Trying to connect to server. */
-    connecting = false;
-
     /** Players in this seats. */
     players: Player[] = [];
 
@@ -51,6 +48,12 @@ export class Lobby extends Component {
 
     /** Cache of collections. */
     collections = new Map<string, Collection>();
+
+    /** Trying to connect to server. */
+    #connecting = false;
+
+    /** Current connection state. */
+    #connected = false;
 
     /** Start game button is clicked and awaiting start. */
     #starting = 0;
@@ -90,11 +93,18 @@ export class Lobby extends Component {
         
         // callback for online mode toggle
         if (this.mine) {
-            this.yield(['sync', null, [peers ? true : false, this.db.get(this.#config) || {}]]);
-            if (this.connecting && !peers) {
+            // update configurations
+            const config = this.#connected !== this.app.connected ? this.db.get(this.#config) ?? {} : null;
+            this.yield(['sync', null, [peers ? true : false, config]]);
+
+            // update lobby state
+            if (this.#connecting && !peers) {
                 this.app.alert('连接失败');
             }
-            this.connecting = false;
+            this.#connecting = false;
+            this.#connected = this.app.connected;
+
+            // update alert for online mode toggle
             const toggle = this.configToggles.get('online');
             if (toggle) {
                 if (peers && peers.length > 1) {
@@ -123,6 +133,7 @@ export class Lobby extends Component {
                 const peer = players[i]!;
                 this.players[i].data.heroImage = peer.data.avatar;
                 this.players[i].data.heroName = peer.data.nickname;
+
                 if (peer.owner === this.owner) {
                     this.players[i].data.marker = peer.data.ready ? '准备开始' : '房主';
                     this.players[i].marker.dataset.tglow = peer.data.ready ? 'orange' : 'doger';
@@ -141,10 +152,9 @@ export class Lobby extends Component {
         }
 
         // update spectate button
-        const peer = this.app.arena!.peer;
-        if (peer) {
+        if (this.app.connected) {
             this.seats.classList.remove('offline');
-            this.spectateButton.dataset.fill = peer.data.playing ? '' : 'red';
+            this.spectateButton.dataset.fill = this.app.arena!.peer!.data.playing ? '' : 'red';
             this.#alignAvatars(spectators.map(peer => peer.data.avatar));
             this.#checkSpectate();
         }
@@ -152,19 +162,13 @@ export class Lobby extends Component {
             this.seats.classList.add('offline');
         }
 
-        // update footer
         if (!this.mine) {
-            const peer = this.app.arena!.peer!;
-            if (peer.data.ready) {
-                (this.sidebar.footer.firstChild as HTMLElement).innerHTML = '取消准备';
-            }
-            else {
-                (this.sidebar.footer.firstChild as HTMLElement).innerHTML = '准备';
-            }
+            // update footer
+            const prep = this.app.arena!.peer!.data.ready ? '取消准备' : '准备';
+            (this.sidebar.footer.firstChild as HTMLElement).innerHTML = prep;
         }
-
-        // check if all players are ready
-        if (this.#starting && this.#checkPrepare()) {
+        else if (this.#starting && this.#checkPrepare()) {
+            // check if all players are ready
             clearInterval(this.#starting);
             this.#starting = 0;
             this.respond();
@@ -195,9 +199,11 @@ export class Lobby extends Component {
                 this.app.alert('无法开始', {content: `牌堆数量不足（<span class="mono">${c2}/${c1}</span>）。`});
             }
             else if (this.#checkPrepare()) {
+                // start game if all players have prepared
                 this.respond();
             }
             else {
+                // wait 15s for unprepared players
                 if (this.#starting) return;
                 this.app.alert('开始', {ok: '取消', id: 'lobbyReady'}).then(() => {
                     clearInterval(this.#starting);
@@ -205,6 +211,8 @@ export class Lobby extends Component {
                     this.app.arena!.peer!.yield('unprepare');
                 });
                 this.app.arena!.peer!.yield('prepare');
+
+                // open count down dialog
                 const dialog = this.app.popups.get('lobbyReady') as Dialog;
                 let n = 15;
                 const update = () => {
@@ -258,6 +266,7 @@ export class Lobby extends Component {
         }
     }
 
+    /** Initialize sidebar content. */
     $pane(configs: {heropacks: string[], cardpacks: string[], configs: Dict<Config>}) {
         // mode options
         const settingsSection = this.sidebar.pane.addSection('选项');
@@ -266,11 +275,11 @@ export class Lobby extends Component {
         });
         for (const name in configs.configs) {
             const config = configs.configs[name];
-            const caption = config.intro ? [config.name, config.intro] : config.name;
+            const caption = [config.name, config.intro ?? config.name];
             const toggle = this.sidebar.pane.addToggle(caption as any, result => {
                 this.freeze();
                 if (name === 'online' && result) {
-                    this.connecting = true;
+                    this.#connecting = true;
                     this.yield(['config', name, hub.url]);
                 }
                 else {
@@ -302,7 +311,7 @@ export class Lobby extends Component {
             });
             this.heroToggles.set(pack, toggle);
         }
-        this.ui.bindClick(heroSection, () => this.#openCollection(heropacks, 'hero'))
+        this.ui.bind(heroSection, () => this.#openCollection(heropacks, 'hero'))
         
         // cardpacks
         const cardSection = this.sidebar.pane.addSection('卡牌');
@@ -318,7 +327,7 @@ export class Lobby extends Component {
             });
             this.cardToggles.set(pack, toggle);
         }
-        this.ui.bindClick(cardSection, () => this.#openCollection(cardpacks, 'card+pile'))
+        this.ui.bind(cardSection, () => this.#openCollection(cardpacks, 'card+pile'))
 
         // picked heros
         this.picked = [
@@ -330,7 +339,7 @@ export class Lobby extends Component {
         this.picked[0].style.display = 'none';
         this.picked[1].node.style.display = 'none';
         this.ui.bind(this.picked[1].node, () => this.#openCollection(heropacks, 'hero'));
-        this.ui.bindClick(this.picked[0], () => this.#showPicked());
+        this.ui.bind(this.picked[0], () => this.#showPicked());
 
         // banned heros
         this.banned = [
@@ -341,7 +350,7 @@ export class Lobby extends Component {
         this.banned[0].style.display = 'none';
         this.banned[1].node.style.display = 'none';
         this.ui.bind(this.banned[1].node, () => this.mine ? this.#openCollection(heropacks, 'hero') : null);
-        this.ui.bindClick(this.banned[0], () => this.#showBanned());
+        this.ui.bind(this.banned[0], () => this.#showBanned());
     }
 
     $owner() {
@@ -349,7 +358,7 @@ export class Lobby extends Component {
         this.sidebar[this.mine ? 'showFooter' : 'hideFooter']();
         if (this.mine) {
             this.sidebar.ready.then(() => this.sidebar.setFooter('开始游戏', () => this.yield(['start'])));
-            this.yield(['sync', null, [false, this.db.get(this.#config) || {}]]);
+            this.yield(['sync', null, [false, this.db.get(this.#config) ?? {}]]);
         }
         else {
             this.sidebar.footer.classList.add('alter');
@@ -394,13 +403,10 @@ export class Lobby extends Component {
 
         // update spectators
         if ('np' in config) {
-            // make sure npmax is set
-            setTimeout(() => {
-                for (let i = 0; i < this.data.npmax; i++) {
-                    this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
-                }
-                this.#checkSpectate();
-            });
+            for (let i = 0; i < this.data.npmax; i++) {
+                this.players[i].node.classList[i < config.np ? 'remove' : 'add']('blurred');
+            }
+            this.#checkSpectate();
         }
 
         // update banned packs

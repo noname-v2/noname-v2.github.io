@@ -2,7 +2,7 @@ import { Task } from './task';
 import * as hub from '../worker/hub';
 import type { Peer, Lobby as LobbyLink } from '../links/link';
 import type { Config, Dict } from '../types';
-import type { ArenaBanned } from '../links/arena';
+import type { ArenaBanned, ArenaConfig } from '../links/arena';
 
 export class Lobby extends Task {
     lobby!: LobbyLink;
@@ -31,7 +31,6 @@ export class Lobby extends Task {
         const np = this.arena.mode.np!;
         let npmax: number;
         if (typeof np === 'number') {
-            this.arena.config.np = np;
             npmax = np;
         }
         else {
@@ -44,7 +43,6 @@ export class Lobby extends Task {
             for (const n of np) {
                 configs.np.options!.push([n, `<span class="mono">${n}</span>人`]);
             }
-            this.arena.config.np = npmax;
         }
 
         // create lobby
@@ -66,21 +64,35 @@ export class Lobby extends Task {
     updateLobby([type, key, val]: [string, string, any]) {
         if (type === 'sync') {
             // game connected to or disconnected from hub
-            this.arena.config.online = val[0];
-            this.arena.config.banned = {};
-            this.arena.utils.apply(this.arena.config, val[1]);
+            if (val[1]) {
+                const config = this.arena.config = { online: val[0], banned: {} } as ArenaConfig;
+                this.arena.utils.apply(config, val[1]);
 
-            for (const key in this.arena.mode.config) {
-                const entry = this.arena.mode.config[key];
-                const requires = entry.requires;
-                if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
-                    delete this.arena.config[key];
+                // fill default entries
+                for (const key in this.arena.mode.config) {
+                    const entry = this.arena.mode.config[key];
+                    const requires = entry.requires;
+                    if ((val[0] && requires === '!online') || (!val[0] && requires === 'online')) {
+                        delete this.arena.config[key];
+                    }
+                    else {
+                        this.arena.config[key] ??= entry.init;
+                    }
                 }
-                else {
-                    this.arena.config[key] ??= entry.init;
+
+                // fill player number
+                const np = this.arena.mode.np;
+                if (Array.isArray(np)) {
+                    if (!('np' in config)) {
+                        config.np = np[np.length - 1];
+                    }
                 }
+                else if (typeof np === 'number') {
+                    config.np = np;
+                }
+
+                this.lobby.data.config = config;
             }
-            this.lobby.data.config = this.arena.config;
 
             // add callback for client operations
             const peers = this.arena.hub.peers;
