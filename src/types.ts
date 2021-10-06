@@ -207,10 +207,10 @@ export interface Extension {
 
 /** Selection configurations. */
 export interface Select<T extends string | number = string | number> {
-    /** Create a Pop component during selection. */
+    /** Create a Pop component during selection (for client). */
     create?: [string, Pick<Pop, 'caption' | 'tray' | 'bar'>];
 
-    /** Include a timer [duration, starttime]. */
+    /** Include a timer [duration, starttime] (for client). */
     timer?: [number, number];
 
     /** Items that are selectable. */
@@ -219,24 +219,21 @@ export interface Select<T extends string | number = string | number> {
     /** Selected items. */
     selected: T[];
 
-    /** Items that are disabled because of this.filter. */
-    disabled?: T[];
-
-    /** Task ID and function name of the filter. */
+    /** Task ID and function name of the filter (for worker). */
     filter?: [number, string];
 
-    /** Dynamically create this.next based on current selection. */
+    /** Items that are disabled because of this.filter (for client). */
+    disabled?: T[];
+
+    /** Dynamically create this.next based on current selection (for worker). */
     progress?: [number, string];
 
     /** New selection to deal with after finishing current one. */
     next?: Select;
 
-    /** Parent selection (this.previous.next === this). */
-    previous?: Select;
-
     /** Required number of selected items. */
     num?: number | [number, number];
 
-    /** Additional data (e.g. mapping string to [name, suit, number] for vcard.) */
+    /** Additional data. */
     [key: string]: any;
 }
