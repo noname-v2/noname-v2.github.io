@@ -431,23 +431,23 @@ export class Lobby extends Component {
             const newBanned = new Set<string>(config.banned?.hero);
             const tray = this.banned[1];
 
+            // update buttons
+            for (const [id, clone] of this.banned[2]) {
+                if (tray.items.has(clone)) {
+                    oldBanned.add(id);
+
+                    // remove old banned
+                    if (!newBanned.has(id)) {
+                        this.heroButtons.get(id)?.classList.remove('defer');
+                        this.megaHeroButtons.get(id)?.classList.remove('defer');
+                        tray.deleteSilent(this.banned[2].get(id)!);
+                    }
+                }
+            }
+
             if (newBanned.size) {
                 this.banned[0].style.display = '';
                 tray.node.style.display = '';
-
-                // get existing tray items
-                for (const [id, clone] of this.banned[2]) {
-                    if (tray.items.has(clone)) {
-                        oldBanned.add(id);
-
-                        // remove old banned
-                        if (!newBanned.has(id)) {
-                            this.heroButtons.get(id)?.classList.remove('defer');
-                            this.megaHeroButtons.get(id)?.classList.remove('defer');
-                            tray.deleteSilent(this.banned[2].get(id)!);
-                        }
-                    }
-                }
                 
                 // add new banned
                 for (const id of newBanned) {
