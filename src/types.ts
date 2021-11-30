@@ -9,9 +9,6 @@ export type { Component } from './components/component';
 /** Plain dictionary object. */
 export type Dict<T=any> = {[key: string]: T};
 
-/** Overwriting classes. */
-export type Class<T> = (arg: { new(...args: any[]): T } ) => { new(...args: any[]): T};
-
 /** Mode configuration entry. */
 export interface Config {
     /** Display name. */
