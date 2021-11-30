@@ -134,11 +134,15 @@ export class Component {
         for (let key in items) {
             const newVal = items[key] ?? null;
             const partial = key.startsWith('^');
+
+            // updating property object entry instead of whole property
             if (partial) {
                 key = key.slice(1);
             }
+
             const oldVal = this.#props.get(key) ?? (partial ? {} : null);
 
+            // update property dict
             if (partial) {
                 this.utils.apply(oldVal, newVal);
             }
@@ -148,13 +152,15 @@ export class Component {
             else {
                 this.#props.set(key, newVal);
             }
-
+            
+            // get hook triggered by current property change
             const hook = this['$' + key as keyof Component];
             if (typeof hook === 'function') {
                 hooks.push([hook, this, newVal, oldVal, partial]);
             }
         }
 
+        // apply hooks directly for unregistered (invisible to worker) component
         if (!client.componentIDs.has(this)) {
             for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
                 this.ready.then(() => hook.apply(cmp, [newVal, oldVal, partial]));
@@ -172,7 +178,7 @@ export class Component {
         client.send(client.componentIDs.get(this)!, result, false);
     }
 
-    /** Send return value to worker (component must be monitored). */
+    /** Send return value to worker (component must be awaited). */
     respond(result?: any) {
         if (!client.componentIDs.has(this)) {
             throw('element is has no ID');

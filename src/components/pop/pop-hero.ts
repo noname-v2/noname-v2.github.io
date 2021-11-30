@@ -2,7 +2,7 @@ import { Pop } from './pop';
 
 export class PopHero extends Pop {
     addItems() {
-        const heros = this.select.items as string[];
+        const heros = this.player.data.select.items as string[];
         const [gallery, width, height] = this.pane.addPopGallery(heros.length);
         this.height += height;
         this.width = Math.max(this.width, width);

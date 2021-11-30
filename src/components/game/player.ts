@@ -1,5 +1,5 @@
 import { Component, Timer, Pop } from '../../components/component';
-import type { Select } from '../../types';
+import type { ClientSelect } from '../../types';
 
 export class Player extends Component {
     /** Player background. */
@@ -47,9 +47,8 @@ export class Player extends Component {
         this.data.hp = info.hp;
     }
 
-    /** Clear all pops. */
+    /** Clear all pops and selections. */
     stage() {
-        this.ignore('stage');
         for (const pop of this.pops.values()) {
             pop.remove();
         }
@@ -138,11 +137,12 @@ export class Player extends Component {
         }
     }
 
-    $select(sel: Select | null) {
-        if (sel) {
+    $select(cs: ClientSelect | null) {
+        // from here
+        if (cs) {
             this.listen('stage');
 
-            console.log(sel);
+            console.log(cs);
         }
         else {
             this.stage();

@@ -157,16 +157,7 @@ export async function dispatch(data: ClientMessage) {
             // send result to listener
             if (done && stage.awaits.has(id)) {
                 // results: component.respond() -> link.await()
-                if (result === null || result === undefined) {
-                    stage.results.delete(id);
-                }
-                else {
-                    stage.results.set(id, result);
-                }
-                stage.awaits.delete(id);
-                if (!stage.awaits.size) {
-                    room.loop();
-                }
+                link.respond(result);
             }
             else if (!done && stage.monitors.has(id)) {
                 // results: component.yield() -> link.monitor()

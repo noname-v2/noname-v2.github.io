@@ -7,7 +7,7 @@ import type { Player } from './player';
 import type { Card } from './card';
 import type { Skill } from './skill';
 import type { Minion } from './minion';
-import type { ModeInfo, PileEntries, Extension } from '../types';
+import type { ModeInfo, PileEntries, Extension, Task } from '../types';
 import type { LinkTagMap } from '../../build/link-classes';
 
 /** Accessor of hub properties. */
@@ -177,13 +177,28 @@ export class Arena extends Link<ArenaData> {
     }
 
     /** Get a link by ID. */
-    get(id: number): Link {
+    getLink(id: number): Link {
         return room.links.get(id)!;
     }
 
     /** Get a task by ID. */
-    getTask(id: number) {
+    getTask(id: number): Task {
         return room.stages.get(id)!.task!;
+    }
+
+    /** Get a player by ID. */
+    getPlayer(id: number): Player {
+        return this.players.get(id)!;
+    }
+
+    /** Call a task method. */
+    callTask([id, method]: [number, string], ...args: any[]): any {
+        return (this.getTask(id) as any)[method](...args);
+    }
+
+    /** Get the number of arguments of a task method. */
+    countArgs([id, method]: [number, string]): number {
+        return (this.getTask(id) as any)[method].length;
     }
 
     /** Create a link. */

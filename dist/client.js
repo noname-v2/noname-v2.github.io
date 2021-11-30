@@ -1230,10 +1230,12 @@
             for (let key in items) {
                 const newVal = items[key] ?? null;
                 const partial = key.startsWith('^');
+                // updating property object entry instead of whole property
                 if (partial) {
                     key = key.slice(1);
                 }
                 const oldVal = this.#props.get(key) ?? (partial ? {} : null);
+                // update property dict
                 if (partial) {
                     this.utils.apply(oldVal, newVal);
                 }
@@ -1243,11 +1245,13 @@
                 else {
                     this.#props.set(key, newVal);
                 }
+                // get hook triggered by current property change
                 const hook = this['$' + key];
                 if (typeof hook === 'function') {
                     hooks.push([hook, this, newVal, oldVal, partial]);
                 }
             }
+            // apply hooks directly for unregistered (invisible to worker) component
             if (!componentIDs.has(this)) {
                 for (const [hook, cmp, newVal, oldVal, partial] of hooks) {
                     this.ready.then(() => hook.apply(cmp, [newVal, oldVal, partial]));
@@ -1262,7 +1266,7 @@
             }
             send(componentIDs.get(this), result, false);
         }
-        /** Send return value to worker (component must be monitored). */
+        /** Send return value to worker (component must be awaited). */
         respond(result) {
             if (!componentIDs.has(this)) {
                 throw ('element is has no ID');
@@ -3813,9 +3817,8 @@
             this.data.hpMax = info.hp;
             this.data.hp = info.hp;
         }
-        /** Clear all pops. */
+        /** Clear all pops and selections. */
         stage() {
-            this.ignore('stage');
             for (const pop of this.pops.values()) {
                 pop.remove();
             }
@@ -3894,10 +3897,11 @@
                 this.node.classList.remove('mine');
             }
         }
-        $select(sel) {
-            if (sel) {
+        $select(cs) {
+            // from here
+            if (cs) {
                 this.listen('stage');
-                console.log(sel);
+                console.log(cs);
             }
             else {
                 this.stage();
@@ -4078,7 +4082,7 @@
         /** Pop caption. */
         caption;
         /** Configuration for selecting items. */
-        select;
+        player;
         /** Include a tray to put selected items. */
         tray;
         /** Additional buttons in confirm bar. */
@@ -4158,14 +4162,15 @@
         /** Add a tray that contains item clones. */
         addTray() {
             const height = parseInt(this.app.css.pop['tray-height']);
-            this.pane.addTray('round');
+            const tray = this.pane.addTray('round');
             this.height += height + 26;
+            return tray;
         }
     }
 
     class PopHero extends Pop {
         addItems() {
-            const heros = this.select.items;
+            const heros = this.player.data.select.items;
             const [gallery, width, height] = this.pane.addPopGallery(heros.length);
             this.height += height;
             this.width = Math.max(this.width, width);

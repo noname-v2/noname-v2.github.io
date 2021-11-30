@@ -67,6 +67,7 @@ export class Link<T extends LinkData = LinkData> {
         room.links.set(id, this);
     }
 
+    /** Update properties. */
     update(items: Dict) {
         for (const key in items) {
             const val = items[key] ?? null;
@@ -80,11 +81,13 @@ export class Link<T extends LinkData = LinkData> {
         tick(this.id, items);
     }
 
+    /** Remove reference to link from both client and worker. */
     unlink() {
         tick(this.id, null);
         room.links.delete(this.id);
     }
 
+    /** Update partial property. */
     patch(key: string, diff: Dict) {
         if (!this.#props.has(key)) {
             this.#props.set(key, {});
@@ -93,14 +96,17 @@ export class Link<T extends LinkData = LinkData> {
         tick(this.id, { ['^' + key]: diff });
     }
 
+    /** Call a client-side method of the link. */
     call(method: string, ...args: any[]) {
         tick(this.id, [method, args]);
     }
 
+    /** Callback of client-side component.yield(). */
     monitor(callback: string) {
         room.currentStage.monitors.set(this.id, callback);
     }
 
+    /** Callback of client-side component.respond(). */
     await(timeout?: number | null) {
         const stage = room.currentStage;
         stage.awaits.set(this.id, timeout || null);
@@ -114,6 +120,21 @@ export class Link<T extends LinkData = LinkData> {
                     }
                 }
             }, timeout * 1000);
+        }
+    }
+
+    /** Set the return value of link.await() (equivalent to component.await()). */
+    respond(result?: any) {
+        const stage = room.currentStage;
+        if (result === null || result === undefined) {
+            stage.results.delete(this.id);
+        }
+        else {
+            stage.results.set(this.id, result);
+        }
+        stage.awaits.delete(this.id);
+        if (!stage.awaits.size) {
+            room.loop();
         }
     }
 

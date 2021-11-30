@@ -1,6 +1,6 @@
 import type { Task } from './tasks/task';
 import type { Link } from './links/link';
-import type { Component, Color, Pop } from './components/component';
+import type { Component, Color } from './components/component';
 import type { lib } from './client/globals';
 
 /** Plain dictionary object. */
@@ -205,35 +205,82 @@ export interface Extension {
     requires?: string[];
 }
 
-/** Selection configurations. */
+/** Selection configurations for worker */
 export interface Select<T extends string | number = string | number> {
-    /** Create a Pop component during selection (for client). */
-    create?: [string, Pick<Pop, 'caption' | 'tray' | 'bar'>];
+    /** ID of the link that awaits selection. */
+    id: number;
 
-    /** Include a timer [duration, starttime] (for client). */
-    timer?: [number, number];
+    /** Create a client-side component during selection.
+     * [0]: tag of the component
+     * [1]: component properties
+     * [2]: create clones of items in the component
+     * [3]: call a method of the component whenever selection changes
+     */
+    create?: [string, Dict, boolean?, boolean?];
 
     /** Items that are selectable. */
     items: T[];
 
-    /** Selected items. */
-    selected: T[];
-
-    /** Task ID and function name of the filter (for worker). */
+    /** Function that determines whether an item is selectable ([Task ID, function name]). */
     filter?: [number, string];
 
-    /** Items that are disabled because of this.filter (for client). */
-    disabled?: T[];
+    /** Selected items (returned from client). */
+    selected: T[];
 
-    /** Dynamically create this.next based on current selection (for worker). */
+    /** Dynamically create this.next based on current selection ([Task ID, function name]). */
     progress?: [number, string];
 
     /** New selection to deal with after finishing current one. */
     next?: Select;
 
-    /** Required number of selected items. */
-    num?: number | [number, number];
+    /** Previons selection (this.next.previous === this). */
+    previous?: Select;
 
-    /** Additional data. */
+    /** Min and max number of selected items (or function that returns [min, max]). */
+    num?: number | [number, number] | [number, string];
+
+    /** Must make choice (no cancel button). */
+    forced: boolean;
+
+    /** Client-side auxiliary data. */
+    options?: Dict;
+
+    /** Auxiliary data. */
     [key: string]: any;
+}
+
+/** Selection configurations for client. */
+export interface ClientSelect {
+    /** Include a timer [duration, starttime] (client only). */
+    timer?: [number, number];
+
+    /** Items and item status.
+     * 0: Item is selectable.
+     * 1: Item is selected.
+     * -1: Item is disabled.
+     */
+    items: {[key: string]: 0 | 1 | -1};
+
+    /** New selection to deal with after finishing current one. */
+    next?: ClientSelect;
+
+    /** Must make choice (no cancel button). */
+    forced?: boolean;
+
+    /** Min and max number of selected items. */
+    num: [number, number];
+
+    /** Does not call filter() after each selection. */
+    simple?: boolean;
+
+    /** Create a client-side component during selection. */
+    create?: [string, Dict, boolean?, boolean?];
+
+    /** Auxiliary data. */
+    options?: Dict;
+}
+
+/** Updates to client selection (sent from worker to client). */
+export interface ClientSelectUpdate extends Partial<Omit<ClientSelect, 'next'>> {
+    next?: ClientSelectUpdate;
 }

@@ -1,12 +1,12 @@
 import { Popup } from '../popup';
-import type { Select } from '../../types';
+import type { Player } from '../component';
 
 export class Pop extends Popup {
     /** Pop caption. */
     caption?: string;
 
     /** Configuration for selecting items. */
-    select!: Select;
+    player!: Player;
 
     /** Include a tray to put selected items. */
     tray!: boolean;
@@ -105,5 +105,7 @@ export class Pop extends Popup {
         const height = parseInt(this.app.css.pop['tray-height']);
         const tray = this.pane.addTray('round');
         this.height += height + 26;
+
+        return tray;
     }
 }

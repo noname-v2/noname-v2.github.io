@@ -401,16 +401,7 @@
                 // send result to listener
                 if (done && stage.awaits.has(id)) {
                     // results: component.respond() -> link.await()
-                    if (result === null || result === undefined) {
-                        stage.results.delete(id);
-                    }
-                    else {
-                        stage.results.set(id, result);
-                    }
-                    stage.awaits.delete(id);
-                    if (!stage.awaits.size) {
-                        room.loop();
-                    }
+                    link.respond(result);
                 }
                 else if (!done && stage.monitors.has(id)) {
                     // results: component.yield() -> link.monitor()
@@ -572,6 +563,7 @@
             tick(id, tag);
             room.links.set(id, this);
         }
+        /** Update properties. */
         update(items) {
             for (const key in items) {
                 const val = items[key] ?? null;
@@ -584,10 +576,12 @@
             }
             tick(this.id, items);
         }
+        /** Remove reference to link from both client and worker. */
         unlink() {
             tick(this.id, null);
             room.links.delete(this.id);
         }
+        /** Update partial property. */
         patch(key, diff) {
             if (!this.#props.has(key)) {
                 this.#props.set(key, {});
@@ -595,12 +589,15 @@
             room.arena.utils.apply(this.#props.get(key), diff);
             tick(this.id, { ['^' + key]: diff });
         }
+        /** Call a client-side method of the link. */
         call(method, ...args) {
             tick(this.id, [method, args]);
         }
+        /** Callback of client-side component.yield(). */
         monitor(callback) {
             room.currentStage.monitors.set(this.id, callback);
         }
+        /** Callback of client-side component.respond(). */
         await(timeout) {
             const stage = room.currentStage;
             stage.awaits.set(this.id, timeout || null);
@@ -614,6 +611,21 @@
                         }
                     }
                 }, timeout * 1000);
+            }
+        }
+        /** Set the return value of link.await() (equivalent to component.await()). */
+        respond(result) {
+            const stage = room.currentStage;
+            if (result === null || result === undefined) {
+                stage.results.delete(this.id);
+            }
+            else {
+                stage.results.set(this.id, result);
+            }
+            stage.awaits.delete(this.id);
+            if (!stage.awaits.size) {
+                console.log('>', result);
+                room.loop();
             }
         }
         pack() {
@@ -861,40 +873,247 @@
         timeout = null;
         /** Allow not choosing. */
         forced = false;
-        /** Select configurations of players. */
+        /** Selection configurations of players. */
         selects;
         main() {
+            this.add('choose');
+            this.add('clear');
         }
         /** Update player data. */
-        diapatch() {
-            const timeout = this.timeout ?? (this.arena.connected ? this.arena.config.timeout : null);
-            const timer = timeout ? [timeout, Date.now()] : null;
-            for (const sel of this.selects.values()) {
-                if (timer) {
-                    sel.timer = timer;
-                }
-                sel.selected ??= [];
-                this.filter(sel);
+        choose() {
+            for (const id of this.selects.keys()) {
+                // initialize selection and timer
+                const player = this.arena.getPlayer(id);
+                const cs = this.initSelect(player);
+                player.monitor('checkUpdate');
+                player.await(cs.timer ? cs.timer[0] : null);
             }
         }
-        /** Get disabled items. */
-        filter(sel) {
-            if (!sel.filter) {
-                return false;
+        /** Handle update from client.
+         * @param {number} level - Level of selection.
+         * @param {string} selected - Stringified IDs of selected items.
+         * @param {boolean?} progress - Finish current level of selection.
+         * @param {Player} player - Player link.
+         */
+        checkUpdate([level, selected, progress], player) {
+            let cs = player.data.select;
+            let csu = {};
+            let select = this.selects.get(player.id);
+            if (!select || !cs) {
+                // illegal selection from client
+                this.initSelect(player);
+                return;
             }
-            let changed = false;
-            const disabled = new Set(sel.disabled);
-            const task = this.arena.getTask(sel.filter[0]);
-            sel.disabled = [];
-            for (const id of sel.items) {
-                if (!task[sel.filter[1]](id, sel)) {
-                    sel.disabled.push(id);
-                    if (!disabled.has(id)) {
-                        changed = true;
+            // go to current level of selection
+            for (let i = 0; i < level; i++) {
+                if (!select.next || !cs.next) {
+                    this.initSelect(player);
+                    return;
+                }
+                select = select.next;
+                cs = cs.next;
+                csu = csu.next = {};
+            }
+            // items that changed selection state
+            csu.items = {};
+            // make sure selected items are legal
+            for (const sid of selected) {
+                if (typeof cs.items[sid] !== 'number') {
+                    // illegal selection from client
+                    this.initSelect(player);
+                    return;
+                }
+            }
+            // update selected items
+            for (const sid in cs.items) {
+                if (cs.items[sid] !== -1) {
+                    const stat = selected.includes(sid) ? 1 : 0;
+                    if (stat !== cs.items[sid]) {
+                        cs.items[sid] = csu.items[sid] = stat;
                     }
                 }
             }
-            return changed || disabled.size !== sel.disabled.length;
+            // update selectable items
+            if (Object.keys(csu.items).length) {
+                const update = this.filterSelect(select, cs);
+                if (Object.keys(update).length) {
+                    for (const key in update) {
+                        // @ts-ignore
+                        csu[key] = update[key];
+                    }
+                }
+            }
+            else {
+                delete csu.items;
+            }
+        }
+        /** Create Selection from Select. */
+        parseSelect(select) {
+            // min and max number of selected items
+            let num;
+            let simple = true;
+            if (typeof select.num === 'number') {
+                num = [select.num, select.num];
+            }
+            else if (Array.isArray(select.num) && typeof select.num[1] === 'number') {
+                num = select.num.slice(0);
+            }
+            else {
+                if (Array.isArray(select.num)) {
+                    // leave [number, string] for this.updateSelect()
+                    simple = false;
+                }
+                num = [1, 1];
+            }
+            if (select.filter && this.arena.countArgs(select.filter) > 2) {
+                simple = false;
+            }
+            const cs = { items: {}, num };
+            if (simple) {
+                cs.simple = true;
+            }
+            // filter items if filter is not dependent on selected items
+            for (const id of select.items) {
+                const sid = typeof id === 'number' ? '#' + id.toString() : id;
+                if (simple && !this.arena.callTask(select.filter, id, select)) {
+                    cs.items[sid] = -1;
+                }
+                else {
+                    cs.items[sid] = 0;
+                }
+            }
+            // time limit for the selection (create for the first selection only)
+            if (!select.previous && this.arena.connected) {
+                const timeout = this.timeout ?? this.arena.config.timeout;
+                if (timeout) {
+                    cs.timer = [timeout, Date.now()];
+                }
+            }
+            // client-side auxiliary data
+            if (select.hasOwnProperty('options')) {
+                cs.options = select.options;
+            }
+            return cs;
+        }
+        /** Update selectable items. */
+        filterSelect(select, cs) {
+            const update = {};
+            // update select.num
+            if (Array.isArray(select.num) && typeof select.num[1] === 'string') {
+                const num = this.arena.callTask(select.num, select);
+                if (cs.num[1] !== num[0] || cs.num[1] !== num[1]) {
+                    update.num = num;
+                }
+                cs.num = num;
+            }
+            // check whether items are selectable (only if filter function takes cs as argument)
+            if (select.filter && this.arena.countArgs(select.filter) === 3) {
+                for (const id of select.items) {
+                    const sid = typeof id === 'number' ? '#' + id.toString() : id;
+                    if (cs.items[sid] !== 1) {
+                        const stat = this.arena.callTask(select.filter, id, select, cs) ? 0 : -1;
+                        if (stat !== cs.items[sid]) {
+                            cs.items[sid] = stat;
+                            update.items ??= {};
+                            update.items[sid] = stat;
+                        }
+                    }
+                }
+            }
+            return update;
+        }
+        /** Set initial selection state. */
+        initSelect(player) {
+            const select = this.selects.get(player.id);
+            const cs = this.parseSelect(select);
+            if (!cs.simple) {
+                this.filterSelect(select, cs);
+            }
+            player.data.select = cs;
+            return cs;
+        }
+        /** Go to the next level ot select. */
+        progressSelect() {
+        }
+        /** Clear the lastest select and go back to select.previous. */
+        rewindSelect() {
+        }
+        // /** Get disabled items. */
+        // filter(cs: Select) {
+        //     if (!cs.filter) {
+        //         return false;
+        //     }
+        //     let changed = false;
+        //     const disabled = new Set(cs.disabled);
+        //     const task = this.arena.getTask(cs.filter[0]) as any;
+        //     cs.disabled = [];
+        //     for (const id of cs.items) {
+        //         if (!task[cs.filter[1]](id, cs)) {
+        //             cs.disabled.push(id);
+        //             if (!disabled.has(id)) {
+        //                 changed = true;
+        //             }
+        //         }
+        //     }
+        //     return changed || disabled.size !== cs.disabled.length;
+        // }
+        // /** Get a list of selectable items. */
+        // getSelectable(selected: Selected, sels: Dict<Select>): (string | number)[] {
+        //     const selectable: (string | number)[] = [];
+        //     for (const section in sels) {
+        //         const filter = this.game.createFilter(section, selected, sels, this);
+        //         try {
+        //             for (const item of sels[section].items) {
+        //                 if (filter(item)) {
+        //                     selectable.push(item);
+        //                 }
+        //             }
+        //         }
+        //         catch {
+        //             return [];
+        //         }
+        //     }
+        //     return selectable;
+        // }
+        // /** Check if selected items are legal. */
+        // checkSelection(selected: Selected, sels: Dict<Select>) {
+        //     // fake selected items
+        //     const current: Selected = {};
+        //     for (const section in sels) {
+        //         current[section] = [];
+        //     }
+        //     // get section order
+        //     const order = Object.keys(sels);
+        //     order.sort((a, b) => (sels[a].order - sels[b].order));
+        //     for (const section of order) {
+        //         // check number of selected items
+        //         const n = selected[section].length;
+        //         const cs = sels[section];
+        //         if (typeof cs.num === 'number') {
+        //             if (n !== cs.num) {
+        //                 return false;
+        //             }
+        //         }
+        //         else if (Array.isArray(cs.num)) {
+        //             if (n < cs.num[0] || n > cs.num[1]) {
+        //                 return false;
+        //             }
+        //         }
+        //         // check if selected items satisfy filter
+        //         const filter = this.game.createFilter(section, current, sels, this);
+        //         for (const item of selected[section]) {
+        //             if (!filter(item)) {
+        //                 return false;
+        //             }
+        //             current[section].push(item);
+        //         }
+        //     }
+        //     return true;
+        // }
+        clear() {
+            for (const id of this.selects.keys()) {
+                this.arena.getPlayer(id).data.select = null;
+            }
         }
     }
 
@@ -1175,12 +1394,24 @@
             return pile;
         }
         /** Get a link by ID. */
-        get(id) {
+        getLink(id) {
             return room.links.get(id);
         }
         /** Get a task by ID. */
         getTask(id) {
             return room.stages.get(id).task;
+        }
+        /** Get a player by ID. */
+        getPlayer(id) {
+            return this.players.get(id);
+        }
+        /** Call a task method. */
+        callTask([id, method], ...args) {
+            return this.getTask(id)[method](...args);
+        }
+        /** Get the number of arguments of a task method. */
+        countArgs([id, method]) {
+            return this.getTask(id)[method].length;
         }
         /** Create a link. */
         create(tag) {
