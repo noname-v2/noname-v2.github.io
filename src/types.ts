@@ -133,7 +133,7 @@ export interface ModeInfo {
     /** Mode-specific task classes. */
     tasks?: Dict<(cls: unknown) => unknown>;
 
-    /** Mode-specific general classes. */
+    /** Mode-specific link classes. */
     links?: Dict<(cls: unknown) => unknown>;
 
     /** Mode-specific component classes. */
