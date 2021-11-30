@@ -1,7 +1,6 @@
 import { apply } from '../utils';
 import { room } from './globals';
-import type { Task } from '../tasks/task';
-import type { Dict } from '../types';
+import type { Dict, Task } from '../types-worker';
 
 export class Stage {
     /** Stage ID. */

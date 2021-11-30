@@ -3,11 +3,7 @@ import * as hub from '../worker/hub';
 import * as utils from '../utils';
 import { accessExtension } from '../extension';
 import { Link, LinkData } from './link';
-import type { Player } from './player';
-import type { Card } from './card';
-import type { Skill } from './skill';
-import type { Minion } from './minion';
-import type { ModeInfo, PileEntries, Extension, Task } from '../types';
+import type { ModeInfo, PileEntries, Extension, Task, Player, Card, Skill, Minion } from '../types-worker';
 import type { LinkTagMap } from '../../build/link-classes';
 
 /** Accessor of hub properties. */

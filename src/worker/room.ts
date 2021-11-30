@@ -3,10 +3,8 @@ import { copy, apply, freeze } from '../utils';
 import { Link } from '../links/link';
 import { taskClasses, linkClasses } from './globals';
 import { importExtension, accessExtension } from '../extension';
-import type { Arena } from '../links/arena';
-import type { Task } from '../tasks/task';
 import type { UITick } from './worker';
-import type { ModeInfo, Dict } from '../types';
+import type { ModeInfo, Dict, Arena, Task } from '../types-worker';
 import type { LinkTagMap } from '../../build/link-classes';
 
 /** Room that controls game flow and classes. */

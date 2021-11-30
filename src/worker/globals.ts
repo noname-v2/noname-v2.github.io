@@ -1,7 +1,6 @@
 import { debug } from '../meta';
 import type { Room } from './room';
-import type { Task } from '../tasks/task';
-import type { Link, LinkClass } from '../links/link';
+import type { Task, Link } from '../types-worker';
 
 export const taskClasses = new Map<string, typeof Task>();
 export const linkClasses = new Map<string, typeof Link>();
