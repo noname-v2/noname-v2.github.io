@@ -1,4 +1,4 @@
-import type { Player } from '../../../links/link';
+import type { Player } from '../../../types-worker';
 
 export function player(P: typeof Player) {
     return class Player extends P {

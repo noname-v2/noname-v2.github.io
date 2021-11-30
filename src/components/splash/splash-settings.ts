@@ -1,6 +1,6 @@
 import { Popup } from '../popup';
 import { splash } from '../../client/globals';
-import { Point, Gallery } from '../../components/component';
+import { Point, Gallery } from '../../types-client';
 
 export class SplashSettings extends Popup {
     /** Portrait sized popup. */

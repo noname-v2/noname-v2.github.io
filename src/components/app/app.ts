@@ -1,8 +1,8 @@
 import { trigger, components } from '../../client/client';
 import { splash, arena, init } from '../../client/globals';
-import { Component, Popup, Zoom, Point, TransitionDuration } from '../../components/component';
 import { accessExtension } from '../../extension';
-import type { Dict, HeroInfo, CardInfo, MinionInfo, SkillInfo } from '../../types';
+import { Component } from '../component';
+import type { Popup, Zoom, Point, TransitionDuration, Dict, HeroInfo, CardInfo, MinionInfo, SkillInfo } from '../../types-client';
 
 /** Get hero info. */
 interface GetInfo {

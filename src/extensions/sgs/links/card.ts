@@ -1,4 +1,4 @@
-import type { Card } from '../../../links/link';
+import type { Card } from '../../../types-worker';
 
 export function card(C: typeof Card) {
     return class Card extends C {

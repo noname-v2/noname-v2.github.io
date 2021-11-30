@@ -2,7 +2,7 @@ import { android, ios } from '../platform';
 import { app, lib, componentClasses } from './globals';
 import { split } from '../utils';
 import type { ComponentTagMap } from '../../build/component-classes';
-import type { Point, Region } from '../components/component';
+import type { Point, Region } from '../types-client';
 
 /** Type for point location from an event. */
 type EventPoint = {clientX: number, clientY: number, button?: number}

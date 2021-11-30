@@ -1,7 +1,6 @@
 import { debug } from '../../meta';
 import { Popup } from '../popup';
-import type { Point, Gallery } from '../../components/component';
-import type { Pile, Dict } from '../../types';
+import type { Point, Gallery, Pile, Dict } from '../../types-client';
 
 /** A collection of all heros or cards in an extension. */
 export class Collection extends Popup {

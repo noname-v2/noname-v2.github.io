@@ -1,7 +1,7 @@
 import { hub } from '../../client/client';
 import { splash } from '../../client/globals';
-import { Component, Toggle, Player, Tray, Collection, Dialog } from '../../components/component';
-import type { Config, Dict } from '../../types';
+import { Component } from '../component';
+import type { Config, Dict, Toggle, Player, Tray, Collection, Dialog } from '../../types-client';
 
 export class Lobby extends Component {
     /** Sidebar for configurations. */

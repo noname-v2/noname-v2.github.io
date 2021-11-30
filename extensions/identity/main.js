@@ -10,7 +10,7 @@ var main = {
                     /** Choice of heros for players. */
                     choices;
                     main() {
-                        this.addTask('lobby');
+                        this.addTask('lobbyWait');
                         this.addTask('setup');
                         this.add('sleep', 0.5);
                         this.add('chooseZhu');

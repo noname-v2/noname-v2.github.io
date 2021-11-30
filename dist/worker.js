@@ -624,7 +624,6 @@
             }
             stage.awaits.delete(this.id);
             if (!stage.awaits.size) {
-                console.log('>', result);
                 room.loop();
             }
         }
@@ -873,10 +872,16 @@
         timeout = null;
         /** Allow not choosing. */
         forced = false;
-        /** Selection configurations of players. */
+        /** Selection configurations. */
         selects;
         main() {
+            // fill IDs in Select
+            for (const [id, select] of this.selects) {
+                select.id = id;
+            }
+            // await selection from player
             this.add('choose');
+            // clean up selection
             this.add('clear');
         }
         /** Update player data. */
@@ -891,7 +896,7 @@
         }
         /** Handle update from client.
          * @param {number} level - Level of selection.
-         * @param {string} selected - Stringified IDs of selected items.
+         * @param {string} selected - Stringified IDs of selected items, null if no selection change.
          * @param {boolean?} progress - Finish current level of selection.
          * @param {Player} player - Player link.
          */
@@ -899,6 +904,7 @@
             let cs = player.data.select;
             let csu = {};
             let select = this.selects.get(player.id);
+            const update = csu;
             if (!select || !cs) {
                 // illegal selection from client
                 this.initSelect(player);
@@ -914,40 +920,64 @@
                 cs = cs.next;
                 csu = csu.next = {};
             }
-            // items that changed selection state
-            csu.items = {};
-            // make sure selected items are legal
-            for (const sid of selected) {
-                if (typeof cs.items[sid] !== 'number') {
-                    // illegal selection from client
-                    this.initSelect(player);
+            if (selected) {
+                // items that changed selection state
+                csu.items = {};
+                // make sure selected items are legal
+                for (const sid of selected) {
+                    if (typeof cs.items[sid] !== 'number') {
+                        // illegal selection from client
+                        this.initSelect(player);
+                        return;
+                    }
+                }
+                // update selected items
+                for (const sid in cs.items) {
+                    if (cs.items[sid] !== -1) {
+                        const stat = selected.includes(sid) ? 1 : 0;
+                        if (stat !== cs.items[sid]) {
+                            cs.items[sid] = csu.items[sid] = stat;
+                        }
+                    }
+                }
+                // update selectable items
+                if (Object.keys(csu.items).length) {
+                    const update = this.filterSelect(select, cs);
+                    if (Object.keys(update).length) {
+                        for (const key in update) {
+                            // @ts-ignore
+                            csu[key] = update[key];
+                        }
+                    }
+                }
+                else {
+                    delete csu.items;
+                }
+            }
+            // progress to next level or finish selection
+            if (progress) {
+                if (select.progress) {
+                    // update select.next
+                    select.next = this.arena.callTask(select.progress, select, cs);
+                }
+                if (select.next) {
+                    // progress to next level of selection
+                    select.next.id = player.id;
+                    select.next.previous = select;
+                    cs.next = csu.next = this.parseSelect(select.next);
+                }
+                else {
+                    // selection done
+                    player.respond();
                     return;
                 }
             }
-            // update selected items
-            for (const sid in cs.items) {
-                if (cs.items[sid] !== -1) {
-                    const stat = selected.includes(sid) ? 1 : 0;
-                    if (stat !== cs.items[sid]) {
-                        cs.items[sid] = csu.items[sid] = stat;
-                    }
-                }
-            }
-            // update selectable items
-            if (Object.keys(csu.items).length) {
-                const update = this.filterSelect(select, cs);
-                if (Object.keys(update).length) {
-                    for (const key in update) {
-                        // @ts-ignore
-                        csu[key] = update[key];
-                    }
-                }
-            }
-            else {
-                delete csu.items;
+            // send updates to client
+            if (Object.keys(csu).length) {
+                player.patch('select', update);
             }
         }
-        /** Create Selection from Select. */
+        /** Create ClientSelect from Select. */
         parseSelect(select) {
             // min and max number of selected items
             let num;
@@ -974,7 +1004,7 @@
             }
             // filter items if filter is not dependent on selected items
             for (const id of select.items) {
-                const sid = typeof id === 'number' ? '#' + id.toString() : id;
+                const sid = typeof id === 'number' ? `#${id}` : id;
                 if (simple && !this.arena.callTask(select.filter, id, select)) {
                     cs.items[sid] = -1;
                 }
@@ -990,8 +1020,15 @@
                 }
             }
             // client-side auxiliary data
+            if (select.hasOwnProperty('create')) {
+                cs.create = select.create;
+            }
             if (select.hasOwnProperty('options')) {
                 cs.options = select.options;
+            }
+            // filter available items
+            if (!cs.simple) {
+                this.filterSelect(select, cs);
             }
             return cs;
         }
@@ -1009,7 +1046,7 @@
             // check whether items are selectable (only if filter function takes cs as argument)
             if (select.filter && this.arena.countArgs(select.filter) === 3) {
                 for (const id of select.items) {
-                    const sid = typeof id === 'number' ? '#' + id.toString() : id;
+                    const sid = typeof id === 'number' ? `#${id}` : id;
                     if (cs.items[sid] !== 1) {
                         const stat = this.arena.callTask(select.filter, id, select, cs) ? 0 : -1;
                         if (stat !== cs.items[sid]) {
@@ -1026,90 +1063,10 @@
         initSelect(player) {
             const select = this.selects.get(player.id);
             const cs = this.parseSelect(select);
-            if (!cs.simple) {
-                this.filterSelect(select, cs);
-            }
             player.data.select = cs;
             return cs;
         }
-        /** Go to the next level ot select. */
-        progressSelect() {
-        }
-        /** Clear the lastest select and go back to select.previous. */
-        rewindSelect() {
-        }
-        // /** Get disabled items. */
-        // filter(cs: Select) {
-        //     if (!cs.filter) {
-        //         return false;
-        //     }
-        //     let changed = false;
-        //     const disabled = new Set(cs.disabled);
-        //     const task = this.arena.getTask(cs.filter[0]) as any;
-        //     cs.disabled = [];
-        //     for (const id of cs.items) {
-        //         if (!task[cs.filter[1]](id, cs)) {
-        //             cs.disabled.push(id);
-        //             if (!disabled.has(id)) {
-        //                 changed = true;
-        //             }
-        //         }
-        //     }
-        //     return changed || disabled.size !== cs.disabled.length;
-        // }
-        // /** Get a list of selectable items. */
-        // getSelectable(selected: Selected, sels: Dict<Select>): (string | number)[] {
-        //     const selectable: (string | number)[] = [];
-        //     for (const section in sels) {
-        //         const filter = this.game.createFilter(section, selected, sels, this);
-        //         try {
-        //             for (const item of sels[section].items) {
-        //                 if (filter(item)) {
-        //                     selectable.push(item);
-        //                 }
-        //             }
-        //         }
-        //         catch {
-        //             return [];
-        //         }
-        //     }
-        //     return selectable;
-        // }
-        // /** Check if selected items are legal. */
-        // checkSelection(selected: Selected, sels: Dict<Select>) {
-        //     // fake selected items
-        //     const current: Selected = {};
-        //     for (const section in sels) {
-        //         current[section] = [];
-        //     }
-        //     // get section order
-        //     const order = Object.keys(sels);
-        //     order.sort((a, b) => (sels[a].order - sels[b].order));
-        //     for (const section of order) {
-        //         // check number of selected items
-        //         const n = selected[section].length;
-        //         const cs = sels[section];
-        //         if (typeof cs.num === 'number') {
-        //             if (n !== cs.num) {
-        //                 return false;
-        //             }
-        //         }
-        //         else if (Array.isArray(cs.num)) {
-        //             if (n < cs.num[0] || n > cs.num[1]) {
-        //                 return false;
-        //             }
-        //         }
-        //         // check if selected items satisfy filter
-        //         const filter = this.game.createFilter(section, current, sels, this);
-        //         for (const item of selected[section]) {
-        //             if (!filter(item)) {
-        //                 return false;
-        //             }
-        //             current[section].push(item);
-        //         }
-        //     }
-        //     return true;
-        // }
+        /** Clear all selections. */
         clear() {
             for (const id of this.selects.keys()) {
                 this.arena.getPlayer(id).data.select = null;
@@ -1117,7 +1074,7 @@
         }
     }
 
-    class Lobby$1 extends Task {
+    class LobbyWait extends Task {
         lobby;
         main() {
             const lobby = this.lobby = this.arena.create('lobby');
@@ -1285,7 +1242,7 @@
 
     const taskClasses = new Map();
     taskClasses.set('choose', Choose);
-    taskClasses.set('lobby', Lobby$1);
+    taskClasses.set('lobbyWait', LobbyWait);
     taskClasses.set('task', Task);
 
     /** Accessor of hub properties. */

@@ -1,4 +1,5 @@
-import { Component, Region } from '../components/component';
+import { Component } from './component';
+import type { Region } from '../types-client';
 
 export class Tray extends Component {
 	/** Item width. */

@@ -1,6 +1,7 @@
 import * as client from '../../client/client';
 import { setArena } from '../../client/globals';
-import { Component, Peer, Popup } from '../../components/component';
+import { Component } from '../component';
+import type { Peer, Popup } from '../../types-client';
 
 export class Arena extends Component {
     /** A dialog has been popped before this.remove() is called. */

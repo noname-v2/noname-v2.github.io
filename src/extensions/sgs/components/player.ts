@@ -1,4 +1,4 @@
-import { Player } from '../../../components/component';
+import type { Player } from '../../../types-client';
 
 export function player(T: typeof Player) {
     return class Player extends T {

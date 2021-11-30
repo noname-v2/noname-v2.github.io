@@ -1,4 +1,4 @@
-import type { Arena } from '../../../components/component';
+import type { Arena } from '../../../types-client';
 
 export function arena(T: typeof Arena) {
     return class Arena extends T {

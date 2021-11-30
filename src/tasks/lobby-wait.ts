@@ -1,11 +1,10 @@
 import { Task } from './task';
 import * as hub from '../worker/hub';
-import type { Peer, Lobby as LobbyLink } from '../links/link';
-import type { Config, Dict } from '../types';
+import type { Peer, Lobby, Config, Dict } from '../types-worker';
 import type { ArenaBanned, ArenaConfig } from '../links/arena';
 
-export class Lobby extends Task {
-    lobby!: LobbyLink;
+export class LobbyWait extends Task {
+    lobby!: Lobby;
 
     main() {
         const lobby = this.lobby = this.arena.create('lobby');

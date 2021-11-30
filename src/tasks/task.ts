@@ -2,9 +2,6 @@ import { room } from '../worker/globals';
 import type { Stage } from '../worker/stage';
 import type { Dict } from '../types';
 
-/** All task classes. */
-export * from '../../build/task-types';
-
 /** Base game execution step. */
 export class Task {
     /** Stage ID. */

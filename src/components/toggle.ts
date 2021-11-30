@@ -1,4 +1,5 @@
-import { Component, Point } from '../components/component';
+import { Component } from './component';
+import type { Point } from '../types-client';
 
 export type ToggleOptions = [
     string | [string, string] | [string, (e: Point) => void],

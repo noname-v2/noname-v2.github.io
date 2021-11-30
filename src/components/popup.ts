@@ -1,4 +1,5 @@
-import { Component, TransitionDuration, Point } from '../components/component';
+import { Component } from './component';
+import type { TransitionDuration, Point } from '../types-client';
 
 export class Popup extends Component {
     /** Child classes use tag <noname-popup> by default. */

@@ -2,7 +2,7 @@ import { hub2owner } from '../hub/types';
 import { split } from '../utils';
 import { room, uid, info } from './globals';
 import type { UITick, ClientMessage } from './worker';
-import type { Link, Peer, PeerData } from '../links/link';
+import type { Peer, PeerData } from '../types-worker';
 
 /** WebSocket connection. */
 export let connection: WebSocket | null = null;

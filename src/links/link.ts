@@ -2,9 +2,6 @@ import { room } from '../worker/globals';
 import { tick } from '../worker/worker';
 import type { Dict } from '../types';
 
-/** All link classes. */
-export * from '../../build/link-types';
-
 /** Default link data. */
 export interface LinkData {
     /* Link owner. */

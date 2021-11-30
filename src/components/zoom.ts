@@ -1,4 +1,4 @@
-import { Component } from '../components/component';
+import { Component } from './component';
 
 export class Zoom extends Component {
 	/** Actual element width without scaling. */

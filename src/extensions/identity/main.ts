@@ -14,7 +14,7 @@ export default {
                     choices!: Set<string>;
 
                     main() {
-                        this.addTask('lobby');
+                        this.addTask('lobbyWait');
                         this.addTask('setup');
                         this.add('sleep', 0.5);
                         this.add('chooseZhu');

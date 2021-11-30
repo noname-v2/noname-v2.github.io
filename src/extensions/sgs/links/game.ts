@@ -1,4 +1,4 @@
-import type { Arena } from '../../../links/link';
+import type { Arena } from '../../../types-worker';
 
 export function arena(A: typeof Arena) {
     return class Arena extends A {

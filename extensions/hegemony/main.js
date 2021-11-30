@@ -7,7 +7,7 @@ const mode = {
                 /** Number of hero choices. */
                 nheros = 10;
                 main() {
-                    this.addTask('lobby');
+                    this.addTask('lobbyWait');
                     this.addTask('setup');
                     this.add('sleep', 0.5);
                     this.add('chooseHero');

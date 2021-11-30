@@ -1,4 +1,5 @@
-import { Component, SplashGallery, SplashSettings, SplashHub } from '../../components/component';
+import { Component } from '../component';
+import { SplashGallery, SplashSettings, SplashHub } from '../../types-client';
 
 export class Splash extends Component {
     // gallery of modes

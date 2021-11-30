@@ -4,7 +4,7 @@ import { create } from './ui';
 import { componentClasses, restore, app, splash, lib } from './globals';
 import * as db from './db';
 import * as meta from '../meta';
-import type { Component, Color } from '../components/component';
+import type { Component, Color } from '../types-client';
 import type { UITick, ClientMessage } from '../worker/worker';
 
 /** Hub configuration. */

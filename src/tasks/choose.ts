@@ -1,5 +1,5 @@
 import { Task } from './task';
-import { Player } from '../links/link';
+import { Player } from '../types-worker';
 import type { Select, ClientSelect, ClientSelectUpdate } from '../types';
 
 export class Choose extends Task {

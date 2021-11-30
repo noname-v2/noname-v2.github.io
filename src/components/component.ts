@@ -7,23 +7,9 @@ import { app, lib } from '../client/globals';
 import { debug } from '../meta';
 import type { Dict } from '../types';
 
-/** Type for point location */
-export type Point = {x: number, y: number};
-
-/** Type for an area */
-export type Region = {x: [number, number], y: [number, number]};
-
 /** Transition duration names. */
 export type TransitionDuration = 'normal' | 'fast' | 'slow' | 'faster' | 'slower' | null;
 
-/** Options for ui.animate(). */
-export type { AnimationOptions } from '../client/ui';
-
-/** All component classes. */
-export * from '../../build/component-types';
-
-/** Color literals. */
-export * from '../../build/literals';
 
 export class Component {
     /** HTMLElement tag  name */

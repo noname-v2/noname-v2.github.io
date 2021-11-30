@@ -1,5 +1,5 @@
-import { Component, Timer, Pop } from '../../components/component';
-import type { ClientSelect } from '../../types';
+import { Component } from '../component';
+import type { ClientSelect, Timer, Pop } from '../../types-client';
 
 export class Player extends Component {
     /** Player background. */

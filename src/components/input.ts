@@ -1,4 +1,5 @@
-import { Component, Point } from '../components/component';
+import { Component } from './component';
+import type { Point } from '../types-client';
 
 export class Input extends Component {
 	// <input> element

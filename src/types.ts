@@ -1,15 +1,16 @@
-import type { Task } from './tasks/task';
-import type { Link } from './links/link';
-import type { Component, Color } from './components/component';
 import type { lib } from './client/globals';
+import type { Color } from './../build/literals';
+
+/** Export base types. */
+export type { Task } from './tasks/task';
+export type { Link } from './links/link';
+export type { Component } from './components/component';
 
 /** Plain dictionary object. */
 export type Dict<T=any> = {[key: string]: T};
 
-/** Export default types. */
-export type { Task }
-export type { Link }
-export type { Component }
+/** Overwriting classes. */
+export type Class<T> = (arg: { new(...args: any[]): T } ) => { new(...args: any[]): T};
 
 /** Mode configuration entry. */
 export interface Config {
@@ -43,9 +44,6 @@ interface Info {
     /** Custom properties. */
     [key: string]: any;
 }
-
-/** Overwriting classes. */
-export type Class<T> = (arg: { new(...args: any[]): T } ) => { new(...args: any[]): T};
 
 /** Hero definition. */
 export interface HeroInfo extends Info {

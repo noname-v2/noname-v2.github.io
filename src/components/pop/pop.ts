@@ -1,5 +1,5 @@
 import { Popup } from '../popup';
-import type { Player } from '../component';
+import type { Player } from '../../types-client';
 
 export class Pop extends Popup {
     /** Pop caption. */
