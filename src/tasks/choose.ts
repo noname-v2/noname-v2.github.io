@@ -1,5 +1,5 @@
 import { Task } from './task';
-import type { Player, Select, ClientSelect, ClientSelectUpdate } from '../types-worker';
+import type { Player, Select, Dict, Link, ClientSelect } from '../types-worker';
 
 export class Choose extends Task {
     /** Has time limit. */
@@ -9,14 +9,12 @@ export class Choose extends Task {
     forced: boolean = false;
 
     /** Selection configurations. */
-    selects!: Map<number, Select>;
+    selects!: Set<Select>;
+
+    /** Created links for selection. */
+    links!: Map<Select, number>;
 
     main() {
-        // fill IDs in Select
-        for (const [id, select] of this.selects) {
-            select.id = id;
-        }
-
         // await selection from player
         this.add('choose');
 
@@ -26,14 +24,142 @@ export class Choose extends Task {
 
     /** Update player data. */
     choose() {
-        for (const id of this.selects.keys()) {
+        for (const select of this.selects) {
             // initialize selection and timer
-            const player = this.arena.getPlayer(id);
-            const cs = this.initSelect(player);
-
-            player.monitor('checkUpdate');
-            player.await(cs.timer ? cs.timer[0] : null);
+            const cs = this.parseSelect(select);
+            select.bind!.data.select = cs;
+            select.bind!.monitor('checkUpdate');
+            select.bind!.await(cs.timer ? cs.timer[0] : null);
         }
+    }
+
+    /** Create ClientSelect from Select. */
+    parseSelect(select: Select): ClientSelect {
+        // skip type checking for task methods
+        const task = select.task as any;
+        
+        // min and max number of selected items
+        let num: [number, number];
+        let simple = true;
+
+        if (typeof select.num === 'number') {
+            num = [select.num, select.num];
+        }
+        else if (Array.isArray(select.num)) {
+            num = select.num.slice(0) as [number, number];
+        }
+        else if (typeof select.num === 'string') {
+            // determine num later by this.filterSelect()
+            simple = false;
+            num = [0, 0]
+        }
+        else {
+            num = [1, 1]
+        }
+
+        // initialize ClientSelect
+        if (select.filter && task[select.filter].length >= 3) {
+            simple = false;
+        }
+
+        const cs: ClientSelect = { links: {}, items: {}, num };
+
+        if (simple) {
+            cs.simple = true;
+        }
+
+        if (select.forced) {
+            cs.forced = true;
+        }
+
+        // create link dynamically
+        if (select.create && !select.link) {
+            select.bind = task[select.create](select);
+        }
+        
+        // copy item entries from Select to ClientSelect
+        for (const item of select.items) {
+            if (typeof item === 'string') {
+                cs.items[item] = 0;
+                
+                // string items must have a binding
+                if (!select.link) {
+                    throw(`no binding component for ${item}`);
+                }
+            }
+            else {
+                cs.links[item.id] = 0;
+            }
+        }
+
+        // filter available items
+        if (!cs.simple) {
+            this.filterSelect(select, cs);
+        }
+        else if (select.filter) {
+            // one-timer filter for simple selection
+            for (const item of select.items) {
+                if (!task[select.filter](item, select)) {
+                    if (typeof item === 'string') {
+                        cs.items[item] = -1;
+                    }
+                    else {
+                        cs.links[item.id] = -1;
+                    }
+                }
+            }
+        }
+
+        // time limit of the selection
+        if (this.arena.connected) {
+            const timeout =  this.timeout ?? this.arena.config.timeout;
+            if (timeout) {
+                cs.timer = [timeout, Date.now()];
+            }
+        }
+
+        return cs;
+    }
+
+    /** Update selectable items. */
+    filterSelect(select: Select, cs: ClientSelect) {
+        const task = select.task as any;
+        const update: ClientSelectUpdate = {}
+
+        // update select.num
+        if (typeof select.num === 'string') {
+            const num = task[select.num](select, cs);
+            if (cs.num[1] !== num[0] || cs.num[1] !== num[1]) {
+                update.num = num;
+            }
+            cs.num = num;
+        }
+
+        // check whether items are selectable (only if filter function takes cs as argument)
+        if (select.filter && this.arena.countArgs(select.filter) >= 3) {
+            const selected: (string | number)[] = [];
+
+            for (const )
+            for (const id of select.items) {
+                const items = typeof id === 'number' ? cs.items : cs.bindItems;
+                if (items[id] !== 1) {
+                    const stat = this.arena.callTask(select.filter, id, select, cs) ? 0 : -1;
+                    if (stat !== items[id]) {
+                        items[id] = stat;
+                        if (typeof id === 'number') {
+                            update.items ??= {};
+                            update.items[id] = stat;
+                        }
+                        else {
+                            update.bindItems ??= {};
+                            update.bindItems[id] = stat;
+                        }
+                    }
+                }
+            }
+        }
+
+        return [update, bindingUpdate];
     }
 
     /** Handle update from client.
@@ -42,7 +168,7 @@ export class Choose extends Task {
      * @param {boolean?} progress - Finish current level of selection.
      * @param {Player} player - Player link.
      */
-    checkUpdate([level, selected, progress]: [number, string[] | null, boolean?], player: Player) {
+    checkUpdate([level, selected, progress]: [number, string[] | null | 0, boolean?], player: Player) {
         let cs: ClientSelect = player.data.select!;
         let csu: ClientSelectUpdate = {};
         let select: Select = this.selects.get(player.id)!;
@@ -72,7 +198,7 @@ export class Choose extends Task {
 
             // make sure selected items are legal
             for (const sid of selected) {
-                if (typeof cs.items[sid] !== 'number') {
+                if (cs.items[sid] !== 0 && cs.items[sid] !== 1) {
                     // illegal selection from client
                     this.initSelect(player);
                     return;
@@ -104,6 +230,12 @@ export class Choose extends Task {
             }
         }
 
+        // update sent by created component
+        if (selected === 0) {
+            this.arena.callTask(select.create!.monitor!, select, cs, progress);
+            return;
+        }
+
         // progress to next level or finish selection
         if (progress) {
             if (select.progress) {
@@ -130,116 +262,36 @@ export class Choose extends Task {
         }
     }
 
-    /** Create ClientSelect from Select. */
-    parseSelect(select: Select): ClientSelect {
-        // min and max number of selected items
-        let num: [number, number];
-        let simple = true;
-
-        if (typeof select.num === 'number') {
-            num = [select.num, select.num];
-        }
-        else if (Array.isArray(select.num) && typeof select.num[1] === 'number') {
-            num = select.num.slice(0) as [number, number];
-        }
-        else {
-            if (Array.isArray(select.num)) {
-                // leave [number, string] for this.updateSelect()
-                simple = false;
-            }
-            num = [1, 1]
-        }
-
-        if (select.filter && this.arena.countArgs(select.filter) > 2) {
-            simple = false;
-        }
-
-        const cs: ClientSelect = { items: {}, num };
-
-        if (simple) {
-            cs.simple = true;
-        }
-        
-        // filter items if filter is not dependent on selected items
-        for (const id of select.items) {
-            const sid = typeof id === 'number' ? `#${id}` : id;
-
-            if (simple && !this.arena.callTask(select.filter!, id, select)) {
-                cs.items[sid] = -1;
-            }
-            else {
-                cs.items[sid] = 0;
-            }
-        }
-        
-        // time limit for the selection (create for the first selection only)
-        if (!select.previous && this.arena.connected) {
-            const timeout =  this.timeout ?? this.arena.config.timeout;
-            if (timeout) {
-                cs.timer = [timeout, Date.now()];
-            }
-        }
-
-        // client-side auxiliary data
-        if (select.hasOwnProperty('create')) {
-            cs.create = select.create;
-        }
-
-        if (select.hasOwnProperty('options')) {
-            cs.options = select.options;
-        }
-
-        // filter available items
-        if (!cs.simple) {
-            this.filterSelect(select, cs);
-        }
-
-        return cs;
-    }
-
-    /** Update selectable items. */
-    filterSelect(select: Select, cs: ClientSelect) {
-        const update: ClientSelectUpdate = {}
-
-        // update select.num
-        if (Array.isArray(select.num) && typeof select.num[1] === 'string') {
-            const num = this.arena.callTask(select.num as [number, string], select);
-            if (cs.num[1] !== num[0] || cs.num[1] !== num[1]) {
-                update.num = num;
-            }
-            cs.num = num;
-        }
-
-        // check whether items are selectable (only if filter function takes cs as argument)
-        if (select.filter && this.arena.countArgs(select.filter) === 3) {
-            for (const id of select.items) {
-                const sid = typeof id === 'number' ? `#${id}` : id;
-                if (cs.items[sid] !== 1) {
-                    const stat = this.arena.callTask(select.filter, id, select, cs) ? 0 : -1;
-                    if (stat !== cs.items[sid]) {
-                        cs.items[sid] = stat;
-                        update.items ??= {};
-                        update.items[sid] = stat;
-                    }
-                }
-            }
-        }
-
-        return update;
-    }
-
-    /** Set initial selection state. */
-    initSelect(player: Player) {
-        const select = this.selects.get(player.id)!
-        const cs = this.parseSelect(select);
-        player.data.select = cs;
-        return cs;
-    }
-
     /** Clear all selections. */
     clear() {
         for (const id of this.selects.keys()) {
-            this.arena.getPlayer(id)!.data.select = null;
+            this.clearPlayer(id);
         }
+    }
+
+    /** Clear the selection of target player. */
+    clearPlayer(id: number) {
+        for (const select of this.tile(this.selects.get(id)!)) {
+            // remove dynamically created components
+            if (select.bind && select.create) {
+                this.arena.getLink(select.bind).unlink();
+                delete select.bind;
+            }
+        }
+
+        // clear selections
+        this.arena.getPlayer(id)!.data.select = null;
+    }
+
+    /** Convert select with property next to list of selects. */
+    tile(select?: Select) {
+        const selects: Select[] = [];
+        
+        while (select) {
+            selects.unshift(select);
+            select = select.next;
+        }
+
+        return selects;
     }
 }

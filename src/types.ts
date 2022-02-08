@@ -1,9 +1,11 @@
 import type { lib } from './client/globals';
 import type { Color } from './../build/literals';
+import type { Task } from './tasks/task';
+import type { Link, LinkData } from './links/link';
 
 /** Export base types. */
-export type { Task } from './tasks/task';
-export type { Link } from './links/link';
+export type { Task };
+export type { Link, LinkData };
 export type { Component } from './components/component';
 
 /** Plain dictionary object. */
@@ -160,8 +162,10 @@ export interface ModeInfo {
     [key: string]: any;
 }
 
-/** Format of card pile. */
+/** Format of card pile defined in extensions. */
 export type Pile = Dict<Dict<(number | [number, ...string[]])[]>>;
+
+/** Format of arena.pile. */
 export type PileEntries = [string, string, number, ...string[]][];
 
 /** Basic extension structure. */
@@ -200,30 +204,33 @@ export interface Extension {
     requires?: string[];
 }
 
+/** Link that can be selected. */
+export interface SelectData extends LinkData {
+    /** Configuration */
+    select: ClientSelect | null;
+}
+
 /** Selection configurations for worker */
-export interface Select<T extends string | number = string | number> {
-    /** ID of the link that awaits selection. */
-    id: number;
-
-    /** Create a client-side component during selection.
-     * [0]: tag of the component
-     * [1]: component properties
-     * [2]: create clones of items in the component
-     * [3]: call a method of the component whenever selection changes
+export interface Select {
+    /** Task that created this selection
+     * (may used by this.create, this.filter, this.progress, this.num).
      */
-    create?: [string, Dict, boolean?, boolean?];
+    task: Task;
 
-    /** Items that are selectable. */
-    items: T[];
+    /** Link that control the selection of items (if not defined, this.create must exist). */
+    target?: Link<SelectData>;
 
-    /** Function that determines whether an item is selectable ([Task ID, function name]). */
-    filter?: [number, string];
+    /** Create link for this.bind when parsed (method name of this.task). */
+    create?: string;
 
-    /** Selected items (returned from client). */
-    selected: T[];
+    /** Items available for selection. */
+    items: (string | Link)[];
 
-    /** Dynamically create this.next based on current selection ([Task ID, function name]). */
-    progress?: [number, string];
+    /** Function that determines whether an item is selectable (method name of this.task). */
+    filter?: string;
+
+    /** Dynamically create this.next based on current selection (method name of this.task). */
+    progress?: string;
 
     /** New selection to deal with after finishing current one. */
     next?: Select;
@@ -231,33 +238,30 @@ export interface Select<T extends string | number = string | number> {
     /** Previons selection (this.next.previous === this). */
     previous?: Select;
 
-    /** Min and max number of selected items (or function that returns [min, max]). */
-    num?: number | [number, number] | [number, string];
+    /** Min and max number of selected items, or function name that returns [min, max]. */
+    num?: number | [number, number] | string;
 
     /** Must make choice (no cancel button). */
     forced: boolean;
 
-    /** Client-side auxiliary data. */
-    options?: Dict;
-
-    /** Auxiliary data. */
+    /** Custom properties. */
     [key: string]: any;
 }
 
-/** Selection configurations for client. */
+/** Selection configurations for client-side selectable component. */
 export interface ClientSelect {
-    /** Include a timer [duration, starttime] (client only). */
+    /** Include a timer [duration, starttime]. */
     timer?: [number, number];
 
-    /** Items and item status.
+    /** Status of items of <type Link>.
      * 0: Item is selectable.
      * 1: Item is selected.
      * -1: Item is disabled.
      */
-    items: {[key: string]: 0 | 1 | -1};
+    links: {[key: string]: 0 | 1 | -1};
 
-    /** New selection to deal with after finishing current one. */
-    next?: ClientSelect;
+    /** Status of items of <type string>. */
+    items: {[key: string]: 0 | 1 | -1};
 
     /** Must make choice (no cancel button). */
     forced?: boolean;
@@ -265,17 +269,9 @@ export interface ClientSelect {
     /** Min and max number of selected items. */
     num: [number, number];
 
-    /** Does not call filter() after each selection. */
+    /** Do not contact worker after each selection. */
     simple?: boolean;
 
-    /** Create a client-side component during selection. */
-    create?: [string, Dict, boolean?, boolean?];
-
-    /** Auxiliary data. */
-    options?: Dict;
-}
-
-/** Updates to client selection (sent from worker to client). */
-export interface ClientSelectUpdate extends Partial<Omit<ClientSelect, 'next'>> {
-    next?: ClientSelectUpdate;
+    /** Selection currently disabled (progressed to the next level). */
+    blurred?: boolean;
 }

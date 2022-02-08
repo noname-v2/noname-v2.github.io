@@ -187,16 +187,6 @@ export class Arena extends Link<ArenaData> {
         return this.players.get(id)!;
     }
 
-    /** Call a task method. */
-    callTask([id, method]: [number, string], ...args: any[]): any {
-        return (this.getTask(id) as any)[method](...args);
-    }
-
-    /** Get the number of arguments of a task method. */
-    countArgs([id, method]: [number, string]): number {
-        return (this.getTask(id) as any)[method].length;
-    }
-
     /** Create a link. */
     create<T extends keyof LinkTagMap>(tag: T): LinkTagMap[T] {
         return room.create(tag);

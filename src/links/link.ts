@@ -4,7 +4,7 @@ import type { Dict } from '../types';
 
 /** Default link data. */
 export interface LinkData {
-    /* Link owner. */
+    /** Link owner. */
     owner: string;
 }
 

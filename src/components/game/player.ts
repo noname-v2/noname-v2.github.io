@@ -1,7 +1,7 @@
-import { Component } from '../component';
+import { Selectable } from './selectable';
 import type { ClientSelect, Timer, Pop } from '../../types-client';
 
-export class Player extends Component {
+export class Player extends Selectable {
     /** Player background. */
     background = this.ui.createElement('background', this.node);
 
@@ -16,7 +16,7 @@ export class Player extends Component {
 
 	/** Main hero name. */
 	heroName = this.ui.createElement('caption', this.content);
-    
+
 	/** Vice hero name. */
 	viceName = this.ui.createElement('caption.vice', this.content);
 
@@ -138,7 +138,6 @@ export class Player extends Component {
     }
 
     $select(cs: ClientSelect | null) {
-        // from here
         if (cs) {
             this.listen('stage');
 
