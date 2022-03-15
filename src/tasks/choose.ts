@@ -1,5 +1,5 @@
 import { Task } from './task';
-import type { Player, Select, Dict, Link, ClientSelect } from '../types-worker';
+import type { Player, Select, Link, ClientSelect, SelectData } from '../types-worker';
 
 export class Choose extends Task {
     /** Has time limit. */
@@ -26,31 +26,33 @@ export class Choose extends Task {
     choose() {
         for (const select of this.selects) {
             // initialize selection and timer
-            const cs = this.parseSelect(select);
-            select.bind!.data.select = cs;
-            select.bind!.monitor('checkUpdate');
-            select.bind!.await(cs.timer ? cs.timer[0] : null);
+            const [cs, link] = this.parseSelect(select);
+            this.links.set(select, link.id);
+            link.data.select = cs;
+            link.monitor('checkUpdate');
+            link.await(cs.timer ? cs.timer[0] : null);
         }
     }
 
     /** Create ClientSelect from Select. */
-    parseSelect(select: Select): ClientSelect {
+    parseSelect(select: Select): [ClientSelect, Link<SelectData>] {
         // skip type checking for task methods
         const task = select.task as any;
-        
+
         // min and max number of selected items
         let num: [number, number];
-        let simple = true;
 
         if (typeof select.num === 'number') {
             num = [select.num, select.num];
         }
         else if (Array.isArray(select.num)) {
-            num = select.num.slice(0) as [number, number];
+            if (typeof select.num[0] !== 'number' || typeof select.num[1] !== 'number') {
+                throw('invalid selection number ' + select.num);
+            }
+            num = [select.num[0], select.num[1]];
         }
         else if (typeof select.num === 'string') {
-            // determine num later by this.filterSelect()
-            simple = false;
+            // will be determined later by this.filterSelect()
             num = [0, 0]
         }
         else {
@@ -58,34 +60,23 @@ export class Choose extends Task {
         }
 
         // initialize ClientSelect
-        if (select.filter && task[select.filter].length >= 3) {
-            simple = false;
-        }
+        const cs: ClientSelect = {links: {}, items: {}, num};
 
-        const cs: ClientSelect = { links: {}, items: {}, num };
-
-        if (simple) {
+        if (typeof select.num !== 'string' && (!select.filter || task[select.filter].length < 3)) {
+            // selection does not require update from worker, requires:
+            // 1. select.num is independent of selected items
+            // 2. select.filter is independent of selected items
             cs.simple = true;
         }
 
         if (select.forced) {
             cs.forced = true;
         }
-
-        // create link dynamically
-        if (select.create && !select.link) {
-            select.bind = task[select.create](select);
-        }
         
         // copy item entries from Select to ClientSelect
         for (const item of select.items) {
             if (typeof item === 'string') {
                 cs.items[item] = 0;
-                
-                // string items must have a binding
-                if (!select.link) {
-                    throw(`no binding component for ${item}`);
-                }
             }
             else {
                 cs.links[item.id] = 0;
@@ -118,7 +109,7 @@ export class Choose extends Task {
             }
         }
 
-        return cs;
+        return [cs, typeof select.target === 'string' ? task[select.target](select) : select.target];
     }
 
     /** Update selectable items. */

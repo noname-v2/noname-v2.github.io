@@ -217,16 +217,23 @@ export interface Select {
      */
     task: Task;
 
-    /** Link that control the selection of items (if not defined, this.create must exist). */
-    target?: Link<SelectData>;
-
-    /** Create link for this.bind when parsed (method name of this.task). */
-    create?: string;
+    /** Link that control the selection of items.
+     * Link<SelectData>: Use existing link.
+     * string: Create a new link when activated.
+     */
+    target: Link<SelectData> | string;
 
     /** Items available for selection. */
     items: (string | Link)[];
 
-    /** Function that determines whether an item is selectable (method name of this.task). */
+    /** Function that determines whether an item is selectable (method name of this.task).
+     * 3 arguments can be passed to function:
+     *  [0]: Target item.
+     *  [1]: Select object.
+     *  [2]: List of selected items.
+     * Function can choose to take only 2 arguments, in that case this.filter()
+     * will be called only once, which means better performance.
+     */
     filter?: string;
 
     /** Dynamically create this.next based on current selection (method name of this.task). */
@@ -238,7 +245,9 @@ export interface Select {
     /** Previons selection (this.next.previous === this). */
     previous?: Select;
 
-    /** Min and max number of selected items, or function name that returns [min, max]. */
+    /** Min and max number of selected items, or function name that returns [min, max].
+     * If undefined, will be set as [1,1]
+     */
     num?: number | [number, number] | string;
 
     /** Must make choice (no cancel button). */
