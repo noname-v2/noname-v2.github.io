@@ -155,7 +155,7 @@ export async function dispatch(data: ClientMessage) {
         }
         else if (sid === stage.id && link && link.owner === uid) {
             // send result to listener
-            if (done && stage.awaits.has(id)) {
+            if (done && stage.awaits.get(id) === null) {
                 // results: component.respond() -> link.await()
                 link.respond(result);
             }

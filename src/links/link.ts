@@ -103,18 +103,22 @@ export class Link<T extends LinkData = LinkData> {
         room.currentStage.monitors.set(this.id, callback);
     }
 
-    /** Callback of client-side component.respond(). */
-    await(timeout?: number | null) {
+    /** Callback of client-side component.respond().
+     * @param {number | null} timeout - Maximum wait time.
+     * @param {string} monitor - Do not accept respond() from client. Get response through this monitor() instead.
+     */
+    await(timeout?: number | null, monitor?: string) {
         const stage = room.currentStage;
-        stage.awaits.set(this.id, timeout || null);
+        stage.awaits.set(this.id, monitor ?? null);
+
+        if (monitor) {
+            this.monitor(monitor);
+        }
+
         if (timeout) {
             setTimeout(() => {
                 if (stage === room.currentStage && stage.awaits.has(this.id)) {
-                    stage.results.delete(this.id);
-                    stage.awaits.delete(this.id);
-                    if (!stage.awaits.size) {
-                        room.loop();
-                    }
+                    this.respond('timeout');
                 }
             }, timeout * 1000);
         }
@@ -130,6 +134,7 @@ export class Link<T extends LinkData = LinkData> {
             stage.results.set(this.id, result);
         }
         stage.awaits.delete(this.id);
+        
         if (!stage.awaits.size) {
             room.loop();
         }

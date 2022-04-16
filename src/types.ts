@@ -231,6 +231,7 @@ export interface Select {
      *  [0]: Target item.
      *  [1]: Select object.
      *  [2]: List of selected items.
+     * Function arguments: id: string, select: Select, cs?: ClientSelect,
      * Function can choose to take only 2 arguments, in that case this.filter()
      * will be called only once, which means better performance.
      */
