@@ -1,4 +1,5 @@
 import { room } from '../worker/globals';
+import * as utils from '../utils';
 import type { Stage } from '../worker/stage';
 import type { Dict } from '../types';
 
@@ -16,6 +17,10 @@ export class Task {
 
     get arena() {
         return room.arena;
+    }
+
+    get utils() {
+        return utils;
     }
 
     get mode() {

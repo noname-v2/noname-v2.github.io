@@ -1,5 +1,6 @@
 import { room } from '../worker/globals';
 import { tick } from '../worker/worker';
+import * as utils from '../utils';
 import type { Dict } from '../types';
 
 /** Default link data. */
@@ -35,6 +36,10 @@ export class Link<T extends LinkData = LinkData> {
 
     get data() {
         return this.#data;
+    }
+
+    get utils() {
+        return utils;
     }
 
     /** Component owner. */

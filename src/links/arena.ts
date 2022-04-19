@@ -1,6 +1,5 @@
 import { room, uid } from '../worker/globals';
 import * as hub from '../worker/hub';
-import * as utils from '../utils';
 import { accessExtension } from '../extension';
 import { Link, LinkData } from './link';
 import type { ModeInfo, PileEntries, Extension, Task, Player, Card, Skill, Minion } from '../types-worker';
@@ -85,10 +84,6 @@ export class Arena extends Link<ArenaData> {
 
     get connected() {
         return hub.peers ? true : false;
-    }
-
-    get utils() {
-        return utils;
     }
 
     get accessExtension() {
@@ -194,7 +189,7 @@ export class Arena extends Link<ArenaData> {
 
     /** Mark game as started and disallow changing configuration. */
     start() {
-        utils.freeze(this.config);
+        this.utils.freeze(this.config);
         room.progress = 1;
         hub.update();
     }
