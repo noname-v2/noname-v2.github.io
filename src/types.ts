@@ -213,7 +213,7 @@ export interface SelectData extends LinkData {
 /** Selection configurations for worker */
 export interface Select {
     /** Task that created this selection
-     * (may used by this.create, this.filter, this.progress, this.num).
+     * (may be used by this.create, this.filter, this.progress, this.num).
      */
     task: Task;
 
@@ -252,7 +252,7 @@ export interface Select {
     num?: number | [number, number] | string;
 
     /** Must make choice (no cancel button). */
-    forced: boolean;
+    forced?: boolean;
 
     /** Custom properties. */
     [key: string]: any;

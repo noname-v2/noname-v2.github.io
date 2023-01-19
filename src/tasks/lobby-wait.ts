@@ -83,7 +83,7 @@ export class LobbyWait extends Task {
                 const np = this.arena.mode.np;
                 if (Array.isArray(np)) {
                     if (!('np' in config)) {
-                        config.np = np[np.length - 1];
+                        (config as ArenaConfig).np = np[np.length - 1];
                     }
                 }
                 else if (typeof np === 'number') {

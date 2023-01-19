@@ -1,5 +1,5 @@
 import { Task } from './task';
-import type { Player, Select, Link, ClientSelect, SelectData } from '../types-worker';
+import type { Select, Link, ClientSelect, SelectData } from '../types-worker';
 
 export class Choose extends Task {
     /** Has time limit. */

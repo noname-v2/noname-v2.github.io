@@ -153,7 +153,7 @@ noname-card > noname-background {
 }
 noname-card > noname-background > noname-image {
   width: 100%;
-  height: calc(100% / 1.4);
+  height: 71.4285714286%;
   left: 0;
   bottom: 0;
 }
@@ -1003,19 +1003,19 @@ noname-player > noname-content noname-hand-count {
 }
 noname-player > noname-content noname-hand-count[data-condition=none] {
   background: rgba(100, 100, 100, 0.8);
-  border: 1px solid #3c3c3c;
+  border: 1px solid rgb(60, 60, 60);
 }
 noname-player > noname-content noname-hand-count[data-condition=mid] {
-  background: #558639;
-  border: 1px solid #274f07;
+  background: rgb(85, 134, 57);
+  border: 1px solid rgb(39, 79, 7);
 }
 noname-player > noname-content noname-hand-count[data-condition=high] {
-  background: #3f77ad;
-  border: 1px solid #1f5283;
+  background: rgb(63, 119, 173);
+  border: 1px solid rgb(31, 82, 131);
 }
 noname-player > noname-content noname-hand-count[data-condition=low] {
-  background: #c2a71e;
-  border: 1px solid #574708;
+  background: rgb(194, 167, 30);
+  border: 1px solid rgb(87, 71, 8);
 }
 
 noname-arena.started > noname-players > noname-player > noname-content > noname-hand-count {
@@ -1387,11 +1387,11 @@ noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-sp
 }
 noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="1"] {
   background: #51af06;
-  border: 1px solid #274f07;
+  border: 1px solid rgb(39, 79, 7);
 }
 noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span > noname-status[data-state="0"] {
   background: #d6b408;
-  border: 1px solid #4f4007;
+  border: 1px solid rgb(79, 64, 7);
 }
 noname-popup.splash-hub > noname-pane > noname-rooms > noname-widget > noname-span.nickname {
   right: auto;

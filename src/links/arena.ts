@@ -96,7 +96,7 @@ export class Arena extends Link<ArenaData> {
 
     /** Available hero packs. */
     get heropacks(): string[] {
-        const packs = [];
+        const packs: string[] = [];
 
         for (const pack of this.packs) {
             if (this.config.banned.heropack?.includes(pack)) {
@@ -113,7 +113,7 @@ export class Arena extends Link<ArenaData> {
 
     /** Available card packs. */
     get cardpacks(): string[] {
-        const packs = [];
+        const packs: string[] = [];
 
         for (const pack of this.packs) {
             if (this.config.banned.cardpack?.includes(pack)) {

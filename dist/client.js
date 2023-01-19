@@ -11,12 +11,12 @@
 
     var platform = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        ios: ios,
         android: android,
-        mobile: mobile,
+        ios: ios,
+        linux: linux,
         mac: mac,
-        windows: windows,
-        linux: linux
+        mobile: mobile,
+        windows: windows
     });
 
     const version = '2.0.0dev1';
@@ -195,16 +195,16 @@
 
     var utils = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        copy: copy,
-        apply: apply,
-        freeze: freeze,
         access: access,
-        split: split,
-        sleep: sleep,
-        rng: rng,
+        apply: apply,
+        copy: copy,
+        freeze: freeze,
         readJSON: readJSON,
         rget: rget,
-        rgets: rgets
+        rgets: rgets,
+        rng: rng,
+        sleep: sleep,
+        split: split
     });
 
     /** Bindings for DOM events. */
@@ -677,23 +677,23 @@
 
     var ui = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        ready: ready$1,
-        create: create,
-        createElement: createElement,
-        setBackground: setBackground,
-        setImage: setImage,
+        animate: animate,
         bind: bind,
         bindClick: bindClick,
+        countActive: countActive,
+        create: create,
+        createElement: createElement,
         dispatchClick: dispatchClick,
-        moveTo: moveTo,
-        getX: getX,
-        getY: getY,
         dispatchMove: dispatchMove,
         dispatchMoveEnd: dispatchMoveEnd,
-        animate: animate,
         format: format,
-        countActive: countActive,
-        setColor: setColor
+        getX: getX,
+        getY: getY,
+        moveTo: moveTo,
+        ready: ready$1,
+        setBackground: setBackground,
+        setColor: setColor,
+        setImage: setImage
     });
 
     /** Map of loaded extensions. */
@@ -826,12 +826,12 @@
 
     var db$1 = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        ready: ready,
         get: get,
-        set: set,
         readFile: readFile,
-        writeFile: writeFile,
-        readdir: readdir
+        readdir: readdir,
+        ready: ready,
+        set: set,
+        writeFile: writeFile
     });
 
     /** Hub configuration. */
@@ -1129,20 +1129,20 @@
 
     var client = /*#__PURE__*/Object.freeze({
         __proto__: null,
-        hub: hub,
+        clear: clear,
+        componentIDs: componentIDs,
+        components: components,
+        connect: connect,
         get connection () { return connection; },
+        disconnect: disconnect,
+        dispatch: dispatch,
+        hub: hub,
         listeners: listeners,
         get registration () { return registration; },
-        get uid () { return uid; },
-        components: components,
-        componentIDs: componentIDs,
-        get updating () { return updating; },
-        connect: connect,
-        disconnect: disconnect,
         send: send,
-        dispatch: dispatch,
-        clear: clear,
-        trigger: trigger
+        trigger: trigger,
+        get uid () { return uid; },
+        get updating () { return updating; }
     });
 
     class Component {
@@ -3784,7 +3784,22 @@
         }
     }
 
-    class Player extends Component {
+    /** A component that can be the binding of a selection. */
+    class Selectable extends Component {
+        $select(cs, old, partial) {
+            throw ('$select is not implemented');
+        }
+        /** Make sure selected items are cleared before being removed. */
+        remove() {
+            super.remove((async () => {
+                if (this.data.select !== null) {
+                    await this.$select(null, this.data.select);
+                }
+            })());
+        }
+    }
+
+    class Player extends Selectable {
         /** Player background. */
         background = this.ui.createElement('background', this.node);
         /** Main hero image. */
@@ -3898,7 +3913,6 @@
             }
         }
         $select(cs) {
-            // from here
             if (cs) {
                 this.listen('stage');
                 console.log(cs);
@@ -4085,7 +4099,10 @@
         player;
         /** Include a tray to put selected items. */
         tray;
-        /** Additional buttons in confirm bar. */
+        /** Additional buttons in confirm bar.
+         * Built-in buttons: OK, cancel
+         * Custom buttons: [id, text, color]
+         */
         bar;
         /** Items in gallery */
         items = new Map();
@@ -4165,6 +4182,18 @@
             const tray = this.pane.addTray('round');
             this.height += height + 26;
             return tray;
+        }
+        $select(cs, old, partial) {
+            if (!cs) {
+                // close dialog after selection done
+                this.remove();
+            }
+            else {
+                if (!partial && !cs.items && !cs.links) {
+                    // pop initialized with no item
+                    throw ('no item added');
+                }
+            }
         }
     }
 
@@ -5274,6 +5303,7 @@
     componentClasses.set('gallery', Gallery);
     componentClasses.set('card', Card);
     componentClasses.set('player', Player);
+    componentClasses.set('selectable', Selectable);
     componentClasses.set('input', Input);
     componentClasses.set('pane', Pane);
     componentClasses.set('popHero', PopHero);
@@ -5298,4 +5328,4 @@
         create('app');
     });
 
-}());
+})();

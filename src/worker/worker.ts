@@ -78,7 +78,7 @@ function commit() {
         for (const [, id, item] of entries) {
             if (Array.isArray(item)) {
                 calls[id] ??= [];
-                calls[id].push(item);
+                calls[id].push(item as [string, any]);
             }
             else if (item && typeof item === 'object') {
                 propChanges[id] ??= {};

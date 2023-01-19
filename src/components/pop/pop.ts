@@ -1,5 +1,6 @@
 import { Popup } from '../popup';
 import type { Player } from '../../types-client';
+import type { ClientSelect } from '../../types';
 
 export class Pop extends Popup {
     /** Pop caption. */
@@ -11,7 +12,10 @@ export class Pop extends Popup {
     /** Include a tray to put selected items. */
     tray!: boolean;
 
-    /** Additional buttons in confirm bar. */
+    /** Additional buttons in confirm bar.
+     * Built-in buttons: OK, cancel
+     * Custom buttons: [id, text, color]
+     */
     bar?: ('ok' | 'cancel' | [string, string, string?])[];
 
     /** Items in gallery */
@@ -107,5 +111,19 @@ export class Pop extends Popup {
         this.height += height + 26;
 
         return tray;
+    }
+
+    $select(cs: Partial<ClientSelect> | null, old?: Partial<ClientSelect>, partial?: boolean) {
+        if (!cs) {
+            // close dialog after selection done
+            this.remove();
+        }
+        else {
+            if (!partial && !cs.items && !cs.links) {
+                // pop initialized with no item
+                throw('no item added');
+            }
+            
+        }
     }
 }

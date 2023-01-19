@@ -73,4 +73,4 @@ var main = {
     tags: ['guess-side', 'leader']
 };
 
-export default main;
+export { main as default };

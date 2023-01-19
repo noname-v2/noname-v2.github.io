@@ -460,4 +460,4 @@ var main = {
     }
 };
 
-export default main;
+export { main as default };
